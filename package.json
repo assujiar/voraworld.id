@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:http": "next build && vitest run -c vitest.http.config.ts",
     "test:e2e": "playwright test",
     "db:migrate": "tsx scripts/apply-migrations.ts",
     "users": "tsx scripts/manage-users.ts",
