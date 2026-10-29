@@ -61,4 +61,17 @@ No live Sites URL or public deployment has been created. Outstanding requirement
 - Database engine is Supabase-pooler safe (no prepared statements) and uses `NullPool` on Vercel.
 - Upload ceiling lowered to 4 MB on Vercel (4.5 MB platform limit); startup refuses a non-production `APP_ENV` on Vercel.
 - Added migration `0011_enable_rls.sql` (deny Supabase Data API access to all tables) and `scripts/apply_migrations.py`.
-- Added `tests/test_deploy_compat.py` and `DEPLOY_STAGING.md`. Not deployed.
+- Added `tests/test_deploy_compat.py`. Not deployed.
+
+## 1.0.0 | 2026-10-29 | Production-oriented release candidate
+
+Everything below is described, with evidence, in `QA_REPORT.md`.
+
+- **Security:** Row Level Security on all tables (`0011`); login throttling (`0012`); credential-bound sessions; POST+CSRF logout; no user enumeration by timing; authentication before record lookup on every admin route (route-table test); strict CSP and static caching; new Supabase `sb_secret_` key support; account CLI `scripts/manage_users.py`.
+- **Production correctness:** email templates and rules seeded by migration (`0014`; production never ran the dev bootstrap); storage buckets by migration (`0013`); PostgreSQL concurrency tests for numbering and payment confirmation; the PostgreSQL suite runs on a migrations-only database.
+- **Admin:** SMTP test email and per-message retry; mobile admin menu fixed; stray mobile header marker fixed.
+- **Documents:** invoice states it is a payment request, not proof of payment; clear 409 when a stored receipt fails its integrity check.
+- **Localization:** navigation, footer, About, Solutions, Network, FAQ, contact/RFQ forms, legal headings and SEO titles translated to Indonesian; public pages no longer mention the admin portal.
+- **Deployment:** zero-config FastAPI `vercel.json` with bundle excludes and a daily mail-retry cron; Python 3.13; runtime/dev requirements split; pooler-safe engine; Vercel upload limits.
+- **Deliverables:** `SUPABASE_MANUAL_SETUP.sql`, `SUPABASE_VERIFICATION.sql`, `scripts/apply_migrations.py`, `.env.example`, `VERCEL_SETUP_GUIDE.md`, `SUPABASE_SETUP_GUIDE.md`, `ADMIN_SETUP_GUIDE.md`, `QA_REPORT.md`, `RELEASE_READINESS.md`.
+- **Removed from the tree** (all remain in Git history): the source zip, generated QA sample PDFs/PNGs, the unused full-size illustration PNGs, the placeholder `test.md`, and superseded staging notes.

@@ -40,4 +40,4 @@ Last update: 29 October 2026. This is a source-backed engineering review, not a 
 
 ## Release conditions
 
-Migrate through `0010_detailed_commercial_documents.sql` in order (after migrations 0001–0009), test editable invoice metadata on real Supabase staging, confirm legitimate SMTP delivery, validate external e-meterai, compare stored original PDF against a tampered file, and audit invoice status, tax calculations, manual payment confirmation and PDF pagination before publishing.
+Migrate through the latest numbered migration in order (see `SUPABASE_SETUP_GUIDE.md`), test editable invoice metadata on real Supabase staging, confirm legitimate SMTP delivery, validate external e-meterai, compare stored original PDF against a tampered file, and audit invoice status, tax calculations, manual payment confirmation and PDF pagination before publishing.

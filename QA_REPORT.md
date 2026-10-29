@@ -1,172 +1,90 @@
-# VORA QA & Acceptance Report
+# VORA QA report
 
-**Build:** 0.1.0 source review release  
-**Date:** 29 October 2026  
-**Environment:** local Python 3.13, SQLAlchemy/SQLite ephemeral test DB, FastAPI TestClient; Chromium offline/in-memory HTML renders; ReportLab-generated A4 PDF.  
-**Public deployment:** NONE. No production data used.  
-**Verdict:** LOCAL CORE TESTS PASS; PRODUCTION / SITES ACCEPTANCE NOT MET.
+**Date:** 29 October 2026 · **Scope:** the whole repository on branch `main` · **Verdict:** all automated checks pass locally on SQLite and on a PostgreSQL 16 database built only from the SQL migrations. Nothing has been run against a live Vercel, Supabase or SMTP account; those checks are listed in §6 and are yours to do.
 
-## Actual test commands and results
+## 1. Environment
 
-```text
-$ pytest tests/test_e2e.py -q --disable-warnings --maxfail=1
-..                                                                       [100%]
-$ python -m compileall -q vora
-COMPILE PASS
-$ python /tmp/vora-browser-qa-offline.py  # local QA harness, not in release
-Rendered 38 screenshots; issues: 0
-$ python /tmp/vora-additional-qa.py      # local QA harness, not in release
-Checked 24 responsive combinations / issues 0
+Python 3.13, FastAPI/Starlette TestClient, SQLAlchemy 2, psycopg 3, PostgreSQL 16.15 (local, throw-away), Chromium (Playwright) for browser checks. All test data is synthetic (`*.invalid`, `*.example`).
+
+## 2. Automated tests (commands and results)
+
+```bash
+pip install -r requirements-dev.txt
+
+# SQLite (default; the 3 concurrency tests need PostgreSQL and skip themselves)
+python -m pytest -o addopts="" -q
+#   59 passed, 3 skipped
+
+# PostgreSQL: the schema comes ONLY from migrations 0001-0014, the dev bootstrap is disabled
+createdb vora_test
+DATABASE_URL=postgresql://localhost/vora_test python scripts/apply_migrations.py --apply
+VORA_TEST_DATABASE_URL=postgresql://localhost/vora_test python -m pytest -o addopts="" -q
+#   62 passed, 0 skipped
+
+python -m compileall -q vora scripts app tests          # clean
+python scripts/build_manual_setup.py --check            # SUPABASE_MANUAL_SETUP.sql is current
+psql vora_test -f SUPABASE_VERIFICATION.sql             # 17 PASS, 0 FAIL (2 WARN expected on plain Postgres: no storage schema; test accounts)
 ```
 
-`previews/BROWSER_QA_RESULTS.json` contains page-by-page Chromium layout results for 19 routes at 1440px and 390px. `previews/RESPONSIVE_MATRIX.json` contains 24 combinations of Home, Services, Admin Dashboard, Invoice at widths 360, 390, 768, 1024, 1440 and 1920px. These are **real browser layout renders fed HTML/CSS/image bytes directly**, NOT live HTTP navigation: network security blocked Chromium access to localhost. No synthetic performance scores are reported.
+| Test module | Tests | What it proves |
+| --- | :-: | --- |
+| `test_e2e.py` | 3 | Public pages in both locales, RFQ/contact capture and persistence, admin sign-in, viewer restrictions, CMS publish/unpublish and sanitising, settings → public site, article/page snapshots and revisions, media upload, invoice maths (tax, withholding, discount), PDF and QR, pending → confirmed payment, partial payment, overpayment rejection, receipt void and reversal, SMTP outbox with fake transport, document numbering and quotation numbering with forced collisions. |
+| `test_finance_extras.py` | 3 | Full settlement to *paid*; e-meterai: receipt withheld, upload validation (wrong type, wrong references, missing approval), one-shot upload, SHA-256 integrity and tamper detection (409), stamped receipt attached to the customer email; invoice says "PAYMENT REQUEST - NOT PROOF OF PAYMENT"; foreign-currency receipts always need stamp review. |
+| `test_quotation_approval.py` | 2 | Quotation issue → approval email with PDF and private expiring link → customer upload → Finance review; invoice email; scheduler endpoint secret. |
+| `test_detailed_documents.py`, `test_pdf_onepage.py` | 4 | Real PDF text: shipment metadata, customer tax ID, banks, ledger reconciliation, amount in words; **max five items per page**, quotation on one page, oversize content fails instead of clipping. |
+| `test_public_site.py` | 13 | All 5 service groups and 9 sub-services render in EN and ID with no phone, WhatsApp or admin links; approved email and address; Indonesian translation present and English UI strings absent; SEO (canonical, hreflang, sitemap, JSON-LD, robots); security headers; standard cursor and no pointer tracking; reduced-motion support; official brand assets; admin mobile-menu regression. |
+| `test_security.py` | 16 | Login throttling and audit; no user enumeration; sessions die on password change or deactivation; POST-only logout with CSRF; role matrix for 6 roles × 13 sections; **every `/admin` route (GET and POST, enumerated from the live route table) returns 401 to anonymous and 403 to a no-permission user**; CSRF on state-changing posts; token-gated internal endpoints. |
+| `test_mail_admin.py`, `test_mail_seed.py` | 5 | SMTP test email, back-off to failed after 5 attempts, manual retry, permissions, dedupe; migration `0014` equals the code's template set. |
+| `test_manage_users.py` | 2 | Account CLI: create, reset (ends sessions), role change, deactivate, audit, weak password rejected. |
+| `test_deploy_compat.py` | 11 | Pooler-safe engine, Vercel guard, upload limit < 4.5 MB, `vercel.json` shape and cron, runtime requirements, contiguous migrations, `SUPABASE_MANUAL_SETUP.sql` current, `.env.example` covers every variable the code reads, Supabase header handling for both key formats. |
+| `test_postgres_concurrency.py` | 3 | 16 parallel invoices get 16 unique, well-formed numbers; the database rejects duplicate numbers; 6 simultaneous confirmations of one payment produce exactly one success (303) and five 409s. PostgreSQL only. |
 
-`previews/qa-invoice.pdf` and `qa-receipt.pdf` are **real generated PDF files** from QA-only local records; they have one A4 page each, the unchanged approved SVG-derived VORA logo and QR verification URL. Their QR URLs point to a **nonpublic local QA base URL**, not a real public verification service. `previews/*-pdf-preview.png` are their rendered pages.
+## 3. Browser checks (Chromium, real HTTP against the running app)
 
-## Acceptance matrix
-
-| Page/feature | Status | Actual local evidence / gap |
+| Run | Matrix | Result |
 | --- | --- | --- |
-| `/en/`, `/id/` Home | PASS local | HTTP 200 and desktop/mobile render, brand assets loaded |
-| `/about`, `/services`, all 7 service details | PASS local | public routes 200, distinct service copy and artwork; not all content admin-editable |
-| `/solutions`, `/network` | PASS local | renders; coverage only shows explicitly enabled DB regions |
-| `/insights`, published `/insights/[slug]` | PASS local | create/publish/unpublish article integration and sitemap update |
-| `/faq`, `/contact`, `/request-quote` | PASS local | pages 200; RFQ submitted with CSRF, persisted to SQL and visible to admin |
-| `/privacy`, `/terms` | NEEDS_CONFIGURATION | blank policy fields are noindex until owner approves copy |
-| `/verify/[token]` | PASS local | genuine DB token lookup, minimum metadata only, revoked receipt displays VOID |
-| Admin login/logout | PASS local | hashed credentials, server-side signed cookies, CSRF |
-| Server-side roles and protected data | PASS local | unauthenticated 401; viewer 403 for restricted reads/mutations |
-| Admin overview | PASS local | counts from SQL, test leads/invoices visible; no invented activity figures |
-| Lead management | PARTIAL | RFQ→DB→pipeline/note persisted, search/filter/export; no import/bulk/attachments |
-| Customers | PARTIAL | create tested via HTTP; read/update endpoints implemented but not exercised in integration tests; no dedicated delete workflow |
-| Article editor / HTML mode | PARTIAL | WYSIWYG basic controls and HTML source; sanitized, revision history. Advanced table/embeds/scheduling missing |
-| Visual page builder | PARTIAL | page create, sections, draft/publish isolation, revision restore actions, reorder buttons. Drag/drop and comprehensive theme/translation editing missing |
-| Global contact settings | PASS local | admin changed email/address; public contact output updated without source change |
-| Media library | PARTIAL | real PNG upload to local filesystem + SQL row persisted, public fetch; remote Supabase upload not run; SVG/crop/replacement missing |
-| Coverage/Nav/FAQ | PASS local | DB CRUD endpoints implemented; preview render checked, not every mutation E2E-tested |
-| Invoice calculations | PASS local | two items: subtotal IDR 2,500,000, discount IDR 50,000, tax 11%, withholding 2% = total IDR 2,670,500 |
-| Invoice PDF + QR | PASS local | `%PDF` bytes and actual rendered A4; local verification link authentic |
-| Partial payment | PASS local | IDR 500,000 paid → outstanding IDR 2,170,500; overpayment rejected 422 |
-| Receipt PDF + QR | PASS local | receipt issued for recorded payment, PDF bytes present; token verifies authentic |
-| Void/reverse payment | PASS local | receipt token becomes VOID; payment void, outstanding resets to IDR 2,670,500; regression fixed |
-| Concurrent number sequences | NEEDS_CONFIGURATION | PostgreSQL row/advisory locking implemented, but concurrency not tested against real Supabase PostgreSQL |
-| SEO dynamic sitemap and robots | PASS local | published article included/unpublished removed; robots disallow admin and verify |
-| Advanced technical SEO / multilingual | PARTIAL | canonical/metadata/Organization JSON-LD present; Service/Article schema, full translations, rich OG and live Search Console checks missing |
-| Responsive and browser screenshots | PASS for static render only | 38 screenshots + 24 width checks; zero horizontal overflow/broken images in sampled routes |
-| Live browser navigation and console | BLOCKED | Browser administrative network policy blocked requests to 127.0.0.1 and localhost; not a live E2E flow |
-| Private ChatGPT Sites staging URL | BLOCKED | no Sites runtime/project creation tool connected to this session |
-| Supabase PostgreSQL/Storage, Vercel deployment | NEEDS_CONFIGURATION | migration and adapters included; no connected external credentials or actual deployment tests |
-| SMTP provider and analytics | NOT_IMPLEMENTED | env placeholders only, no claim of emails sent or analytics recorded |
-| Actual Web Vitals/Lighthouse | NOT_IMPLEMENTED | no real domain or live browser network performance run |
+| Public site | EN and ID × 11 pages (home, about, services, a sub-service, project cargo, solutions, network, FAQ, insights, contact, RFQ) × widths 360, 390, 768, 1024, 1440, 1920 = **132 page loads** | 0 horizontal overflow, 0 broken images, 0 console errors, 0 failed or 4xx requests, exactly one `<h1>`, correct `lang`, standard cursor. Mobile menu opens in both languages. |
+| Admin portal | Signed in; 22 pages × widths 390, 768, 1440 = **66 page loads**, then sign-out through the POST form at each width | 0 overflow, 0 console errors, 0 failed requests; session invalid after sign-out. |
 
-## Key assertions exercised in `tests/test_e2e.py`
+The Content-Security-Policy is active during these runs, so no page depends on a blocked script, style or font. Screenshots were reviewed by eye for the desktop hero, the mobile RFQ page, the Indonesian mobile menu and the invoice form; the A4 invoice was rendered to PNG and inspected (monospace layout, logo, A-icon watermark, QR, five rows, new payment-request statement).
 
-1. Public English/Indonesian and service pages return HTTP 200; pages contain official SVG source references.
-2. Anonymous access to protected admin records returns 401; read-only viewer cannot access finance/CRM or mutate settings.
-3. Contact/RFQ submissions require CSRF, valid consent, name/email/message and save to SQL.
-4. Lead state and comments persist across HTTP requests and new DB sessions.
-5. Updated site settings propagate to public contact page.
-6. Article HTML is sanitized; script tags/event attributes do not survive; publish and unpublish change public route and sitemap.
-7. New custom page remains 404 until section changes are published as a snapshot.
-8. Invoice with configurable tax/withholding/discount uses integer minor units. Generated PDF bytes begin with `%PDF`.
-9. Opaque verification token displays minimum metadata only; not customer name. Receipt token is revoked on void.
-10. Partial payment changes outstanding and status, overpayment is rejected, voiding the receipt reverses the payment and reconciles the invoice.
-11. Only authorized admin can upload media. Valid PNG persists in local storage and can be fetched. Corrupt CSRF token is rejected.
-12. Arithmetic tests cover IDR/foreign currency minor units and exact calculation.
+## 4. PostgreSQL and migration checks
 
-## Outstanding business/technical approval
+* Migrations `0001`–`0014` apply cleanly, in order, to an empty database, through both `scripts/apply_migrations.py` and `SUPABASE_MANUAL_SETUP.sql`; the runner recognises the manual setup as complete.
+* ORM models and migrated schema match exactly (no missing table or column).
+* Row Level Security on for all 33 public tables; simulated `anon` and `authenticated` roles get *permission denied* on `users` and `invoices`.
+* The storage migration was exercised against simulated `storage.buckets` tables (new and old column layouts) and is idempotent. It was **not** run on a real Supabase project.
+* The real entrypoint `app/index.py` boots in `APP_ENV=production` with `VERCEL=1` using a virtualenv that contains only `requirements.txt` (no test tools): public pages 200, `/api/docs` 404, HSTS and CSP present, cron endpoint 401 without and 200 with the bearer secret, admin sign-in reaches the dashboard.
 
-Before public deployment: validate legal name/registration, bank details and policies; verify actual capabilities and service coverage; secure and test a Supabase/Vercel staging deployment; run browser-driven real network E2E, access controls and role administration; finish listed CMS/CRM/finance gaps; configure backup/restore, incident logging and external providers; obtain explicit site-owner approval.
+## 5. Defects found and fixed during this pass
 
-**Acceptance decision:** Source review can proceed. **Final production approval is NOT recommended yet** against `docs/MASTER_SPEC.md`.
+| # | Defect | Fix |
+| --- | --- | --- |
+| 1 | Migrations never enabled Row Level Security: on Supabase the public anon key could read and write every table (users, leads, invoices…). | `0011_enable_rls.sql`; `0012`/`0013` follow the pattern; verification SQL checks it. |
+| 2 | Production never seeded 5 of the 8 email templates/rules (only development ran `init_db`). Invoice and receipt emails could never be enabled. | `0014_seed_email_templates.sql` generated from the code, with a drift test; PostgreSQL tests now run with the bootstrap disabled so this class of bug cannot hide again. |
+| 3 | New-style Supabase `sb_secret_…` keys were also sent as a Bearer token, which Supabase rejects ("Invalid JWT"). | One header helper; both key styles tested. |
+| 4 | psycopg prepared statements break behind Supabase's transaction pooler; serverless instances kept idle pools. | `prepare_threshold=None`, `NullPool` on Vercel. |
+| 5 | Upload limits (7/10 MB) exceeded Vercel's 4.5 MB request cap. | 4 MB on Vercel, `MAX_UPLOAD_BYTES` override, UI shows the real limit. |
+| 6 | Admin menu unreachable at ≤780 px (menu closed by script, its toggle hidden). | Toggle shown; regression test and browser check. |
+| 7 | Stray disclosure triangle in the mobile header. | CSS fix. |
+| 8 | `GET /admin/<thing>/{id}` returned 404 before checking sign-in (lets anonymous visitors probe which IDs exist); two POSTs validated input before authorising. | Authenticate first; generic all-routes test added. |
+| 9 | No login throttling; unknown-user timing differed; GET logout; sessions survived password change. | Throttle table (`0012`), dummy-hash verification, POST+CSRF logout, credential-bound sessions. |
+| 10 | No Content-Security-Policy; static assets uncached on serverless. | Strict CSP (no third-party sources), `Cache-Control` on `/static`. |
+| 11 | Indonesian pages still had English navigation, footer, About, use cases, forms, legal headings, SEO titles; public text referred to the "admin portal". | Translated; tests assert English UI strings are absent from `/id/`. |
+| 12 | Invoice PDF did not state that it is not proof of payment. | Footer statement; receipt footer says it was issued after cleared funds. |
+| 13 | A tampered stored receipt crashed the download route (500). | 409 with a clear message. |
+| 14 | No way to test SMTP or retry a failed message by hand. | **Send test email** and per-message **Retry**. |
+| 15 | `.env.example` listed variables the code never reads (`SMTP_*`, `GA4_MEASUREMENT_ID`) and missed others. | Rewritten; a test keeps it in sync with the code. |
+| 16 | `vercel.json` used legacy `builds`/`routes`, which disable project settings. | Zero-config FastAPI entrypoint, bundle excludes, daily cron. |
 
-## Follow-up motion regression (29 October 2026, v0.1.1)
+## 6. Not tested here: needs your cloud accounts
 
-Changes made after owner feedback: browser-native pointer retained; pointer-following 3D tilt, mouse-driven hero rotation and magnetic button movement removed. Existing ambient morphing, floating images, scroll progress and reactive RFQ summary are retained.
+These cannot be verified from a build machine. Treat each as a launch gate.
 
-```text
-pytest tests/test_e2e.py -q --disable-warnings --maxfail=1
-..                                                                       [100%]
-python -m compileall -q vora
-COMPILE PASS
-python scripts/qa_motion.py
-RESULTS 36 route/viewport combos, 12 functional checks
-PASS pointer tracking is absent
-PASS pointer-driven hero/card motion is absent
-PASS clay morphing, RFQ summary, reduced motion and mobile nav
-PASS no browser JavaScript exceptions / broken images / horizontal overflow
-```
-
-Source for actual browser results: `previews/MOTION_QA_RESULTS.json`; short video: `previews/VORA_Motion_Experience.mp4`. The Chromium tests render public HTML/CSS/JS into a local page without testing public hosting or actual live HTTP navigation. This is **not** a production deploy verification.
-
-## Service portfolio cropping fix (29 October 2026, v0.1.2)
-
-**Issue:** the International Freight Forwarding illustration was cut at the card boundary and overlapped body text. The original 3D art file itself was intact. The previous video also placed the card's bottom content under the playback controls due to scroll framing.
-
-**Changes:** contained the illustration on desktop; gave it a separate art zone at mobile/tablet widths; maintained native cursor and existing reduced-motion behavior; regenerated the motion preview.
-
-**Actual local test commands/results:**
-
-```text
-PYTHONPATH=. python scripts/qa_service_art.py
-360 PASS contained True separate True
-390 PASS contained True separate True
-768 PASS contained True separate True
-900 PASS contained True separate True
-1024 PASS contained True separate True
-1440 PASS contained True separate True
-1920 PASS contained True separate True
-
-PYTHONPATH=. pytest -q
-..                                                                       [100%]
-```
-
-Evidence: `previews/service-art-contained-390.png`, `previews/service-art-contained-1440.png`, `previews/SERVICE_ART_QA.json`, and refreshed `previews/VORA_Motion_Experience.mp4`. These confirm the card's image bounds and distinct content zone in local Chromium rendering; they do **not** verify a public deployment.
-
-## Public/admin navigation regression · 29 October 2026
-
-- `pytest tests/test_e2e.py -q`: 2 passed. Includes direct admin access permissions, rejected `/admin` and `/en/admin/settings` public nav inserts, and exclusion of a legacy `/admin` nav row.
-- Offline Chromium: seven public routes had **zero** anchor links to `#/admin`. Direct `#/admin` remained navigable for demo/testing. No JavaScript page errors.
-- Public Contact and RFQ show only owner-approved email and office address, not telephone/WhatsApp.
-- **Security distinction:** hiding links is a presentation choice. Server-side `/admin` authentication and RBAC remain mandatory; the offline browser prototype does not implement authentication.
-
-## Actual additional tests · 29 October 2026 · numbering revision
-
-Status: **PASS (local):** `pytest -q tests/test_e2e.py` -> `3 passed`. Tests include successful RFQ storage, customer/invoice payment/receipt, quote generated from customer and from lead, exact `INV/RCP/QUO/RFQ-VORA-CODE-YYYYMM-#####` patterns, stable owner code, forced collision/retry, PDF generation, QR verification for draft / issued / void.
-
-Status: **PASS (browser):** standalone Chromium test created customer, invoice, receipt, quotation; checked shared customer code across all three; issued quotation and checked no horizontal overflow at 390px. JS errors: 0. Full prototype regression: 43/43 routes; 7/7 previously defined flows; 14/14 responsive checks; 0 JS errors.
-
-Status: **NEEDS_CONFIGURATION:** migration `0005` on actual Supabase PostgreSQL and production concurrency test. **NOT IMPLEMENTED:** SMTP dispatch for quotations. No production deployment was performed.
-
----
-
-## NEW: Current release QA | 29 Oct 2026 | deployment candidate source (NOT public-approved)
-
-Previous sections above were written for older build stages. The assertions below supersede older comments that SMTP workflows or quotation outbound emails had not been implemented.
-
-**Actual commands and outputs:**
-
-```text
-$ python -m compileall -q vora
-PASS (no errors)
-$ python -m pytest -q --disable-warnings --maxfail=1
-.......                                                                  [100%]
-7 passed
-```
-
-**Expanded integration tests:** `tests/test_quotation_approval.py` verifies admin-only request creation, queued quotation email with PDF attachment and unguessable approval URL, public `noindex` customer approval form, PDF download, upload with matching document reference, private file download, manual Finance checkbox, approval status transition and link non-reuse. It also checks invoice outbound SMTP queue/attachment via **mock SMTP transport**, and rejects unauthorized cron dispatch.
-
-**Actual PDF render check:** synthetic examples generated with `build_vora_release_previews.py` into `qa_samples`: **5 line items = 1 A4 page**, **6 line items = 2 A4 pages** with respective 5+1 rows, receipt = 1 page, quotation = 1 page. Rendered PNGs were examined to verify layout, logo, watermark, QR, line separation and summary positioning. The examples contain fictional QA-only customer and bank data; no real financial records.
-
-**NOT RUN / NEEDS CONFIGURATION:** Vercel deploy, live Supabase PostgreSQL migration, remote PDF storage, actual SMTP server, DNS email deliverability, real e-meterai verification, cron retry under hosting limits, browser full E2E, accessibility/performance auditing on a public hostname, all master-spec CRUD and SEO requirements. **Do not mark these PASS.**
-
-**Known unreconciled functional requirement:** `Receipt issued for billing before funds received` remains absent. Present release only issues receipts once Finance confirms effective funds, and sends the corresponding confirmation through enabled SMTP rules. See `RELEASE_READINESS_2026-10-29.md`.
-
-## 29 Oct 2026 — Detailed invoice / receipt revision
-
-- PASS: `python -m pytest -q` — 9 local tests, including new detailed-document metadata and amount-in-words tests.
-- PASS: `python -m compileall -q vora`.
-- PASS: Invoice with five ordinary line items renders on one A4 page, six line items split 5 + 1. Full shipment metadata with five concise lines and one bank also renders on one page; extremely verbose cases may require a separate financial summary page to preserve legibility.
-- PASS: Receipt with confirmed payment, bank trace, cumulative settlement, outstanding balance and English IDR amount renders on one A4 page.
-- NEEDS_CONFIGURATION: PostgreSQL migration 0010 has not run on a real hosted Supabase environment.
-- BLOCKED: Live SMTP, e-meterai validation, canonical-PDF integrity comparison and hosted browser verification.
+1. **Vercel**: an actual deployment, cold-start behaviour, function region, deployment protection, cron execution, logs.
+2. **Supabase**: running `SUPABASE_MANUAL_SETUP.sql` and `SUPABASE_VERIFICATION.sql` on the real project (including the Storage section, which only a real project can answer), the pooler connection, real Storage uploads and reads for both buckets with your key format, backups and restore.
+3. **SMTP**: delivery to a real mailbox with your provider, SPF/DKIM/DMARC, HTML rendering in mail clients, PDF attachments; the quotation, invoice, payment-confirmation and receipt emails end to end.
+4. **E-meterai**: a genuine stamped PDF from your provider passing the upload checks (the software checks structure and references, not the stamp's authenticity).
+5. **Performance and accessibility**: Lighthouse/Web Vitals on the production domain; an assistive-technology pass. No scores are claimed.
+6. **Security**: an independent penetration test, WAF/bot protection in front of the public forms (the app has a honeypot and a per-email throttle only), and load testing.
+7. **Content**: legal review of Privacy and Terms, factual review of every service statement, and owner approval of the company details.

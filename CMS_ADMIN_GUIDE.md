@@ -1,6 +1,6 @@
 # VORA administrator handbook
 
-Sign in at `/admin/login` with the account created using `scripts/create_admin.py`.
+Sign in at `/admin/login` with an account created using `scripts/manage_users.py` (see `ADMIN_SETUP_GUIDE.md`).
 
 ## Public site and content
 
@@ -12,7 +12,7 @@ Sign in at `/admin/login` with the account created using `scripts/create_admin.p
 
 `Site Settings`: Enter legal issuer name, company profile, approved phone, email, address, contact hours, social links, bank account details, privacy and terms. Save to publish immediately; these changes affect public header/footer/contact/Organization metadata and invoices where used. Any unknown values may safely remain blank. Never enter registration numbers or certificates unless verified.
 
-`Media Library`: Upload images (PNG/JPEG/WebP/AVIF, max 7 MB), supply real alt text, and copy media URLs into page section images. Production needs configured Supabase Storage. SVG upload and automatic crop/replacement workflows are not enabled in this version.
+`Media Library`: Upload images (PNG/JPEG/WebP/AVIF, max 7 MB, 4 MB on Vercel), supply real alt text, and copy media URLs into page section images. Production needs configured Supabase Storage. SVG upload and automatic crop/replacement workflows are not enabled in this version.
 
 ## Leads
 
