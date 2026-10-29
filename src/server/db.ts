@@ -21,6 +21,8 @@ function connect(): Sql {
     connect_timeout: 15,
     // Return camelCase properties; `sql(obj)` helpers write snake_case columns.
     transform: { column: { to: postgres.fromCamel, from: postgres.toCamel } },
+    // Money columns are bigint (8 bytes). Return them as JS numbers: IDR amounts stay far below 2^53.
+    types: { bigint: { to: 20, from: [20], parse: (x: string) => Number(x), serialize: (x: unknown) => String(x) } },
     // Never log server notices (they can contain row data).
     onnotice: () => {},
   })
