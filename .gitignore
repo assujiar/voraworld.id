@@ -1,14 +1,18 @@
+# dependencies and build output
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+# secrets and local state
 .env
 .env.*
 !.env.example
 .vercel/
-*.db
-*.sqlite*
-__pycache__/
-.pytest_cache/
-.venv/
-venv/
-*.pyc
 .DS_Store
-uploads/
-protected/
+# local-only storage used when no Supabase is configured
+.local-storage/
+# test artefacts
+coverage/
+test-results/
+playwright-report/

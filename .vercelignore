@@ -1,7 +1,0 @@
-# Keep deployment uploads small; none of this is needed at runtime.
-*.zip
-tests
-qa_samples
-docs
-scripts
-vora/static/assets/ASET_WEB_VORA*
