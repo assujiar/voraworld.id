@@ -1,8 +1,7 @@
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { assertSameOrigin } from './auth/csrf'
-import { userFromToken, assertPermission, type SessionUser } from './auth/guard'
-import type { Permission } from './auth/roles'
+import { userFromToken, assertAdmin, type SessionUser } from './auth/guard'
 import { SESSION_COOKIE } from './auth/session'
 import { HttpError } from './http'
 
@@ -25,7 +24,7 @@ function withQuery(path: string, key: string, value: string) {
 }
 
 export function doneUrl(d: Done): string {
-  if (d.query) return d.to + (d.to.includes('?') ? '&' : '?') + d.query
+  if (d.query !== undefined) return d.query ? d.to + (d.to.includes('?') ? '&' : '?') + d.query : d.to
   return d.notice ? withQuery(d.to, 'notice', d.notice) : withQuery(d.to, 'saved', '1')
 }
 
@@ -42,15 +41,15 @@ async function execute(form: FormData, back: string, run: () => Promise<Done | v
 
 /**
  * Guard for every signed-in admin action. Each exported action in src/actions/ must be an `async function`
- * whose body is `return adminRun(permission, form, fn)`: a test checks the source and executes every action
- * as an anonymous visitor and as a user without the permission.
- * Order: same-origin -> signed in (else login page) -> permission (403) -> handler.
+ * whose body is `return adminRun(form, fn)`: a test checks the source and executes every action as an
+ * anonymous visitor and as an account without the admin role.
+ * Order: same-origin -> signed in (else login page) -> admin role (403) -> handler.
  */
-export async function adminRun(permission: Permission | undefined, form: FormData, fn: (c: AdminCtx) => Promise<Done | void>): Promise<void> {
+export async function adminRun(form: FormData, fn: (c: AdminCtx) => Promise<Done | void>): Promise<void> {
   assertSameOrigin(await headers())
   const user = await userFromToken((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) redirect('/admin/login')
-  assertPermission(user, permission)
+  assertAdmin(user)
   await execute(form, '/admin', () => fn({ form, user }))
 }
 

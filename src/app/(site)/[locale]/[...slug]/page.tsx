@@ -1,6 +1,5 @@
 import { notFound, permanentRedirect, redirect } from 'next/navigation'
-import { CtaBand } from '@/components/site/CtaBand'
-import { CustomSections } from '@/components/site/CustomSections'
+import { CustomPageView } from '@/components/site/CustomPageView'
 import { isLocale } from '@/content'
 import { pageMetadata } from '@/lib/metadata'
 import { findRedirect, getPublishedPage } from '@/server/site'
@@ -24,11 +23,5 @@ export default async function CustomPage({ params }: P) {
   if (hit && hit.newPath.startsWith('/') && !hit.newPath.startsWith('//')) (hit.status === 301 ? permanentRedirect : redirect)(hit.newPath)
   const page = await getPublishedPage(route(slug), locale)
   if (!page) notFound()
-  return (
-    <>
-      <section className="page-intro"><div className="wrap"><span className="eyebrow">VORA / {page.title}</span><h1>{page.title}</h1><p>{page.description}</p></div></section>
-      <CustomSections locale={locale} sections={page.sections} />
-      <CtaBand locale={locale} />
-    </>
-  )
+  return <CustomPageView locale={locale} page={page} />
 }

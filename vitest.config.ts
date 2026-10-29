@@ -6,9 +6,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
-    exclude: ['tests/e2e/**', 'node_modules/**'],
+    exclude: ['tests/e2e/**', 'tests/http/**', 'node_modules/**'],
     globalSetup: ['tests/setup/global.ts'],
-    setupFiles: ['tests/setup/per-file.ts'],
+    setupFiles: ['tests/setup/per-file.ts', 'tests/setup/next-mocks.ts'],
     testTimeout: 30_000,
     hookTimeout: 60_000,
     pool: 'forks',

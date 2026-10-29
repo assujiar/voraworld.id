@@ -1,7 +1,7 @@
 import { sql } from '../db'
 import { HttpError } from '../http'
 import { safeEqual } from '../crypto'
-import { can, type Permission } from './roles'
+import { isAdminRole } from './roles'
 import { SESSION_COOKIE, credentialFingerprint, readSessionToken } from './session'
 import { readCookie } from './cookies'
 
@@ -18,14 +18,15 @@ export async function userFromToken(token: string | undefined | null): Promise<S
 
 export const userFromRequest = (request: Request) => userFromToken(readCookie(request, SESSION_COOKIE))
 
-export function assertPermission(user: SessionUser, permission?: Permission): void {
-  if (!can(user.role, permission)) throw new HttpError(403, 'Permission denied')
+/** Only the admin role may use the portal. */
+export function assertAdmin(user: SessionUser): void {
+  if (!isAdminRole(user.role)) throw new HttpError(403, 'Permission denied')
 }
 
-/** 401 when not signed in, 403 when signed in without the permission. */
-export async function requireUser(request: Request, permission?: Permission): Promise<SessionUser> {
+/** 401 when not signed in, 403 when the account does not hold the admin role. */
+export async function requireUser(request: Request): Promise<SessionUser> {
   const user = await userFromRequest(request)
   if (!user) throw new HttpError(401, 'Authentication required')
-  assertPermission(user, permission)
+  assertAdmin(user)
   return user
 }

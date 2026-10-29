@@ -6,14 +6,14 @@ import { signToken, verifyToken } from '@/server/crypto'
 import { requireUser, userFromToken } from '@/server/auth/guard'
 import { attemptLogin, LOGIN_MAX_PER_EMAIL, LOGIN_MAX_PER_IP } from '@/server/auth/login'
 import { assertSameOrigin } from '@/server/auth/csrf'
-import { can, ROLE_NAMES } from '@/server/auth/roles'
+import { ADMIN_ROLE, isAdminRole } from '@/server/auth/roles'
 import { clientIp, parseCookies } from '@/server/auth/cookies'
 import { HttpError } from '@/server/http'
 
 // Produced by the previous Python implementation (hashlib.pbkdf2_hmac, 310000 rounds, salt 00..1f).
 const PYTHON_HASH = 'pbkdf2_sha256$310000$000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f$67cd1dea9a72f37ea164bd70a81235aac5af9ddea3c01b57b450e681c7f445b8'
 
-async function makeUser(email: string, role = 'viewer', password = 'A-long-test-password-1') {
+async function makeUser(email: string, role = 'admin', password = 'A-long-test-password-1') {
   const passwordHash = await hashPassword(password)
   const [u] = await sql`insert into users (email, password_hash, role) values (${email}, ${passwordHash}, ${role}) returning id`
   return { id: u.id as number, passwordHash, role }
@@ -68,18 +68,18 @@ describe('signed tokens and sessions', () => {
 })
 
 describe('guard', () => {
-  it('ends the session on password change, deactivation, deletion and role lookup', async () => {
-    const u = await makeUser('guard@invalid.example', 'finance')
+  it('ends the session on password change, role change, deactivation and deletion', async () => {
+    const u = await makeUser('guard@invalid.example', 'admin')
     const token = await createSessionToken(u)
-    expect(await userFromToken(token)).toMatchObject({ email: 'guard@invalid.example', role: 'finance' })
+    expect(await userFromToken(token)).toMatchObject({ email: 'guard@invalid.example', role: 'admin' })
     const changed = await hashPassword('A-new-password-after-reset')
     await sql`update users set password_hash = ${changed} where id = ${u.id}`
     expect(await userFromToken(token)).toBeNull()
-    const fresh = await createSessionToken({ id: u.id, passwordHash: changed, role: 'finance' })
+    const fresh = await createSessionToken({ id: u.id, passwordHash: changed, role: 'admin' })
     expect(await userFromToken(fresh)).not.toBeNull()
-    await sql`update users set role = 'admin' where id = ${u.id}`
+    await sql`update users set role = 'viewer' where id = ${u.id}`
     expect(await userFromToken(fresh)).toBeNull()   // a role change signs the user out, so the cookie's role is never stale
-    await sql`update users set role = 'finance' where id = ${u.id}`
+    await sql`update users set role = 'admin' where id = ${u.id}`
     expect(await userFromToken(fresh)).not.toBeNull()
     await sql`update users set active = false where id = ${u.id}`
     expect(await userFromToken(fresh)).toBeNull()
@@ -88,23 +88,22 @@ describe('guard', () => {
     expect(await credentialFingerprint('a', 'x')).not.toBe(await credentialFingerprint('b', 'x'))
     expect(await credentialFingerprint('a', 'x')).not.toBe(await credentialFingerprint('a', 'y'))
   })
-  it('requireUser answers 401 for anonymous and 403 for missing permission', async () => {
-    const u = await makeUser('viewer-guard@invalid.example', 'viewer')
-    const token = await createSessionToken(u)
+  it('requireUser answers 401 for anonymous and 403 for any account that is not an admin', async () => {
+    const legacy = await makeUser('legacy-guard@invalid.example', 'viewer')
+    const admin = await makeUser('admin-guard@invalid.example', 'admin')
     const req = (cookie?: string) => new Request('http://x/', { headers: cookie ? { cookie } : {} })
     await expect(requireUser(req())).rejects.toMatchObject({ status: 401 })
     await expect(requireUser(req('vora_session=garbage'))).rejects.toMatchObject({ status: 401 })
-    await expect(requireUser(req(`vora_session=${token}`))).resolves.toMatchObject({ role: 'viewer' })
-    await expect(requireUser(req(`vora_session=${token}`), 'finance')).rejects.toMatchObject({ status: 403 })
+    await expect(requireUser(req(`vora_session=${await createSessionToken(legacy)}`))).rejects.toMatchObject({ status: 403 })
+    await expect(requireUser(req(`vora_session=${await createSessionToken(admin)}`))).resolves.toMatchObject({ role: 'admin', email: 'admin-guard@invalid.example' })
   })
 })
 
 describe('roles', () => {
-  it('grant exactly the documented permissions', () => {
-    const grants: Record<string, string[]> = { superadmin: ['content', 'crm', 'finance', 'settings'], admin: ['content', 'crm', 'finance', 'settings'], editor: ['content'], sales: ['crm'], finance: ['finance'], viewer: [] }
-    for (const role of ROLE_NAMES) for (const p of ['content', 'crm', 'finance', 'settings'] as const) expect(can(role, p), `${role}:${p}`).toBe(grants[role].includes(p))
-    expect(can('nobody', 'content')).toBe(false)
-    expect(can('viewer')).toBe(true)
+  it('has one role, admin, and denies every other value', () => {
+    expect(ADMIN_ROLE).toBe('admin')
+    expect(isAdminRole('admin')).toBe(true)
+    for (const other of ['superadmin', 'editor', 'sales', 'finance', 'viewer', 'ADMIN', 'admin ', '', 'root', null, undefined]) expect(isAdminRole(other as string), String(other)).toBe(false)
   })
 })
 

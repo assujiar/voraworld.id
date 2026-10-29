@@ -18,7 +18,7 @@ export default async function setup() {
 
   const env = {
     ...process.env,
-    NODE_ENV: 'production',
+    NODE_ENV: 'production' as const,
     DATABASE_URL: withDatabase(adminUrl(), name),
     PUBLIC_BASE_URL: `http://localhost:${port}`,
     SESSION_SECRET: 'http-test-secret-that-is-long-enough-0123456789abcdef',
@@ -26,14 +26,15 @@ export default async function setup() {
     CRON_SECRET: 'c'.repeat(40),
     VORA_LOCAL_STORAGE_DIR: `/tmp/vora-http-${name}`,
   }
-  server = spawn('npx', ['next', 'start', '-p', String(port)], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+  const proc = spawn('npx', ['next', 'start', '-p', String(port)], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+  server = proc
   let log = ''
-  server.stdout?.on('data', (d) => (log += d))
-  server.stderr?.on('data', (d) => (log += d))
+  proc.stdout?.on('data', (d) => (log += d))
+  proc.stderr?.on('data', (d) => (log += d))
   const base = `http://localhost:${port}`
   for (let i = 0; i < 120; i++) {
     try { if ((await fetch(`${base}/robots.txt`)).ok) break } catch { /* not up yet */ }
-    if (server.exitCode !== null) throw new Error('next start exited early:\n' + log)
+    if (proc.exitCode !== null) throw new Error('next start exited early:\n' + log)
     await new Promise((r) => setTimeout(r, 500))
   }
   process.env.HTTP_BASE_URL = base
