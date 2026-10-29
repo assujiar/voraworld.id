@@ -12,7 +12,7 @@ next-env.d.ts
 .DS_Store
 # local-only storage used when no Supabase is configured
 .local-storage/
-# test artefacts
-coverage/
+# test artefacts (anchored: the admin page src/app/(admin)/admin/(shell)/coverage/ must NOT be ignored)
+/coverage/
 test-results/
 playwright-report/

@@ -1,6 +1,6 @@
 # VORA QA report
 
-**Date:** 29 October 2026 · **Scope:** the whole repository, Next.js / React / TypeScript version 2.0.0 · **Verdict:** every automated check passes locally: 220 unit and integration tests, 42 real-server HTTP tests and 17 browser tests (279 in all), a clean type check, a production build, and the operational smoke tests in §4–§5. Nothing has been run against a live Vercel, Supabase or SMTP account; those checks are listed in §7 and are yours to do.
+**Date:** 29 October 2026 · **Scope:** the whole repository, Next.js / React / TypeScript version 2.0.0 · **Verdict:** every automated check passes locally: 221 unit and integration tests, 42 real-server HTTP tests and 17 browser tests (280 in all), a clean type check, a production build, and the operational smoke tests in §4–§5. Nothing has been run against a live Vercel, Supabase or SMTP account; those checks are listed in §7 and are yours to do.
 
 ## 1. Environment
 
@@ -11,7 +11,7 @@ Node.js 22.22, Next.js 15.5.28, React 19.1.10, TypeScript 5.9.3, PostgreSQL 16.1
 ```bash
 export TEST_DATABASE_ADMIN_URL=postgresql://postgres@localhost:5432/postgres   # a server that may create databases
 npx tsc --noEmit                      # clean
-npm test                              # 18 files, 220 tests passed (about 30 s)
+npm test                              # 18 files, 221 tests passed (about 30 s)
 npm run test:http                     # next build, then 3 files, 42 tests passed against a real `next start`
 npm run test:e2e                      # next build, then 17 browser tests passed in about 5 minutes (Chromium)
 npm run build:setup-sql -- --check    # SUPABASE_MANUAL_SETUP.sql is current
@@ -36,7 +36,7 @@ Every unit-test file gets its own database cloned from a template that was built
 | `users.test.ts` | 13 | The account command: create, duplicates, weak passwords, reset ends sessions, deactivate, no role option, legacy-role accounts explained, **and the program run as a real child process with a real pipe**. |
 | `migrations.test.ts` | 4 | Contiguous numbering, RLS and seed data on a fresh database, template wording after `0018`, `src/server/schema.ts` matches the migrated database. |
 | `manual-setup.test.ts` | 8 | `SUPABASE_MANUAL_SETUP.sql` is exactly what the builder produces, creates no demo data, gives the same schema as the migrations on an empty database, `SUPABASE_VERIFICATION.sql` passes there and flags an unprotected table, a missing seed and a 32-bit money column. |
-| `deploy.test.ts` | 13 | `.env.example` documents every variable the code reads and nothing else, no real secret in it, `vercel.json` shape and cron, run times, exact dependency pins, no environment file or key tracked, no leftover Python. |
+| `deploy.test.ts` | 14 | `.env.example` documents every variable the code reads and nothing else, no real secret in it, `vercel.json` shape and cron, run times, exact dependency pins, no environment file or key tracked, no source file hidden from Git by `.gitignore`, no leftover Python. |
 | `env.test.ts` | 7 | Start-up rules: PostgreSQL URL, https base URL in production, long random session secret, Vercel needs production mode, upload ceiling. |
 | `setup-check.test.ts` | 4 | The dashboard checklist starts empty, turns green only when things are really done, rejects look-alikes, and never puts a configured value into its answer. |
 | `tests/http/*` | 42 | A real server: five service groups and nine sub-services in both languages with no phone, WhatsApp or admin links; approved company details; Indonesian translation; canonical, hreflang, Open Graph and JSON-LD; sitemap and robots; redirects; security headers and caching; brand and cursor rules; the admin gate (every admin page redirects an anonymous visitor to sign-in with the wanted page remembered; every POST, a Server Action call included, and every other method gets 401; every non-admin role is refused everywhere); every menu entry is a live page; CSV export without formula injection; ids that are not real record numbers answer 404; QR verification pages; PDF downloads; the private approval link; the cron endpoint. |
@@ -92,6 +92,7 @@ PDF layouts were also rendered to PNG with poppler and inspected by eye during d
 | 17 | The admin checkbox rendered oversized and the rich-text surface too narrow; the setup checklist wrongly required a legal name that is not seeded. | CSS and checklist corrected. |
 | 18 | `npm run test:e2e` existed without a configuration or any spec. | The browser suite in `tests/e2e/`. |
 | 19 | `npm run db:migrate` said "Dry run only" even when nothing was pending. | It now says the database is up to date. |
+| 20 | `.gitignore` listed `coverage/`, which also matched the admin page `src/app/(admin)/admin/(shell)/coverage/`: the page was never committed, so a fresh clone had a dead "Coverage" menu link (404) while every test passed in the developer's working tree. Found by running the whole suite on a fresh clone of the pushed branch. | The pattern is anchored (`/coverage/`), the page is tracked, and `deploy.test.ts` fails if `.gitignore` hides anything under `src`, `scripts`, `migrations`, `tests` or `public`. |
 
 ## 7. Not tested here: needs your cloud accounts
 

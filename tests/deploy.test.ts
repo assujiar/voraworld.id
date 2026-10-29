@@ -86,6 +86,12 @@ describe('repository hygiene', () => {
     const ignore = read('.gitignore')
     for (const entry of ['.env', '.env.*', '!.env.example', 'node_modules/', '.next/', '.vercel/']) expect(ignore).toContain(entry)
   })
+  it('hides no source file from Git: nothing the application needs is matched by .gitignore', () => {
+    if (!tracked) return
+    // A pattern such as `coverage/` once swallowed the admin page of the same name; a fresh clone then had a dead menu link.
+    const ignored = execSync('git ls-files --others --ignored --exclude-standard -- src scripts migrations tests public', { encoding: 'utf8' }).split('\n').filter(Boolean)
+    expect(ignored).toEqual([])
+  })
   it('contains no leftover Python runtime', () => {
     if (!tracked) return
     expect(tracked.filter((f) => /\.py$|^requirements.*\.txt$|^Dockerfile$|^pytest\.ini$|^\.python-version$/.test(f))).toEqual([])
