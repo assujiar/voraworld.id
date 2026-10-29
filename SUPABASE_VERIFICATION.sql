@@ -1,6 +1,6 @@
 -- ============================================================================
 -- VORA: post-setup verification. READ-ONLY: it changes nothing.
--- Run in Supabase Dashboard -> SQL Editor after SUPABASE_MANUAL_SETUP.sql (or after scripts/apply_migrations.py).
+-- Run in Supabase Dashboard -> SQL Editor after SUPABASE_MANUAL_SETUP.sql (or after `npm run db:migrate -- --apply`).
 -- It returns one row per check. Every row must say PASS (INFO rows are informational, WARN needs a look).
 -- Any FAIL means the database is not safe to point the application at.
 -- ============================================================================
@@ -35,6 +35,11 @@ BEGIN
   RETURN QUERY SELECT 'no row level security policies defined', CASE WHEN n = 0 THEN 'PASS' ELSE 'WARN' END,
     n || ' policies (the app uses a server-side role, so none are needed)';
 
+  SELECT string_agg(table_name || '.' || column_name, ', ') INTO missing FROM information_schema.columns
+    WHERE table_schema = 'public' AND column_name LIKE '%\_minor' AND data_type <> 'bigint';
+  RETURN QUERY SELECT 'money columns are 64-bit', CASE WHEN missing IS NULL THEN 'PASS' ELSE 'FAIL' END,
+    COALESCE('not bigint (amounts above IDR 2.1 billion would fail): ' || missing, 'every *_minor column holds amounts above IDR 2.1 billion');
+
   -- 2. Integrity guards for document identifiers ------------------------------
   FOREACH v IN ARRAY ARRAY['invoices.number','quotations.number','receipts.number','leads.reference','leads.public_code','customers.public_code'] LOOP
     SELECT count(*) INTO n FROM pg_index i JOIN pg_class t ON t.oid = i.indrelid
@@ -48,7 +53,7 @@ BEGIN
     RETURN QUERY SELECT 'migration history', 'WARN', 'schema_migrations table absent (fine if you ran the SQL files by hand)';
   ELSE
     EXECUTE 'SELECT count(*), max(name) FROM schema_migrations' INTO n, v;
-    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 14 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded, latest ' || COALESCE(v, 'none');
+    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 18 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (18 expected), latest ' || COALESCE(v, 'none');
   END IF;
 
   -- 4. Seed data the application depends on ------------------------------------
@@ -75,9 +80,12 @@ BEGIN
   END IF;
 
   -- 6. State (informational) --------------------------------------------------------
-  SELECT count(*) INTO n FROM users WHERE role = 'superadmin' AND active;
-  RETURN QUERY SELECT 'active superadmin accounts', CASE WHEN n > 0 THEN 'PASS' ELSE 'INFO' END,
-    n || ' (create the first one with scripts/manage_users.py create EMAIL --role superadmin)';
+  SELECT count(*) INTO n FROM users WHERE role = 'admin' AND active;
+  RETURN QUERY SELECT 'active admin accounts', CASE WHEN n > 0 THEN 'PASS' ELSE 'INFO' END,
+    n || ' (create the first one from a trusted machine: npm run users -- create EMAIL)';
+  SELECT count(*) INTO n FROM users WHERE role <> 'admin';
+  RETURN QUERY SELECT 'every account holds the admin role', CASE WHEN n = 0 THEN 'PASS' ELSE 'WARN' END,
+    n || ' account(s) with another role have NO access to the portal (the portal has one role: admin)';
   SELECT count(*) INTO n FROM users WHERE email ~* '(example|invalid|demo)';
   RETURN QUERY SELECT 'no demo/test accounts', CASE WHEN n = 0 THEN 'PASS' ELSE 'WARN' END, n || ' suspicious account(s)';
   RETURN QUERY SELECT 'data volume', 'INFO',

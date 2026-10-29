@@ -9,6 +9,7 @@ import { absoluteUrl, getNav, getSettings } from '@/server/site'
 
 // Content is editable in the admin, so pages are rendered per request.
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30      // form submissions queue and send email
 export const viewport: Viewport = { themeColor: '#101720', width: 'device-width', initialScale: 1 }
 export const metadata = { icons: { icon: [{ url: '/static/assets/vora-a-icon-primary.svg', type: 'image/svg+xml' }] } }
 

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 
 export const dynamic = 'force-dynamic'
+/** PDF rendering, uploads and sending email run inside these routes: allow more than the platform default. */
+export const maxDuration = 30
 export const metadata: Metadata = { title: { absolute: 'VORA Document Verification' }, robots: { index: false, follow: false }, referrer: 'no-referrer', icons: { icon: [{ url: '/static/assets/vora-a-icon-primary.svg', type: 'image/svg+xml' }] } }
 export const viewport: Viewport = { themeColor: '#101720', width: 'device-width', initialScale: 1 }
 
