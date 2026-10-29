@@ -1,3 +1,5 @@
+import { ActionError } from './errors'
+
 /** Errors that map straight to an HTTP status. Route handlers turn them into text responses. */
 export class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -6,7 +8,7 @@ export class HttpError extends Error {
 }
 
 export function errorResponse(e: unknown): Response {
-  if (e instanceof HttpError) return new Response(e.message, { status: e.status, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
+  if (e instanceof HttpError || e instanceof ActionError) return new Response(e.message, { status: e.status, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
   console.error(e)
   return new Response('Internal server error', { status: 500, headers: { 'content-type': 'text/plain; charset=utf-8' } })
 }
@@ -28,4 +30,22 @@ export const rawStr = (form: FormData, key: string, max = 12000): string => (tex
 export function int(form: FormData, key: string, fallback = 0): number {
   const n = Number.parseInt(String(form.get(key) ?? ''), 10)
   return Number.isSafeInteger(n) && Math.abs(n) <= 2_147_483_647 ? n : fallback
+}
+
+/** An uploaded file's bytes, or null when the field has no file. Oversize files are rejected before they are read. */
+export async function fileBytes(form: FormData, key: string, maxBytes: number): Promise<Uint8Array | null> {
+  const v = form.get(key)
+  if (!v || typeof v === 'string' || !v.size) return null
+  if (v.size > maxBytes) throw new ActionError(`The file exceeds the ${Math.floor(maxBytes / 1048576)} MB limit`, 413)
+  return new Uint8Array(await v.arrayBuffer())
+}
+
+/** A private PDF download: never cached, never sniffed, and the file name is a VORA document number (no user input). */
+export function pdfResponse(bytes: Uint8Array, filename: string, disposition: 'inline' | 'attachment' = 'inline'): Response {
+  return new Response(Buffer.from(bytes), {
+    headers: {
+      'content-type': 'application/pdf', 'content-disposition': `${disposition}; filename="${filename.replace(/[^A-Za-z0-9._-]/g, '_')}"`,
+      'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer',
+    },
+  })
 }

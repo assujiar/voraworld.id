@@ -3,14 +3,10 @@ import { redirect } from 'next/navigation'
 import { assertSameOrigin } from './auth/csrf'
 import { userFromToken, assertAdmin, type SessionUser } from './auth/guard'
 import { SESSION_COOKIE } from './auth/session'
+import { ActionError } from './errors'
 import { HttpError } from './http'
 
-/** Business-rule or validation failure: shown to the user on the form they came from. */
-export class ActionError extends Error {
-  constructor(message: string, public status = 422) {
-    super(message)
-  }
-}
+export { ActionError }
 
 /** Where to go after success. `query` replaces the default `saved=1`, e.g. `sent=1` for public forms. */
 export interface Done { to: string; notice?: string; query?: string }
@@ -51,6 +47,40 @@ export async function adminRun(form: FormData, fn: (c: AdminCtx) => Promise<Done
   if (!user) redirect('/admin/login')
   assertAdmin(user)
   await execute(form, '/admin', () => fn({ form, user }))
+}
+
+/** What a form-state action hands back to its form when the submission is refused: the message and what was typed. */
+export interface FormState { error?: string; values?: Record<string, string | string[]> }
+
+/** The text the user typed (never files), so a refused form can be shown again with everything still filled in. */
+function typedValues(form: FormData): Record<string, string | string[]> {
+  const out: Record<string, string | string[]> = {}
+  for (const key of new Set(form.keys())) {
+    if (key.startsWith('$ACTION') || key === '_back') continue
+    const all = form.getAll(key).filter((v): v is string => typeof v === 'string')
+    if (!all.length) continue
+    out[key] = all.length > 1 ? all.map((v) => v.slice(0, 12_000)) : all[0].slice(0, 12_000)
+  }
+  return out
+}
+
+/**
+ * Same guard as `adminRun`, for long forms that use React's `useActionState`: a refused submission returns
+ * `{ error, values }` instead of navigating, so nothing the user typed is lost. Success redirects as usual.
+ */
+export async function adminRunForm(form: FormData, fn: (c: AdminCtx) => Promise<Done>): Promise<FormState> {
+  assertSameOrigin(await headers())
+  const user = await userFromToken((await cookies()).get(SESSION_COOKIE)?.value)
+  if (!user) redirect('/admin/login')
+  assertAdmin(user)
+  let result: Done
+  try {
+    result = await fn({ form, user })
+  } catch (e) {
+    if (e instanceof ActionError) return { error: e.message, values: typedValues(form) }
+    throw e
+  }
+  redirect(doneUrl(result))
 }
 
 /** Guard for actions open to visitors (contact form, RFQ, customer approval upload, login). */

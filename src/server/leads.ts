@@ -3,7 +3,7 @@ import { ensurePublicCode, nextNumber } from './numbering'
 import { enqueue } from './mail/outbox'
 import { getMailConfig } from './mail/config'
 import { publicBaseUrl } from './env'
-import { ActionError } from './action'
+import { ActionError } from './errors'
 
 export interface InquiryInput {
   kind: 'contact' | 'rfq'

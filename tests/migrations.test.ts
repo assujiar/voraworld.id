@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readMigrations } from '../scripts/lib/migrations'
 import { sql } from '@/server/db'
+import { EVENTS, EVENT_KEYS } from '@/server/mail/events'
 
 describe('migrations', () => {
   it('are numbered contiguously from 0001', () => {
@@ -13,6 +14,15 @@ describe('migrations', () => {
     expect(unprotected).toBe(0)
     const settings = await sql`select key, value from settings where key in ('email', 'address') order by key`
     expect(settings.map((r) => r.key)).toEqual(['address', 'email'])
+  })
+})
+
+describe('seeded email templates', () => {
+  it('equal, on a database built only from the migrations, the wording the code defines (0008/0009 seeded older text; 0018 aligns it)', async () => {
+    const rows = await sql`select key, subject, html from email_templates order by key`
+    expect(rows.map((r) => r.key)).toEqual([...EVENT_KEYS].sort())
+    for (const r of rows) expect({ subject: r.subject, html: r.html }, r.key as string).toEqual(EVENTS[r.key as string])
+    expect((await sql`select key from email_rules where enabled`).length).toBe(0)       // every notification starts switched off
   })
 })
 

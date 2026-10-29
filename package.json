@@ -16,7 +16,8 @@
     "db:migrate": "tsx scripts/apply-migrations.ts",
     "users": "tsx scripts/manage-users.ts",
     "build:setup-sql": "tsx scripts/build-manual-setup.ts",
-    "gen:schema": "tsx scripts/gen-schema-types.ts"
+    "gen:schema": "tsx scripts/gen-schema-types.ts",
+    "build:pdf-assets": "tsx scripts/embed-pdf-assets.ts"
   },
   "dependencies": {
     "next": "15.5.28",
@@ -26,7 +27,8 @@
     "qrcode": "1.5.4",
     "react": "19.1.10",
     "react-dom": "19.1.10",
-    "sanitize-html": "2.18.1"
+    "sanitize-html": "2.18.1",
+    "unpdf": "1.9.1"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
@@ -38,7 +40,6 @@
     "@types/sanitize-html": "2.16.2",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
-    "unpdf": "1.9.1",
     "vitest": "3.2.7"
   }
 }

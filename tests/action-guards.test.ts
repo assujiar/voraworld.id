@@ -13,7 +13,7 @@ const DIR = join(process.cwd(), 'src/actions')
 const FILES = readdirSync(DIR).filter((f) => f.endsWith('.ts')).sort()
 
 /** Actions that visitors may call without signing in. Adding one here is a deliberate, reviewed decision. */
-const PUBLIC_ACTIONS = new Set(['login', 'logout', 'submitContact', 'submitQuote', 'uploadQuotationApprovalAction'])
+const PUBLIC_ACTIONS = new Set(['login', 'logout', 'submitContact', 'submitQuote', 'submitApprovalAction'])
 
 interface Found { file: string; name: string; body: string }
 const found: Found[] = []
@@ -27,8 +27,11 @@ for (const file of FILES) {
 }
 
 describe('source scan', () => {
-  it('finds the actions', () => {
+  it('finds the actions, including every one that moves money or releases a document', () => {
     expect(found.length).toBeGreaterThan(20)
+    const names = found.map((f) => f.name)
+    for (const n of ['confirmPaymentAction', 'cancelPaymentAction', 'recordPaymentAction', 'voidReceiptAction', 'uploadStampAction', 'reviewApprovalAction', 'requestApprovalAction',
+      'createInvoiceAction', 'invoiceStatusAction', 'sendInvoiceAction', 'createQuotationAction', 'quotationStatusAction', 'saveCustomerAction', 'createBankAction', 'updateBankAction']) expect(names, n).toContain(n)
   })
   it.each(FILES)('%s is a "use server" module that exports only async functions (or types)', (file) => {
     const src = readFileSync(join(DIR, file), 'utf8')
@@ -38,15 +41,14 @@ describe('source scan', () => {
   })
   it('every action takes the form and hands its body to a guard runner', () => {
     for (const a of found) {
-      const guard = PUBLIC_ACTIONS.has(a.name) ? 'publicRun' : 'adminRun'
-      expect(a.body, `${a.file}: ${a.name} must call ${guard}`).toMatch(new RegExp(`return ${guard}\\(`))
-      const other = guard === 'publicRun' ? 'adminRun' : 'publicRun'
-      expect(a.body, `${a.file}: ${a.name} must not call ${other}`).not.toContain(`${other}(`)
+      const isPublic = PUBLIC_ACTIONS.has(a.name)
+      expect(a.body, `${a.file}: ${a.name} must call its guard`).toMatch(isPublic ? /return publicRun\(/ : /return adminRun(Form)?\(/)
+      expect(a.body, `${a.file}: ${a.name} uses the wrong guard`).not.toMatch(isPublic ? /adminRun/ : /publicRun/)
     }
   })
   it('an admin action does nothing before the guard runs', () => {
     for (const a of found.filter((f) => !PUBLIC_ACTIONS.has(f.name))) {
-      expect(a.body.trimStart().startsWith('return adminRun(form,'), `${a.file}: ${a.name} starts with something else`).toBe(true)
+      expect(/^return adminRun(Form)?\(form,/.test(a.body.trimStart()), `${a.file}: ${a.name} starts with something else`).toBe(true)
     }
   })
   it('public actions are only in the files meant for visitors', () => {
@@ -69,7 +71,7 @@ async function fingerprint() {
 /** Plausible values for whatever fields an action reads, so each guard is exercised with a realistic request. */
 function formFor(body: string): Record<string, string | Blob> {
   const names = new Set<string>()
-  for (const m of body.matchAll(/(?:str|rawStr|int)\(form,\s*'(\w+)'/g)) names.add(m[1])
+  for (const m of body.matchAll(/(?:str|rawStr|int|ids|fileBytes)\(form,\s*'(\w+)'/g)) names.add(m[1])
   for (const m of body.matchAll(/form\.get\('(\w+)'\)/g)) names.add(m[1])
   const form: Record<string, string | Blob> = {}
   for (const n of names) {
@@ -86,10 +88,11 @@ function formFor(body: string): Record<string, string | Blob> {
   return form
 }
 
-const adminActions: Array<Found & { fn: (f: FormData) => Promise<void> }> = []
+type AnyAction = (...args: never[]) => Promise<unknown>
+const adminActions: Array<Found & { fn: AnyAction }> = []
 beforeAll(async () => {
   for (const file of FILES) {
-    const mod = (await import(/* @vite-ignore */ join(DIR, file))) as Record<string, (f: FormData) => Promise<void>>
+    const mod = (await import(/* @vite-ignore */ join(DIR, file))) as Record<string, AnyAction>
     for (const f of found.filter((x) => x.file === file && !PUBLIC_ACTIONS.has(x.name))) {
       expect(typeof mod[f.name], `${file}: ${f.name}`).toBe('function')
       adminActions.push({ ...f, fn: mod[f.name] })

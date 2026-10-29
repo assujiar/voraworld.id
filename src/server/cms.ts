@@ -2,11 +2,9 @@ import { sql, tx, type Db } from './db'
 import { recordAudit } from './audit'
 import { cleanHtml } from './sanitize'
 import { slugify } from './slug'
-import { ActionError } from './action'
+import { ActionError, isUnique } from './errors'
 import { SECTION_KINDS, SECTION_LAYOUTS, SECTION_SURFACES } from './cms-constants'
 import type { ArticlesRow, PagesRow, SectionsRow } from './schema'
-
-const isUnique = (e: unknown) => typeof e === 'object' && e !== null && (e as { code?: string }).code === '23505'
 
 // ---------------------------------------------------------------- articles
 const ARTICLE_FIELDS = ['title', 'slug', 'excerpt', 'body', 'category', 'tags', 'locale', 'status', 'cover', 'author', 'seoTitle', 'seoDescription'] as const

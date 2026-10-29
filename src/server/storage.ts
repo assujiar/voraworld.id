@@ -1,11 +1,13 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { isProd } from './env'
+import { ActionError } from './errors'
 
 export type Bucket = 'media' | 'documents'
 
-export class StorageError extends Error {
-  constructor(message: string, public status = 502) { super(message) }
+/** A storage failure. It is an ActionError, so forms show it and file routes answer with its status. */
+export class StorageError extends ActionError {
+  constructor(message: string, status = 502) { super(message, status) }
 }
 
 /**
@@ -24,10 +26,19 @@ function bucketName(bucket: Bucket): string {
   return bucket === 'media' ? process.env.SUPABASE_STORAGE_BUCKET || 'vora-media' : process.env.SUPABASE_DOCUMENTS_BUCKET || 'vora-documents'
 }
 
+const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])$/
+
+/** The Supabase project, if configured. In production the secret key only ever travels over https (loopback is allowed for local stand-ins). */
 function remote(): { url: string; secret: string } | null {
   const url = (process.env.SUPABASE_URL || '').replace(/\/+$/, '')
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  return url && secret ? { url, secret } : null
+  if (!url || !secret) return null
+  if (isProd()) {
+    let host = ''
+    try { const u = new URL(url); host = u.protocol === 'https:' ? '' : u.hostname } catch { throw new StorageError('SUPABASE_URL is not a valid URL', 503) }
+    if (host && !LOOPBACK.test(host)) throw new StorageError('SUPABASE_URL must use https in production', 503)
+  }
+  return { url, secret }
 }
 
 /** Local directory used when Supabase is not configured (development and tests only). */

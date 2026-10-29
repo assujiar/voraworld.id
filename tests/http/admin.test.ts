@@ -6,6 +6,7 @@ import { ADMIN_MENU } from '@/content/admin-menu'
 import { hashPassword } from '@/server/auth/password'
 import { SESSION_COOKIE, createSessionToken } from '@/server/auth/session'
 import { Client } from './client'
+import { seedFinance } from './fixtures'
 
 /** The real production server, real cookies, every admin URL: who gets in, and what each page contains. */
 const db = postgres(process.env.HTTP_DATABASE_URL!, { max: 2, onnotice: () => {} })
@@ -24,22 +25,25 @@ const withSession = async (u: { id: number; passwordHash: string; role: string }
 }
 
 /** URL of every page and route handler under src/app/(admin)/admin, with dynamic segments filled in. */
-function adminRoutes(): string[] {
+function adminRoutes(): Array<{ path: string; kind: 'page' | 'route' }> {
   const root = join(process.cwd(), 'src/app/(admin)/admin')
-  const out: string[] = []
+  const out: Array<{ path: string; kind: 'page' | 'route' }> = []
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {
       const full = join(dir, name)
       if (statSync(full).isDirectory()) { walk(full); continue }
       if (!/^(page\.tsx|route\.ts)$/.test(name)) continue
       const segs = relative(root, dir).split('/').filter((s) => s && !/^\(.*\)$/.test(s)).map((s) => (s.startsWith('[') ? '{id}' : s))
-      out.push('/admin' + (segs.length ? '/' + segs.join('/') : ''))
+      out.push({ path: '/admin' + (segs.length ? '/' + segs.join('/') : ''), kind: name === 'page.tsx' ? 'page' : 'route' })
     }
   }
   walk(root)
-  return [...new Set(out)].sort()
+  return out.sort((a, b) => a.path.localeCompare(b.path))
 }
-const ROUTES = adminRoutes()
+const ALL = adminRoutes()
+const ROUTES = ALL.map((r) => r.path)
+/** Routes that answer with a file (PDF, CSV), not a page. */
+const FILES = new Set(ALL.filter((r) => r.kind === 'route').map((r) => r.path))
 /** Ids of fixture rows by collection, so `/admin/articles/{id}` can be opened for real. */
 const IDS: Record<string, number> = {}
 const url = (route: string) => route.replace(/\/([^/]+)\/\{id\}/, (_m, parent: string) => `/${parent}/${IDS[parent] ?? 1}`)
@@ -115,11 +119,11 @@ describe('the admin', () => {
     const [lead] = await db`insert into leads (type, name, company, email, message, reference, public_code, status) values ('contact', ${'=HYPERLINK("http://evil.example","x")'}, 'ACME, Inc.', 'lead@example.invalid', 'hello', 'LEAD-1', 'L0000000001', 'new') returning id`
     const [article] = await db`insert into articles (title, slug, excerpt, body, status, locale) values ('Draft piece', 'draft-piece', 'x', '<p>secret draft</p>', 'draft', 'en') returning id`
     const [page] = await db`insert into pages (title, slug, locale) values ('Careers', 'careers', 'en') returning id`
-    Object.assign(IDS, { leads: lead.id, articles: article.id, pages: page.id })
+    Object.assign(IDS, { leads: lead.id, articles: article.id, pages: page.id }, (await seedFinance()).ids)
   })
 
   it('opens every admin page that exists and gets the full portal chrome', async () => {
-    for (const r of PROTECTED.filter((x) => x !== '/admin/leads.csv').map(url)) {
+    for (const r of PROTECTED.filter((x) => !FILES.has(x)).map(url)) {
       const res = await c.get(r)
       expect(res.status, r).toBe(200)
       expect(res.headers.get('cache-control'), r).toContain('no-store')
@@ -135,8 +139,7 @@ describe('the admin', () => {
     const html = await c.text('/admin')
     for (const cat of ADMIN_MENU) for (const l of cat.links) expect(html, l.href).toContain(`href="${l.href}"`)
     const seen = new Set<string>()
-    for (const r of PROTECTED.map(url)) {
-      if (r === '/admin/leads.csv') continue
+    for (const r of PROTECTED.filter((x) => !FILES.has(x)).map(url)) {
       for (const m of (await c.text(r)).matchAll(/href="(\/admin[^"#]*)"/g)) seen.add(m[1].replace(/&amp;/g, '&'))
     }
     for (const href of seen) {
