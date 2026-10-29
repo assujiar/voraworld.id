@@ -45,7 +45,7 @@ async function attempt(q: QuotationData, issuer: Issuer, verificationUrl: string
   rt(RIGHT, H - 39, 'QUOTATION', 16, WHITE, true)
   rt(RIGHT, H - 54, q.number, 6.8, WHITE)
   rt(RIGHT, H - 74, (q.status || 'draft').toUpperCase().replace(/_/g, ' '), 7, '#E8B3AA', true)
-  rule(FOOTER_TOP)
+  s.footer(FOOTER_TOP, LEFT, RIGHT, 3)
   txt(LEFT, 68, 'VORA / DOCUMENT VERIFICATION', 7.7, SLATE, true)
   txt(LEFT, 54, 'Scan QR for document number and current status.', 6.8, SLATE)
   txt(LEFT, 39, issuer.email, 7.2, INK)

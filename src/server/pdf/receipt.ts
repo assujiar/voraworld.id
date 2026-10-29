@@ -1,5 +1,5 @@
 import { englishWords, money } from '../money'
-import { H, INK, PALE, RED, RULE, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
+import { H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { Issuer, ReceiptData } from './types'
 
 /**
@@ -104,12 +104,12 @@ export async function renderReceipt(r: ReceiptData, issuer: Issuer, verification
   if (r.stampRequired && r.status === 'pending_stamp') y = detail(y, 'DOCUMENT RELEASE CONTROL', 'Manual official e-meterai application pending; document not released.')
   if (y < 117) throw new PdfLayoutError('Receipt contents exceed the reserved A4 layout')
 
-  s.rule(99, L, R, RULE, 0.7)
+  s.footer(99, L, R)
   s.text(L, 83, 'VORA / DOCUMENT AUTHENTICITY VERIFICATION', 7.8, INK, true)
   s.text(L, 68, 'Scan the QR to check this receipt and current status.', 7.2, SLATE)
   s.text(L, 53, 'Issued after VORA Finance confirmed cleared funds.', 6.9, SLATE)
   s.text(L, 38, issuer.email, 7.2, INK)
   s.text(L, 22, 'RECEIPT / PAGE 01 OF 01', 7.0, SLATE)
-  s.page.drawImage(await s.qr(verificationUrl), { x: R - 85, y: 7, width: 82, height: 82 })
+  s.page.drawImage(await s.qr(verificationUrl), { x: R - 85, y: 9, width: 82, height: 82 })
   return s.save()
 }

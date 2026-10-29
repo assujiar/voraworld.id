@@ -114,6 +114,16 @@ export class Sheet {
     this.page.drawImage(this.logo, { x: logo.x, y: logo.y, width: logo.w, height: logo.h })
   }
 
+  /**
+   * Footer accent shared by every document: the short red tab of the section titles sits on the footer hairline, and a red
+   * edge runs along the foot of the page, the counterpart of the red edge under the header band.
+   */
+  footer(ruleY: number, left: number, right: number, edge = 4): void {
+    this.rule(ruleY, left, right)
+    this.rect(left, ruleY - 1.1, 31, 2.5, RED)
+    this.rect(0, 0, W, edge, RED)
+  }
+
   save(): Promise<Uint8Array> { return this.doc.save() }
 }
 

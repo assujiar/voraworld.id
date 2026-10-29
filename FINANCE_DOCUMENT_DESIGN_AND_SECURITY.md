@@ -8,6 +8,7 @@ Last update: 29 October 2026. This is a source-backed engineering review of the 
 * Details come from the issuing transaction and the company settings; there are no hard-coded sample customers, bank accounts, routes, shipment references or tax rates.
 * The **invoice** is paginated to **five charge items per page**, with the settlement block on the last page; when an unusually verbose block cannot fit, a separate summary page is produced instead of clipping data. The **quotation** is laid out on **one page** (text is measured, font size 8.0 down to 6.5); a quotation that cannot fit fails loudly instead of being clipped, and one with more than ten items uses the paginated layout. The **receipt** is one page.
 * The quotation keeps its signature and company-stamp area for the customer approval workflow.
+* **Company-red footer accent on every page of every document:** a short red tab sits on the footer line (the same tab the section titles use) and a red edge runs along the foot of the page, the counterpart of the red edge under the header band. It is drawn by one shared routine (`Sheet.footer` in `src/server/pdf/kit.ts`), and `tests/pdf.test.ts` checks the pixels Poppler draws for the invoice (one and several pages), the receipt and the quotation.
 
 ## Invoice fields actually supported
 

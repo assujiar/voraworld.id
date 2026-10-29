@@ -67,7 +67,7 @@ async function compose(d: Doc, issuer: Issuer, verificationUrl: string, summaryP
       s.right(R, H - 83, d.status.toUpperCase().replace(/_/g, ' '), 7.0, '#E8B3AA', true)
     }
     // Repeated verification footer on every page.
-    s.rule(83, L, R)
+    s.footer(83, L, R)
     s.text(L, 66, 'VORA / DIGITAL DOCUMENT VERIFICATION', 7.6, INK, true)
     s.text(L, 51, 'Scan QR to check document status with VORA.', 7.1, SLATE)
     s.text(L, 36, issuer.email, 7.6, INK)

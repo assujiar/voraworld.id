@@ -14,7 +14,7 @@ import { renderDocumentPdf } from '@/server/pdf/documents'
 import { PdfLayoutError } from '@/server/pdf/kit'
 import { createUser } from './helpers/actions'
 import { makePdf } from './helpers/pdf'
-import { pdfPages, poppler, squash } from './helpers/pdf-text'
+import { pdfPages, poppler, rasterize, squash } from './helpers/pdf-text'
 
 process.env.VORA_LOCAL_STORAGE_DIR = mkdtempSync(join(tmpdir(), 'vora-pdf-'))
 const BASE = 'https://staging.example.invalid'
@@ -36,6 +36,22 @@ async function setup(o: { currency?: string; name?: string; itemText?: string; n
   return { customer, invoice, banks }
 }
 const save = (name: string, bytes: Uint8Array) => { if (OUT) { writeFileSync(join(OUT, name), bytes) } }
+
+/**
+ * Every page of every document ends in the company red: a red edge along the foot of the page (the answer to the red edge
+ * under the header) and a short red tab on the footer hairline. Checked on the pixels Poppler draws.
+ */
+const isRed = ([r, g, b]: number[]) => Math.abs(r - 180) <= 6 && Math.abs(g - 62) <= 6 && Math.abs(b - 49) <= 6      // #B43E31
+function expectRedFooter(pdf: Uint8Array, pages: number, ruleY: number, label: string) {
+  for (let page = 1; page <= pages; page++) {
+    const img = rasterize(pdf, page)
+    if (!img) return                                                             // Poppler is not installed: nothing to look at
+    for (const x of [2, 150, 300, 450, img.width - 3]) expect(isRed(img.at(x, img.height - 2)), `${label} page ${page}: red edge at x=${x}`).toBe(true)
+    expect(isRed(img.at(300, img.height - 12)), `${label} page ${page}: the edge stays thin`).toBe(false)
+    const row = Math.round(img.height - ruleY)
+    expect([-2, -1, 0, 1, 2].some((d) => isRed(img.at(52, row + d))), `${label} page ${page}: red tab on the footer line`).toBe(true)
+  }
+}
 
 beforeAll(async () => { actor = (await createUser('finance-qa@example.invalid', 'admin')).id })
 beforeEach(async () => {
@@ -70,6 +86,8 @@ describe('invoice and receipt PDFs', () => {
     expect(squash((await pdfPages(await renderDocumentPdf(sql, 'invoice', invoice, BASE)))[0])).toContain('ISSUED / PARTIALLY PAID')
     for (const text of [pages[0], rp[0]]) expect(text.toUpperCase()).not.toMatch(/WHATSAPP|TEL[:.]|PHONE/)
     expect(poppler(receipt)).toContain('OFFICIAL PAYMENT RECEIPT')
+    expectRedFooter(pdf, 1, 83, 'invoice')
+    expectRedFooter(receipt, 1, 99, 'receipt')
   })
 
   it('split ten items into five-per-page blocks and keep every bank, total and the page numbering', async () => {
@@ -86,6 +104,7 @@ describe('invoice and receipt PDFs', () => {
     for (let i = 0; i < 3; i++) expect(all).toContain(`QA BANK ${i + 1}`)
     expect(all).toContain('OUTSTANDING'); expect(all).toContain('GRAND TOTAL')
     expect(poppler(pdf)).toBeTruthy()
+    expectRedFooter(pdf, pages.length, 83, 'multi-page invoice')
   })
 
   it('print foreign-currency amounts with decimals and omit the rupiah wording', async () => {
@@ -148,6 +167,7 @@ describe('quotation PDFs', () => {
     const [{ number }] = await sql`select number from quotations where id = ${id}`
     expect(text).toContain(number as string)
     expect(poppler(pdf)).toContain('QUOTATION')
+    expectRedFooter(pdf, 1, 86, 'quotation')
   })
   it('flow onto further pages above ten items, keeping every item', async () => {
     const id = await quote(12)
