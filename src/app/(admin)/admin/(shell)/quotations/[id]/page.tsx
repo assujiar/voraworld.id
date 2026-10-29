@@ -3,9 +3,10 @@ import { quotationStatusAction, requestApprovalAction, reviewApprovalAction } fr
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { sql } from '@/server/db'
 import { money } from '@/server/money'
+import { routeId } from '@/server/http'
 
 export default async function QuotationDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
-  const id = Number((await params).id) || 0
+  const id = routeId((await params).id)
   const [q] = id > 0 && id < 2_147_483_647 ? await sql`select * from quotations where id = ${id}` : []
   if (!q) notFound()
   const [recipient] = q.customerId

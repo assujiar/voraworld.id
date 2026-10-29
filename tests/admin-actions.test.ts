@@ -5,10 +5,12 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { sql } from '@/server/db'
 import { login, logout } from '@/actions/auth'
 import { addFaqAction, addNavigationAction, addSectionAction, deleteNavigationAction, restoreArticleAction, restorePageAction, saveArticleAction, savePageAction, saveSectionAction, updateFaqAction, uploadMediaAction } from '@/actions/content'
-import { updateLeadAction } from '@/actions/crm'
+import { replyLeadAction, updateLeadAction } from '@/actions/crm'
 import { addCoverageAction, addRedirectAction, dispatchMailAction, retryMailJobAction, saveMailConfigAction, saveMailTemplateAction, saveSettingsAction, setMailRuleAction, testMailAction, toggleCoverageAction } from '@/actions/settings'
 import { cookiesAfter, act, createUser, q, sessionFor } from './helpers/actions'
 import { setSender } from '@/server/mail/transport'
+import { saveMailConfig } from '@/server/mail/config'
+import { EVENTS } from '@/server/mail/events'
 import { SESSION_COOKIE } from '@/server/auth/session'
 
 process.env.MAIL_ENCRYPTION_KEY = Buffer.alloc(32, 9).toString('base64')
@@ -270,5 +272,54 @@ describe('SMTP administration', () => {
     expect(decodeURIComponent((await act(dispatchMailAction, {}, { as: admin })).redirect!)).toContain('Mail: 0 sent, 0 failed')
     await sql`update mail_config set enabled = false`
     expect(q((await act(testMailAction, {}, { as: admin })).redirect).get('error')).toBe('Save and enable the SMTP configuration first')
+  })
+})
+
+describe('replying to a lead by email', () => {
+  beforeEach(async () => { for (const [key, e] of Object.entries(EVENTS)) await sql`update email_templates set subject = ${e.subject}, html = ${e.html} where key = ${key}` })    // earlier tests edited some templates
+  const settle = async () => { for (let i = 0; i < 100; i++) { if (!(await sql`select 1 from email_jobs where status in ('queued', 'sending')`).length) return; await new Promise((r) => setTimeout(r, 50)) } }
+  let counter = 0
+  const reference = () => `RFQ-VORA-L0000000001-202610-${String(++counter).padStart(5, '0')}`
+  async function lead() {
+    const [{ id }] = await sql`insert into leads (name, email, reference, status) values ('Rina Wijaya', 'rina@customer.invalid', ${reference()}, 'new') returning id`
+    return id as number
+  }
+  it('is refused until SMTP and the lead_reply notification are on, and nothing is queued', async () => {
+    await sql`truncate email_jobs, mail_config`; await sql`update email_rules set enabled = false`
+    const id = await lead()
+    expect(q((await act(replyLeadAction, { record: String(id), message: 'Hello', _back: `/admin/leads/${id}` }, { as: admin })).redirect).get('error')).toMatch(/Enable SMTP and the lead_reply email rule/)
+    await saveMailConfig(sql, { host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
+    expect(q((await act(replyLeadAction, { record: String(id), message: 'Hello', _back: '/x' }, { as: admin })).redirect).get('error')).toMatch(/lead_reply/)
+    expect(await sql`select id from email_jobs`).toHaveLength(0)
+  })
+  it('queues the message with its line breaks, escapes markup, logs it on the timeline and marks a new lead as contacted', async () => {
+    await sql`truncate email_jobs`; await sql`update email_rules set enabled = true where key = 'lead_reply'`
+    const sent: Array<{ to: string; subject: string; html: string }> = []
+    setSender(async (_c, to, subject, html) => { sent.push({ to, subject, html }) })
+    const id = await lead()
+    const r = await act(replyLeadAction, { record: String(id), message: 'Dear Rina,\nWe can ship <b>FCL</b> on Friday.\n<script>alert(1)</script>' }, { as: admin })
+    expect(decodeURIComponent(r.redirect!)).toContain('Reply queued for sending')
+    await settle()
+    expect(sent).toHaveLength(1)
+    expect(sent[0]).toMatchObject({ to: 'rina@customer.invalid', subject: expect.stringMatching(/^Regarding your VORA inquiry #RFQ-VORA-L0000000001-202610-0000\d$/) })
+    expect(sent[0].html).toContain('Dear Rina,<br />We can ship &lt;b&gt;FCL&lt;/b&gt; on Friday.<br />&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(sent[0].html).not.toMatch(/<script|<b>/)
+    expect((await sql`select status from leads where id = ${id}`)[0].status).toBe('contacted')
+    expect((await sql`select message from lead_activities where lead_id = ${id}`)[0].message).toMatch(/^Replied by email: Dear Rina,/)
+    expect((await sql`select verb from audit_logs where object_type = 'lead' and object_id = ${id} order by id desc limit 1`)[0].verb).toBe('reply')
+    // the same text pressed twice within a minute is one email; a different text is another
+    await act(replyLeadAction, { record: String(id), message: 'Second' }, { as: admin }); await act(replyLeadAction, { record: String(id), message: 'Second' }, { as: admin }); await settle()
+    expect(sent).toHaveLength(2)
+    await act(replyLeadAction, { record: String(id), message: 'Third, different' }, { as: admin }); await settle()
+    expect(sent).toHaveLength(3)
+  })
+  it('keeps a lead that is already further along where it is, and refuses an empty reply, no address or an unknown lead', async () => {
+    const id = await lead(); await sql`update leads set status = 'qualified' where id = ${id}`
+    await act(replyLeadAction, { record: String(id), message: 'Quote attached' }, { as: admin })
+    expect((await sql`select status from leads where id = ${id}`)[0].status).toBe('qualified')
+    expect(q((await act(replyLeadAction, { record: String(id), message: '  ', _back: '/x' }, { as: admin })).redirect).get('error')).toBe('Write the reply first')
+    const [{ id: bare }] = await sql`insert into leads (name, email) values ('No Mail', '') returning id`
+    expect(q((await act(replyLeadAction, { record: String(bare), message: 'Hello', _back: '/x' }, { as: admin })).redirect).get('error')).toBe('This lead has no email address')
+    expect(q((await act(replyLeadAction, { record: '999999', message: 'Hello', _back: '/x' }, { as: admin })).redirect).get('error')).toBe('Lead not found')
   })
 })

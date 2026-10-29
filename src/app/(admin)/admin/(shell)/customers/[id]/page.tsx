@@ -4,9 +4,10 @@ import { CustomerForm } from '@/components/admin/CustomerForm'
 import { sql } from '@/server/db'
 import { money } from '@/server/money'
 import type { CustomersRow } from '@/server/schema'
+import { routeId } from '@/server/http'
 
 export default async function EditCustomer({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
-  const id = Number((await params).id) || 0
+  const id = routeId((await params).id)
   const [c] = id > 0 && id < 2_147_483_647 ? await sql`select * from customers where id = ${id}` : []
   if (!c) notFound()
   const quotations = await sql`select id, number, status, total_minor, currency from quotations where customer_id = ${id} order by id desc limit 50`

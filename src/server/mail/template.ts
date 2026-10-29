@@ -20,7 +20,7 @@ export async function renderTemplate(db: Db, event: string, context: Record<stri
   const escaped: Record<string, string> = {}
   for (const [k, v] of Object.entries(context)) {
     raw[k] = String(v ?? '')
-    escaped[k] = escapeHtml(raw[k])
+    escaped[k] = escapeHtml(raw[k]).replace(/\r?\n/g, '<br>')     // a typed message keeps its line breaks
   }
   const subject = safeSubstitute(template.subject as string, raw).replace(/[\r\n\x00-\x1f\x7f]+/g, ' ').slice(0, 250)
   if (!subject.trim()) throw new Error('Email template subject is empty')

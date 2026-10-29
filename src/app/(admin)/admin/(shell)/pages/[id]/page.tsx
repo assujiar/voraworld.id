@@ -3,9 +3,10 @@ import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { PageForm } from '@/components/admin/PageForm'
 import { sql } from '@/server/db'
 import type { PagesRow, SectionsRow } from '@/server/schema'
+import { routeId } from '@/server/http'
 
 export default async function EditPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
-  const id = Number((await params).id) || 0
+  const id = routeId((await params).id)
   const [p] = await sql`select * from pages where id = ${id}`
   if (!p) notFound()
   const [sections, revisions] = await Promise.all([

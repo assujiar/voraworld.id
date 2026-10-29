@@ -1,10 +1,13 @@
 'use server'
 import { ActionError, adminRun } from '@/server/action'
 import { recordAudit } from '@/server/audit'
-import { sql, tx } from '@/server/db'
-import { int, str } from '@/server/http'
-
+import { tx } from '@/server/db'
+import { afterResponse } from '@/server/after'
+import { publicBaseUrl } from '@/server/env'
+import { int, rawStr, str } from '@/server/http'
 import { LEAD_PRIORITIES, LEAD_STATUSES } from '@/server/lead-constants'
+import { replyToLead } from '@/server/leads'
+import { dispatch } from '@/server/mail/outbox'
 
 export async function updateLeadAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
@@ -20,7 +23,15 @@ export async function updateLeadAction(form: FormData) {
       if (note) await t`insert into lead_activities (lead_id, actor_id, message) values (${id}, ${user.id}, ${note})`
       await recordAudit(t, user.id, 'update', 'lead', id, status)
     })
-    void sql
     return { to: `/admin/leads/${id}`, notice: 'Lead updated' }
+  })
+}
+
+export async function replyLeadAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    const id = int(form, 'record')
+    await replyToLead(user.id, id, rawStr(form, 'message', 6000))
+    afterResponse(() => dispatch(publicBaseUrl(), 10))
+    return { to: `/admin/leads/${id}`, notice: 'Reply queued for sending. Check the SMTP outbox for delivery status' }
   })
 }

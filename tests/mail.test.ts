@@ -50,7 +50,7 @@ describe('templates', () => {
     const out = await renderTemplate(sql, 'lead_reply', { name: '<b>Ana</b>\r\nBcc: evil@example.invalid' })
     expect(out.subject).toBe('Hello <b>Ana</b> Bcc: evil@example.invalid')
     expect(out.subject).not.toMatch(/[\r\n]/)
-    expect(out.html).toBe('<p>Dear &lt;b&gt;Ana&lt;/b&gt;\r\nBcc: evil@example.invalid</p><a>l</a>')
+    expect(out.html).toBe('<p>Dear &lt;b&gt;Ana&lt;/b&gt;<br />Bcc: evil@example.invalid</p><a>l</a>')
     await expect(renderTemplate(sql, 'nope', {})).rejects.toThrow('Missing email template')
     await sql`update email_templates set subject = '   ' where key = 'lead_reply'`
     await expect(renderTemplate(sql, 'lead_reply', {})).rejects.toThrow('subject is empty')

@@ -5,9 +5,10 @@ import { RecordPaymentForm } from '@/components/admin/RecordPaymentForm'
 import { sql } from '@/server/db'
 import { today } from '@/server/dates'
 import { money } from '@/server/money'
+import { routeId } from '@/server/http'
 
 export default async function InvoiceDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
-  const id = Number((await params).id) || 0
+  const id = routeId((await params).id)
   const [inv] = id > 0 && id < 2_147_483_647 ? await sql`select i.*, c.name as customer_name, c.email as customer_email, c.address as customer_address, c.tax_id as customer_tax_id from invoices i join customers c on c.id = i.customer_id where i.id = ${id}` : []
   if (!inv) notFound()
   const cur = inv.currency as string

@@ -4,6 +4,8 @@ import { enqueue } from './mail/outbox'
 import { getMailConfig } from './mail/config'
 import { publicBaseUrl } from './env'
 import { ActionError } from './errors'
+import { recordAudit } from './audit'
+import { sha256Hex } from './crypto'
 
 export interface InquiryInput {
   kind: 'contact' | 'rfq'
@@ -42,4 +44,27 @@ export async function createLead(input: InquiryInput): Promise<{ id: number; ref
     return { id: row.id as number, reference }
   })
   return lead
+}
+
+/**
+ * Emails the person who wrote in, from the admin screen. It needs SMTP switched on and the `lead_reply` notification
+ * enabled, so nothing leaves the building unless the owner has chosen to send mail. The reply is kept on the lead's timeline.
+ */
+export async function replyToLead(actorId: number, id: number, rawMessage: string): Promise<void> {
+  const message = rawMessage.trim().slice(0, 6000)
+  if (message.length < 2) throw new ActionError('Write the reply first')
+  await tx(async (t) => {
+    const [lead] = await t`select id, name, email, reference, status from leads where id = ${id} for update`
+    if (!lead) throw new ActionError('Lead not found', 404)
+    if (!lead.email) throw new ActionError('This lead has no email address')
+    const conf = await getMailConfig(t)
+    const [rule] = await t`select enabled from email_rules where key = 'lead_reply'`
+    if (!conf?.enabled || !rule?.enabled) throw new ActionError('Enable SMTP and the lead_reply email rule first (Admin → SMTP & Email Rules)', 409)
+    const queued = await enqueue(t, 'lead_reply', lead.email as string, { name: lead.name, lead_id: (lead.reference as string) || String(id), reply_message: message },
+      { dedupeKey: `lead-reply-${id}-${(await sha256Hex(message)).slice(0, 16)}-${Math.floor(Date.now() / 60_000)}` })      // the same text pressed twice in a minute is one email; a different text is another
+    if (!queued) throw new ActionError('Email delivery is disabled', 409)
+    await t`insert into lead_activities (lead_id, actor_id, message) values (${id}, ${actorId}, ${'Replied by email: ' + message.slice(0, 500)})`
+    if (lead.status === 'new') await t`update leads set status = 'contacted', updated_at = now() where id = ${id}`
+    await recordAudit(t, actorId, 'reply', 'lead', id, 'Email reply queued')
+  })
 }

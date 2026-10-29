@@ -49,3 +49,8 @@ export function pdfResponse(bytes: Uint8Array, filename: string, disposition: 'i
     },
   })
 }
+
+/** A record id taken from a URL segment: a positive PostgreSQL `integer`, otherwise 0, which matches nothing (a 404, never a database error). */
+export function routeId(value: string | undefined): number {
+  return /^\d{1,10}$/.test(value ?? '') && Number(value) <= 2_147_483_647 ? Number(value) : 0
+}

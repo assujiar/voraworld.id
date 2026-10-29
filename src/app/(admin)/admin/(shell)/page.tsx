@@ -1,9 +1,12 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { sql } from '@/server/db'
 import { money } from '@/server/money'
+import { setupChecklist } from '@/server/setup-check'
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<Notices> }) {
   const sp = await searchParams
+  const checks = await setupChecklist()
+  const todo = checks.filter((k) => !k.ok)
   const [[c], leads, invoices] = await Promise.all([
     sql`select (select count(*) from leads)::int as leads, (select count(*) from leads where status = 'new')::int as new_leads,
                (select count(*) from articles where status = 'published')::int as published,
@@ -13,6 +16,21 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   ])
   return (
     <AdminPage heading="Overview" sp={sp}>
+      <details className="admin-panel" open={todo.some((k) => k.level === 'launch')}>
+        <summary style={{ cursor: 'pointer', fontWeight: 650 }}>
+          Setup checklist <span className="status">{checks.length - todo.length} of {checks.length} ready</span>
+        </summary>
+        <p className="muted mini" style={{ marginTop: 10 }}>What this server can see of your Vercel, Supabase and email setup. It shows presence only, never a secret value.</p>
+        <table><tbody>
+          {checks.map((k) => (
+            <tr key={k.id}>
+              <td style={{ width: 28 }} aria-label={k.ok ? 'Ready' : 'To do'}>{k.ok ? '✓' : '!'}</td>
+              <td><strong>{k.label}</strong>{k.ok ? null : <><br /><span className="muted mini">{k.hint}{k.href ? <> <a href={k.href}>Open</a></> : null}</span></>}</td>
+              <td style={{ width: 90 }}><span className="status">{k.ok ? 'ready' : k.level === 'launch' ? 'before launch' : 'recommended'}</span></td>
+            </tr>
+          ))}
+        </tbody></table>
+      </details>
       <div className="metrics">
         <div className="metric"><strong>{c.leads}</strong><span>All leads</span></div>
         <div className="metric"><strong>{c.newLeads}</strong><span>New leads</span></div>

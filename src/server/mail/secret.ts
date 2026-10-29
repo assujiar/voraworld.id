@@ -13,6 +13,11 @@ function key(): Buffer {
   return k
 }
 
+/** True when MAIL_ENCRYPTION_KEY is present and valid (never reveals the key). */
+export function encryptionKeyUsable(): boolean {
+  try { key(); return true } catch { return false }
+}
+
 export function encryptSecret(plain: string): string {
   const iv = randomBytes(12)
   const cipher = createCipheriv('aes-256-gcm', key(), iv)
