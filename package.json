@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:http": "next build && vitest run -c vitest.http.config.ts",
-    "test:e2e": "playwright test",
+    "test:e2e": "next build && playwright test",
     "db:migrate": "tsx scripts/apply-migrations.ts",
     "users": "tsx scripts/manage-users.ts",
     "build:setup-sql": "tsx scripts/build-manual-setup.ts",
