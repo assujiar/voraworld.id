@@ -137,6 +137,10 @@ def render_invoice(db, invoice, verification_url, money):
             text(L,51,'Scan QR to check document status with VORA.',7.1,SLATE)
             text(L,36,email,7.6,INK)
             text(L,21,f'DOCUMENT  /  PAGE {page_num:02d} OF {total:02d}',7.3,SLATE)
+            # An invoice is a payment request. Proof of payment is only the receipt issued after cleared funds.
+            text(L+232,66,'PAYMENT REQUEST - NOT PROOF OF PAYMENT',6.9,RED,True)
+            text(L+232,51,'Proof of payment is the official VORA receipt,',6.5,SLATE)
+            text(L+232,41,'issued only after Finance confirms cleared funds.',6.5,SLATE)
             c.drawImage(qr_img,R-73,8,72,72,mask='auto',preserveAspectRatio=False)
 
         def parties_and_metadata(page_idx):

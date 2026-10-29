@@ -3,7 +3,10 @@
   "functions": {
     "app/index.py": {
       "maxDuration": 30,
-      "excludeFiles": "{tests/**,qa_samples/**,docs/**,migrations/**,scripts/**,previews/**,*.zip,vora/static/assets/ASET_WEB_VORA*}"
+      "excludeFiles": "{tests/**,docs/**,migrations/**,scripts/**,previews/**,*.zip,*.sql,vora/static/assets/ASET_WEB_VORA*}"
     }
-  }
+  },
+  "crons": [
+    { "path": "/internal/mail/dispatch", "schedule": "0 3 * * *" }
+  ]
 }

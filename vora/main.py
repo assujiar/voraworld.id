@@ -13,12 +13,12 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, or_, func
 from sqlalchemy.exc import IntegrityError
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from .db import (init_db, Session, User, Setting, Page, Section, Revision, Article, Faq,
+from .db import (init_db, Session, User, LoginAttempt, Setting, Page, Section, Revision, Article, Faq,
  ServiceCoverage, Media, Lead, LeadActivity, Customer, BankAccount, InvoiceBankInstruction, Quotation, QuotationItem, Invoice, InvoiceItem, Payment, Receipt, QuotationApproval,
  Verification, Audit, Redirect, Nav, now)
 from .logic import (clean_html, slugify, units, money, calc_lines, ensure_public_code, next_number, create_verification,
  get_verification, record_audit, recompute_outstanding, payment_record, pdf_document)
-from .content import SERVICES, TEXT, NAV, SERVICE_GROUPS, SERVICE_MODES, SERVICE_ALIASES
+from .content import SERVICES, TEXT, NAV, NAV_LABELS, SEO_TITLES, SEO_DESCRIPTION, SOLUTIONS, SERVICE_GROUPS, SERVICE_MODES, SERVICE_ALIASES
 from .defaults import PUBLIC_CONTACT_DEFAULTS
 
 ROOT=Path(__file__).resolve().parent
@@ -39,7 +39,8 @@ csrf_serializer=URLSafeTimedSerializer(SECRET,salt='vora-csrf-v1')
 @asynccontextmanager
 async def lifespan(app):
  # Production schema must be migrated before deploy; create_all only in development.
- if not IS_PROD:init_db()
+ # Development bootstrap only. VORA_SKIP_INIT_DB=1 lets the test-suite prove a migrations-only database works.
+ if not IS_PROD and os.getenv('VORA_SKIP_INIT_DB')!='1':init_db()
  yield
 app=FastAPI(title='VORA Corporate CMS',docs_url=None if IS_PROD else '/api/docs',redoc_url=None,openapi_url=None if IS_PROD else '/api/openapi.json',lifespan=lifespan)
 app.mount('/static',StaticFiles(directory=str(ROOT/'static')),name='static')
@@ -58,8 +59,12 @@ async def headers(req:Request,call_next):
  resp.headers['Referrer-Policy']='strict-origin-when-cross-origin'
  resp.headers['X-Frame-Options']='DENY'
  resp.headers['Permissions-Policy']='camera=(), microphone=(), geolocation=()'
+ # No third-party scripts, fonts or frames are used; Supabase Storage hosts uploaded public images.
+ resp.headers['Content-Security-Policy']="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+ resp.headers['Cross-Origin-Opener-Policy']='same-origin'
  if req.url.path.startswith(('/admin','/verify','/quotation-approval')):
   resp.headers['X-Robots-Tag']='noindex, nofollow'
+ if req.url.path.startswith('/static/') and resp.status_code==200:resp.headers.setdefault('Cache-Control','public, max-age=86400, stale-while-revalidate=604800')
  if IS_PROD:resp.headers['Strict-Transport-Security']='max-age=31536000; includeSubDomains'
  return resp
 
@@ -69,11 +74,23 @@ def password_hash(pw):
  salt=secrets.token_bytes(32);digest=hashlib.pbkdf2_hmac('sha256',pw.encode(),salt,310_000)
  return 'pbkdf2_sha256$310000$'+salt.hex()+'$'+digest.hex()
 
+DUMMY_PASSWORD_HASH='pbkdf2_sha256$310000$'+'00'*32+'$'+'00'*32
+LOGIN_WINDOW_MINUTES=15;LOGIN_MAX_PER_EMAIL=5;LOGIN_MAX_PER_IP=30
+
+def client_ip(req):
+ # Vercel overwrites these headers at its edge, so they cannot be spoofed by the browser there.
+ for header in ('x-vercel-forwarded-for','x-real-ip','x-forwarded-for'):
+  value=req.headers.get(header,'').split(',')[0].strip()
+  if value:return value[:64]
+ return (req.client.host if req.client else '')[:64]
+
 def password_valid(pw,encoded):
  try:
   scheme,iterations,salt,expected=encoded.split('$')
   return scheme=='pbkdf2_sha256' and hmac.compare_digest(hashlib.pbkdf2_hmac('sha256',pw.encode(),bytes.fromhex(salt),int(iterations)),bytes.fromhex(expected))
  except (ValueError,TypeError):return False
+
+def credential_fingerprint(u):return hashlib.sha256(('vora-pv:'+u.password_hash).encode()).hexdigest()[:24]
 
 def current_user(req,db):
  token=req.cookies.get('vora_session')
@@ -81,7 +98,8 @@ def current_user(req,db):
  try:payload=serializer.loads(token,max_age=60*60*8)
  except (BadSignature,SignatureExpired):return None
  u=db.get(User,payload.get('id'))
- return u if u and u.active else None
+ # The token carries a fingerprint of the stored credential: resetting the password invalidates old sessions.
+ return u if u and u.active and hmac.compare_digest(str(payload.get('pv','')),credential_fingerprint(u)) else None
 
 ROLES={'superadmin':{'*'},'admin':{'content','crm','finance','settings'},'editor':{'content'},'sales':{'crm'},'finance':{'finance'},'viewer':set()}
 def auth(req,db,permission=None):
@@ -140,14 +158,16 @@ def public_payload(req,db,locale,path,kind,**items):
  values=TEXT[locale]
  settings=setting_map(db)
  nav=db.query(Nav).filter_by(location='header',visible=True).order_by(Nav.position).all()
- valid_links=[(n.label,n.href) for n in nav if not is_admin_navigation(n.href)]
- links=valid_links or [(label,href) for label,href in NAV if not is_admin_navigation(href)]
+ nav_labels=NAV_LABELS[locale]
+ # Core links use the localized default unless an administrator renamed the English label.
+ valid_links=[(nav_labels.get(n.href,n.label) if n.label==NAV_LABELS['en'].get(n.href) else n.label,n.href) for n in nav if not is_admin_navigation(n.href)]
+ links=valid_links or [(nav_labels[href],href) for label,href in NAV if not is_admin_navigation(href)]
  articles=items.pop('articles',None)
  if articles is None:articles=db.query(Article).filter_by(status='published',locale=locale).order_by(Article.published_at.desc()).limit(3).all()
  path=path if path.startswith('/') else '/'+path
  canonical=base_url(req)+'/'+locale+path if path!='/' else base_url(req)+'/'+locale+'/'
- seo_title=items.pop('seo_title',None) or {'home':'VORA | Bringing the World Within Reach','about':'About VORA | Freight & Logistics','services':'Freight & Logistics Services | VORA','insights':'Insights | VORA','contact':'Contact VORA','quote':'Request a Freight Quote | VORA'}.get(kind,'VORA | Freight & Logistics')
- seo_desc=items.pop('seo_desc',None) or (items.get('service',(None,None,''))[2] if kind=='service' else 'VORA offers freight and logistics inquiry and coordination for international and domestic movements.')
+ seo_title=items.pop('seo_title',None) or SEO_TITLES[locale].get(kind,SEO_TITLES[locale]['default'])
+ seo_desc=items.pop('seo_desc',None) or (items.get('service',(None,None,''))[2] if kind=='service' else SEO_DESCRIPTION[locale])
  schema={'@context':'https://schema.org','@type':'Organization','name':'VORA','legalName':settings.get('legal_name','PT Satu Arah International'),'url':base_url(req)}
  # Only add administrator-entered contact fields. No invented addresses or telephone numbers.
  if settings.get('email'):schema['email']=settings['email']
@@ -156,7 +176,7 @@ def public_payload(req,db,locale,path,kind,**items):
   schema={'@context':'https://schema.org','@type':'Service','name':items.get('servicename','Freight and Logistics'),
    'description':seo_desc,'provider':{'@type':'Organization','name':'VORA'},'url':canonical,
    'serviceType':items.get('servicename','Freight and Logistics')}
- return dict(locale=locale,path=path,t=values,nav=links,settings=settings,services=SERVICES,articles=articles,year=date.today().year,kind=kind,
+ return dict(locale=locale,path=path,t=values,nav=links,nav_labels=nav_labels,settings=settings,services=SERVICES,articles=articles,year=date.today().year,kind=kind,
   canonical=canonical,seo_title=seo_title,seo_desc=seo_desc,service_groups=SERVICE_GROUPS,service_modes=SERVICE_MODES,
   alternates={i:base_url(req)+'/'+i+path for i in ['en','id']},schema=schema,**items)
 
@@ -188,7 +208,7 @@ def public(req,loc,route,db,**kwargs):
    service_submode=mode,service_submode_slug=child_slug,
    servicename=service_name,service_image=(mode[3] if mode else group['image']),
    seo_title=service_name+' | VORA Freight & Logistics',seo_desc=(mode[1] if mode else detail['intro']))
- elif kind=='solutions':data['solutions']=[('Manufacturing','Coordinating inbound components and finished products around factory schedules.'),('Retail & E-commerce','Evaluating inventory flows and distribution requirements.'),('Industrial Projects','Planning equipment movements and special handling feasibility.'),('General Cargo','Aligning standard cargo movement with route and documentation needs.')]
+ elif kind=='solutions':data['solutions']=SOLUTIONS[loc]
  elif kind=='network':data['coverage']=db.query(ServiceCoverage).filter_by(active=True).all()
  elif kind=='insights':
   q=str(req.query_params.get('q','')).strip()[:100];pn=max(1,min(500,int(req.query_params.get('page','1') or '1')))
@@ -260,14 +280,26 @@ def login_get(req:Request):
 async def login_post(req:Request):
  form=await req.form();csrf_valid(req,form)
  with Session() as db:
-  u=db.query(User).filter_by(email=str(form.get('email','')).strip().lower(),active=True).first()
-  if not u or not password_valid(str(form.get('password','')),u.password_hash):
+  email=str(form.get('email','')).strip().lower()[:200];ip=client_ip(req)
+  since=datetime.now(timezone.utc)-timedelta(minutes=LOGIN_WINDOW_MINUTES)
+  failed_email=db.query(LoginAttempt).filter(LoginAttempt.email==email,LoginAttempt.succeeded==False,LoginAttempt.created_at>=since).count()  # noqa: E712
+  failed_ip=db.query(LoginAttempt).filter(LoginAttempt.ip==ip,LoginAttempt.succeeded==False,LoginAttempt.created_at>=since).count()  # noqa: E712
+  if failed_email>=LOGIN_MAX_PER_EMAIL or failed_ip>=LOGIN_MAX_PER_IP:
+   return html(req,'login.html',{'noindex':True,'error':'Too many failed attempts. Try again later.'},429)
+  u=db.query(User).filter_by(email=email,active=True).first()
+  # Verify against a dummy hash for unknown accounts so response time does not reveal which emails exist.
+  ok=password_valid(str(form.get('password','')),u.password_hash if u else DUMMY_PASSWORD_HASH) and u is not None
+  db.add(LoginAttempt(email=email,ip=ip,succeeded=ok))
+  if not ok:
+   db.commit()
    return html(req,'login.html',{'noindex':True,'error':'Invalid login details'},401)
+  record_audit(db,u.id,'login','user',u.id);db.commit()
   resp=RedirectResponse('/admin',status_code=303)
-  resp.set_cookie('vora_session',serializer.dumps({'id':u.id}),httponly=True,secure=IS_PROD,samesite='lax',max_age=8*3600,path='/')
+  resp.set_cookie('vora_session',serializer.dumps({'id':u.id,'pv':credential_fingerprint(u)}),httponly=True,secure=IS_PROD,samesite='lax',max_age=8*3600,path='/')
   return resp
-@app.get('/admin/logout')
-def logout(req:Request):
+@app.post('/admin/logout')
+async def logout(req:Request):
+ form=await req.form();csrf_valid(req,form)
  r=RedirectResponse('/admin/login',status_code=303);r.delete_cookie('vora_session',path='/');return r
 
 LEAD_STATUSES=['new','contacted','qualified','quotation_sent','negotiation','won','lost','archived']
@@ -336,7 +368,7 @@ def articles_new(req:Request):
 @app.get('/admin/articles/{id}')
 def articles_get(id:int,req:Request):
  with Session() as db:
-  o=db.get(Article,id)
+  auth(req,db,'content');o=db.get(Article,id)
   if not o:raise HTTPException(404)
   return render_admin(req,db,'article-form','Article editor','content',obj=o,revisions=db.query(Revision).filter_by(resource='article',resource_id=id).order_by(Revision.id.desc()).limit(15).all())
 
@@ -389,7 +421,7 @@ def page_new(req:Request):
 @app.get('/admin/pages/{id}')
 def page_get(id:int,req:Request):
  with Session() as db:
-  p=db.get(Page,id)
+  auth(req,db,'content');p=db.get(Page,id)
   if not p:raise HTTPException(404)
   return render_admin(req,db,'page-form','Page customizer','content',obj=p,page_sections=db.query(Section).filter_by(page_id=id).order_by(Section.position,Section.id).all(),revisions=db.query(Revision).filter_by(resource='page',resource_id=id).order_by(Revision.id.desc()).limit(12).all())
 
@@ -464,7 +496,7 @@ def customer_new(req:Request):
 @app.get('/admin/customers/{id}')
 def customer_get(id:int,req:Request):
  with Session() as db:
-  c=db.get(Customer,id)
+  auth(req,db,'finance');c=db.get(Customer,id)
   if not c:raise HTTPException(404)
   return render_admin(req,db,'customer-form','Edit customer','finance',obj=c)
 @app.post('/admin/customers/{id}')
@@ -496,7 +528,7 @@ def quotation_new(req:Request):
 @app.get('/admin/quotations/{id}')
 def quotation_get(id:int,req:Request):
  with Session() as db:
-  q=db.get(Quotation,id)
+  auth(req,db,'finance');q=db.get(Quotation,id)
   if not q:raise HTTPException(404)
   return render_admin(req,db,'quotation-form','Quotation detail','finance',obj=q,approval_requests=db.query(QuotationApproval).filter_by(quotation_id=id).order_by(QuotationApproval.id.desc()).limit(20).all())
 
@@ -676,9 +708,9 @@ def quotation_approval_file(id:int,req:Request):
 async def quotation_approval_review(id:int,req:Request):
  form=await req.form();csrf_valid(req,form)
  outcome=str(form.get('action',''))
- if outcome not in ('approve','reject'):raise HTTPException(422,'Invalid review outcome')
  with Session() as db:
   actor=auth(req,db,'finance')
+  if outcome not in ('approve','reject'):raise HTTPException(422,'Invalid review outcome')
   item=db.execute(select(QuotationApproval).where(QuotationApproval.id==id).with_for_update()).scalar_one_or_none()
   if not item or item.status!='submitted':raise HTTPException(409,'Only submitted approvals can be reviewed')
   quote=db.execute(select(Quotation).where(Quotation.id==item.quotation_id).with_for_update()).scalar_one()
@@ -764,7 +796,7 @@ def invoice_new(req:Request):
 @app.get('/admin/invoices/{id}')
 def invoice_get(id:int,req:Request):
  with Session() as db:
-  inv=db.get(Invoice,id)
+  auth(req,db,'finance');inv=db.get(Invoice,id)
   if not inv:raise HTTPException(404)
   payments=db.query(Payment).filter_by(invoice_id=id).order_by(Payment.id.desc()).all()
   recs=db.query(Receipt).filter_by(invoice_id=id).all()
@@ -869,9 +901,9 @@ def _notify_cleared_payment(payment_id:int,base:str):
 async def confirm_payment(id:int,req:Request):
  """Only finance roles may acknowledge effective funds in the issuer's bank."""
  form=await req.form();csrf_valid(req,form)
- if form.get('funds_cleared')!='yes':raise HTTPException(422,'Confirm effective bank credit before issuing a receipt')
  with Session() as db:
   u=auth(req,db,'finance')
+  if form.get('funds_cleared')!='yes':raise HTTPException(422,'Confirm effective bank credit before issuing a receipt')
   p=db.execute(select(Payment).where(Payment.id==id).with_for_update()).scalar_one_or_none()
   if not p:raise HTTPException(404)
   if p.status!='pending_confirmation':raise HTTPException(409,'Payment already confirmed, cancelled or voided')
@@ -949,7 +981,7 @@ def receipts_list(req:Request):
 @app.get('/admin/receipts/{id}')
 def receipt_get(id:int,req:Request):
  with Session() as db:
-  rec=db.get(Receipt,id)
+  auth(req,db,'finance');rec=db.get(Receipt,id)
   if not rec:raise HTTPException(404)
   return render_admin(req,db,'receipt-detail','Receipt detail','finance',obj=rec)
 @app.get('/admin/receipts/{id}/pdf')
@@ -959,7 +991,9 @@ def receipt_pdf(id:int,req:Request):
   if not obj:raise HTTPException(404)
   payment=db.get(Payment,obj.payment_id)
   if not payment or payment.status!='recorded':raise HTTPException(409,'Cannot issue receipt before funds are confirmed')
-  return Response(pdf_document(db,'receipt',id,base_url(req)),media_type='application/pdf',headers={'Content-Disposition':f'inline; filename="{obj.number}.pdf"','Cache-Control':'no-store'})
+  try:binary=pdf_document(db,'receipt',id,base_url(req))
+  except (ValueError,OSError) as e:raise HTTPException(409,'Receipt PDF unavailable: '+str(e))  # e.g. stamped file missing or failed its SHA-256 check
+  return Response(binary,media_type='application/pdf',headers={'Content-Disposition':f'inline; filename="{obj.number}.pdf"','Cache-Control':'no-store'})
 @app.post('/admin/receipts/{id}/stamp')
 async def receipt_stamp_upload(id:int,req:Request):
  form=await req.form();csrf_valid(req,form)
@@ -1072,7 +1106,7 @@ async def media_upload(req:Request,image:UploadFile=File(...),alt:str=Form(''),c
  with Session() as db:
   u=auth(req,db,'content')
   from PIL import Image
-  from .receipt_stamp import MAX_STAMPED_PDF
+  from .receipt_stamp import MAX_STAMPED_PDF,supabase_headers
   limit=min(7_000_000,MAX_STAMPED_PDF);binary=await image.read(limit+1)
   if len(binary)>limit:raise HTTPException(413,f'File exceeds {limit//1_000_000} MB limit')
   try:
@@ -1088,7 +1122,7 @@ async def media_upload(req:Request,image:UploadFile=File(...),alt:str=Form(''),c
    domain=os.getenv('SUPABASE_URL','').rstrip('/');key_secret=os.getenv('SUPABASE_SERVICE_ROLE_KEY','');bucket=os.getenv('SUPABASE_STORAGE_BUCKET','vora-media')
    if not domain or not key_secret:raise HTTPException(503,'Storage not configured')
    uri=f'{domain}/storage/v1/object/{bucket}/{key}'
-   req_u=urllib.request.Request(uri,data=binary,method='POST',headers={'Authorization':'Bearer '+key_secret,'apikey':key_secret,'Content-Type':mime,'x-upsert':'false'})
+   req_u=urllib.request.Request(uri,data=binary,method='POST',headers={**supabase_headers(key_secret,mime),'x-upsert':'false'})
    try:
     with urllib.request.urlopen(req_u,timeout=25) as result:result.read()
    except Exception:raise HTTPException(502,'Storage provider upload failed')
@@ -1132,6 +1166,39 @@ async def mail_config_post(req:Request):
   except ValueError as e:db.rollback();raise HTTPException(422,str(e))
   record_audit(db,user.id,'update','mail-config',1,'SMTP settings updated (password never logged)');db.commit()
  return see_also(req,'/admin/mail','SMTP configuration saved')
+
+@app.post('/admin/mail/jobs/{id}/retry')
+async def mail_job_retry(id:int,req:Request):
+ """Re-queue a message that exhausted its automatic attempts (or is waiting for its next one)."""
+ from .db import EmailJob
+ form=await req.form();csrf_valid(req,form)
+ with Session() as db:
+  u=auth(req,db,'settings')
+  job=db.execute(select(EmailJob).where(EmailJob.id==id).with_for_update()).scalar_one_or_none()
+  if not job:raise HTTPException(404)
+  if job.status not in ('failed','retry'):raise HTTPException(409,'Only failed or waiting messages can be retried')
+  job.status='queued';job.attempts=0;job.error='';job.next_attempt_at=now()
+  record_audit(db,u.id,'retry','email-job',id,job.event);db.commit()
+ result=_notify_cleared_payment(0,base_url(req))
+ return see_also(req,'/admin/mail',f"Message re-queued: {result['sent']} sent, {result['failed']} failed")
+
+@app.post('/admin/mail/test')
+async def mail_test(req:Request):
+ """Send one real message to the configured administrator address to prove the SMTP settings work."""
+ from .db import MailConfig
+ from .mail import send_smtp
+ form=await req.form();csrf_valid(req,form)
+ with Session() as db:
+  u=auth(req,db,'settings');conf=db.get(MailConfig,1)
+  if not conf or not conf.enabled or not conf.host:raise HTTPException(409,'Save and enable the SMTP configuration first')
+  try:
+   send_smtp(conf,conf.admin_email,'VORA SMTP test',f'<p>This is a test message from the VORA admin portal ({str(now())[:19]} UTC). If you can read it, outgoing email works.</p>')
+   record_audit(db,u.id,'smtp-test','mail-config',1,'ok');db.commit()
+   return see_also(req,'/admin/mail',f'Test email sent to {conf.admin_email}')
+  except Exception as exc:
+   detail=re.sub(r'\s+',' ',f'{type(exc).__name__}: {exc}')[:200]
+   record_audit(db,u.id,'smtp-test','mail-config',1,'failed: '+detail);db.commit()
+   return see_also(req,'/admin/mail','SMTP test failed - '+detail)
 
 @app.post('/admin/mail/rules/{key}')
 async def mail_rule_post(key:str,req:Request):

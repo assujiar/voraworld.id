@@ -1,17 +1,13 @@
-"""One-time admin account creation. Usage: python scripts/create_admin.py"""
-import sys,getpass
-from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from vora.db import Session,User
-from vora.main import password_hash
+"""One-time superadmin creation. Usage: python scripts/create_admin.py EMAIL
 
-def main():
- email=input('Admin email: ').strip().lower()
- pw=getpass.getpass('New password (min 14 characters): ')
- if len(pw)<14 or '@' not in email:raise SystemExit('Valid email and password >=14 characters required')
- with Session() as db:
-  if db.query(User).filter_by(email=email).first():raise SystemExit('Account already exists')
-  u=User(email=email,password_hash=password_hash(pw),role='superadmin',active=True)
-  db.add(u);db.commit()
- print('Superadmin account created (no credentials printed).')
-if __name__=='__main__':main()
+Thin wrapper kept for backwards compatibility; see scripts/manage_users.py for roles, resets and deactivation.
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from manage_users import main  # noqa: E402
+
+if __name__ == '__main__':
+    email = sys.argv[1] if len(sys.argv) > 1 else input('Admin email: ').strip()
+    raise SystemExit(main(['create', email, '--role', 'superadmin']))

@@ -156,6 +156,9 @@ class Verification(Base):
 class Audit(Base):
  __tablename__='audit_logs'
  id=Column(Integer,primary_key=True);actor_id=Column(Integer);verb=Column(String(90));object_type=Column(String(50));object_id=Column(Integer);summary=Column(Text,default='');created_at=Column(DateTime(timezone=True),default=now)
+class LoginAttempt(Base):
+ __tablename__='login_attempts'
+ id=Column(Integer,primary_key=True);email=Column(String(200),nullable=False,index=True);ip=Column(String(64),nullable=False,default='',index=True);succeeded=Column(Boolean,nullable=False,default=False);created_at=Column(DateTime(timezone=True),default=now,index=True)
 class MailConfig(Base):
  __tablename__='mail_config'
  id=Column(Integer,primary_key=True);host=Column(String(253),default='');port=Column(Integer,default=587);security=Column(String(20),default='starttls');username=Column(String(240),default='');encrypted_password=Column(Text,default='');from_email=Column(String(254),default='info@voraworld.id');from_name=Column(String(140),default='VORA Freight & Logistics');reply_to=Column(String(254),default='info@voraworld.id');admin_email=Column(String(254),default='info@voraworld.id');enabled=Column(Boolean,default=False)

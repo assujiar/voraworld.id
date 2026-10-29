@@ -184,7 +184,7 @@ def render_receipt(db,receipt,verification_url,money):
     horizontal(99)
     text(L,83,'VORA / DOCUMENT AUTHENTICITY VERIFICATION',7.8,INK,True)
     text(L,68,'Scan the QR to check this receipt and current status.',7.2,SLATE)
-    text(L,53,'Recorded payment data is confirmed in the VORA ledger.',6.9,SLATE)
+    text(L,53,'Issued after VORA Finance confirmed cleared funds.',6.9,SLATE)
     text(L,38,'info@voraworld.id',7.2,INK)
     text(L,22,'RECEIPT / PAGE 01 OF 01',7.0,SLATE)
     qr=qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M,box_size=4,border=1)

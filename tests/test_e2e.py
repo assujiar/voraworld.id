@@ -2,7 +2,9 @@
 import os, tempfile, re
 from pathlib import Path
 DB=tempfile.mktemp(suffix='.sqlite3',prefix='vora-test-')
-os.environ['DATABASE_URL']='sqlite:///'+DB
+# VORA_TEST_DATABASE_URL points the whole suite at a freshly migrated PostgreSQL database (see QA_REPORT.md).
+os.environ['DATABASE_URL']=os.environ.get('VORA_TEST_DATABASE_URL') or 'sqlite:///'+DB
+if os.environ.get('VORA_TEST_DATABASE_URL'):os.environ['VORA_SKIP_INIT_DB']='1'  # the migrations alone must produce a working app
 os.environ['APP_ENV']='development'
 os.environ['PUBLIC_BASE_URL']='http://testserver'
 os.environ['SESSION_SECRET']='local-test-secret-that-is-long-enough-to-be-valid'
@@ -10,6 +12,11 @@ from fastapi.testclient import TestClient
 from vora.main import app,password_hash
 from vora.db import Session,User,Lead,Article,Invoice,Receipt,Payment,Setting,Page,Section,Verification,Nav,BankAccount,InvoiceBankInstruction
 
+
+def prepare_schema():
+ """SQLite tests build the schema from the models; PostgreSQL tests rely on the migrations alone."""
+ from vora.db import engine,init_db
+ if engine.dialect.name=='sqlite':init_db()
 
 def csrf(client):
  if 'vora_csrf' not in client.cookies:client.get('/admin/login')

@@ -18,6 +18,23 @@ MAX_STAMPED_PDF=int(os.getenv('MAX_UPLOAD_BYTES') or (4_000_000 if os.getenv('VE
 STAMP_LIMIT_IDR=5_000_000
 
 
+def supabase_headers(secret:str,content_type:str='')->dict:
+    """Auth headers for the Supabase Storage REST API.
+
+    Legacy `service_role` keys are JWTs and are sent as both `apikey` and Bearer. New-style `sb_secret_...` keys
+    are NOT JWTs: Supabase rejects them with "Invalid JWT" if they also appear in `Authorization: Bearer`.
+    """
+    headers={'apikey':secret}
+    if secret.startswith('eyJ'):headers['Authorization']='Bearer '+secret
+    if content_type:headers['Content-Type']=content_type
+    return headers
+
+
+def _local_dir()->Path:
+    # Development/test only: production always uses the private Supabase bucket (see _storage).
+    return Path(os.getenv('VORA_LOCAL_PRIVATE_DIR') or Path(__file__).resolve().parent.parent/'protected')
+
+
 def requires_stamp(currency:str, amount_minor:int)->bool:
     # Non-IDR requires manual stamp review: no FX calculation without verified rate.
     return currency!='IDR' or int(amount_minor)>STAMP_LIMIT_IDR
@@ -61,12 +78,10 @@ def save_stamped_pdf(receipt_id:int, binary:bytes)->str:
     if mode=='remote':
         bucket=os.getenv('SUPABASE_DOCUMENTS_BUCKET','vora-documents')
         url=f'{domain}/storage/v1/object/{bucket}/{key}'
-        request=urllib.request.Request(url,data=binary,method='POST',headers={
-            'apikey':secret,'Authorization':'Bearer '+secret,'Content-Type':'application/pdf','x-upsert':'false'
-        })
+        request=urllib.request.Request(url,data=binary,method='POST',headers={**supabase_headers(secret,'application/pdf'),'x-upsert':'false'})
         with urllib.request.urlopen(request,timeout=30) as response: response.read()
     else:
-        path=Path(__file__).resolve().parent.parent/'protected'/key
+        path=_local_dir()/key
         path.parent.mkdir(parents=True,exist_ok=True)
         with path.open('xb') as output:output.write(binary)
     return key
@@ -79,9 +94,9 @@ def load_stamped_pdf(key:str)->bytes:
     if mode=='remote':
         bucket=os.getenv('SUPABASE_DOCUMENTS_BUCKET','vora-documents')
         url=f'{domain}/storage/v1/object/{bucket}/{key}'
-        request=urllib.request.Request(url,headers={'apikey':secret,'Authorization':'Bearer '+secret})
+        request=urllib.request.Request(url,headers=supabase_headers(secret))
         with urllib.request.urlopen(request,timeout=30) as response:return response.read(MAX_STAMPED_PDF+1)
-    return (Path(__file__).resolve().parent.parent/'protected'/key).read_bytes()
+    return (_local_dir()/key).read_bytes()
 
 
 def final_receipt_pdf(receipt)->bytes:
@@ -100,12 +115,10 @@ def save_quotation_approval_pdf(approval_id:int, binary:bytes)->str:
     if mode=='remote':
         bucket=os.getenv('SUPABASE_DOCUMENTS_BUCKET','vora-documents')
         url=f'{domain}/storage/v1/object/{bucket}/{key}'
-        request=urllib.request.Request(url,data=binary,method='POST',headers={
-            'apikey':secret,'Authorization':'Bearer '+secret,'Content-Type':'application/pdf','x-upsert':'false'
-        })
+        request=urllib.request.Request(url,data=binary,method='POST',headers={**supabase_headers(secret,'application/pdf'),'x-upsert':'false'})
         with urllib.request.urlopen(request,timeout=30) as response: response.read()
     else:
-        path=Path(__file__).resolve().parent.parent/'protected'/key
+        path=_local_dir()/key
         path.parent.mkdir(parents=True,exist_ok=True)
         with path.open('xb') as out:out.write(binary)
     return key
@@ -118,9 +131,9 @@ def load_quotation_approval_pdf(key:str)->bytes:
     if mode=='remote':
         bucket=os.getenv('SUPABASE_DOCUMENTS_BUCKET','vora-documents')
         url=f'{domain}/storage/v1/object/{bucket}/{key}'
-        request=urllib.request.Request(url,headers={'apikey':secret,'Authorization':'Bearer '+secret})
+        request=urllib.request.Request(url,headers=supabase_headers(secret))
         with urllib.request.urlopen(request,timeout=30) as response:return response.read(MAX_STAMPED_PDF+1)
-    return (Path(__file__).resolve().parent.parent/'protected'/key).read_bytes()
+    return (_local_dir()/key).read_bytes()
 
 
 def inspect_signed_quotation(binary:bytes,quotation_number:str)->str:
