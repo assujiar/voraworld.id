@@ -1,5 +1,6 @@
 import { randomBytes, randomInt } from 'node:crypto'
 import type { Db } from './db'
+import { today } from './dates'
 
 export type OwnerTable = 'customers' | 'leads'
 
@@ -40,7 +41,7 @@ export async function nextNumber(db: Db, kind: string, ownerCode: string, date?:
   const spec = KINDS[kind]
   if (!spec) throw new Error('Unsupported document kind')
   if (!/^[CL][A-F0-9]{10}$/.test(ownerCode ?? '')) throw new Error('Invalid owner code')
-  const day = date ?? new Date().toISOString().slice(0, 10)
+  const day = date ?? today()   // the business date in Jakarta, so a lead logged just after midnight there gets the right month
   if (!/^\d{4}-\d{2}-\d{2}/.test(day)) throw new Error('Invalid date')
   const period = day.slice(0, 4) + day.slice(5, 7)
   const scope = `${kind}-VORA-${ownerCode}-${period}-`

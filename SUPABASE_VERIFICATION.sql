@@ -82,7 +82,7 @@ BEGIN
   -- 6. State (informational) --------------------------------------------------------
   SELECT count(*) INTO n FROM users WHERE role = 'admin' AND active;
   RETURN QUERY SELECT 'active admin accounts', CASE WHEN n > 0 THEN 'PASS' ELSE 'INFO' END,
-    n || ' (create the first one from a trusted machine: npm run users -- create EMAIL)';
+    CASE WHEN n > 0 THEN n || ' active admin account(s)' ELSE '0: create the first one from a trusted machine with npm run users -- create EMAIL' END;
   SELECT count(*) INTO n FROM users WHERE role <> 'admin';
   RETURN QUERY SELECT 'every account holds the admin role', CASE WHEN n = 0 THEN 'PASS' ELSE 'WARN' END,
     n || ' account(s) with another role have NO access to the portal (the portal has one role: admin)';

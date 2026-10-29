@@ -1,3 +1,5 @@
+import { businessDateTime, today } from '@/server/dates'
+
 export interface Notices { notice?: string; error?: string }
 
 /** Page heading, optional "+ New" button, and the success/error banners every admin screen shows. */
@@ -18,5 +20,6 @@ export function AdminPage({ heading, sp, newHref, newLabel, children }: { headin
 /** Where a failed submission returns to (validated server-side to local paths only). */
 export const Back = ({ to }: { to: string }) => <input type="hidden" name="_back" value={to} />
 
-export const fmt = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 16).replace('T', ' ') : '')
-export const day = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : '')
+/** Times in the portal are shown on the Jakarta clock (WIB, UTC+7), the same day the documents carry. */
+export const fmt = (d: Date | null | undefined) => (d ? businessDateTime(d) : '')
+export const day = (d: Date | null | undefined) => (d ? today(d) : '')

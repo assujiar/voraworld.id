@@ -14,7 +14,7 @@ import { createInterface } from 'node:readline'
 import type { Sql } from 'postgres'
 import { MIN_PASSWORD_LENGTH } from '../src/server/auth/password'
 import { connectionUrl, openSql } from './lib/migrations'
-import { UserCommandError, createAdmin, listUsers, resetPassword, setActive } from './lib/users'
+import { UserCommandError, createAdmin, hasPortalAccess, listUsers, noAccessMessage, resetPassword, setActive } from './lib/users'
 
 export interface Io {
   /** Asks for a secret without echoing it. */
@@ -61,11 +61,13 @@ export async function run(argv: string[], sql: Sql, io: Io): Promise<number> {
       const u = await createAdmin(sql, email, await password(rest, io))
       io.out(`Admin account created for ${u.email}. No credentials are printed.`)
     } else if (command === 'reset-password') {
-      await resetPassword(sql, email, await password(rest, io))
+      const { role } = await resetPassword(sql, email, await password(rest, io))
       io.out('Password reset. Every existing session of this account is now invalid.')
+      if (!hasPortalAccess(role)) io.out(`Note: ${noAccessMessage(role, email.trim().toLowerCase())}`)
     } else {
-      await setActive(sql, email, command === 'activate')
+      const { role } = await setActive(sql, email, command === 'activate')
       io.out(command === 'activate' ? 'Account activated.' : 'Account deactivated. Its sessions are no longer valid.')
+      if (command === 'activate' && !hasPortalAccess(role)) io.out(`Note: ${noAccessMessage(role, email.trim().toLowerCase())}`)
     }
     return 0
   } catch (e) {
@@ -77,7 +79,8 @@ export async function run(argv: string[], sql: Sql, io: Io): Promise<number> {
 function terminalIo(): Io {
   const stdinLines = () => new Promise<string>((resolve) => {
     const rl = createInterface({ input: process.stdin, terminal: false })
-    rl.once('line', (l) => { rl.close(); resolve(l) })
+    // Resolve BEFORE closing: closing fires the 'close' listener synchronously, which would win with an empty password.
+    rl.once('line', (l) => { resolve(l); rl.close() })
     rl.once('close', () => resolve(''))
   })
   const readSecret = (prompt: string) => new Promise<string>((resolve, reject) => {

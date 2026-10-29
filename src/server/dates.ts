@@ -10,6 +10,14 @@ export function today(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
 }
 
+/** "2026-10-29 14:05" for a moment in time, read off the Jakarta clock. */
+export function businessDateTime(d: Date): string {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(d).map((x) => [x.type, x.value]))
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`
+}
+
 export function isIsoDay(value: string): boolean {
   const m = ISO_DAY.exec(value)
   if (!m) return false

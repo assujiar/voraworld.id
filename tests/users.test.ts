@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { run, type Io } from '../scripts/manage-users'
 import { UserCommandError, checkPassword, createAdmin, listUsers, normalizeEmail, resetPassword, setActive } from '../scripts/lib/users'
@@ -101,6 +103,23 @@ describe('the command line', () => {
     }
     expect((await sql`select 1 from users where email = 'r@example.invalid'`).length).toBe(0)
   })
+  it('warns when an account holds a role that gives no access, and says how to fix it', async () => {
+    await sql`insert into users (email, password_hash, role) values ('legacy.sales@example.invalid', 'x', 'sales')`
+    const create = io({ stdin: PW1 })
+    expect(await run(['create', 'legacy.sales@example.invalid', '--password-stdin'], sql as never, create.tool)).toBe(2)
+    expect(create.out.join('\n')).toMatch(/role "sales".*UPDATE users SET role = 'admin' WHERE email = 'legacy\.sales@example\.invalid';/s)
+    const reset = io({ stdin: PW2 })
+    expect(await run(['reset-password', 'legacy.sales@example.invalid', '--password-stdin'], sql as never, reset.tool)).toBe(0)
+    expect(reset.out.join('\n')).toMatch(/Note: .*role "sales"/s)
+    const on = io(); expect(await run(['activate', 'legacy.sales@example.invalid'], sql as never, on.tool)).toBe(0)
+    expect(on.out.join('\n')).toMatch(/Note: .*role "sales"/s)
+    const off = io(); expect(await run(['deactivate', 'legacy.sales@example.invalid'], sql as never, off.tool)).toBe(0)
+    expect(off.out.join('\n')).not.toContain('Note:')
+    // The statement it prints really does open the portal.
+    await sql`update users set role = 'admin' where email = 'legacy.sales@example.invalid'`
+    const again = io({ stdin: PW1 }); expect(await run(['create', 'legacy.sales@example.invalid', '--password-stdin'], sql as never, again.tool)).toBe(2)
+    expect(again.out.join('\n')).toContain('already exists (use reset-password)')
+  })
   it('lists, resets, deactivates and activates', async () => {
     const list = io(); expect(await run(['list'], sql as never, list.tool)).toBe(0)
     expect(list.out.join('\n')).toMatch(/cli\.user@example\.invalid\s+admin\s+active/)
@@ -110,5 +129,42 @@ describe('the command line', () => {
     const list2 = io(); await run(['list'], sql as never, list2.tool); expect(list2.out.join('\n')).toMatch(/cli\.user@example\.invalid\s+admin\s+DISABLED/)
     const on = io(); expect(await run(['activate', 'cli.user@example.invalid'], sql as never, on.tool)).toBe(0)
     const missing = io(); expect(await run(['deactivate', 'ghost@example.invalid'], sql as never, missing.tool)).toBe(2)
+  })
+})
+
+describe('the program itself (a real child process, a real pipe)', () => {
+  /** Runs `scripts/manage-users.ts` the way an owner does: DATABASE_URL in the environment, the password on standard input. */
+  const cli = (args: string[], stdin = '') => {
+    const r = spawnSync(process.execPath, [join(process.cwd(), 'node_modules/tsx/dist/cli.mjs'), 'scripts/manage-users.ts', ...args], {
+      input: stdin, encoding: 'utf8', env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL }, timeout: 60_000,
+    })
+    return { code: r.status, out: (r.stdout ?? '') + (r.stderr ?? '') }
+  }
+
+  it('reads a piped password with or without a trailing newline, and never prints it', async () => {
+    const withNewline = cli(['create', 'pipe.one@example.invalid', '--password-stdin'], PW1 + '\n')
+    expect(withNewline.code, withNewline.out).toBe(0)
+    const without = cli(['create', 'pipe.two@example.invalid', '--password-stdin'], PW2)
+    expect(without.code, without.out).toBe(0)
+    expect(withNewline.out + without.out).not.toContain(PW1)
+    expect(withNewline.out + without.out).not.toContain(PW2)
+    expect((await login('pipe.one@example.invalid', PW1, '203.0.113.50')).status).toBe('ok')
+    expect((await login('pipe.two@example.invalid', PW2, '203.0.113.51')).status).toBe('ok')
+  })
+
+  it('refuses an empty pipe, a short password and a second account with the same email', () => {
+    expect(cli(['create', 'empty@example.invalid', '--password-stdin'], '').out).toContain('at least 14')
+    expect(cli(['create', 'short@example.invalid', '--password-stdin'], 'short\n').out).toContain('at least 14')
+    const again = cli(['create', 'pipe.one@example.invalid', '--password-stdin'], PW2 + '\n')
+    expect(again.code).toBe(2)
+    expect(again.out).toContain('already exists')
+  })
+
+  it('lists and deactivates through the same entry point', () => {
+    const list = cli(['list'])
+    expect(list.code, list.out).toBe(0)
+    expect(list.out).toMatch(/pipe\.one@example\.invalid\s+admin\s+active/)
+    expect(cli(['deactivate', 'pipe.one@example.invalid']).code).toBe(0)
+    expect(cli(['list']).out).toMatch(/pipe\.one@example\.invalid\s+admin\s+DISABLED/)
   })
 })

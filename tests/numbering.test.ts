@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { sql, tx } from '@/server/db'
 import { ensurePublicCode, nextNumber } from '@/server/numbering'
 import { createVerification, findVerification, getVerification } from '@/server/verification'
@@ -36,6 +36,18 @@ describe('document numbers', () => {
     expect((await tx((t) => nextNumber(t, 'quo', code, '2027-01-02'))).startsWith(`QUO-VORA-${code}-202701-`)).toBe(true)
     await expect(tx((t) => nextNumber(t, 'XYZ', code))).rejects.toThrow('Unsupported document kind')
     await expect(tx((t) => nextNumber(t, 'INV', 'bad-code'))).rejects.toThrow('Invalid owner code')
+  })
+  it('take the month from the Jakarta calendar when no date is given', async () => {
+    const code = await ensurePublicCode(sql, 'customers', await customer())
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date('2026-10-31T20:00:00Z'))        // 03:00 on 1 November in Jakarta (UTC+7), still 31 October in UTC
+      expect((await tx((t) => nextNumber(t, 'RFQ', code))).startsWith(`RFQ-VORA-${code}-202611-`)).toBe(true)
+      vi.setSystemTime(new Date('2026-10-31T16:59:00Z'))        // 23:59 on 31 October in Jakarta
+      expect((await tx((t) => nextNumber(t, 'INQ', code))).startsWith(`INQ-VORA-${code}-202610-`)).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
   })
   it('stay unique when sixteen requests allocate at once', async () => {
     const id = await customer('PARALLEL')

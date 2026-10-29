@@ -16,8 +16,9 @@ async function main() {
   const baseline = bi >= 0 ? args[bi + 1] : undefined
   const sql = openSql(connectionUrl())
   try {
-    await runMigrations(sql, { apply, baseline, log: (l) => console.log(l) })
-    if (!apply && !baseline) console.log('Dry run only. Re-run with --apply to execute.')
+    const result = await runMigrations(sql, { apply, baseline, log: (l) => console.log(l) })
+    if (!result.pending.length && !result.applied.length && !result.baselined.length) console.log('Nothing to apply: the database is up to date.')
+    else if (!apply && !baseline) console.log('Dry run only. Re-run with --apply to execute.')
   } finally {
     await sql.end({ timeout: 5 })
   }

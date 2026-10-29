@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { today } from '@/server/dates'
 import { sql } from '@/server/db'
 import { findVerification } from '@/server/verification'
 
@@ -19,7 +20,7 @@ export default async function Verify({ params }: { params: Promise<{ token: stri
   const state = doc.status as string
   const status = row.revoked || state === 'void' ? 'VOID' : kind === 'receipt' && state === 'pending_stamp' ? 'PENDING E-METERAI' : state === 'draft' ? 'DRAFT' : 'AUTHENTIC'
   const payment = kind === 'invoice' && !row.revoked && state !== 'void' ? (state === 'paid' ? 'OFFICIALLY PAID' : state === 'partially_paid' ? 'PARTIALLY PAID' : 'AWAITING PAYMENT') : ''
-  const date = kind === 'receipt' ? (doc.createdAt as Date).toISOString().slice(0, 10) : (doc.issuedAt as string)
+  const date = kind === 'receipt' ? today(doc.createdAt as Date) : (doc.issuedAt as string)
   return (
     <main className="wrap" style={{ maxWidth: 750, paddingTop: '10vh' }}>
       <a href="/en"><img src="/static/assets/vora-primary.svg" alt="VORA" width={160} /></a>

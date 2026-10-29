@@ -150,6 +150,8 @@ describe('origin check', () => {
   })
   it('parses cookies and client IPs', () => {
     expect(parseCookies('a=1; b=two%20words; a=ignored')).toEqual({ a: '1', b: 'two words' })
+    // A cookie set by someone else with a broken escape must not make the whole request fail.
+    expect(parseCookies('x=%E0%A4%A; vora_session=abc.def')).toEqual({ x: '%E0%A4%A', vora_session: 'abc.def' })
     expect(clientIp(new Headers({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8' }))).toBe('1.2.3.4')
     expect(clientIp(new Headers({ 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.2.3.4' }))).toBe('9.9.9.9')
     expect(clientIp(new Headers())).toBe('')

@@ -1154,7 +1154,8 @@ ALTER TABLE payments          ALTER COLUMN amount_minor       TYPE bigint;
 -- The portal now has ONE role, `admin`, with access to every menu.
 -- Accounts created by the earlier multi-role version as `superadmin` become `admin`. Any other legacy role
 -- (editor, sales, finance, viewer) is left untouched and simply has NO access: the application denies every
--- role except `admin`. To grant such a person access, run:  npm run users -- create EMAIL   (or an UPDATE of users.role).
+-- role except `admin`. To grant such a person access, run:  UPDATE users SET role = 'admin' WHERE email = '...';
+-- (`npm run users -- create` refuses an email that already exists and prints this statement for you.)
 UPDATE users SET role = 'admin' WHERE role = 'superadmin';
 
 -- ---------------------------------------------------------------------------
@@ -1192,6 +1193,6 @@ INSERT INTO schema_migrations (name, sha256) VALUES
   ('0014_seed_email_templates.sql', '8b302e0bd53f77669471c9f809c6e13d5013a3794747305233e8b16da3d2743a'),
   ('0015_column_defaults.sql', '25f1f3e6e91e0eb7496281e47b4369cd136a21e488527419e0d7e417d3fafdca'),
   ('0016_bigint_money.sql', 'b398f4a9387a38eb0f6e8850b9ce83bfbac31118f78209ac59a2f0b12ac16e25'),
-  ('0017_single_admin_role.sql', '10abbc10ca2af88e79586c0c1da0d9cabaf0c4cc705e7e164af4710102872950'),
+  ('0017_single_admin_role.sql', '396f5fa09f2b6f3ffdd0aeec7705d83262d53dd316029e8bd2313e2bc7737cc7'),
   ('0018_sync_email_template_wording.sql', 'bffda28331fa6d88f11d37aafab5484068e8cb50c1cf46dafdf34f7ce15315c0')
 ON CONFLICT (name) DO NOTHING;

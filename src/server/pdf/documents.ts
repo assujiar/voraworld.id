@@ -1,5 +1,6 @@
 import type { Db } from '../db'
 import { settingMap } from '../settings'
+import { today } from '../dates'
 import { ActionError } from '../errors'
 import { readStampedReceipt } from '../finance/receipts'
 import { getVerification, type DocumentKind } from '../verification'
@@ -82,7 +83,7 @@ async function receiptPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Arr
   const [customer] = await db`select * from customers where id = ${inv.customerId as number}`
   const [reviewer] = p.confirmedBy ? await db`select email from users where id = ${p.confirmedBy as number}` : []
   const data: ReceiptData = {
-    number: r.number as string, status: r.status as string, stampRequired: Boolean(r.stampRequired), issuedOn: (r.createdAt as Date).toISOString().slice(0, 10),
+    number: r.number as string, status: r.status as string, stampRequired: Boolean(r.stampRequired), issuedOn: today(r.createdAt as Date),
     payment: { id: p.id as number, amountMinor: p.amountMinor as number, date: String(p.date ?? ''), method: String(p.method ?? ''), reference: String(p.reference ?? ''),
       confirmedAt: (p.confirmedAt as Date | null) ?? null, confirmedBy: String(reviewer?.email ?? ''), bank: (p.receivingBankSnapshot as Record<string, string> | null) ?? null },
     invoice: { number: inv.number as string, currency: inv.currency as string, totalMinor: inv.totalMinor as number, outstandingMinor: inv.outstandingMinor as number },
