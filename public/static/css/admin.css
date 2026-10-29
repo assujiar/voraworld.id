@@ -1,0 +1,25 @@
+/* Admin-only refinements on top of site.css. */
+
+/* A checkbox inside .field keeps its natural size (the generic field rule would stretch it to full width). */
+.admin-body .field input[type=checkbox],
+.admin-body .field input[type=radio] {
+  width: auto;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  margin: 0 8px 0 0;
+  vertical-align: middle;
+  accent-color: #b43e31;
+}
+.admin-body .field label:has(> input[type=checkbox]) {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+/* The rich-text surface borrows .article-body typography; it must still fill the form column. */
+.admin-body .rich-surface {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}

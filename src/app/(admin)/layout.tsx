@@ -10,6 +10,7 @@ export default function AdminRoot({ children }: { children: React.ReactNode }) {
       <head>
         <link rel="stylesheet" href="/static/css/site.css" />
         <link rel="stylesheet" href="/static/css/motion.css?v=2" />
+        <link rel="stylesheet" href="/static/css/admin.css?v=1" />
       </head>
       <body className="admin-body">{children}</body>
     </html>
