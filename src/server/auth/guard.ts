@@ -12,7 +12,7 @@ export async function userFromToken(token: string | undefined | null): Promise<S
   const session = await readSessionToken(token)
   if (!session) return null
   const [u] = await sql`select id, email, role, active, password_hash from users where id = ${session.id}`
-  if (!u || !u.active || !safeEqual(session.pv, credentialFingerprint(u.passwordHash as string))) return null
+  if (!u || !u.active || !safeEqual(session.pv, await credentialFingerprint(u.passwordHash as string, u.role as string))) return null
   return { id: u.id as number, email: u.email as string, role: u.role as string }
 }
 

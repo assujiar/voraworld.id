@@ -5,7 +5,7 @@ import { createSessionToken, credentialFingerprint, readSessionToken } from '@/s
 import { signToken, verifyToken } from '@/server/crypto'
 import { requireUser, userFromToken } from '@/server/auth/guard'
 import { attemptLogin, LOGIN_MAX_PER_EMAIL, LOGIN_MAX_PER_IP } from '@/server/auth/login'
-import { assertCsrf, assertSameOrigin } from '@/server/auth/csrf'
+import { assertSameOrigin } from '@/server/auth/csrf'
 import { can, ROLE_NAMES } from '@/server/auth/roles'
 import { clientIp, parseCookies } from '@/server/auth/cookies'
 import { HttpError } from '@/server/http'
@@ -16,7 +16,7 @@ const PYTHON_HASH = 'pbkdf2_sha256$310000$000102030405060708090a0b0c0d0e0f101112
 async function makeUser(email: string, role = 'viewer', password = 'A-long-test-password-1') {
   const passwordHash = await hashPassword(password)
   const [u] = await sql`insert into users (email, password_hash, role) values (${email}, ${passwordHash}, ${role}) returning id`
-  return { id: u.id as number, passwordHash }
+  return { id: u.id as number, passwordHash, role }
 }
 
 describe('passwords', () => {
@@ -60,7 +60,7 @@ describe('signed tokens and sessions', () => {
   })
   it('session tokens expire after 8 hours', async () => {
     vi.useFakeTimers()
-    const token = await createSessionToken({ id: 7, passwordHash: 'h' })
+    const token = await createSessionToken({ id: 7, passwordHash: 'h', role: 'viewer' })
     expect((await readSessionToken(token))?.id).toBe(7)
     vi.advanceTimersByTime(8 * 3600_000 + 5_000)
     expect(await readSessionToken(token)).toBeNull()
@@ -75,13 +75,18 @@ describe('guard', () => {
     const changed = await hashPassword('A-new-password-after-reset')
     await sql`update users set password_hash = ${changed} where id = ${u.id}`
     expect(await userFromToken(token)).toBeNull()
-    const fresh = await createSessionToken({ id: u.id, passwordHash: changed })
+    const fresh = await createSessionToken({ id: u.id, passwordHash: changed, role: 'finance' })
+    expect(await userFromToken(fresh)).not.toBeNull()
+    await sql`update users set role = 'admin' where id = ${u.id}`
+    expect(await userFromToken(fresh)).toBeNull()   // a role change signs the user out, so the cookie's role is never stale
+    await sql`update users set role = 'finance' where id = ${u.id}`
     expect(await userFromToken(fresh)).not.toBeNull()
     await sql`update users set active = false where id = ${u.id}`
     expect(await userFromToken(fresh)).toBeNull()
     await sql`delete from users where id = ${u.id}`
     expect(await userFromToken(fresh)).toBeNull()
-    expect(credentialFingerprint('a')).not.toBe(credentialFingerprint('b'))
+    expect(await credentialFingerprint('a', 'x')).not.toBe(await credentialFingerprint('b', 'x'))
+    expect(await credentialFingerprint('a', 'x')).not.toBe(await credentialFingerprint('a', 'y'))
   })
   it('requireUser answers 401 for anonymous and 403 for missing permission', async () => {
     const u = await makeUser('viewer-guard@invalid.example', 'viewer')
@@ -133,21 +138,16 @@ describe('login', () => {
   })
 })
 
-describe('CSRF and origin', () => {
-  const form = (csrf?: string) => { const f = new FormData(); if (csrf !== undefined) f.set('csrf', csrf); return f }
-  const req = (cookie?: string, headers: Record<string, string> = {}) => new Request('http://app.example/x', { method: 'POST', headers: { ...(cookie ? { cookie } : {}), ...headers } })
-  it('requires the form token to equal the cookie', () => {
-    expect(() => assertCsrf(req('vora_csrf=abc'), form('abc'))).not.toThrow()
-    for (const [cookie, field] of [['vora_csrf=abc', 'abd'], ['vora_csrf=abc', ''], [undefined, 'abc'], ['vora_csrf=', ''], ['vora_csrf=abc', undefined]] as const) {
-      expect(() => assertCsrf(req(cookie), form(field))).toThrow(HttpError)
-    }
-  })
+describe('origin check', () => {
+  const h = (headers: Record<string, string>) => new Headers(headers)
   it('refuses cross-site Origin headers but allows same-site and non-browser clients', () => {
-    expect(() => assertSameOrigin(req(undefined, { host: 'app.example', origin: 'http://app.example' }))).not.toThrow()
-    expect(() => assertSameOrigin(req(undefined, { host: 'app.example' }))).not.toThrow()
-    expect(() => assertSameOrigin(req(undefined, { host: 'app.example', origin: 'https://evil.example' }))).toThrow(HttpError)
-    expect(() => assertSameOrigin(req(undefined, { host: 'app.example', origin: 'null' }))).toThrow(HttpError)
-    expect(() => assertSameOrigin(req(undefined, { host: 'app.example', origin: 'http://app.example.evil.example' }))).toThrow(HttpError)
+    expect(() => assertSameOrigin(h({ host: 'app.example', origin: 'http://app.example' }))).not.toThrow()
+    expect(() => assertSameOrigin(h({ host: 'app.example' }))).not.toThrow()
+    expect(() => assertSameOrigin(h({ 'x-forwarded-host': 'app.example', host: 'internal:3000', origin: 'https://app.example' }))).not.toThrow()
+    expect(() => assertSameOrigin(h({ host: 'app.example', origin: 'https://evil.example' }))).toThrow(HttpError)
+    expect(() => assertSameOrigin(h({ host: 'app.example', origin: 'null' }))).toThrow(HttpError)
+    expect(() => assertSameOrigin(h({ host: 'app.example', origin: 'http://app.example.evil.example' }))).toThrow(HttpError)
+    expect(() => assertSameOrigin(h({ origin: 'http://app.example' }))).toThrow(HttpError)
   })
   it('parses cookies and client IPs', () => {
     expect(parseCookies('a=1; b=two%20words; a=ignored')).toEqual({ a: '1', b: 'two words' })

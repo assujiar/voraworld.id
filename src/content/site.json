@@ -1,0 +1,426 @@
+{
+ "serviceGroups": {
+  "international-freight-forwarding": {
+   "en": {
+    "name": "International Freight Forwarding",
+    "strap": "Across borders. Across modes. One clear plan.",
+    "intro": "Coordinate air and ocean imports and exports with the routing, paperwork and cost visibility each movement needs.",
+    "scope": "International forwarding requirements differ by direction, cargo type, Incoterm and destination. We evaluate options before confirming an offer.",
+    "process": "Share cargo specifications and trade terms; review routes, carrier options and documentation; agree on scope and milestones.",
+    "audience": "Importers, exporters and businesses managing cross-border cargo.",
+    "proof": "A quotation clarifies inclusions, exclusions, cost basis and expected milestones before shipment confirmation."
+   },
+   "id": {
+    "name": "International Freight Forwarding",
+    "strap": "Lintas negara. Dua moda. Satu rencana yang jelas.",
+    "intro": "Koordinasi impor dan ekspor udara maupun laut berdasarkan kebutuhan rute, dokumen, dan transparansi biaya.",
+    "scope": "Kebutuhan forwarding berbeda menurut arah pengiriman, jenis barang, Incoterm, dan tujuan. Opsi dievaluasi sebelum penawaran dikonfirmasi.",
+    "process": "Sampaikan spesifikasi barang serta trade terms; tinjau rute, carrier, dan dokumen; sepakati cakupan serta tahapan pengiriman.",
+    "audience": "Importir, eksportir, dan perusahaan dengan kebutuhan pengiriman lintas negara.",
+    "proof": "Penawaran menjelaskan komponen biaya, pengecualian, serta tahapan estimasi sebelum shipment dikonfirmasi."
+   },
+   "image": "vora-visual-59.webp",
+   "index": "01",
+   "modes": [
+    "air-import",
+    "sea-import",
+    "air-export",
+    "sea-export"
+   ]
+  },
+  "customs-brokerage": {
+   "en": {
+    "name": "Customs Brokerage",
+    "strap": "Regulatory clarity before cargo release.",
+    "intro": "Plan import and export customs documentation and clearance coordination with careful attention to applicable requirements.",
+    "scope": "Document readiness, HS classification review, customs declarations and clearance coordination through appropriately authorised parties where required.",
+    "process": "Review commercial documents, identify declarations and permits, coordinate filings and address customs responses.",
+    "audience": "Businesses requiring customs document review and clearance coordination.",
+    "proof": "Specific declarant responsibilities, permits, import restrictions and licence requirements must be confirmed before commitment."
+   },
+   "id": {
+    "name": "Customs Brokerage",
+    "strap": "Kejelasan kepabeanan sebelum barang dikeluarkan.",
+    "intro": "Perencanaan dokumen dan koordinasi clearance impor maupun ekspor dengan mempertimbangkan ketentuan yang berlaku.",
+    "scope": "Kesiapan dokumen, peninjauan HS code, deklarasi kepabeanan, dan koordinasi clearance melalui pihak yang berwenang bila diperlukan.",
+    "process": "Periksa dokumen komersial, tentukan deklarasi serta izin yang diperlukan, koordinasikan filing dan tanggapan kepabeanan.",
+    "audience": "Perusahaan yang membutuhkan pemeriksaan dokumen dan koordinasi clearance.",
+    "proof": "Tanggung jawab deklaran, perizinan dan pembatasan barang harus dikonfirmasi sebelum penugasan."
+   },
+   "image": "vora-visual-60.webp",
+   "index": "02",
+   "modes": []
+  },
+  "3pl-warehousing": {
+   "en": {
+    "name": "3PL & Warehousing",
+    "strap": "More than storage. A designed flow of goods.",
+    "intro": "Build practical warehouse and third-party logistics arrangements around storage, handling and order-flow requirements.",
+    "scope": "Storage feasibility, inbound receiving, inventory processes, pick-and-pack, fulfilment and dispatch coordination subject to facility and partner confirmation.",
+    "process": "Review product characteristics, space needs, throughput, system visibility and fulfilment SLA expectations.",
+    "audience": "Businesses planning inventory storage and fulfilment operations.",
+    "proof": "Warehouse capacity, site suitability, safety conditions and pricing are verified against the actual proposal."
+   },
+   "id": {
+    "name": "3PL & Warehousing",
+    "strap": "Bukan sekadar penyimpanan. Aliran barang dirancang.",
+    "intro": "Perencanaan pergudangan dan third-party logistics sesuai kebutuhan storage, handling, dan pemrosesan pesanan.",
+    "scope": "Evaluasi ruang simpan, penerimaan barang, pengelolaan stok, pick-and-pack, fulfilment dan dispatch sesuai konfirmasi fasilitas serta mitra.",
+    "process": "Tinjau karakter barang, kebutuhan kapasitas, volume pergerakan, visibilitas stok dan ekspektasi SLA.",
+    "audience": "Perusahaan yang merencanakan operasional penyimpanan dan fulfilment.",
+    "proof": "Kapasitas, kesesuaian fasilitas, keamanan dan harga harus diverifikasi berdasarkan proposal aktual."
+   },
+   "image": "vora-visual-64.webp",
+   "index": "03",
+   "modes": []
+  },
+  "domestic-distribution": {
+   "en": {
+    "name": "Domestic Distribution",
+    "strap": "Different loads. Different routes. The right transport choice.",
+    "intro": "Plan intercity and domestic distribution through full-truck, part-load, containerised and air cargo options.",
+    "scope": "FTL, LTL, FCL, LCL and domestic air freight; pickup, handling, transport coordination and delivery arrangements as applicable.",
+    "process": "Evaluate cargo dimensions, origin/destination, delivery constraints, consolidation options and mode-specific handovers.",
+    "audience": "Businesses moving goods within Indonesia using road, sea or air distribution.",
+    "proof": "Equipment availability, origin–destination coverage, cargo acceptance and delivery commitments are confirmed per inquiry."
+   },
+   "id": {
+    "name": "Domestic Distribution",
+    "strap": "Beragam muatan. Beragam rute. Moda yang tepat.",
+    "intro": "Perencanaan distribusi domestik melalui charter truk, konsolidasi, kontainer, dan kargo udara.",
+    "scope": "FTL, LTL, FCL, LCL serta air freight domestik; pengambilan, penanganan, koordinasi angkutan dan pengantaran sesuai kebutuhan.",
+    "process": "Tinjau dimensi barang, rute, batasan waktu, opsi konsolidasi dan serah terima sesuai moda.",
+    "audience": "Perusahaan dengan kebutuhan distribusi antarkota di Indonesia.",
+    "proof": "Ketersediaan unit, cakupan rute, ketentuan penerimaan barang dan komitmen pengiriman dikonfirmasi per inquiry."
+   },
+   "image": "vora-visual-66.webp",
+   "index": "04",
+   "modes": [
+    "ftl",
+    "ltl",
+    "fcl",
+    "lcl",
+    "air-freight"
+   ]
+  },
+  "project-cargo": {
+   "en": {
+    "name": "Project Cargo",
+    "strap": "Complex cargo calls for technical planning.",
+    "intro": "For heavy, oversized and specialised cargo, the route, lifting interface and risk controls should be considered before the movement begins.",
+    "scope": "Feasibility evaluation for out-of-gauge, heavy-lift, breakbulk and multimodal movements, subject to drawings, survey and partner validation.",
+    "process": "Review cargo drawings and weight, transport geometry, lifting/lashing concepts, route and schedule feasibility.",
+    "audience": "Industrial equipment and non-standard cargo requiring technical coordination.",
+    "proof": "Proposed handling methods and permits remain conditional on engineering, surveys and actual provider capability."
+   },
+   "id": {
+    "name": "Project Cargo",
+    "strap": "Muatan kompleks memerlukan perencanaan teknis.",
+    "intro": "Untuk barang berat, oversized, dan khusus, rute, metode pengangkatan, serta kontrol risiko perlu dipastikan sebelum bergerak.",
+    "scope": "Evaluasi OOG, heavy-lift, breakbulk dan multimoda berdasarkan gambar teknis, survei dan validasi mitra.",
+    "process": "Tinjau drawing, berat, dimensi angkutan, metode lifting/lashing, kelayakan rute dan jadwal.",
+    "audience": "Pengiriman peralatan industri dan barang nonstandar yang membutuhkan koordinasi teknis.",
+    "proof": "Metode handling dan izin merupakan hasil studi teknis, survei dan konfirmasi kapabilitas provider."
+   },
+   "image": "vora-visual-44.webp",
+   "index": "05",
+   "modes": []
+  }
+ },
+ "serviceModes": {
+  "international-freight-forwarding": {
+   "air-import": {
+    "en": [
+     "Air Import",
+     "International inbound by air, managed around cargo readiness and customs handover.",
+     "Air waybill and commercial documents, airport handling, clearance handover, routing and delivery scope.",
+     "vora-visual-68.webp"
+    ],
+    "id": [
+     "Air Import",
+     "Impor udara internasional berdasarkan kesiapan kargo serta proses customs.",
+     "Air waybill dan dokumen komersial, handling bandara, koordinasi clearance, rute dan cakupan pengantaran.",
+     "vora-visual-68.webp"
+    ]
+   },
+   "sea-import": {
+    "en": [
+     "Sea Import",
+     "Container and consolidated inbound sea freight with port-side coordination.",
+     "FCL/LCL selection, bill of lading, origin charges, destination charges, customs and inland handover.",
+     "vora-visual-67.webp"
+    ],
+    "id": [
+     "Sea Import",
+     "Impor laut melalui kontainer dan konsolidasi dengan koordinasi pelabuhan.",
+     "Pilihan FCL/LCL, bill of lading, origin/destination charges, customs dan koordinasi transportasi lanjutan.",
+     "vora-visual-67.webp"
+    ]
+   },
+   "air-export": {
+    "en": [
+     "Air Export",
+     "Outbound air cargo planned for destination and documentation requirements.",
+     "Export cargo acceptance, packing review, airwaybill coordination, screening and flight options.",
+     "vora-visual-68.webp"
+    ],
+    "id": [
+     "Air Export",
+     "Pengiriman ekspor udara sesuai tujuan serta kebutuhan dokumen.",
+     "Penerimaan cargo, pemeriksaan kemasan, koordinasi airwaybill, screening dan pilihan penerbangan.",
+     "vora-visual-68.webp"
+    ]
+   },
+   "sea-export": {
+    "en": [
+     "Sea Export",
+     "Outbound ocean shipping options for containerised and consolidated cargo.",
+     "FCL/LCL planning, container suitability, cut-offs, bill of lading and export document requirements.",
+     "vora-visual-65.webp"
+    ],
+    "id": [
+     "Sea Export",
+     "Pengiriman ekspor laut melalui kontainer maupun konsolidasi.",
+     "Perencanaan FCL/LCL, kesesuaian kontainer, cut-off, bill of lading dan kebutuhan dokumen ekspor.",
+     "vora-visual-65.webp"
+    ]
+   }
+  },
+  "domestic-distribution": {
+   "ftl": {
+    "en": [
+     "FTL · Full Truckload",
+     "Dedicated truck movement when a load needs its own vehicle.",
+     "Vehicle body and capacity, pickup/delivery windows, routing, loading constraints and POD.",
+     "vora-visual-66.webp"
+    ],
+    "id": [
+     "FTL · Full Truckload",
+     "Pengiriman dengan satu truk khusus sesuai kebutuhan muatan.",
+     "Jenis dan kapasitas kendaraan, jadwal pickup/delivery, rute, batasan loading dan POD.",
+     "vora-visual-66.webp"
+    ]
+   },
+   "ltl": {
+    "en": [
+     "LTL · Less Than Truckload",
+     "Part-load road distribution where consolidation can improve efficiency.",
+     "Chargeable weight/volume, consolidation points, handling and estimated delivery windows.",
+     "vora-visual-62.webp"
+    ],
+    "id": [
+     "LTL · Less Than Truckload",
+     "Distribusi part-load dengan opsi konsolidasi muatan.",
+     "Perhitungan berat/volume, titik konsolidasi, handling dan estimasi waktu pengiriman.",
+     "vora-visual-62.webp"
+    ]
+   },
+   "fcl": {
+    "en": [
+     "FCL · Full Container Load",
+     "Domestic container shipping for full-container requirements.",
+     "Container type, port pairs, container handling, freight schedule and onward delivery.",
+     "vora-visual-65.webp"
+    ],
+    "id": [
+     "FCL · Full Container Load",
+     "Pengiriman domestik menggunakan satu kontainer penuh.",
+     "Tipe kontainer, rute antarpelabuhan, handling, jadwal kapal dan pengantaran lanjutan.",
+     "vora-visual-65.webp"
+    ]
+   },
+   "lcl": {
+    "en": [
+     "LCL · Less Than Container Load",
+     "Domestic sea consolidation for shipments that do not require a full container.",
+     "Cargo measurement, consolidation timetable, cargo acceptance, port-to-port and delivery scope.",
+     "vora-visual-67.webp"
+    ],
+    "id": [
+     "LCL · Less Than Container Load",
+     "Konsolidasi laut domestik untuk muatan yang tidak memerlukan satu kontainer penuh.",
+     "Pengukuran muatan, jadwal konsolidasi, ketentuan barang, port-to-port dan pengantaran.",
+     "vora-visual-67.webp"
+    ]
+   },
+   "air-freight": {
+    "en": [
+     "Domestic Air Freight",
+     "Air distribution between domestic airports when transit speed is a key variable.",
+     "Chargeable weight, flight uplift, cargo security checks, airport handling and final-mile arrangements.",
+     "vora-visual-68.webp"
+    ],
+    "id": [
+     "Air Freight Domestik",
+     "Pengiriman antarabandara domestik ketika waktu menjadi pertimbangan utama.",
+     "Chargeable weight, ruang penerbangan, pemeriksaan keamanan, handling bandara dan last-mile.",
+     "vora-visual-68.webp"
+    ]
+   }
+  }
+ },
+ "text": {
+  "en": {
+   "home_eyebrow": "Freight & Logistics",
+   "home_title": "Bringing the World Within Reach.",
+   "home_intro": "Moving goods across borders and between cities takes more than a shipment. It takes a clear plan, the right coordination, and a partner that stays accountable.",
+   "home_service": "The right movement starts with the right conversation.",
+   "home_process": "From first inquiry to final handover.",
+   "home_process_body": "Tell us what moves, where it needs to go, and when. We evaluate the requirements, propose an appropriate approach, and coordinate the next steps.",
+   "why_title": "Built around the movement, not a template.",
+   "why_body": "Every shipment is different. Scope, timelines and responsibility should be explicit before commitments are made.",
+   "cta": "Talk through your shipment",
+   "rfq": "Request a Quote",
+   "about_title": "Movement made more approachable.",
+   "about_body": "VORA is a freight and logistics brand of PT Satu Arah International. Our approach starts with understanding cargo, trade lanes and delivery constraints. Operational capabilities and available coverage are confirmed per inquiry.",
+   "solutions_title": "Solutions shaped around real cargo needs.",
+   "network_title": "Coverage is verified, not assumed.",
+   "network_body": "Share your origin, destination and requirements. Available lanes and service partners are confirmed during inquiry.",
+   "insights_title": "Perspectives from the movement of goods.",
+   "contact_title": "Start a conversation.",
+   "faq_title": "Questions before shipping?",
+   "services_title": "Freight solutions, considered end to end."
+  },
+  "id": {
+   "home_eyebrow": "Freight & Logistics",
+   "home_title": "Membawa Dunia Lebih Dekat.",
+   "home_intro": "Pergerakan barang antarkota dan antarnegara butuh perencanaan yang jelas, koordinasi tepat, dan tanggung jawab hingga selesai.",
+   "home_service": "Solusi pengiriman dimulai dari percakapan yang tepat.",
+   "home_process": "Dari permintaan awal hingga serah terima.",
+   "home_process_body": "Informasikan jenis barang, asal, tujuan, dan jadwalnya. Kami meninjau kebutuhan, mengusulkan pendekatan, dan mengoordinasikan langkah berikutnya.",
+   "why_title": "Solusi mengikuti kebutuhan, bukan template.",
+   "why_body": "Setiap pengiriman memiliki karakter berbeda. Cakupan, jadwal, dan penanggung jawab perlu jelas sejak awal.",
+   "cta": "Diskusikan pengiriman",
+   "rfq": "Minta Penawaran",
+   "about_title": "Membuat pengiriman lebih mudah dipahami.",
+   "about_body": "VORA adalah brand freight dan logistik dari PT Satu Arah International. Pendekatan kami dimulai dari memahami barang, jalur perdagangan dan batasan pengiriman. Kapabilitas serta jangkauan layanan dikonfirmasi untuk setiap permintaan.",
+   "solutions_title": "Solusi berdasarkan kebutuhan pengiriman nyata.",
+   "network_title": "Jangkauan layanan perlu dikonfirmasi.",
+   "network_body": "Berikan asal, tujuan dan kebutuhan Anda. Ketersediaan jalur dan mitra layanan akan dikonfirmasi dalam proses inquiry.",
+   "insights_title": "Perspektif tentang pergerakan barang.",
+   "contact_title": "Mulai percakapan.",
+   "faq_title": "Pertanyaan sebelum mengirim?",
+   "services_title": "Solusi freight dengan perencanaan menyeluruh."
+  }
+ },
+ "nav": [
+  [
+   "About",
+   "/about"
+  ],
+  [
+   "Services",
+   "/services"
+  ],
+  [
+   "Solutions",
+   "/solutions"
+  ],
+  [
+   "Network",
+   "/network"
+  ],
+  [
+   "Insights",
+   "/insights"
+  ],
+  [
+   "FAQ",
+   "/faq"
+  ],
+  [
+   "Contact",
+   "/contact"
+  ]
+ ],
+ "navLabels": {
+  "en": {
+   "/about": "About",
+   "/services": "Services",
+   "/solutions": "Solutions",
+   "/network": "Network",
+   "/insights": "Insights",
+   "/faq": "FAQ",
+   "/contact": "Contact"
+  },
+  "id": {
+   "/about": "Tentang",
+   "/services": "Layanan",
+   "/solutions": "Solusi",
+   "/network": "Jaringan",
+   "/insights": "Wawasan",
+   "/faq": "FAQ",
+   "/contact": "Kontak"
+  }
+ },
+ "seoTitles": {
+  "en": {
+   "home": "VORA | Bringing the World Within Reach",
+   "about": "About VORA | Freight & Logistics",
+   "services": "Freight & Logistics Services | VORA",
+   "insights": "Insights | VORA",
+   "contact": "Contact VORA",
+   "quote": "Request a Freight Quote | VORA",
+   "default": "VORA | Freight & Logistics"
+  },
+  "id": {
+   "home": "VORA | Membawa Dunia Lebih Dekat",
+   "about": "Tentang VORA | Freight & Logistics",
+   "services": "Layanan Freight & Logistics | VORA",
+   "insights": "Wawasan | VORA",
+   "contact": "Hubungi VORA",
+   "quote": "Minta Penawaran Pengiriman | VORA",
+   "default": "VORA | Freight & Logistics"
+  }
+ },
+ "seoDescription": {
+  "en": "VORA offers freight and logistics inquiry and coordination for international and domestic movements.",
+  "id": "VORA menyediakan layanan permintaan dan koordinasi freight dan logistik untuk pengiriman internasional maupun domestik."
+ },
+ "solutions": {
+  "en": [
+   [
+    "Manufacturing",
+    "Coordinating inbound components and finished products around factory schedules."
+   ],
+   [
+    "Retail & E-commerce",
+    "Evaluating inventory flows and distribution requirements."
+   ],
+   [
+    "Industrial Projects",
+    "Planning equipment movements and special handling feasibility."
+   ],
+   [
+    "General Cargo",
+    "Aligning standard cargo movement with route and documentation needs."
+   ]
+  ],
+  "id": [
+   [
+    "Manufaktur",
+    "Mengoordinasikan komponen masuk dan produk jadi sesuai jadwal pabrik."
+   ],
+   [
+    "Ritel & E-commerce",
+    "Mengevaluasi arus persediaan dan kebutuhan distribusi."
+   ],
+   [
+    "Proyek Industri",
+    "Merencanakan pergerakan peralatan dan kelayakan penanganan khusus."
+   ],
+   [
+    "Kargo Umum",
+    "Menyelaraskan pergerakan kargo standar dengan kebutuhan rute dan dokumen."
+   ]
+  ]
+ },
+ "serviceAliases": {
+  "air-freight": "international-freight-forwarding/air-export",
+  "sea-freight": "international-freight-forwarding/sea-export",
+  "road-transport": "domestic-distribution/ftl",
+  "customs-clearance": "customs-brokerage",
+  "warehousing-3pl": "3pl-warehousing",
+  "distribution": "domestic-distribution"
+ }
+}

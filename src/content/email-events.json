@@ -1,0 +1,34 @@
+{
+ "lead_admin": {
+  "subject": "New VORA $lead_type inquiry - #$lead_id",
+  "html": "<h2>New $lead_type inquiry</h2><p>Reference: <strong>#$lead_id</strong></p><p>From: $name ($company)</p><p>Email: $email</p><p>Service: $mode</p><p>Origin: $origin &nbsp; Destination: $destination</p><p>Message: $message</p><p>Open in admin: <a href=\"$admin_url\">Lead #$lead_id</a></p>"
+ },
+ "lead_customer": {
+  "subject": "VORA inquiry received - #$lead_id",
+  "html": "<p>Dear $name,</p><p>Thank you for contacting VORA. Your $lead_type inquiry (#$lead_id) has been received. Our team will review the details and respond by email.</p><p>VORA | Freight & Logistics</p>"
+ },
+ "invoice_customer": {
+  "subject": "VORA invoice $document_number",
+  "html": "<p>Dear $customer_name,</p><p>Please find attached invoice <strong>$document_number</strong> ($document_date).</p><p>Verify the document using the QR code in the PDF or the link: <a href=\"$verify_url\">Verify invoice</a>.</p><p>VORA | Freight & Logistics</p>"
+ },
+ "receipt_customer": {
+  "subject": "VORA payment receipt $document_number",
+  "html": "<p>Dear $customer_name,</p><p>Your payment receipt <strong>$document_number</strong> is attached. Verify the document through the QR code or <a href=\"$verify_url\">online verification</a>.</p><p>VORA | Freight & Logistics</p>"
+ },
+ "payment_confirmed": {
+  "subject": "VORA payment confirmation - $invoice_number",
+  "html": "<p>Dear $customer_name,</p><p>We confirm that your payment of <strong>$payment_amount</strong> has been credited to PT Satu Arah International on $payment_date.</p><p>Invoice: <strong>$invoice_number</strong><br>Payment reference: $payment_reference<br>Invoice status: <strong>$invoice_status</strong><br>Outstanding balance: <strong>$outstanding_amount</strong></p><p>For your records, the official receipt will be delivered separately when any required administrative formalities have been completed.</p><p>VORA | Freight & Logistics</p>"
+ },
+ "quotation_approval_request": {
+  "subject": "VORA quotation approval requested - $document_number",
+  "html": "<p>Dear $customer_name,</p><p>Please review the attached quotation <strong>$document_number</strong>. You can download, sign and stamp the quotation and securely upload the signed PDF at <a href=\"$approval_url\">the customer approval link</a>.</p><p>Valid until: $valid_until. The approval link will expire on $approval_expiry.</p><p>VORA | Freight & Logistics</p>"
+ },
+ "quotation_approved_admin": {
+  "subject": "VORA quotation accepted - $document_number",
+  "html": "<p>Quotation $document_number has been reviewed and approved by VORA Finance. A signed/stamped PDF is retained in the private document archive.</p>"
+ },
+ "lead_reply": {
+  "subject": "Regarding your VORA inquiry #$lead_id",
+  "html": "<p>Dear $name,</p><p>$reply_message</p><p>VORA | Freight & Logistics</p>"
+ }
+}
