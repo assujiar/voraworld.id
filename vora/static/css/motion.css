@@ -1,0 +1,113 @@
+/* VORA Motion System v1 — organic sculptural movement, never motion on the logo.
+   All animations are progressive enhancements; content and forms work without JS.
+   Motion coordinates: slow spatial layers (8-24s), fast affordances (180-360ms).
+*/
+:root {
+  --vora-motion-ease: cubic-bezier(.22, 1, .36, 1);
+  --vora-motion-fast: 240ms;
+  --vora-motion-medium: 650ms;
+}
+/* Native same-origin cross-document transitions where supported. Fallback = normal navigation. */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: vora-page-old 230ms ease-in both; }
+::view-transition-new(root) { animation: vora-page-new 460ms var(--vora-motion-ease) both; }
+@keyframes vora-page-old { to { opacity:0; transform:scale(.995); filter:blur(3px); } }
+@keyframes vora-page-new { from { opacity:.65; clip-path:inset(0 0 5% 0 round 22px); transform:translateY(10px); } to {opacity:1; clip-path:inset(0 0 0 0 round 0); transform:none;} }
+
+/* Scroll indicator remains decorative. No screen reader or keyboard focus noise. */
+.vora-scroll-progress {position:fixed;left:0;top:0;z-index:40;width:100%;height:3px;overflow:hidden;pointer-events:none;}
+.vora-scroll-progress__fill {display:block;width:100%;height:100%;background:var(--red);transform-origin:left center;transform:scaleX(0);will-change:transform;}
+@supports (animation-timeline: scroll()) {
+  /* JS still drives progress for uniform behavior, including browsers lacking scroll timelines. */
+}
+
+/* Clay morphing: the stage itself is tactile, not a rotating stock illustration. */
+@keyframes vora-organic-morph {
+  0%,100% {border-radius:42% 58% 53% 47% / 47% 40% 60% 53%;}
+  30% {border-radius:51% 49% 44% 56% / 44% 55% 45% 56%;}
+  65% {border-radius:46% 54% 61% 39% / 57% 44% 56% 43%;}
+}
+@keyframes vora-organic-morph-small {
+  0%,100% {border-radius:43% 57% 61% 39% / 51% 41% 59% 49%;}
+  50% {border-radius:56% 44% 48% 52% / 44% 53% 47% 56%;}
+}
+@keyframes vora-gentle-float {
+  0%,100% { translate:0 0; }
+  50% { translate:0 -12px; }
+}
+@keyframes vora-chip-drift {
+  0%,100% {translate:0 0;}
+  50% {translate:0 -7px;}
+}
+@keyframes vora-rotate-orbit {
+  from {rotate:0deg;}
+  to {rotate:360deg;}
+}
+@keyframes vora-line-grow {
+  from {transform:scaleX(.08);}
+  to {transform:scaleX(1);}
+}
+/* Do not apply to brand SVG, which must remain exactly the identity source. */
+.hero-art .clay-stage {transition:transform 650ms var(--vora-motion-ease);}
+.hero-art .stage-relief:not(.stage-relief--inner) {animation:vora-organic-morph 17s ease-in-out infinite;}
+.hero-art .stage-relief--inner {animation:vora-organic-morph-small 19s ease-in-out infinite reverse;}
+.hero-art .clay-stage>img {animation:vora-gentle-float 8.5s ease-in-out infinite;}
+.hero-art .stage-ring {animation:vora-rotate-orbit 50s linear infinite;}
+.hero-art .stage-ring--two {animation-duration:70s;animation-direction:reverse;}
+.hero-art .float-chip--top {animation:vora-chip-drift 6.2s ease-in-out infinite;}
+.hero-art .float-chip--bottom {animation:vora-chip-drift 7.3s ease-in-out infinite reverse;}
+.service-hero-art .service-art-pedestal {animation:vora-organic-morph 19s ease-in-out infinite;}
+.service-hero-art img {animation:vora-gentle-float 9.5s ease-in-out infinite;}
+.clay-relief-figure .sculpture-cutout {animation:vora-organic-morph-small 21s ease-in-out infinite;}
+
+/* Native browser cursor and subtle fixed hover feedback only.
+   No pointer-following tilt, rotating stage, or magnetic controls. */
+@media (hover:hover) and (pointer:fine) {
+  .service-tile:hover {transform:translateY(-5px);}
+  .service-tile:focus-visible {transform:translateY(-3px);}
+  .button:hover,.button-outline:hover {transform:translateY(-2px);}
+}
+/* Intentional interaction states that have functional meaning. */
+.service-tile .tile-arrow, .mode-tab, .mega-primary, .mobile-service-branch summary,
+.faq summary, .site-header .rightnav a, .nav-services summary {
+  transition:transform 260ms var(--vora-motion-ease),background-color 260ms ease,color 260ms ease,box-shadow 260ms ease;
+}
+.service-tile:hover .tile-arrow,.service-tile:focus-visible .tile-arrow {transform:translate(2px,-2px) rotate(11deg);}
+.mode-tab:hover,.mode-tab:focus-visible {translate:0 -3px;}
+.mode-tab:active {translate:0 1px;}
+.faq summary {position:relative;cursor:pointer;}
+.faq summary:focus-visible {outline:3px solid var(--red);outline-offset:2px;}
+.faq details[open] summary {color:var(--red);}
+.workflow-bullets span {position:relative;}
+.workflow-bullets span::after {content:'';position:absolute;bottom:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,var(--red),#cfd6d2 60%,transparent);transform-origin:left;transform:scaleX(.18);transition:transform 950ms var(--vora-motion-ease);}
+.workflow-bullets span.in-view::after {transform:scaleX(1);}
+.numbered .step.in-view::before,.service-process .step.in-view::before {animation:vora-line-grow 800ms var(--vora-motion-ease) both;transform-origin:left;}
+
+/* A small route discovery affordance with an animated path, not decorative arrows everywhere. */
+.vora-scroll-cue {display:inline-flex;gap:13px;align-items:center;margin-top:13px;color:#67757d;font-size:.7rem;letter-spacing:.13em;font-weight:700;text-transform:uppercase;}
+.vora-scroll-cue:hover {color:var(--red);text-decoration:none;}
+.vora-scroll-cue__track {display:block;width:19px;height:39px;border:1px solid #b7c0bb;border-radius:30px;position:relative;}
+.vora-scroll-cue__track::after {content:'';position:absolute;top:9px;left:50%;width:3px;height:8px;border-radius:5px;background:var(--red);transform:translateX(-50%);animation:vora-scroll-beat 2.2s ease-in-out infinite;}
+@keyframes vora-scroll-beat {0%,100% {top:8px;opacity:.25;} 55% {top:21px;opacity:1;}}
+
+/* Interactive inquiry route summary is a real reflection of entered fields, never a price promise. */
+.vora-rfq-summary {margin:12px 0 22px;padding:15px 17px;border-radius:17px;background:linear-gradient(145deg,#f2f5f1,#e6ece5);border:1px solid #fff;box-shadow:var(--clay-inset);}
+.vora-rfq-summary small {display:block;color:#64717c;margin-bottom:5px;letter-spacing:.11em;}
+.vora-rfq-summary strong {display:block;font-size:.95rem;line-height:1.5;color:var(--ink);font-weight:650;overflow-wrap:anywhere;}
+.vora-rfq-summary[data-filled="true"] {box-shadow:inset 4px 5px 9px #8e9d9140,inset -4px -5px 10px #fff;}
+
+/* Respect OS motion settings, regardless of script or browser feature support. */
+@media (prefers-reduced-motion:reduce) {
+  @view-transition {navigation:none;}
+  *,*::before,*::after {animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important;}
+  .vora-scroll-cue__track::after {top:17px;opacity:1;}
+  .hero-art .clay-stage,.service-tile,.service-hero-art img {transform:none!important;translate:none!important;}
+  .hero-art .clay-stage>img {transform:translate(2%,0) rotate(-1deg)!important;}
+}
+@media (max-width:780px) {
+  .vora-scroll-progress {height:2px;}
+  .vora-scroll-cue {margin-top:0;}
+  .hero-art .stage-ring {animation-duration:90s;}
+  .hero-art .stage-relief:not(.stage-relief--inner) {animation-duration:26s;}
+  /* Touch devices retain ambient morphing, no pointer tracking. */
+}

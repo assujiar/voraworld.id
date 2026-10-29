@@ -1,0 +1,12 @@
+<div class="service-portfolio" aria-label="VORA core logistics services">
+{% for slug,group in service_groups.items() %}
+<a class="service-tile service-tile--{{loop.index}}" href="/{{locale}}/services/{{slug}}" aria-label="{{group[locale].name}} details">
+ <span class="tile-index">{{group.index}} <span>/ 05</span></span>
+ <div class="tile-content"><span class="eyebrow">{{'Service portfolio' if locale=='en' else 'Layanan VORA'}}</span><h3>{{group[locale].name}}</h3><p>{{group[locale].intro}}</p>
+ {% if group.modes %}<span class="tile-modes">{% for mode in group.modes %}{{service_modes[slug][mode][locale][0]}}{% if not loop.last %}<span class="dot">·</span>{% endif %}{% endfor %}</span>{% endif %}</div>
+ <span class="tile-stage" aria-hidden="true"></span>
+ <img class="tile-art" loading="lazy" src="/static/assets/{{group.image|urlencode}}" alt="" aria-hidden="true" width="430" height="360">
+ <span class="tile-arrow" aria-hidden="true">↗</span>
+</a>
+{% endfor %}
+</div>

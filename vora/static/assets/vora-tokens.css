@@ -1,0 +1,41 @@
+/* VORA / Brand Design Tokens */
+:root {
+ --vora-ink:#101720; --vora-red:#B43E31; --vora-white:#FFFFFF; --vora-paper:#F7F7F4;
+ --vora-soft:#EEECE7; --vora-line:#DCE0E1; --vora-muted:#64717C; --vora-tint:#E9ECEE;
+ --vora-deep:#0B1219; --vora-success:#276650;
+ --font-display:'Inter Display','Inter',Arial,sans-serif;
+ --font-body:'Inter',Arial,sans-serif;
+ --max-content:1280px; --page-x:clamp(20px,4.5vw,64px);
+ --radius-sm:6px; --radius-md:10px; --radius-lg:16px;
+ --duration-fast:160ms; --duration-default:240ms;
+ --ease-vora:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:var(--vora-white);color:var(--vora-ink);font-family:var(--font-body);-webkit-font-smoothing:antialiased}
+.vora-container{width:min(calc(100% - 2*var(--page-x)),var(--max-content));margin-inline:auto}
+.vora-display{font-family:var(--font-display);font-size:clamp(3.25rem,7vw,6.75rem);letter-spacing:-.055em;line-height:.97;font-weight:600}
+.vora-h1{font-size:clamp(2.6rem,5vw,5rem);letter-spacing:-.048em;line-height:1.04;font-weight:600}
+.vora-h2{font-size:clamp(2rem,3.4vw,3.6rem);letter-spacing:-.038em;line-height:1.1;font-weight:600}
+.vora-eyebrow{font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;font-weight:700}
+.vora-body{font-size:1rem;line-height:1.65}
+.vora-btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px;border:1px solid var(--vora-ink);border-radius:var(--radius-sm);background:var(--vora-ink);color:white;text-decoration:none;font-weight:600;transition:background var(--duration-default) var(--ease-vora)}
+.vora-btn:hover{background:#283747} .vora-btn:focus-visible,.vora-link:focus-visible{outline:3px solid var(--vora-red);outline-offset:3px}
+.vora-btn--outline{background:transparent;color:var(--vora-ink)}.vora-btn--outline:hover{background:var(--vora-paper)}
+.vora-link{color:var(--vora-ink);text-decoration:underline;text-decoration-color:var(--vora-red);text-underline-offset:5px}
+.vora-card{background:white;border:1px solid var(--vora-line);border-radius:var(--radius-md);padding:clamp(24px,3vw,40px)}
+.vora-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px}
+@media(max-width:767px){.vora-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.vora-display{font-size:clamp(2.75rem,12vw,4.5rem)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* VORA logo on light vs dark: counterform accent unchanged */
+.vora-logo--light {display:block; color:#101720;}
+.vora-logo--dark {display:block; color:#FFFFFF;}
+/* Use <img src="assets/logo/vora-reverse.svg"> for dark backgrounds. */
+
+/* VORA approved compact A icon, not the retired VO icon. */
+.vora-icon{display:block;width:32px;height:auto;}
+.vora-icon--dark{filter:none;} /* point src to vora-a-icon-reverse.svg on dark backgrounds */
+
+/* VORA v2.2: approved light/dark logo swapping. No white logo container on dark. */
+.vora-logo, .vora-a-icon { display: block; height: auto; background: transparent; }
+.vora-dark-surface { background-color: #101720; color: #FFFFFF; }
+.vora-dark-surface .vora-logo { background: transparent; }

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "name": "VORA Brand Design System",
+  "updated": "2026-10-29",
+  "color": {
+    "ink": "#101720",
+    "accent": "#B43E31",
+    "canvas": "#FFFFFF",
+    "paper": "#F7F7F4",
+    "soft": "#EEECE7",
+    "line": "#DCE0E1",
+    "muted": "#64717C",
+    "tint": "#E9ECEE",
+    "deep": "#0B1219",
+    "error": "#A3342D",
+    "success": "#276650"
+  },
+  "type": {
+    "family": {
+      "display": "Inter Display, Inter, Arial, sans-serif",
+      "body": "Inter, Arial, sans-serif"
+    },
+    "weight": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "fluid": {
+      "display": "clamp(3.25rem, 7vw, 6.75rem)",
+      "h1": "clamp(2.6rem, 5vw, 5rem)",
+      "h2": "clamp(2rem, 3.4vw, 3.6rem)",
+      "h3": "clamp(1.5rem, 2vw, 2.25rem)",
+      "body": "1rem",
+      "caption": "0.8125rem"
+    }
+  },
+  "space": {
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "6": "24px",
+    "8": "32px",
+    "12": "48px",
+    "16": "64px",
+    "24": "96px",
+    "32": "128px"
+  },
+  "radius": {
+    "small": "6px",
+    "medium": "10px",
+    "large": "16px",
+    "pill": "999px"
+  },
+  "layout": {
+    "container": "1280px",
+    "gridColumns": 12,
+    "gutterDesktop": "24px",
+    "gutterMobile": "16px",
+    "pagePaddingDesktop": "64px",
+    "pagePaddingMobile": "20px"
+  },
+  "motion": {
+    "micro": "160ms",
+    "standard": "240ms",
+    "slow": "420ms",
+    "easing": "cubic-bezier(.2,.8,.2,1)"
+  },
+  "breakpoints": {
+    "tablet": "768px",
+    "desktop": "1024px",
+    "wide": "1440px"
+  },
+  "identity": {
+    "brand": "VORA",
+    "legalCompany": "PT Satu Arah International",
+    "descriptor": "Freight & Logistics",
+    "tagline": "Bringing the World Within Reach.",
+    "primaryLogo": "assets/logo/vora-primary.svg",
+    "reverseLogo": "assets/logo/vora-reverse.svg",
+    "compactIcon": "assets/logo/vora-a-icon-primary.svg",
+    "compactIconReverse": "assets/logo/vora-a-icon-reverse.svg",
+    "lightLogoBackground": "transparent",
+    "darkLogoBackground": "transparent",
+    "darkBackground": "#101720",
+    "reverseWordmarkColor": "#FFFFFF",
+    "accent": "#B43E31",
+    "approvedLogoReference": "assets/logo/VORA_APPROVED_REFERENCE.png",
+    "approvedIconReference": "assets/logo/VORA_APPROVED_A_ICON_REFERENCE.png",
+    "compactIconSource": "Derived from vora-primary.svg: original right A stroke mirrored and original red A counterform"
+  },
+  "iconMaster": {
+    "primary": "assets/logo/vora-a-icon-primary.svg",
+    "reverse": "assets/logo/vora-a-icon-reverse.svg",
+    "geometry": "Symmetric black A + curved red inset",
+    "colors": {
+      "ink": "#101720",
+      "accent": "#B43E31"
+    }
+  }
+}
