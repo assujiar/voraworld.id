@@ -305,9 +305,26 @@ async def logout(req:Request):
 LEAD_STATUSES=['new','contacted','qualified','quotation_sent','negotiation','won','lost','archived']
 SETTING_FIELDS=[('legal_name','Legal company name'),('company_description','Company profile public text'),('email','Public email'),('address','Public address'),('hours','Operating hours'),('linkedin','LinkedIn URL'),('instagram','Instagram URL'),('privacy','Approved privacy notice HTML'),('terms','Approved terms HTML'),('ga4_id','GA4 measurement ID (optional)'),('gtm_id','GTM ID (optional)')]
 
+# Sidebar categories. Each link carries the permission its page requires, so a role only sees what it can open.
+ADMIN_MENU=[
+ ('Sales',[('Leads','/admin/leads','crm')]),
+ ('Finance',[('Customers','/admin/customers','finance'),('Quotations','/admin/quotations','finance'),('Invoices','/admin/invoices','finance'),('Receipts','/admin/receipts','finance'),('Bank Accounts','/admin/bank-accounts','finance')]),
+ ('Website',[('Pages & Sections','/admin/pages','content'),('Articles','/admin/articles','content'),('FAQs','/admin/faq','content'),('Media Library','/admin/media','content'),('Navigation','/admin/navigation','content'),('Coverage','/admin/coverage','settings'),('SEO & Redirects','/admin/seo','settings')]),
+ ('System',[('Site Settings','/admin/settings','settings'),('SMTP & Email Rules','/admin/mail','settings'),('Audit Log','/admin/audit','settings')]),
+]
+
+def admin_menu(user,path):
+ """Categories visible to this user; the one containing the current page starts open."""
+ grants=ROLES.get(user.role,set())
+ groups=[]
+ for title,items in ADMIN_MENU:
+  visible=[dict(label=label,href=href,active=path==href or path.startswith(href+'/')) for label,href,perm in items if '*' in grants or perm in grants]
+  if visible:groups.append(dict(title=title,links=visible,open=any(i['active'] for i in visible)))
+ return groups
+
 def render_admin(req,db,section,heading,perm=None,**kw):
  user=auth(req,db,perm)
- return html(req,'admin.html',dict(user=user,section=section,heading=heading,money=money,today=date.today().isoformat(),settings=setting_map(db),lead_statuses=LEAD_STATUSES,message=req.query_params.get('notice',''),error=kw.pop('error',''),**kw))
+ return html(req,'admin.html',dict(user=user,menu=admin_menu(user,req.url.path),section=section,heading=heading,money=money,today=date.today().isoformat(),settings=setting_map(db),lead_statuses=LEAD_STATUSES,message=req.query_params.get('notice',''),error=kw.pop('error',''),**kw))
 
 @app.get('/admin')
 def admin_dashboard(req:Request):

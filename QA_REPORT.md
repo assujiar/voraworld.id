@@ -13,13 +13,13 @@ pip install -r requirements-dev.txt
 
 # SQLite (default; the 3 concurrency tests need PostgreSQL and skip themselves)
 python -m pytest -o addopts="" -q
-#   59 passed, 3 skipped
+#   60 passed, 3 skipped
 
 # PostgreSQL: the schema comes ONLY from migrations 0001-0014, the dev bootstrap is disabled
 createdb vora_test
 DATABASE_URL=postgresql://localhost/vora_test python scripts/apply_migrations.py --apply
 VORA_TEST_DATABASE_URL=postgresql://localhost/vora_test python -m pytest -o addopts="" -q
-#   62 passed, 0 skipped
+#   63 passed, 0 skipped
 
 python -m compileall -q vora scripts app tests          # clean
 python scripts/build_manual_setup.py --check            # SUPABASE_MANUAL_SETUP.sql is current
@@ -33,7 +33,7 @@ psql vora_test -f SUPABASE_VERIFICATION.sql             # 17 PASS, 0 FAIL (2 WAR
 | `test_quotation_approval.py` | 2 | Quotation issue → approval email with PDF and private expiring link → customer upload → Finance review; invoice email; scheduler endpoint secret. |
 | `test_detailed_documents.py`, `test_pdf_onepage.py` | 4 | Real PDF text: shipment metadata, customer tax ID, banks, ledger reconciliation, amount in words; **max five items per page**, quotation on one page, oversize content fails instead of clipping. |
 | `test_public_site.py` | 13 | All 5 service groups and 9 sub-services render in EN and ID with no phone, WhatsApp or admin links; approved email and address; Indonesian translation present and English UI strings absent; SEO (canonical, hreflang, sitemap, JSON-LD, robots); security headers; standard cursor and no pointer tracking; reduced-motion support; official brand assets; admin mobile-menu regression. |
-| `test_security.py` | 16 | Login throttling and audit; no user enumeration; sessions die on password change or deactivation; POST-only logout with CSRF; role matrix for 6 roles × 13 sections; **every `/admin` route (GET and POST, enumerated from the live route table) returns 401 to anonymous and 403 to a no-permission user**; CSRF on state-changing posts; token-gated internal endpoints. |
+| `test_security.py` | 17 | Login throttling and audit; no user enumeration; sessions die on password change or deactivation; POST-only logout with CSRF; role matrix for 6 roles × 13 sections; **every `/admin` route (GET and POST, enumerated from the live route table) returns 401 to anonymous and 403 to a no-permission user**; CSRF on state-changing posts; token-gated internal endpoints; the grouped sidebar shows each role only the categories and links it can open. |
 | `test_mail_admin.py`, `test_mail_seed.py` | 5 | SMTP test email, back-off to failed after 5 attempts, manual retry, permissions, dedupe; migration `0014` equals the code's template set. |
 | `test_manage_users.py` | 2 | Account CLI: create, reset (ends sessions), role change, deactivate, audit, weak password rejected. |
 | `test_deploy_compat.py` | 11 | Pooler-safe engine, Vercel guard, upload limit < 4.5 MB, `vercel.json` shape and cron, runtime requirements, contiguous migrations, `SUPABASE_MANUAL_SETUP.sql` current, `.env.example` covers every variable the code reads, Supabase header handling for both key formats. |

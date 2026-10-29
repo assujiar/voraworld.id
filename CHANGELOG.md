@@ -69,7 +69,7 @@ Everything below is described, with evidence, in `QA_REPORT.md`.
 
 - **Security:** Row Level Security on all tables (`0011`); login throttling (`0012`); credential-bound sessions; POST+CSRF logout; no user enumeration by timing; authentication before record lookup on every admin route (route-table test); strict CSP and static caching; new Supabase `sb_secret_` key support; account CLI `scripts/manage_users.py`.
 - **Production correctness:** email templates and rules seeded by migration (`0014`; production never ran the dev bootstrap); storage buckets by migration (`0013`); PostgreSQL concurrency tests for numbering and payment confirmation; the PostgreSQL suite runs on a migrations-only database.
-- **Admin:** SMTP test email and per-message retry; mobile admin menu fixed; stray mobile header marker fixed.
+- **Admin:** sidebar grouped into collapsible, role-aware categories (Sales, Finance, Website, System); SMTP test email and per-message retry; mobile admin menu fixed; stray mobile header marker fixed.
 - **Documents:** invoice states it is a payment request, not proof of payment; clear 409 when a stored receipt fails its integrity check.
 - **Localization:** navigation, footer, About, Solutions, Network, FAQ, contact/RFQ forms, legal headings and SEO titles translated to Indonesian; public pages no longer mention the admin portal.
 - **Deployment:** zero-config FastAPI `vercel.json` with bundle excludes and a daily mail-retry cron; Python 3.13; runtime/dev requirements split; pooler-safe engine; Vercel upload limits.

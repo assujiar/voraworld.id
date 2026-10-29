@@ -52,6 +52,19 @@ Every change is written to the audit log. There is no self-service password rese
 
 Every admin route enforces this on the server, and a test enumerates the live route table to prove anonymous users get 401 and unprivileged users get 403. Every signed-in user can open the Overview.
 
+### The sidebar
+
+The sidebar shows **Overview** plus four collapsible categories, and only the ones your role can use:
+
+| Category | Pages |
+| --- | --- |
+| **Sales** | Leads |
+| **Finance** | Customers, Quotations, Invoices, Receipts, Bank Accounts |
+| **Website** | Pages & Sections, Articles, FAQs, Media Library, Navigation, Coverage, SEO & Redirects |
+| **System** | Site Settings, SMTP & Email Rules, Audit Log |
+
+The category containing the page you are on opens by itself; click a category title to open or close the others. On phones and small tablets the whole menu sits behind the **Menu** button.
+
 ## 3. First-time configuration checklist
 
 Do these in order after the first sign-in.

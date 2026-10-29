@@ -193,3 +193,44 @@ def test_internal_and_customer_facing_endpoints_are_token_gated():
     assert c.get('/internal/mail/dispatch', headers={'Authorization': 'Bearer short'}).status_code == 401
     assert c.get('/quotation-approval/not-a-real-token').status_code in (404, 410)
     assert c.get('/verify/not-a-real-token').status_code == 404
+
+
+def sidebar(html):
+    import re
+    nav = html[html.index('<aside class="admin-sidebar">'):html.index('</aside>')]
+    groups = re.findall(r'<details class="menu-group"( open)?><summary>([^<]+)</summary>(.*?)</details>', nav, re.S)
+    return {title: (bool(is_open), re.findall(r'href="([^"]+)"', body)) for is_open, title, body in groups}
+
+
+def test_admin_sidebar_is_grouped_and_role_aware():
+    make_user('menu-super@matrix.invalid', 'superadmin')
+    c = signed_in('menu-super@matrix.invalid')
+    menu = sidebar(c.get('/admin').text)
+    assert list(menu) == ['Sales', 'Finance', 'Website', 'System']
+    assert all(not is_open for is_open, _ in menu.values()), 'on the overview every category starts collapsed'
+    assert '/admin/invoices' in menu['Finance'][1] and '/admin/audit' in menu['System'][1] and '/admin/media' in menu['Website'][1]
+    # the category containing the current page opens by itself, others stay closed
+    menu = sidebar(c.get('/admin/invoices').text)
+    assert menu['Finance'][0] and not menu['Sales'][0] and not menu['System'][0]
+    menu = sidebar(c.get('/admin/invoices/new').text)
+    assert menu['Finance'][0], 'detail and form pages keep their category open'
+    # every sidebar link leads to a page this role may open
+    for _, links in sidebar(c.get('/admin').text).values():
+        for href in links:
+            assert c.get(href).status_code == 200, href
+
+    expected = {'finance': ['Finance'], 'sales': ['Sales'], 'editor': ['Website'], 'viewer': []}
+    for role, groups in expected.items():
+        make_user(f'menu-{role}@matrix.invalid', role)
+        rc = signed_in(f'menu-{role}@matrix.invalid')
+        shown = sidebar(rc.get('/admin').text)
+        assert list(shown) == groups, (role, list(shown))
+        for _, links in shown.values():
+            for href in links:
+                assert rc.get(href).status_code == 200, (role, href)  # no link a role cannot follow
+    admin_groups = sidebar(signed_in('menu-super@matrix.invalid').get('/admin').text)
+    # 'admin' sees the same four categories as the superadmin
+    make_user('menu-admin@matrix.invalid', 'admin')
+    assert list(sidebar(signed_in('menu-admin@matrix.invalid').get('/admin').text)) == list(admin_groups)
+    # the editor sees only the content links inside Website (Coverage and SEO need the settings permission)
+    assert sidebar(signed_in('menu-editor@matrix.invalid').get('/admin').text)['Website'][1] == ['/admin/pages', '/admin/articles', '/admin/faq', '/admin/media', '/admin/navigation']
