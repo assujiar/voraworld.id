@@ -1,53 +1,56 @@
 # VORA administrator handbook
 
-Sign in at `/admin/login` with an account created using `scripts/manage_users.py` (see `ADMIN_SETUP_GUIDE.md`).
+Sign in at `/admin/login` with an account created using `npm run users -- create` (see `ADMIN_SETUP_GUIDE.md`). There is one role, `admin`, and it opens every menu. The sidebar groups the pages into **Sales**, **Finance**, **Website** and **System**.
 
-## Public site and content
+## Public site and content (Website)
 
-`Pages & Sections`: Create a page with title, slug, language and SEO. Add sections, edit heading/text/image/CTA, select background and editorial layout, reorder with Up/Down, toggle visibility, and use **Publish page**. Until published, visitor routes use the last published snapshot. A draft preview is available to authenticated editors. Revision history can restore previous published snapshots. The page editor currently uses ordered controls rather than drag-and-drop and does not offer a full global theme studio.
+**Pages & Sections.** Create a page with a title, slug, language and SEO fields. Add sections and edit each one: heading, text, image, button label and link, kind (`editorial`, `hero`, `features`, `cta`, `media`, `faq`), layout (`split`, `stack`, `center`, `cards`) and background (`paper`, `white`, `ink`). Reorder with Up/Down, hide a section with *Visible*, or delete it. **Publish page** freezes the draft as a snapshot, and visitors only ever see the last published snapshot; a draft preview (`/en/preview/page/<id>`, never indexed) is available while you are signed in. Each publish keeps the previously published snapshot as a revision, and **Restore** brings an earlier one back (the restore is recorded too). The editor uses ordered controls, not drag-and-drop, and the five core service pages and the other built-in pages keep their copy in source control (`src/content/`) rather than in the admin; a CMS page published with the slug `home`, `about`, `services`, `solutions`, `network`, `insights` or `faq` adds its published sections to that built-in page (and is not a separate page).
 
-`Articles`: Create rich-text content, use heading/list/link/image toolbar, toggle **HTML source**, save draft, preview, publish, unpublish or restore a revision. Unsafe markup is filtered on the server, so the rendered article may not exactly match arbitrary HTML pasted into source mode. Article URLs are `/en/insights/<slug>` or `/id/insights/<slug>`. Do not publish material without approval. Use unique slugs.
+**Articles.** The editor has a toolbar (bold, italic, underline, bullets, numbers, H2, H3, quote, link, image, undo, redo), a **HTML source** switch and a **Preview**. Save as draft, publish, unpublish, or restore an earlier revision (every save stores the previous state). The server sanitises the HTML with an allow-list (paragraphs, headings, lists, links, quotes, code, tables, figures and images; no scripts, iframes or inline styles; links and images must be https, `mailto:` or a same-site path), so what is rendered may differ from arbitrary HTML pasted into source mode. Article URLs are `/en/insights/<slug>` or `/id/insights/<slug>`; slugs must be unique. Do not publish material without approval.
 
-`FAQs`, `Navigation`, `Coverage`: Add and update FAQ entries, header/footer links, and only genuinely verified service regions. Unverified regions should remain unpublished. Core service-page copy is conservative, but is presently maintained in `vora/content.py`, NOT fully editable in admin.
+**FAQs, Navigation, Coverage.** FAQ entries are one list shared by both languages. Navigation has header and footer links with a position (lower numbers first); remove one with Delete. Links into the admin portal are refused. Coverage: add only genuinely verified service regions; a region is public on the Network page only while it is marked active.
 
-`Site Settings`: Enter legal issuer name, company profile, approved phone, email, address, contact hours, social links, bank account details, privacy and terms. Save to publish immediately; these changes affect public header/footer/contact/Organization metadata and invoices where used. Any unknown values may safely remain blank. Never enter registration numbers or certificates unless verified.
+**SEO & Redirects.** Create 301 redirects from an old public path to a new one (both must be local paths). The page also links to the live `sitemap.xml` and `robots.txt`. Published routes and published articles are in the sitemap automatically.
 
-`Media Library`: Upload images (PNG/JPEG/WebP/AVIF, max 7 MB, 4 MB on Vercel), supply real alt text, and copy media URLs into page section images. Production needs configured Supabase Storage. SVG upload and automatic crop/replacement workflows are not enabled in this version.
+**Site Settings.** Enter the legal issuer name, company profile text, public email and address, operating hours, social links, the approved privacy notice and terms (HTML), and optional GA4/GTM IDs. Save to publish immediately: these affect the public header, footer, contact page and Organization metadata, and the issuer block of the documents. Unknown values may safely stay blank. Never enter registration numbers or certificates unless verified. There is no telephone or WhatsApp setting by design.
 
-## Leads
+**Media Library.** Upload PNG, JPEG, WebP or AVIF (the file's bytes are checked, not its name) with real alt text (limit 7 MB, 4 MB on Vercel). Copy the resulting URL into a section image or an article. Production needs Supabase Storage configured; SVG uploads and image editing are not offered.
 
-Contact and RFQ forms save directly to SQL. The Leads screen offers search/status filter, detail, pipeline status, priority, assignee, follow-up date, internal activity and CSV export. No fake email notices are generated. Lead CSV import, bulk actions, file attachments and duplicate merging remain unimplemented.
+## Leads (Sales)
 
-## Invoices and receipts
+The Contact and Request-a-Quote forms save directly to the database; each lead gets a reference such as `INQ-VORA-L…` or `RFQ-VORA-L…`. The Leads page offers search and a status filter, a detail view, status (`new`, `contacted`, `qualified`, `quotation_sent`, `negotiation`, `won`, `lost`, `archived`), priority, assignee, follow-up date, an internal note timeline, **Reply by email** and a CSV export. A reply needs SMTP switched on and the `lead_reply` rule enabled; it is kept on the lead's timeline and moves a *new* lead to *contacted*. Not offered: CSV import, bulk actions, attachments, duplicate merging.
 
-1. Create a customer with billing contact, optional tax ID, currency and payment terms.
-2. Create a draft invoice by choosing customer, dates, adjustable tax/withholding percentages and discount. Enter invoice items, one per line, using `Description | quantity | unit price | unit`.
-3. Preview totals and verify them. Issue the invoice when confirmed. Each issued PDF includes a random verification QR link.
-4. Record actual payment, including partial amounts and reference. System rejects an overpayment, recalculates outstanding, and automatically creates a receipt with PDF/QR.
-5. When reversing a payment, void its receipt. The recorded payment becomes void, the receipt token is revoked, and invoice outstanding is recalculated. This action is audited.
-6. Public `/verify/<token>` displays ONLY document type, number, issuer, date and status. The QR is **not** QRIS, a certified electronic signature or a tax invoice.
+## Finance
 
-Amounts are based on invoice currency. Tax is configurable, not a hardcoded VAT interpretation. **An invoice is not an Indonesian e-Faktur**. Invoice editing, document emails, refund credits and richer finance approval controls remain limited/absent, so confirm business controls before operational use.
+Customers, bank accounts, quotations, invoices, payments and receipts are described step by step in `ADMIN_SETUP_GUIDE.md` §4, and the design and security notes are in `FINANCE_DOCUMENT_DESIGN_AND_SECURITY.md`. In short:
+
+1. Create a customer (billing contact, optional tax ID, currency, payment terms).
+2. Create an invoice: choose the customer, dates, tax and withholding percentages, a discount, bank accounts and the items, one per line as `Description | quantity | unit price | unit`. The totals are calculated and shown before you save. *Issue* it when confirmed; each issued PDF carries a random verification QR.
+3. *Record payment* when the customer says they paid; it stays **pending confirmation**. *Confirm cleared funds* only after the bank shows the money. The system rejects an overpayment and recalculates the balance; confirming creates the receipt with its PDF and QR.
+4. To reverse a payment, void its receipt: the payment is voided, the receipt's verification link is revoked and the invoice balance is recalculated. This is audited.
+5. Public `/verify/<token>` shows only document type, number, issuer, date and status. The QR is **not** QRIS, a certified electronic signature or a tax invoice, and an invoice here is **not** an Indonesian e-Faktur.
+
+Amounts follow the invoice currency. Tax is a percentage you enter, not a hard-coded VAT interpretation. Invoice editing after issue, refund credits and richer finance approvals are not offered, so confirm your business controls before operational use.
 
 ## Access control
 
-`superadmin` all; `admin` content/CRM/finance/settings; `editor` content; `sales` CRM; `finance` finance; `viewer` dashboard/read-only. Role checks apply on the server for administration paths. User creation/recovery and role management use administrator-controlled CLI/database operations, not a built-in user administration panel.
+One role, `admin`, can open everything, including recording and confirming payments, voiding documents, changing bank accounts and settings, and reading the audit log. There is no separation of duties inside the system; use one account per person, keep the number of accounts small, and review `/admin/audit`. Accounts are created and managed with `npm run users` (there is no user-management page). See `ADMIN_SETUP_GUIDE.md` §2.
 
 ## Content governance
 
-The English/Indonesian core pages have built-in language routes. New CMS article/page content can be created for one locale at a time. SEO alternate links are generated mechanically, so for truly bilingual content publish both corresponding locale versions and manually review untranslated screens before making the site public.
+The English and Indonesian core pages have built-in language routes. New CMS articles and pages are created for one language at a time, and `hreflang` alternates are generated from the paths, so for truly bilingual content publish both language versions and review untranslated screens before making the site public.
 
 ### Customer, lead and document reference codes
 
-Codes appear in Customers / Leads; they are assigned once and cannot be edited in routine forms. New invoices and receipts inherit the customer code. A quotation can be prepared from either an existing lead or an existing customer; it uses `QUO-VORA-[CODE]-YYYYMM-[5 RANDOM DIGITS]`. Draft/issue/void preserve the same number; void never releases the number for reuse. Review `NUMBERING_POLICY.md` for old-record policy and technical safeguards. Do not use document numbers instead of QR verification tokens.
+Codes appear in Customers and Leads; they are assigned once and cannot be edited in routine forms. New invoices and receipts inherit the customer code. A quotation is prepared for an existing customer and uses `QUO-VORA-[CODE]-YYYYMM-[5 RANDOM DIGITS]`. Draft, issue and void preserve the same number; a void number is never reused. See `NUMBERING_POLICY.md`. Document numbers are identifiers, not secrets: the QR verification token is what proves a document.
 
 ## Quotation customer approval and direct invoice email
 
-1. Configure `/admin/mail`: enable custom SMTP and the email rules `quotation_approval_request`, `invoice_customer`, `payment_confirmed`, `receipt_customer`, `lead_admin`, `lead_customer` as required. Save approved HTML templates. A server-owned `MAIL_ENCRYPTION_KEY` is needed to save SMTP passwords.
-2. Create and issue the quotation. In its detail page, select **Send quotation for customer approval**. The system creates a one-use, time-limited private link and queues the quotation PDF to the recipient. Check the delivery outbox; `queued` does not mean delivered.
-3. The customer opens the link, downloads the PDF, signs and applies the company stamp, then uploads a complete signed PDF and identifies the authorized signatory.
-4. Finance downloads the signed file from quotation history and inspects it. The **Approve** button requires an explicit checkbox confirming manual signature/stamp review. Until then, status remains `awaiting_approval` and the uploaded file is unverified.
-5. To send an issued invoice PDF from Admin, open its detail and select **Email invoice PDF to customer**. The rule and SMTP must be enabled first. Outstanding amounts change only when the incoming payment is confirmed as cleared, not when an email is sent.
-6. In the receipt flow, if the confirmed payment amount exceeds IDR 5 million, the PDF is marked pending e-meterai and must be stamped through an official external mechanism then uploaded before final delivery. The app never generates an e-meterai itself.
+1. Configure `/admin/mail`: enable custom SMTP and the email rules you need (`quotation_approval_request`, `quotation_approved_admin`, `invoice_customer`, `payment_confirmed`, `receipt_customer`, `lead_admin`, `lead_customer`, `lead_reply`). Save approved HTML templates. A server-owned `MAIL_ENCRYPTION_KEY` is needed to save the SMTP password.
+2. Create and issue the quotation. On its detail page choose **Send quotation for customer approval**. The system creates a one-use private link (valid 14 days, never beyond the day after the quotation's validity) and queues the quotation PDF to the recipient. Check the delivery outbox; `queued` does not mean delivered.
+3. The customer opens the link, downloads the PDF, signs and applies the company stamp, then uploads the complete signed PDF and names the authorised signatory.
+4. You open the signed file from the quotation page and inspect it. **Approve** requires an explicit checkbox confirming you reviewed the signature and stamp. Until then the quotation stays `awaiting approval` and the uploaded file is unverified; approving also queues the `quotation_approved_admin` notice.
+5. To send an issued invoice PDF, open the invoice and choose **Email invoice PDF to customer**. The rule and SMTP must be enabled first. Outstanding amounts change only when the incoming payment is confirmed as cleared, never because an email was sent.
+6. For a confirmed payment above IDR 5,000,000, or in a foreign currency, the receipt is marked pending e-meterai and must be stamped through an official external mechanism and uploaded before it is delivered. The app never generates an e-meterai itself.
 
-Public quotation approval tokens are not visible in site navigation, are `noindex`, and expire. Never send signed customer PDFs as public media assets.
+Quotation approval links are not visible in site navigation, are `noindex` and expire. Never send signed customer PDFs as public media assets.
