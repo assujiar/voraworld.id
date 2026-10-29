@@ -62,7 +62,7 @@ export default async function Mail({ searchParams }: { searchParams: Promise<Not
         <table><thead><tr><th>Event</th><th>Recipient</th><th>Status</th><th>Attempts</th><th>Error</th><th></th></tr></thead><tbody>
           {jobs.map((j) => (
             <tr key={j.id as number}><td>{j.event as string}</td><td>{j.recipient as string}</td><td>{j.status as string}</td><td>{j.attempts as number}</td><td>{(j.error as string).slice(0, 100)}</td>
-              <td>{['failed', 'retry'].includes(j.status as string) ? <form action={retryMailJobAction}><input type="hidden" name="id" value={j.id as number} />{B}<button className="button-outline">Retry</button></form> : null}</td></tr>
+              <td>{['failed', 'retry'].includes(j.status as string) ? <form action={retryMailJobAction}><input type="hidden" name="record" value={j.id as number} />{B}<button className="button-outline">Retry</button></form> : null}</td></tr>
           ))}
         </tbody></table>
       </div>

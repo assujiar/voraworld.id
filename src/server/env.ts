@@ -40,7 +40,11 @@ export function assertConfig(): void {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required')
   if (!/^postgres(ql)?:\/\//.test(process.env.DATABASE_URL)) throw new Error('DATABASE_URL must be a PostgreSQL URL')
   if (!isProd()) return
-  if (!(process.env.PUBLIC_BASE_URL || '').startsWith('https://')) {
+  // The address is printed into the QR code of every document and never changes afterwards, so it must be the final https
+  // domain. A loopback address is accepted only off Vercel, so a production build can be run on a developer machine.
+  const base = process.env.PUBLIC_BASE_URL || ''
+  const loopback = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(base) && !onVercel()
+  if (!base.startsWith('https://') && !loopback) {
     throw new Error('Production requires an HTTPS PUBLIC_BASE_URL (it is printed into document QR codes)')
   }
   const secret = process.env.SESSION_SECRET || ''

@@ -19,7 +19,7 @@ export default async function Navigation({ searchParams }: { searchParams: Promi
         <table><tbody>
           {rows.map((r) => (
             <tr key={r.id as number}><td>{r.label as string}</td><td>{r.href as string}</td><td>{r.location as string}</td>
-              <td><form action={deleteNavigationAction}><input type="hidden" name="id" value={r.id as number} /><Back to="/admin/navigation" /><button className="button-outline">Delete</button></form></td></tr>
+              <td><form action={deleteNavigationAction}><input type="hidden" name="record" value={r.id as number} /><Back to="/admin/navigation" /><button className="button-outline">Delete</button></form></td></tr>
           ))}
         </tbody></table>
       </div>

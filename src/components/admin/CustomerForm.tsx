@@ -7,7 +7,7 @@ export function CustomerForm({ customer }: { customer?: CustomersRow }) {
   return (
     <div className="admin-panel">
       <ActionForm action={saveCustomerAction}>
-        {customer ? <input type="hidden" name="id" value={customer.id} /> : null}
+        {customer ? <input type="hidden" name="record" value={customer.id} /> : null}
         <div className="admin-form-grid">
           <div className="field"><label>Company / person *</label><FInput name="name" fallback={customer?.name ?? ''} required maxLength={200} /></div>
           <div className="field"><label>Billing email</label><FInput name="email" type="email" fallback={customer?.email ?? ''} maxLength={200} /></div>

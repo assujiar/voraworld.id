@@ -56,16 +56,19 @@ async function inspect(bytes: Uint8Array, rules: Rules): Promise<string> {
   if (header !== '%PDF-' || bytes.length > maxUploadBytes() || bytes.length < 300) {
     throw new ActionError(rules.sizeMessage ?? `Only PDF documents up to ${megabytes()} MB are accepted`)
   }
-  let doc: PDFDocument
+  // pdf-lib is lenient: garbage that merely starts with "%PDF-" loads as an empty document and then fails later, with
+  // a TypeError. Anything unexpected while reading the structure therefore means "not a usable PDF".
+  let pages: number
+  let refused: string | null
   try {
-    doc = await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false, throwOnInvalidObject: true })
+    const doc = await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false, throwOnInvalidObject: true })
+    pages = doc.getPageCount()
+    refused = activeContent(doc)
   } catch (e) {
     const encrypted = e instanceof Error && /encrypted/i.test(e.message)
     throw new ActionError(encrypted ? `PDF must be readable, unencrypted and 1-${rules.maxPages} pages` : 'Invalid or damaged PDF')
   }
-  const pages = doc.getPageCount()
   if (pages < 1 || pages > rules.maxPages) throw new ActionError(`PDF must be readable, unencrypted and 1-${rules.maxPages} pages`)
-  const refused = activeContent(doc)
   if (refused) throw new ActionError(refused)
   let text: string
   try {

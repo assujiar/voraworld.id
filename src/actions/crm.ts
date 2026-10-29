@@ -8,7 +8,7 @@ import { LEAD_PRIORITIES, LEAD_STATUSES } from '@/server/lead-constants'
 
 export async function updateLeadAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     const status = str(form, 'status', 30)
     if (!LEAD_STATUSES.includes(status)) throw new ActionError('Invalid lead status')
     const priority = LEAD_PRIORITIES.includes(str(form, 'priority', 20)) ? str(form, 'priority', 20) : 'normal'

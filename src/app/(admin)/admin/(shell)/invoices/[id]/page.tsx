@@ -18,18 +18,17 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
   const here = `/admin/invoices/${id}`
   const status = inv.status as string
   const open = ['issued', 'partially_paid'].includes(status)
+  const shipment = [
+    inv.poNumber && `PO ${inv.poNumber}`, inv.shipmentReference && `Job ${inv.shipmentReference}`, inv.serviceMode,
+    (inv.origin || inv.destination) && `${inv.origin || '—'} → ${inv.destination || '—'}`, inv.transportDocumentRef && `B/L–AWB ${inv.transportDocumentRef}`,
+  ].filter(Boolean) as string[]
   return (
     <AdminPage heading="Invoice" sp={await searchParams}>
       <div className="admin-panel">
         <h3>{inv.number as string} <span className="status">{status}</span></h3>
         <p><strong>Customer:</strong> <a href={`/admin/customers/${inv.customerId}`}>{inv.customerName as string}</a>{inv.customerEmail ? ` · ${inv.customerEmail}` : ''}<br />
           <strong>Issued:</strong> {inv.issuedAt as string} · <strong>Due:</strong> {inv.dueAt as string}</p>
-        {(inv.poNumber || inv.shipmentReference || inv.serviceMode || inv.origin || inv.destination || inv.transportDocumentRef) ? (
-          <p className="mini muted">
-            {inv.poNumber ? <>PO {inv.poNumber as string} · </> : null}{inv.shipmentReference ? <>Job {inv.shipmentReference as string} · </> : null}{inv.serviceMode ? <>{inv.serviceMode as string} · </> : null}
-            {inv.origin || inv.destination ? <>{(inv.origin as string) || '—'} → {(inv.destination as string) || '—'} · </> : null}{inv.transportDocumentRef ? <>B/L–AWB {inv.transportDocumentRef as string}</> : null}
-          </p>
-        ) : null}
+        {shipment.length ? <p className="mini muted">{shipment.join(' · ')}</p> : null}
         <table><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Amount</th></tr></thead><tbody>
           {items.map((i) => <tr key={i.id as number}><td>{i.description as string}</td><td>{i.quantity as string}</td><td>{i.unit as string}</td><td>{money(i.priceMinor as number, cur)}</td><td>{money(i.amountMinor as number, cur)}</td></tr>)}
         </tbody></table>
@@ -46,10 +45,10 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
           {banks.length ? banks.map((b) => <p key={b.id as number} style={{ fontFamily: 'monospace' }}>{b.bankName as string} · {b.accountNumber as string} · {b.accountHolder as string} · {b.currency as string}{b.swiftCode ? ` · SWIFT ${b.swiftCode}` : ''}</p>) : <p className="note">No payment account was selected for this invoice.</p>}
         </div>
         <div className="inline-actions">
-          {status === 'draft' ? <form action={invoiceStatusAction}><input type="hidden" name="id" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue invoice</button></form> : null}
-          {['draft', 'issued'].includes(status) ? <form action={invoiceStatusAction}><input type="hidden" name="id" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
+          {status === 'draft' ? <form action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue invoice</button></form> : null}
+          {['draft', 'issued'].includes(status) ? <form action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
           <a className="button-outline" href={`/admin/invoices/${id}/pdf`} target="_blank" rel="noopener">Download PDF ↗</a>
-          {!['draft', 'void'].includes(status) ? <form action={sendInvoiceAction}><input type="hidden" name="id" value={id} /><Back to={here} /><button className="button-outline">Email invoice PDF to customer</button></form> : null}
+          {!['draft', 'void'].includes(status) ? <form action={sendInvoiceAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Email invoice PDF to customer</button></form> : null}
         </div>
         {open ? <><hr /><RecordPaymentForm invoiceId={id} currency={cur} today={today()} banks={accounts} /></> : null}
         <h3 style={{ marginTop: 25 }}>Payment confirmation queue</h3>
@@ -63,7 +62,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
                 {p.status === 'pending_confirmation' ? (
                   <>
                     <form action={confirmPaymentAction} style={{ marginTop: 9 }}>
-                      <input type="hidden" name="id" value={p.id as number} /><Back to={here} />
+                      <input type="hidden" name="record" value={p.id as number} /><Back to={here} />
                       {p.receivingBankSnapshot ? <p className="mini muted">Receiving account: {(p.receivingBankSnapshot as Record<string, string>).bank_name} · {(p.receivingBankSnapshot as Record<string, string>).account_number}</p> : (
                         <div className="field"><label className="mini">VORA account that received the money</label>
                           <select name="receiving_bank_id" defaultValue=""><option value="">Select the receiving account</option>{accounts.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}</select>
@@ -72,7 +71,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
                       <label className="mini" style={{ display: 'block' }}><input type="checkbox" name="funds_cleared" value="yes" required /> I verified that the funds are effectively credited to PT Satu Arah International</label>
                       <button className="button" style={{ marginTop: 7 }}>Confirm cleared funds &amp; notify customer</button>
                     </form>
-                    <form action={cancelPaymentAction} style={{ marginTop: 5 }}><input type="hidden" name="id" value={p.id as number} /><Back to={here} /><button className="button-outline">Reject / cancel</button></form>
+                    <form action={cancelPaymentAction} style={{ marginTop: 5 }}><input type="hidden" name="record" value={p.id as number} /><Back to={here} /><button className="button-outline">Reject / cancel</button></form>
                   </>
                 ) : p.status === 'recorded' ? <small style={{ display: 'block' }}>Confirmed {fmt(p.confirmedAt as Date)} UTC</small> : null}
               </td>

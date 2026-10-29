@@ -362,6 +362,33 @@ describe('e-meterai rules', () => {
   })
 })
 
+describe('uploaded PDFs that are not PDFs', () => {
+  it('are refused with a message, never with a crash: every kind of garbage, for receipts and for quotations', async () => {
+    const c = await customer(); const b = await bank({ accountNumber: 'GARB0000001' }); const id = await issued(c)
+    const r = await confirm(await pay(id, '6000000', { receivingBankId: b }))
+    const approvalQuote = await quoteFor(c, { validUntil: '2999-01-01' }); await setQuotationStatus(actor, approvalQuote, 'issue')
+    await smtp(); await rule('quotation_approval_request'); await requestApproval(actor, approvalQuote, BASE)
+    const [job] = await sql`select html from email_jobs where event = 'quotation_approval_request'`
+    const token = /quotation-approval\/([A-Za-z0-9_-]+)/.exec(job.html as string)![1]
+    const real = await makePdf(['hello'])
+    const garbage: Array<[string, Uint8Array]> = [
+      ['header only', new TextEncoder().encode('%PDF-1.7'.padEnd(400, '\n'))], ['header and text', new TextEncoder().encode('%PDF-1.4 not really a pdf'.padEnd(400))],
+      ['random bytes', Uint8Array.from({ length: 900 }, (_, i) => (i * 131 + 7) % 256)], ['header then random', Uint8Array.from([...new TextEncoder().encode('%PDF-1.5\n'), ...Array.from({ length: 900 }, (_, i) => (i * 37 + 11) % 256)])],
+      ['truncated', real.slice(0, 250)], ['half a file', real.slice(0, Math.floor(real.length / 2))], ['no xref', new TextEncoder().encode('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n'.padEnd(400, ' '))],
+      ['catalog without pages', new TextEncoder().encode('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R /Size 2 >>\n%%EOF'.padEnd(400, ' '))],
+      ['zip file', new TextEncoder().encode('PK\u0003\u0004'.padEnd(500, 'x'))], ['empty', new Uint8Array(0)],
+    ]
+    for (const [name, file] of garbage) {
+      const stamp = uploadReceiptStamp(actor, r.receiptId, { providerReference: 'PERURI-GARBAGE', reviewed: true, file }, BASE)
+      await expect(stamp, `stamp: ${name}`).rejects.toMatchObject({ status: expect.any(Number), message: expect.stringMatching(/Invalid or damaged PDF|Only PDF documents|all required|unencrypted|must retain/) })
+      const sign = submitApproval({ token, signerName: 'Siti Rahma', signerTitle: 'CFO', acknowledged: true, file })
+      await expect(sign, `signed: ${name}`).rejects.toMatchObject({ status: expect.any(Number), message: expect.stringMatching(/Invalid or damaged PDF|not exceeding|are required|unencrypted|exact VORA quotation number/) })
+    }
+    expect((await sql`select status from receipts where id = ${r.receiptId}`)[0].status).toBe('pending_stamp')
+    expect((await sql`select status from quotation_approvals`)[0].status).toBe('pending')
+  })
+})
+
 describe('voiding a receipt', () => {
   it('reverses the payment, restores the balance and revokes the QR link; once only', async () => {
     const c = await customer(); const b = await bank({ accountNumber: 'VOID0000001' }); const id = await issued(c)

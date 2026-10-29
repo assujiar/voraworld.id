@@ -16,7 +16,7 @@ export default async function Faq({ searchParams }: { searchParams: Promise<Noti
         <h3 style={{ marginTop: 30 }}>Published FAQs</h3>
         {rows.map((r) => (
           <div key={r.id as number}>
-            <form action={updateFaqAction}><input type="hidden" name="id" value={r.id as number} /><Back to="/admin/faq" />
+            <form action={updateFaqAction}><input type="hidden" name="record" value={r.id as number} /><Back to="/admin/faq" />
               <div className="field"><input name="question" defaultValue={r.question as string} /></div>
               <div className="field"><textarea name="answer" defaultValue={r.answer as string} /></div>
               <div className="inline-actions"><button className="button">Update</button><button className="button-outline" name="delete" value="1">Delete</button></div>

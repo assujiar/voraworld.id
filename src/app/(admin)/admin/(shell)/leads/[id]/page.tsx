@@ -25,7 +25,7 @@ export default async function LeadDetail({ params, searchParams }: { params: Pro
         <div className="admin-panel">
           <h3>Pipeline &amp; follow-up</h3>
           <form action={updateLeadAction}>
-            <input type="hidden" name="id" value={o.id} /><Back to={`/admin/leads/${o.id}`} />
+            <input type="hidden" name="record" value={o.id} /><Back to={`/admin/leads/${o.id}`} />
             <div className="field"><label>Status</label><select name="status" defaultValue={o.status}>{LEAD_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="field"><label>Priority</label><select name="priority" defaultValue={o.priority}>{LEAD_PRIORITIES.map((s) => <option key={s}>{s}</option>)}</select></div>
             <div className="field"><label>Assignee</label><input name="assignee" defaultValue={o.assignee} /></div>

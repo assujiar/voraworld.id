@@ -29,6 +29,8 @@ const security = [
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // unpdf ships its own PDF.js build and uses import.meta: it must be loaded from node_modules, not bundled.
+  serverExternalPackages: ['unpdf'],
   reactStrictMode: true,
   // Uploads are capped by MAX_UPLOAD_BYTES in the app (and by Vercel's 4.5 MB request limit).
   experimental: { serverActions: { bodySizeLimit: '10mb' } },

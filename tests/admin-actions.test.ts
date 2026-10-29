@@ -68,15 +68,15 @@ describe('articles', () => {
   })
   it('publishes, unpublishes, keeps a revision per edit and can restore one', async () => {
     const [{ id }] = await sql`select id from articles where title = 'Port congestion update'`
-    await act(saveArticleAction, { ...base, id: String(id), body: '<p>Second version</p>', action: 'publish' }, { as: admin })
+    await act(saveArticleAction, { ...base, record: String(id), body: '<p>Second version</p>', action: 'publish' }, { as: admin })
     let [a] = await sql`select * from articles where id = ${id}`
     expect(a).toMatchObject({ status: 'published', body: '<p>Second version</p>' }); expect(a.publishedAt).toBeInstanceOf(Date)
-    await act(saveArticleAction, { ...base, id: String(id), body: '<p>Third version</p>', action: 'unpublish' }, { as: admin })
+    await act(saveArticleAction, { ...base, record: String(id), body: '<p>Third version</p>', action: 'unpublish' }, { as: admin })
     ;[a] = await sql`select * from articles where id = ${id}`
     expect(a.status).toBe('draft')
     const revs = await sql`select id, snapshot from revisions where resource = 'article' and resource_id = ${id} order by id`
     expect(revs).toHaveLength(2)
-    expect(await act(restoreArticleAction, { id: String(id), revision: String(revs[0].id) }, { as: admin })).toMatchObject({ redirect: expect.stringContaining('Revision%20restored') })
+    expect(await act(restoreArticleAction, { record: String(id), revision: String(revs[0].id) }, { as: admin })).toMatchObject({ redirect: expect.stringContaining('Revision%20restored') })
     ;[a] = await sql`select * from articles where id = ${id}`
     expect(a.body).toBe('<p>Hello <b>world</b></p>')
     expect(await sql`select id from revisions where resource_id = ${id}`).toHaveLength(3)
@@ -84,7 +84,7 @@ describe('articles', () => {
   it('rejects duplicate slugs, missing titles and unknown articles with a message', async () => {
     expect(q((await act(saveArticleAction, { ...base, title: 'Other', slug: 'port-congestion-update' }, { as: admin })).redirect).get('error')).toBe('Article slug already in use')
     expect(q((await act(saveArticleAction, { ...base, title: '' }, { as: admin })).redirect).get('error')).toBe('Article title and slug required')
-    expect(q((await act(saveArticleAction, { ...base, id: '999999' }, { as: admin })).redirect).get('error')).toBe('Article not found')
+    expect(q((await act(saveArticleAction, { ...base, record: '999999' }, { as: admin })).redirect).get('error')).toBe('Article not found')
     expect(await sql`select id from articles where title = 'Other'`).toHaveLength(0)
   })
   it('only accepts known locales', async () => {
@@ -103,22 +103,22 @@ describe('pages and sections', () => {
     expect(p).toMatchObject({ status: 'draft', publishedSnapshot: null })
   })
   it('adds, edits, reorders and deletes sections, then publishes a frozen snapshot', async () => {
-    await act(addSectionAction, { id: String(pageId) }, { as: admin })
-    await act(addSectionAction, { id: String(pageId) }, { as: admin })
+    await act(addSectionAction, { record: String(pageId) }, { as: admin })
+    await act(addSectionAction, { record: String(pageId) }, { as: admin })
     let secs = await sql`select id, position from sections where page_id = ${pageId} order by position, id`
     expect(secs).toHaveLength(2)
     const [first, second] = secs.map((s) => s.id as number)
-    const edit = { id: String(first), title: 'We are hiring', body: 'Roles open', kind: 'hero', layout: 'stack', surface: 'ink', visible: '1', button_label: 'Apply', button_href: '/en/contact', image: '/static/assets/vora-visual-59.webp' }
+    const edit = { record: String(first), title: 'We are hiring', body: 'Roles open', kind: 'hero', layout: 'stack', surface: 'ink', visible: '1', button_label: 'Apply', button_href: '/en/contact', image: '/static/assets/vora-visual-59.webp' }
     await act(saveSectionAction, edit, { as: admin })
     expect((await sql`select * from sections where id = ${first}`)[0]).toMatchObject({ title: 'We are hiring', kind: 'hero', layout: 'stack', surface: 'ink', visible: true })
-    await act(saveSectionAction, { ...edit, id: String(second), title: 'Second', kind: 'nonsense', layout: 'weird', surface: 'purple' }, { as: admin })
+    await act(saveSectionAction, { ...edit, record: String(second), title: 'Second', kind: 'nonsense', layout: 'weird', surface: 'purple' }, { as: admin })
     expect((await sql`select kind, layout, surface from sections where id = ${second}`)[0]).toEqual({ kind: 'editorial', layout: 'split', surface: 'paper' })
-    await act(saveSectionAction, { id: String(second), move: 'up' }, { as: admin })
+    await act(saveSectionAction, { record: String(second), move: 'up' }, { as: admin })
     secs = await sql`select id from sections where page_id = ${pageId} order by position, id`
     expect(secs.map((s) => s.id)).toEqual([second, first])
     // drafts are invisible: nothing published yet
     expect((await sql`select published_snapshot from pages where id = ${pageId}`)[0].publishedSnapshot).toBeNull()
-    await act(savePageAction, { ...page, id: String(pageId), action: 'publish' }, { as: admin })
+    await act(savePageAction, { ...page, record: String(pageId), action: 'publish' }, { as: admin })
     const [p] = await sql`select status, published_snapshot from pages where id = ${pageId}`
     expect(p.status).toBe('published')
     const snap = p.publishedSnapshot as { sections: Array<{ title: string; button_href: string }> }
@@ -126,22 +126,22 @@ describe('pages and sections', () => {
     // later draft edits do not leak into the published snapshot
     await act(saveSectionAction, { ...edit, title: 'Changed after publishing' }, { as: admin })
     expect(((await sql`select published_snapshot from pages where id = ${pageId}`)[0].publishedSnapshot as typeof snap).sections[1].title).toBe('We are hiring')
-    await act(saveSectionAction, { id: String(second), delete: '1' }, { as: admin })
+    await act(saveSectionAction, { record: String(second), delete: '1' }, { as: admin })
     expect(await sql`select id from sections where page_id = ${pageId}`).toHaveLength(1)
   })
   it('keeps a revision on each publish and can restore the previous one', async () => {
-    await act(savePageAction, { ...page, id: String(pageId), action: 'publish' }, { as: admin })
+    await act(savePageAction, { ...page, record: String(pageId), action: 'publish' }, { as: admin })
     const revs = await sql`select id from revisions where resource = 'page' and resource_id = ${pageId} order by id`
     expect(revs.length).toBe(2)
-    const r = await act(restorePageAction, { id: String(pageId), revision: String(revs[1].id) }, { as: admin })
+    const r = await act(restorePageAction, { record: String(pageId), revision: String(revs[1].id) }, { as: admin })
     expect(r.redirect).toContain('restored')
     const empty = await sql`insert into revisions (resource, resource_id, snapshot) values ('page', ${pageId}, '{}'::json) returning id`
-    expect(q((await act(restorePageAction, { id: String(pageId), revision: String(empty[0].id) }, { as: admin })).redirect).get('error')).toBe('Previous revision is empty')
+    expect(q((await act(restorePageAction, { record: String(pageId), revision: String(empty[0].id) }, { as: admin })).redirect).get('error')).toBe('Previous revision is empty')
   })
   it('refuses unsafe images, reserved slugs and duplicate slugs', async () => {
     const [{ id: sid }] = await sql`select id from sections where page_id = ${pageId} limit 1`
     for (const image of ['javascript:alert(1)', 'http://insecure.example/x.png', '//evil.example/x.png', 'data:image/png;base64,AA']) {
-      expect(q((await act(saveSectionAction, { id: String(sid), title: 'x', image }, { as: admin })).redirect).get('error'), image).toBe('Invalid image source')
+      expect(q((await act(saveSectionAction, { record: String(sid), title: 'x', image }, { as: admin })).redirect).get('error'), image).toBe('Invalid image source')
     }
     for (const slug of ['admin', 'preview', 'static', 'verify']) expect(q((await act(savePageAction, { ...page, title: 'Reserved', slug }, { as: admin })).redirect).get('error'), slug).toBe('That slug is reserved')
     expect(q((await act(savePageAction, { ...page, title: 'Careers again', slug: 'careers' }, { as: admin })).redirect).get('error')).toBe('Page slug already exists')
@@ -151,7 +151,7 @@ describe('pages and sections', () => {
 describe('leads', () => {
   it('updates the pipeline, validates the status and appends notes to the timeline', async () => {
     const [{ id }] = await sql`insert into leads (name, email) values ('Lead One', 'one@x.invalid') returning id`
-    const f = { id: String(id), status: 'qualified', priority: 'urgent', assignee: 'Rina', followup: '2026-12-01', note: 'Called the customer' }
+    const f = { record: String(id), status: 'qualified', priority: 'urgent', assignee: 'Rina', followup: '2026-12-01', note: 'Called the customer' }
     expect((await act(updateLeadAction, f, { as: admin })).redirect).toBe(`/admin/leads/${id}?notice=Lead%20updated`)
     expect((await sql`select * from leads where id = ${id}`)[0]).toMatchObject({ status: 'qualified', priority: 'urgent', assignee: 'Rina', followup: '2026-12-01' })
     expect((await sql`select message from lead_activities where lead_id = ${id}`).map((r) => r.message)).toEqual(['Called the customer'])
@@ -159,7 +159,7 @@ describe('leads', () => {
     await act(updateLeadAction, { ...f, priority: 'nonsense', note: '' }, { as: admin })
     expect((await sql`select priority from leads where id = ${id}`)[0].priority).toBe('normal')
     expect(await sql`select id from lead_activities where lead_id = ${id}`).toHaveLength(1)
-    expect(q((await act(updateLeadAction, { ...f, id: '999999' }, { as: admin })).redirect).get('error')).toBe('Lead not found')
+    expect(q((await act(updateLeadAction, { ...f, record: '999999' }, { as: admin })).redirect).get('error')).toBe('Lead not found')
   })
 })
 
@@ -167,10 +167,10 @@ describe('small resources', () => {
   it('FAQs: add, update, delete', async () => {
     await act(addFaqAction, { question: 'How long?', answer: 'Two days' }, { as: admin })
     const [{ id }] = await sql`select id from faqs where question = 'How long?'`
-    await act(updateFaqAction, { id: String(id), question: 'How long now?', answer: 'Three days' }, { as: admin })
+    await act(updateFaqAction, { record: String(id), question: 'How long now?', answer: 'Three days' }, { as: admin })
     expect((await sql`select question, answer from faqs where id = ${id}`)[0]).toEqual({ question: 'How long now?', answer: 'Three days' })
     expect(q((await act(addFaqAction, { question: '', answer: 'x' }, { as: admin })).redirect).get('error')).toBe('Question and answer are required')
-    await act(updateFaqAction, { id: String(id), delete: '1' }, { as: admin })
+    await act(updateFaqAction, { record: String(id), delete: '1' }, { as: admin })
     expect(await sql`select id from faqs where id = ${id}`).toHaveLength(0)
   })
   it('navigation: accepts local paths only and never an admin route', async () => {
@@ -180,16 +180,16 @@ describe('small resources', () => {
     }
     expect(q((await act(addNavigationAction, { label: '', href: '/x' }, { as: admin })).redirect).get('error')).toBe('A label is required')
     const [{ id }] = await sql`select id from navigation_items where label = 'Careers'`
-    await act(deleteNavigationAction, { id: String(id) }, { as: admin })
+    await act(deleteNavigationAction, { record: String(id) }, { as: admin })
     expect(await sql`select id from navigation_items`).toHaveLength(0)
   })
   it('coverage: publishing sets and clears the verification time', async () => {
     await act(addCoverageAction, { region: 'Jakarta - Singapore', mode: 'Sea' }, { as: admin })
     const [{ id }] = await sql`select id from coverage where region = 'Jakarta - Singapore'`
     expect((await sql`select active, verified_at from coverage where id = ${id}`)[0]).toMatchObject({ active: false, verifiedAt: null })
-    await act(toggleCoverageAction, { id: String(id) }, { as: admin })
+    await act(toggleCoverageAction, { record: String(id) }, { as: admin })
     expect((await sql`select active, verified_at from coverage where id = ${id}`)[0].verifiedAt).toBeInstanceOf(Date)
-    await act(toggleCoverageAction, { id: String(id) }, { as: admin })
+    await act(toggleCoverageAction, { record: String(id) }, { as: admin })
     expect((await sql`select active, verified_at from coverage where id = ${id}`)[0]).toMatchObject({ active: false, verifiedAt: null })
   })
   it('redirects: relative paths only, no loops, no duplicates', async () => {
@@ -263,10 +263,10 @@ describe('SMTP administration', () => {
     await sql`insert into email_jobs (event, recipient, subject, html, status, attempts, error) values ('lead_reply', 'c@x.invalid', 'S', '<p>x</p>', 'failed', 5, 'boom')`
     const [{ id }] = await sql`select id from email_jobs`
     setSender(async (_c, to) => { sent.push(to) })
-    const r = await act(retryMailJobAction, { id: String(id) }, { as: admin })
+    const r = await act(retryMailJobAction, { record: String(id) }, { as: admin })
     expect(decodeURIComponent(r.redirect!)).toContain('Message re-queued: 1 sent, 0 failed')
     expect((await sql`select status from email_jobs where id = ${id}`)[0].status).toBe('sent')
-    expect(q((await act(retryMailJobAction, { id: String(id) }, { as: admin })).redirect).get('error')).toBe('Only failed or waiting messages can be retried')
+    expect(q((await act(retryMailJobAction, { record: String(id) }, { as: admin })).redirect).get('error')).toBe('Only failed or waiting messages can be retried')
     expect(decodeURIComponent((await act(dispatchMailAction, {}, { as: admin })).redirect!)).toContain('Mail: 0 sent, 0 failed')
     await sql`update mail_config set enabled = false`
     expect(q((await act(testMailAction, {}, { as: admin })).redirect).get('error')).toBe('Save and enable the SMTP configuration first')

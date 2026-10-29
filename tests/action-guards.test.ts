@@ -75,7 +75,7 @@ function formFor(body: string): Record<string, string | Blob> {
   for (const m of body.matchAll(/form\.get\('(\w+)'\)/g)) names.add(m[1])
   const form: Record<string, string | Blob> = {}
   for (const n of names) {
-    if (/^(id|revision|.*_id)$/.test(n)) form[n] = '1'
+    if (/^(record|revision|.*_id)$/.test(n)) form[n] = '1'
     else if (n === 'move') form[n] = 'up'
     else if (/^(delete|remove|enabled|active|visible|funds_cleared)$/.test(n)) form[n] = n === 'funds_cleared' ? 'yes' : '1'
     else if (n === 'action') form[n] = 'publish'
@@ -161,7 +161,7 @@ describe('every admin action, executed', () => {
     for (const a of adminActions) {
       const empty = await act(a.fn, {}, { as: admin })
       expect(empty.error, `${a.name} (empty form): ${empty.error?.message}`).toBeUndefined()
-      const junk = Object.fromEntries(Object.keys(formFor(a.body)).map((k) => [k, k === 'id' || k === 'revision' ? '99999999999999999999' : '\u0000'.repeat(3) + 'x'.repeat(50_000)]))
+      const junk = Object.fromEntries(Object.keys(formFor(a.body)).map((k) => [k, k === 'record' || k === 'revision' ? '99999999999999999999' : '\u0000'.repeat(3) + 'x'.repeat(50_000)]))
       const r = await act(a.fn, junk, { as: admin })
       expect(r.error, `${a.name} (junk): ${r.error?.message}`).toBeUndefined()
     }

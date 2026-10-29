@@ -37,7 +37,7 @@ export async function addCoverageAction(form: FormData) {
 
 export async function toggleCoverageAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     const [row] = await sql`update coverage set active = not active, verified_at = case when active then null else now() end where id = ${id} returning id`
     if (!row) throw new ActionError('Not found', 404)
     await recordAudit(sql, user.id, 'toggle', 'coverage', id)
@@ -112,7 +112,7 @@ export async function dispatchMailAction(form: FormData) {
 
 export async function retryMailJobAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    try { await retryJob(user.id, int(form, 'id')) } catch (e) {
+    try { await retryJob(user.id, int(form, 'record')) } catch (e) {
       const status = (e as { status?: number }).status
       if (status) throw new ActionError((e as Error).message, status)
       throw e

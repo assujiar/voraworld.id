@@ -10,7 +10,7 @@ export function PageForm({ obj, sections, revisions }: { obj: PagesRow | null; s
       <div className="admin-panel">
         <h3>Page settings</h3>
         <form action={savePageAction}>
-          <input type="hidden" name="id" value={obj?.id ?? ''} /><Back to={back} />
+          <input type="hidden" name="record" value={obj?.id ?? ''} /><Back to={back} />
           <div className="admin-form-grid">
             <div className="field"><label>Page title</label><input required name="title" defaultValue={obj?.title ?? ''} /></div>
             <div className="field"><label>Slug</label><input name="slug" defaultValue={obj?.slug ?? ''} /></div>
@@ -34,7 +34,9 @@ export function PageForm({ obj, sections, revisions }: { obj: PagesRow | null; s
           {sections.map((sec, i) => (
             <div className="layout-preview" key={sec.id}>
               <form action={saveSectionAction}>
-                <input type="hidden" name="id" value={sec.id} /><Back to={back} />
+                <input type="hidden" name="record" value={sec.id} /><Back to={back} />
+                {/* Pressing Enter in a field submits the FIRST submit button of the form: make that "save", never "move up" or "delete". */}
+                <button name="save" value="1" tabIndex={-1} aria-hidden="true" style={{ position: 'absolute', width: 1, height: 1, opacity: 0, overflow: 'hidden', pointerEvents: 'none' }} />
                 <div className="inline-actions" style={{ marginBottom: 12 }}>
                   <strong>Section {i + 1}</strong><span className="status">{sec.kind} · {sec.layout}</span>
                   <button className="button-outline" name="move" value="up">↑ Up</button>
@@ -56,12 +58,12 @@ export function PageForm({ obj, sections, revisions }: { obj: PagesRow | null; s
               </form>
             </div>
           ))}
-          <form action={addSectionAction}><input type="hidden" name="id" value={obj.id} /><Back to={back} /><button className="button-outline">+ Add editorial section</button></form>
+          <form action={addSectionAction}><input type="hidden" name="record" value={obj.id} /><Back to={back} /><button className="button-outline">+ Add editorial section</button></form>
         </div>
         {revisions.length ? (
           <div className="admin-panel"><h3>Published revisions</h3>
             {revisions.map((r) => (
-              <form key={r.id} action={restorePageAction}><input type="hidden" name="id" value={obj.id} /><input type="hidden" name="revision" value={r.id} /><Back to={back} />
+              <form key={r.id} action={restorePageAction}><input type="hidden" name="record" value={obj.id} /><input type="hidden" name="revision" value={r.id} /><Back to={back} />
                 {fmt(r.createdAt)} <button className="button-outline">Restore #{r.id}</button></form>
             ))}
           </div>

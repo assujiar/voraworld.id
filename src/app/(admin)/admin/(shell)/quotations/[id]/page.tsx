@@ -30,14 +30,14 @@ export default async function QuotationDetail({ params, searchParams }: { params
         </div>
         {q.notes ? <p style={{ whiteSpace: 'pre-wrap' }}>{q.notes as string}</p> : null}
         <div className="inline-actions">
-          {q.status === 'draft' ? <form action={quotationStatusAction}><input type="hidden" name="id" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue quotation</button></form> : null}
-          {q.status !== 'void' ? <form action={quotationStatusAction}><input type="hidden" name="id" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
+          {q.status === 'draft' ? <form action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue quotation</button></form> : null}
+          {q.status !== 'void' ? <form action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
           <a className="button-outline" href={`/admin/quotations/${id}/pdf`} target="_blank" rel="noopener">View PDF ↗</a>
         </div>
       </div>
       {['issued', 'awaiting_approval'].includes(q.status as string) ? (
         <form action={requestApprovalAction} className="admin-panel">
-          <input type="hidden" name="id" value={id} /><Back to={here} />
+          <input type="hidden" name="record" value={id} /><Back to={here} />
           <h4>Customer signature &amp; company stamp</h4>
           <p className="note">Sends the quotation PDF through the configured SMTP with a private, expiring link. The customer uploads the signed and stamped PDF. Nothing is approved until Finance has reviewed it manually. A new request revokes earlier links.</p>
           <button className="button">Send quotation for customer approval</button>
@@ -54,7 +54,7 @@ export default async function QuotationDetail({ params, searchParams }: { params
                 <td>{a.signedPdfKey ? <a href={`/admin/quotation-approvals/${a.id}/file`}>Download signed PDF</a> : 'Awaiting upload'}<br />{a.signedPdfSha256 ? <small title="SHA-256 recorded at upload">sha256 {(a.signedPdfSha256 as string).slice(0, 12)}…</small> : null}</td>
                 <td>{a.status === 'submitted' ? (
                   <form action={reviewApprovalAction}>
-                    <input type="hidden" name="id" value={a.id as number} /><Back to={here} />
+                    <input type="hidden" name="record" value={a.id as number} /><Back to={here} />
                     <label><input type="checkbox" name="signature_and_stamp_verified" value="yes" /> Signature and stamp reviewed manually</label>
                     <textarea name="review_note" placeholder="Review notes (optional)" />
                     <div className="inline-actions"><button className="button" name="action" value="approve">Approve</button><button className="button-outline" name="action" value="reject">Reject</button></div>

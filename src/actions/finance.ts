@@ -27,7 +27,7 @@ const bankFields = (form: FormData) => ({
 // ----------------------------------------------------------------- customers
 export async function saveCustomerAction(_prev: FormState, form: FormData): Promise<FormState> {
   return adminRunForm(form, async ({ user }) => {
-    const id = int(form, 'id') || null
+    const id = int(form, 'record') || null
     const saved = await saveCustomer(user.id, id, {
       name: str(form, 'name', 200), email: str(form, 'email', 200), address: rawStr(form, 'address', 3000), taxId: str(form, 'tax_id', 100),
       currency: str(form, 'currency', 3), termsDays: str(form, 'terms_days', 4),
@@ -47,7 +47,7 @@ export async function createBankAction(_prev: FormState, form: FormData): Promis
 export async function updateBankAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
     const action = str(form, 'action', 10) as BankAction
-    await updateBank(user.id, int(form, 'id'), action, action === 'save' ? bankFields(form) : undefined)
+    await updateBank(user.id, int(form, 'record'), action, action === 'save' ? bankFields(form) : undefined)
     return { to: '/admin/bank-accounts', notice: 'Bank account updated' }
   })
 }
@@ -65,7 +65,7 @@ export async function createQuotationAction(_prev: FormState, form: FormData): P
 
 export async function quotationStatusAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     await setQuotationStatus(user.id, id, str(form, 'action', 10))
     return { to: `/admin/quotations/${id}`, notice: 'Quotation state updated' }
   })
@@ -73,7 +73,7 @@ export async function quotationStatusAction(form: FormData) {
 
 export async function requestApprovalAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     await requestApproval(user.id, id, publicBaseUrl())
     sendSoon()
     return { to: `/admin/quotations/${id}`, notice: 'Approval email queued. Check the SMTP outbox for delivery status' }
@@ -82,7 +82,7 @@ export async function requestApprovalAction(form: FormData) {
 
 export async function reviewApprovalAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const quotationId = await reviewApproval(user.id, int(form, 'id'), str(form, 'action', 10), form.get('signature_and_stamp_verified') === 'yes', rawStr(form, 'review_note', 2000))
+    const quotationId = await reviewApproval(user.id, int(form, 'record'), str(form, 'action', 10), form.get('signature_and_stamp_verified') === 'yes', rawStr(form, 'review_note', 2000))
     sendSoon()
     return { to: `/admin/quotations/${quotationId}`, notice: 'Customer document reviewed; quotation status updated' }
   })
@@ -104,7 +104,7 @@ export async function createInvoiceAction(_prev: FormState, form: FormData): Pro
 
 export async function invoiceStatusAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     await setInvoiceStatus(user.id, id, str(form, 'action', 10))
     return { to: `/admin/invoices/${id}`, notice: 'Invoice state updated' }
   })
@@ -112,7 +112,7 @@ export async function invoiceStatusAction(form: FormData) {
 
 export async function sendInvoiceAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     await sendInvoice(user.id, id, publicBaseUrl())
     sendSoon()
     return { to: `/admin/invoices/${id}`, notice: 'Invoice email queued. Check the SMTP outbox for delivery status' }
@@ -122,7 +122,7 @@ export async function sendInvoiceAction(form: FormData) {
 // -------------------------------------------------------------------- payments
 export async function recordPaymentAction(_prev: FormState, form: FormData): Promise<FormState> {
   return adminRunForm(form, async ({ user }) => {
-    const invoiceId = int(form, 'id')
+    const invoiceId = int(form, 'record')
     await recordPayment(user.id, invoiceId, {
       amount: str(form, 'amount', 30), date: str(form, 'date', 10), method: str(form, 'method', 100), reference: str(form, 'reference', 160),
       receivingBankId: int(form, 'receiving_bank_id') || null,
@@ -133,7 +133,7 @@ export async function recordPaymentAction(_prev: FormState, form: FormData): Pro
 
 export async function confirmPaymentAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const result = await confirmPayment(user.id, int(form, 'id'), { fundsCleared: form.get('funds_cleared') === 'yes', receivingBankId: int(form, 'receiving_bank_id') || null }, publicBaseUrl())
+    const result = await confirmPayment(user.id, int(form, 'record'), { fundsCleared: form.get('funds_cleared') === 'yes', receivingBankId: int(form, 'receiving_bank_id') || null }, publicBaseUrl())
     sendSoon()
     return {
       to: result.stampRequired ? `/admin/receipts/${result.receiptId}` : `/admin/invoices/${result.invoiceId}`,
@@ -144,7 +144,7 @@ export async function confirmPaymentAction(form: FormData) {
 
 export async function cancelPaymentAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const invoiceId = await cancelPayment(user.id, int(form, 'id'))
+    const invoiceId = await cancelPayment(user.id, int(form, 'record'))
     return { to: `/admin/invoices/${invoiceId}`, notice: 'Pending payment cancelled' }
   })
 }
@@ -152,7 +152,7 @@ export async function cancelPaymentAction(form: FormData) {
 // -------------------------------------------------------------------- receipts
 export async function uploadStampAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     await uploadReceiptStamp(user.id, id, {
       providerReference: str(form, 'stamp_provider_reference', 160), reviewed: form.get('approved') === '1', file: await fileBytes(form, 'stamped_pdf', maxUploadBytes()),
     }, publicBaseUrl())
@@ -163,7 +163,7 @@ export async function uploadStampAction(form: FormData) {
 
 export async function voidReceiptAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     await voidReceipt(user.id, id)
     return { to: `/admin/receipts/${id}`, notice: 'Receipt voided: the payment was reversed and the invoice recalculated' }
   })

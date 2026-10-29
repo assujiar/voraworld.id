@@ -29,7 +29,7 @@ export default async function BankAccounts({ searchParams }: { searchParams: Pro
         {rows.length ? rows.map((b) => (
           <div className="admin-panel" key={b.id}>
             <form action={updateBankAction}>
-              <input type="hidden" name="id" value={b.id} /><Back to="/admin/bank-accounts" />
+              <input type="hidden" name="record" value={b.id} /><Back to="/admin/bank-accounts" />
               <h4>{b.bankName} · {b.currency} {b.isDefault ? <span className="status">PREFERRED</span> : null} {!b.active ? <span className="status">INACTIVE</span> : null}</h4>
               <div className="admin-form-grid">
                 <div className="field"><label>Bank name</label><input name="bank_name" defaultValue={b.bankName} required /></div>

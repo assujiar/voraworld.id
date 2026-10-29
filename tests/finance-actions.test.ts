@@ -88,21 +88,21 @@ describe('the full money flow through the form actions', () => {
     expect((await sql`select total_minor, po_number from invoices where id = ${invoiceId}`)[0]).toMatchObject({ totalMinor: 1_110_000, poNumber: 'PO-1' })
     expect((await sql`select count(*)::int as n from invoice_bank_instructions where invoice_id = ${invoiceId}`)[0].n).toBe(1)
 
-    expect((await act(invoiceStatusAction, { id: String(invoiceId), action: 'issue' }, as())).redirect).toContain('Invoice%20state%20updated')
-    expect((await act(invoiceStatusAction, { id: String(invoiceId), action: 'issue', _back: `/admin/invoices/${invoiceId}` }, as())).redirect).toMatch(/error=Invalid%20state%20change/)
-    expect((await act(sendInvoiceAction, { id: String(invoiceId) }, as())).redirect).toContain('Invoice%20email%20queued')
+    expect((await act(invoiceStatusAction, { record: String(invoiceId), action: 'issue' }, as())).redirect).toContain('Invoice%20state%20updated')
+    expect((await act(invoiceStatusAction, { record: String(invoiceId), action: 'issue', _back: `/admin/invoices/${invoiceId}` }, as())).redirect).toMatch(/error=Invalid%20state%20change/)
+    expect((await act(sendInvoiceAction, { record: String(invoiceId) }, as())).redirect).toContain('Invoice%20email%20queued')
     await settle()
     expect(sent.map((s) => s.subject)).toEqual([expect.stringContaining('VORA invoice INV-VORA-')])
     expect(sent[0].attachment).toMatch(/^INV-VORA-.*\.pdf$/)          // a real PDF was rendered and attached
 
-    const pay = await act(recordPaymentAction, { id: String(invoiceId), amount: '555000', date: today(), method: 'bank transfer', reference: 'TRX-9', receiving_bank_id: String(bankId) }, as())
+    const pay = await act(recordPaymentAction, { record: String(invoiceId), amount: '555000', date: today(), method: 'bank transfer', reference: 'TRX-9', receiving_bank_id: String(bankId) }, as())
     expect(pay.redirect).toContain('waiting%20for%20bank%20confirmation')
     const [{ id: paymentId }] = await sql`select id from payments`
     expect((await sql`select outstanding_minor from invoices where id = ${invoiceId}`)[0].outstandingMinor).toBe(1_110_000)
 
-    const refuse = await act(confirmPaymentAction, { id: String(paymentId), _back: `/admin/invoices/${invoiceId}` }, as())     // checkbox not ticked
+    const refuse = await act(confirmPaymentAction, { record: String(paymentId), _back: `/admin/invoices/${invoiceId}` }, as())     // checkbox not ticked
     expect(q(refuse.redirect).get('error')).toMatch(/funds are credited/)
-    const done = await act(confirmPaymentAction, { id: String(paymentId), funds_cleared: 'yes' }, as())
+    const done = await act(confirmPaymentAction, { record: String(paymentId), funds_cleared: 'yes' }, as())
     expect(done.redirect).toBe(`/admin/invoices/${invoiceId}?notice=Funds%20confirmed%3A%20invoice%20recalculated%2C%20receipt%20issued%2C%20customer%20emails%20queued`)
     await settle()
     expect(sent.map((s) => s.subject).slice(1).sort()).toEqual([expect.stringContaining('payment confirmation'), expect.stringContaining('payment receipt')].sort())
@@ -110,19 +110,19 @@ describe('the full money flow through the form actions', () => {
     expect((await sql`select status, outstanding_minor from invoices where id = ${invoiceId}`)[0]).toMatchObject({ status: 'partially_paid', outstandingMinor: 555_000 })
 
     const [{ id: receiptId }] = await sql`select id from receipts`
-    expect((await act(voidReceiptAction, { id: String(receiptId) }, as())).redirect).toContain('payment%20was%20reversed')
+    expect((await act(voidReceiptAction, { record: String(receiptId) }, as())).redirect).toContain('payment%20was%20reversed')
     expect((await sql`select status, outstanding_minor from invoices where id = ${invoiceId}`)[0]).toMatchObject({ status: 'issued', outstandingMinor: 1_110_000 })
-    expect(q((await act(voidReceiptAction, { id: String(receiptId), _back: '/admin/receipts' }, as())).redirect).get('error')).toMatch(/already void/)
+    expect(q((await act(voidReceiptAction, { record: String(receiptId), _back: '/admin/receipts' }, as())).redirect).get('error')).toMatch(/already void/)
   })
 
   it('cancels a pending payment', async () => {
     const cid = await customer()
     const inv = await act(createInvoiceAction, { customer_id: String(cid), items: 'x | 1 | 5000 | u' }, as())
     const id = Number(/invoices\/(\d+)/.exec(inv.redirect!)![1])
-    await act(invoiceStatusAction, { id: String(id), action: 'issue' }, as())
-    await act(recordPaymentAction, { id: String(id), amount: '1000', method: 'cash' }, as())
+    await act(invoiceStatusAction, { record: String(id), action: 'issue' }, as())
+    await act(recordPaymentAction, { record: String(id), amount: '1000', method: 'cash' }, as())
     const [{ id: pid }] = await sql`select id from payments`
-    expect((await act(cancelPaymentAction, { id: String(pid) }, as())).redirect).toContain('Pending%20payment%20cancelled')
+    expect((await act(cancelPaymentAction, { record: String(pid) }, as())).redirect).toContain('Pending%20payment%20cancelled')
     expect((await sql`select status from payments`)[0].status).toBe('cancelled')
   })
 
@@ -133,17 +133,17 @@ describe('the full money flow through the form actions', () => {
     const [{ id: bankId }] = await sql`select id from bank_accounts`
     const inv = await act(createInvoiceAction, { customer_id: String(cid), items: 'Project cargo | 1 | 9000000 | job' }, as())
     const invoiceId = Number(/invoices\/(\d+)/.exec(inv.redirect!)![1])
-    await act(invoiceStatusAction, { id: String(invoiceId), action: 'issue' }, as())
-    await act(recordPaymentAction, { id: String(invoiceId), amount: '6000000', method: 'bank transfer', receiving_bank_id: String(bankId) }, as())
+    await act(invoiceStatusAction, { record: String(invoiceId), action: 'issue' }, as())
+    await act(recordPaymentAction, { record: String(invoiceId), amount: '6000000', method: 'bank transfer', receiving_bank_id: String(bankId) }, as())
     const [{ id: paymentId }] = await sql`select id from payments`
-    const confirmed = await act(confirmPaymentAction, { id: String(paymentId), funds_cleared: 'yes' }, as())
+    const confirmed = await act(confirmPaymentAction, { record: String(paymentId), funds_cleared: 'yes' }, as())
     const receiptId = Number(/receipts\/(\d+)/.exec(confirmed.redirect!)![1])           // sent to the receipt page, where the stamp is uploaded
     expect(confirmed.redirect).toContain('needs%20a%20manual%20e-meterai')
     await settle(); expect(sent).toHaveLength(0)                                          // nothing is emailed yet
     const [r] = await sql`select r.number as rn, i.number as inum from receipts r join invoices i on i.id = r.invoice_id`
     const good = await makePdf([r.rn as string, r.inum as string])
 
-    const attempt = (fields: Record<string, string | Blob>) => act(uploadStampAction, { id: String(receiptId), _back: `/admin/receipts/${receiptId}`, ...fields }, as())
+    const attempt = (fields: Record<string, string | Blob>) => act(uploadStampAction, { record: String(receiptId), _back: `/admin/receipts/${receiptId}`, ...fields }, as())
     expect(q((await attempt({ stamp_provider_reference: 'PERURI-0001', approved: '1' })).redirect).get('error')).toMatch(/all required/)
     expect(q((await attempt({ stamp_provider_reference: 'PERURI-0001', approved: '1', stamped_pdf: pdfFile(await makePdf(['unrelated'])) })).redirect).get('error')).toMatch(/must retain VORA receipt/)
     const ok = await attempt({ stamp_provider_reference: 'PERURI-0001', approved: '1', stamped_pdf: pdfFile(good) })
@@ -159,10 +159,10 @@ describe('quotation approval through the actions', () => {
     const cid = await customer()
     const created = await act(createQuotationAction, { recipient: `customer:${cid}`, issued_at: today(), valid_until: '2999-01-01', tax_percent: '0', items: 'Air freight | 1 | 50000 | kg' }, as())
     const id = Number(/quotations\/(\d+)/.exec(created.redirect!)![1])
-    await act(quotationStatusAction, { id: String(id), action: 'issue' }, as())
-    expect(q((await act(requestApprovalAction, { id: String(id), _back: `/admin/quotations/${id}` }, as())).redirect).get('error')).toMatch(/Configure SMTP/)
+    await act(quotationStatusAction, { record: String(id), action: 'issue' }, as())
+    expect(q((await act(requestApprovalAction, { record: String(id), _back: `/admin/quotations/${id}` }, as())).redirect).get('error')).toMatch(/Configure SMTP/)
     await smtp('quotation_approval_request', 'quotation_approved_admin')
-    expect((await act(requestApprovalAction, { id: String(id) }, as())).redirect).toContain('Approval%20email%20queued')
+    expect((await act(requestApprovalAction, { record: String(id) }, as())).redirect).toContain('Approval%20email%20queued')
     await settle()
     expect(sent).toHaveLength(1); expect(sent[0].attachment).toMatch(/^QUO-VORA-/)
     const [job] = await sql`select html from email_jobs where event = 'quotation_approval_request'`
@@ -181,7 +181,7 @@ describe('quotation approval through the actions', () => {
     expect(q((await act(submitApprovalAction, form({ signed_pdf: pdfFile(await makePdf([number as string])) }))).redirect).get('error')).toMatch(/expired or was already used/)
 
     const [{ id: approvalId }] = await sql`select id from quotation_approvals`
-    const review = (o: Record<string, string>) => act(reviewApprovalAction, { id: String(approvalId), _back: `/admin/quotations/${id}`, ...o }, as())
+    const review = (o: Record<string, string>) => act(reviewApprovalAction, { record: String(approvalId), _back: `/admin/quotations/${id}`, ...o }, as())
     expect(q((await review({ action: 'approve' })).redirect).get('error')).toMatch(/reviewed manually/)
     expect((await review({ action: 'approve', signature_and_stamp_verified: 'yes', review_note: 'ok' })).redirect).toContain('quotation%20status%20updated')
     expect((await sql`select status from quotations where id = ${id}`)[0].status).toBe('approved')
@@ -195,12 +195,12 @@ describe('bank account actions', () => {
     for (const n of ['AAAAA11111', 'BBBBB22222']) await act(createBankAction, { bank_name: 'Bank', account_number: n, account_holder: 'PT X', currency: 'IDR' }, as())
     const [a, b] = (await sql`select id from bank_accounts order by id`).map((r) => String(r.id))
     const row = async (id: string) => (await sql`select is_default, active from bank_accounts where id = ${id}`)[0]
-    await act(updateBankAction, { id: b, action: 'default' }, as())
+    await act(updateBankAction, { record: b, action: 'default' }, as())
     expect(await row(b)).toMatchObject({ isDefault: true }); expect(await row(a)).toMatchObject({ isDefault: false })
-    await act(updateBankAction, { id: b, action: 'disable' }, as())
+    await act(updateBankAction, { record: b, action: 'disable' }, as())
     expect(await row(b)).toMatchObject({ isDefault: false, active: false })
-    await act(updateBankAction, { id: a, action: 'save', bank_name: 'Renamed', account_number: 'ZZZZZ99999', account_holder: 'PT Y', swift_code: 'bcaidjak' }, as())
+    await act(updateBankAction, { record: a, action: 'save', bank_name: 'Renamed', account_number: 'ZZZZZ99999', account_holder: 'PT Y', swift_code: 'bcaidjak' }, as())
     expect((await sql`select bank_name, account_number, swift_code from bank_accounts where id = ${a}`)[0]).toMatchObject({ bankName: 'Renamed', accountNumber: 'ZZZZZ99999', swiftCode: 'BCAIDJAK' })
-    expect(q((await act(updateBankAction, { id: a, action: 'explode', _back: '/admin/bank-accounts' }, as())).redirect).get('error')).toBe('Invalid action')
+    expect(q((await act(updateBankAction, { record: a, action: 'explode', _back: '/admin/bank-accounts' }, as())).redirect).get('error')).toBe('Invalid action')
   })
 })

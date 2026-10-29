@@ -12,7 +12,7 @@ import { isAdminNavigation } from '@/server/site'
 
 export async function saveArticleAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id', 0) || null
+    const id = int(form, 'record', 0) || null
     const articleId = await saveArticle(user.id, id, {
       title: str(form, 'title', 240), slug: str(form, 'slug', 160), excerpt: rawStr(form, 'excerpt', 1600), body: rawStr(form, 'body', 400_000),
       category: str(form, 'category', 80), tags: str(form, 'tags', 400), locale: str(form, 'locale', 8), author: str(form, 'author', 120),
@@ -24,14 +24,14 @@ export async function saveArticleAction(form: FormData) {
 
 export async function restoreArticleAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id'); await restoreArticle(user.id, id, int(form, 'revision'))
+    const id = int(form, 'record'); await restoreArticle(user.id, id, int(form, 'revision'))
     return { to: `/admin/articles/${id}`, notice: 'Revision restored' }
   })
 }
 
 export async function savePageAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id', 0) || null
+    const id = int(form, 'record', 0) || null
     const pageId = await savePage(user.id, id, {
       title: str(form, 'title', 200), slug: str(form, 'slug', 160), locale: str(form, 'locale', 8), description: rawStr(form, 'description', 1200),
       seoTitle: str(form, 'seo_title', 200), action: str(form, 'action', 20) || 'draft',
@@ -42,21 +42,21 @@ export async function savePageAction(form: FormData) {
 
 export async function restorePageAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id'); await restorePage(user.id, id, int(form, 'revision'))
+    const id = int(form, 'record'); await restorePage(user.id, id, int(form, 'revision'))
     return { to: `/admin/pages/${id}`, notice: 'Published revision restored' }
   })
 }
 
 export async function addSectionAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id'); await addSection(user.id, id)
+    const id = int(form, 'record'); await addSection(user.id, id)
     return { to: `/admin/pages/${id}`, notice: 'Section added to draft' }
   })
 }
 
 export async function saveSectionAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const pageId = await saveSection(user.id, int(form, 'id'), {
+    const pageId = await saveSection(user.id, int(form, 'record'), {
       title: str(form, 'title', 200), body: rawStr(form, 'body', 6000), kind: str(form, 'kind', 20), layout: str(form, 'layout', 20), surface: str(form, 'surface', 20),
       visible: form.get('visible') === '1', buttonLabel: str(form, 'button_label', 120), buttonHref: str(form, 'button_href', 400), image: str(form, 'image', 500),
       move: str(form, 'move', 10), remove: form.get('delete') === '1',
@@ -77,7 +77,7 @@ export async function addFaqAction(form: FormData) {
 
 export async function updateFaqAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     const [x] = await sql`select id from faqs where id = ${id}`
     if (!x) throw new ActionError('FAQ not found', 404)
     if (form.get('delete') === '1') await sql`delete from faqs where id = ${id}`
@@ -101,7 +101,7 @@ export async function addNavigationAction(form: FormData) {
 
 export async function deleteNavigationAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
-    const id = int(form, 'id')
+    const id = int(form, 'record')
     const [x] = await sql`delete from navigation_items where id = ${id} returning id`
     if (!x) throw new ActionError('Not found', 404)
     await recordAudit(sql, user.id, 'delete', 'navigation', id)

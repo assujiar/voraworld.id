@@ -29,7 +29,7 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
             <p className="note">Download the draft receipt, apply an authentic e-meterai manually through an authorised provider, then upload the stamped PDF. The receipt is not released to the customer, and cannot be verified as final, before this step. VORA calls no external API and does not check the stamp itself: that review is yours.</p>
             <a className="button-outline" href={`/admin/receipts/${id}/pdf`} target="_blank" rel="noopener">Download PDF for stamping ↗</a>
             <form action={uploadStampAction} encType="multipart/form-data" style={{ marginTop: 16 }}>
-              <input type="hidden" name="id" value={id} /><Back to={here} />
+              <input type="hidden" name="record" value={id} /><Back to={here} />
               <div className="admin-form-grid">
                 <div className="field"><label>Official e-meterai serial / reference *</label><input name="stamp_provider_reference" required minLength={6} maxLength={160} /></div>
                 <div className="field"><label>Final stamped PDF (max {maxMb} MB) *</label><input type="file" name="stamped_pdf" accept="application/pdf" required /></div>
@@ -43,7 +43,7 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
         ) : null}
         <div className="inline-actions">
           {status !== 'void' ? <a className="button" href={`/admin/receipts/${id}/pdf`} target="_blank" rel="noopener">{status === 'pending_stamp' ? 'Download PDF draft' : 'Download final PDF'} ↗</a> : null}
-          {status !== 'void' ? <form action={voidReceiptAction}><input type="hidden" name="id" value={id} /><Back to={here} /><button className="button-outline">Void receipt and reverse payment</button></form> : null}
+          {status !== 'void' ? <form action={voidReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Void receipt and reverse payment</button></form> : null}
         </div>
       </div>
     </AdminPage>

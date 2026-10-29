@@ -9,7 +9,7 @@ export function ArticleForm({ obj, revisions }: { obj: ArticlesRow | null; revis
     <div className="admin-panel">
       <h3>{obj ? 'Edit article' : 'New article'}{obj ? <span className="status">{obj.status}</span> : null}</h3>
       <form action={saveArticleAction} id="article-form">
-        <input type="hidden" name="id" value={obj?.id ?? ''} /><Back to={back} />
+        <input type="hidden" name="record" value={obj?.id ?? ''} /><Back to={back} />
         <div className="admin-form-grid">
           <div className="field"><label>Title *</label><input name="title" defaultValue={obj?.title ?? ''} required /></div>
           <div className="field"><label>Slug</label><input name="slug" defaultValue={obj?.slug ?? ''} placeholder="Generated from title" /></div>
@@ -35,7 +35,7 @@ export function ArticleForm({ obj, revisions }: { obj: ArticlesRow | null; revis
         <h3 style={{ marginTop: 25 }}>Revision history</h3>
         {revisions.map((r) => (
           <form key={r.id} action={restoreArticleAction} className="inline-actions" style={{ marginBottom: 8 }}>
-            <input type="hidden" name="id" value={obj.id} /><input type="hidden" name="revision" value={r.id} /><Back to={back} />
+            <input type="hidden" name="record" value={obj.id} /><input type="hidden" name="revision" value={r.id} /><Back to={back} />
             <span>{fmt(r.createdAt)}</span><button className="button-outline" type="submit">Restore revision #{r.id}</button>
           </form>
         ))}

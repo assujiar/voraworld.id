@@ -7,7 +7,7 @@ export function RecordPaymentForm({ invoiceId, currency, today, banks }: { invoi
       <h3>Register a payment (pending bank confirmation)</h3>
       <p className="note">Entering a transfer does not change the outstanding balance. Only Finance can confirm that the funds were really credited to the company bank account, and a receipt exists only after that.</p>
       <ActionForm action={recordPaymentAction}>
-        <input type="hidden" name="id" value={invoiceId} />
+        <input type="hidden" name="record" value={invoiceId} />
         <div className="admin-form-grid">
           <div className="field"><label>Amount ({currency})</label><FInput name="amount" required inputMode="decimal" /></div>
           <div className="field"><label>Payment date</label><FInput name="date" type="date" fallback={today} max={today} /></div>
