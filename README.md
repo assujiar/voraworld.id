@@ -16,7 +16,7 @@ Requires Python 3.11+ (tested with Python 3.13). The bundle ships no credentials
 python -m venv .venv
 # Windows: .venv\Scripts\activate
 # macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 cp .env.example .env       # copy manually on Windows
 # Set SESSION_SECRET and PUBLIC_BASE_URL, load .env variables into your shell.
 # For local setup, DATABASE_URL=sqlite:///./vora.db is fine.

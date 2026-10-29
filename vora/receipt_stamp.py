@@ -12,7 +12,9 @@ import urllib.request
 from pathlib import Path
 from pypdf import PdfReader
 
-MAX_STAMPED_PDF=10*1024*1024
+# Vercel rejects request bodies above 4.5 MB before they reach the app, so a hosted deployment must
+# advertise a lower limit than the 10 MB default. MAX_UPLOAD_BYTES overrides both.
+MAX_STAMPED_PDF=int(os.getenv('MAX_UPLOAD_BYTES') or (4_000_000 if os.getenv('VERCEL') else 10*1024*1024))
 STAMP_LIMIT_IDR=5_000_000
 
 

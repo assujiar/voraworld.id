@@ -1,5 +1,7 @@
 # Deployment & Review Guide (Vercel + Supabase)
 
+> **Staging on Vercel + Supabase: follow `DEPLOY_STAGING.md` first.** It covers migration `0011` (Row Level Security), the migration runner and the hosting fixes added after this guide was written.
+
 **Status: NEEDS_CONFIGURATION.** No Supabase project, Vercel account or domain was connected during this build. Deployment has not been attempted or certified. Do not treat localhost QA as cloud deployment QA.
 
 ## 1. Create the services

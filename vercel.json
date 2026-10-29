@@ -1,1 +1,9 @@
-{"builds":[{"src":"app/index.py","use":"@vercel/python"}],"routes":[{"src":"/(.*)","dest":"app/index.py"}]}
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "app/index.py": {
+      "maxDuration": 30,
+      "excludeFiles": "{tests/**,qa_samples/**,docs/**,migrations/**,scripts/**,previews/**,*.zip,vora/static/assets/ASET_WEB_VORA*}"
+    }
+  }
+}

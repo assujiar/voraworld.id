@@ -53,3 +53,12 @@ No live Sites URL or public deployment has been created. Outstanding requirement
 - Replaced basic receipt PDF generation with a one-page payment reconciliation report containing current balance, individual versus cumulative payment, English IDR words, bank reference and Finance audit information when recorded.
 - Added regression tests validating actual fields, 5-item invoice, money wording, payment reconciliation and privacy. All samples use QA-only fictional values.
 - Outstanding risk: QR status verification is not sufficient on its own to detect tampering with a copied PDF. See FINANCE_DOCUMENT_DESIGN_AND_SECURITY.md.
+
+## 0.2.0-staging | 2026-10-29 | Vercel + Supabase staging preparation
+
+- Imported the Finance detailed staging source (migrations 0001-0010) unmodified, then fixed hosting compatibility in separate commits.
+- `vercel.json` moved off legacy `builds`/`routes`; Python 3.13 pinned; runtime and dev requirements split.
+- Database engine is Supabase-pooler safe (no prepared statements) and uses `NullPool` on Vercel.
+- Upload ceiling lowered to 4 MB on Vercel (4.5 MB platform limit); startup refuses a non-production `APP_ENV` on Vercel.
+- Added migration `0011_enable_rls.sql` (deny Supabase Data API access to all tables) and `scripts/apply_migrations.py`.
+- Added `tests/test_deploy_compat.py` and `DEPLOY_STAGING.md`. Not deployed.

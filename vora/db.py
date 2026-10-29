@@ -7,7 +7,17 @@ from sqlalchemy.types import JSON
 DB_URL=os.getenv('DATABASE_URL','sqlite:///./vora.db')
 if DB_URL.startswith('postgres://'): DB_URL=DB_URL.replace('postgres://','postgresql+psycopg://',1)
 if DB_URL.startswith('postgresql://'): DB_URL=DB_URL.replace('postgresql://','postgresql+psycopg://',1)
-engine=create_engine(DB_URL,pool_pre_ping=True, connect_args={'check_same_thread':False} if DB_URL.startswith('sqlite') else {})
+def _engine_options(url):
+ if url.startswith('sqlite'):return {'connect_args':{'check_same_thread':False}}
+ # Supabase's transaction pooler (PgBouncer, port 6543) rejects psycopg's automatic server-side
+ # prepared statements, so they are disabled. Serverless instances (Vercel) should not hold their own
+ # pool either: the Supabase pooler already multiplexes connections, and idle instances would leak them.
+ opts={'connect_args':{'prepare_threshold':None}}
+ if os.getenv('VERCEL') or os.getenv('DB_NULL_POOL')=='1':
+  from sqlalchemy.pool import NullPool
+  opts['poolclass']=NullPool
+ return opts
+engine=create_engine(DB_URL,pool_pre_ping=True,**_engine_options(DB_URL))
 Session=sessionmaker(bind=engine,autoflush=False,expire_on_commit=False)
 class Base(DeclarativeBase):pass
 def now():return datetime.now(timezone.utc)

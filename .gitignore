@@ -1,10 +1,14 @@
 .env
+.env.*
+!.env.example
+.vercel/
 *.db
 *.sqlite*
 __pycache__/
 .pytest_cache/
 .venv/
+venv/
 *.pyc
+.DS_Store
 uploads/
-
 protected/

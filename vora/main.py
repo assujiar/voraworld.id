@@ -27,6 +27,8 @@ if IS_PROD and not os.getenv('DATABASE_URL','').startswith(('postgresql://','pos
  raise RuntimeError('Production requires persistent PostgreSQL DATABASE_URL')
 if IS_PROD and not os.getenv('PUBLIC_BASE_URL','').startswith('https://'):
  raise RuntimeError('Production requires HTTPS PUBLIC_BASE_URL for document verification QR codes')
+if os.getenv('VERCEL') and not IS_PROD:
+ raise RuntimeError('Vercel deployments must set APP_ENV=production: the function filesystem is read-only and SQLite/local uploads are unavailable')
 SECRET=os.getenv('SESSION_SECRET','')
 if IS_PROD and (len(SECRET)<32 or SECRET.startswith('replace-')):
  raise RuntimeError('SESSION_SECRET must contain >=32 random characters in production')
@@ -45,6 +47,9 @@ if not IS_PROD:
  uploads=ROOT.parent/'uploads';uploads.mkdir(exist_ok=True)
  app.mount('/uploads',StaticFiles(directory=str(uploads)),name='uploads')
 templates=Jinja2Templates(directory=str(ROOT/'templates'))
+from .receipt_stamp import MAX_STAMPED_PDF
+max_upload_mb=f'{MAX_STAMPED_PDF/1_048_576:.1f}'.removesuffix('.0')
+templates.env.globals['max_upload_mb']=max_upload_mb
 
 @app.middleware('http')
 async def headers(req:Request,call_next):
@@ -616,7 +621,7 @@ def quotation_approval_view(token:str,req:Request):
   <input type="hidden" name="csrf" value="{csrf}">
   <label>Full name of authorized signatory <input name="signer_name" maxlength="180" required></label>
   <label>Position / title <input name="signer_title" maxlength="180" required></label>
-  <label>Signed and company-stamped quotation PDF (max 10 MB) <input name="signed_pdf" type="file" accept="application/pdf" required></label>
+  <label>Signed and company-stamped quotation PDF (max {max_upload_mb} MB) <input name="signed_pdf" type="file" accept="application/pdf" required></label>
   <label class="ack"><input type="checkbox" name="ack" value="yes" required> I confirm I am authorized to submit the signed and company-stamped quotation for review by VORA.</label>
   <button type="submit">Submit for VORA review</button></form>''' if active else '<p>This request is no longer accepting documents. Please contact VORA by email.</p>')
   markup=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Customer approval | VORA</title><style>body{{margin:0;background:#F7F7F4;color:#101720;font:16px/1.6 Inter,system-ui,sans-serif}}main{{max-width:680px;margin:8vh auto;background:white;border:1px solid #DCE0E1;border-radius:22px;padding:clamp(24px,5vw,45px);box-shadow:0 15px 65px #10172014}}h1{{font-size:clamp(26px,4vw,39px);line-height:1.15}}small{{color:#B43E31;font-weight:700;letter-spacing:.1em}}label{{display:block;margin:17px 0;font-weight:600}}input:not([type=checkbox]){{display:block;margin-top:6px;padding:13px;width:100%;box-sizing:border-box;border:1px solid #DCE0E1;border-radius:9px}}.ack{{display:flex;gap:9px;font-weight:400}}button,.link{{display:inline-block;background:#101720;color:white;padding:13px 21px;border:0;border-radius:9px;cursor:pointer;text-decoration:none}}a{{color:#B43E31}}.state{{background:#F7F7F4;padding:10px;border-radius:9px}}</style></head><body><main><img src="/static/assets/vora-primary.svg" alt="VORA" width="135"><small><p>CUSTOMER APPROVAL WORKFLOW</p></small><h1>Review and approve quotation</h1><p>Quotation: <strong>{number}</strong></p><p class="state">Approval status: <strong>{status}</strong></p><p><a href="/quotation-approval/{token_safe}/pdf">Download quotation PDF</a>. Sign and apply your company's stamp to the quotation before uploading the complete PDF for VORA review.</p>{form}<p><small>Uploading a document does not automatically constitute VORA's acceptance. The document will be reviewed by an authorized administrator.</small></p></main></body></html>'''
@@ -1067,8 +1072,9 @@ async def media_upload(req:Request,image:UploadFile=File(...),alt:str=Form(''),c
  with Session() as db:
   u=auth(req,db,'content')
   from PIL import Image
-  limit=7_000_000;binary=await image.read(limit+1)
-  if len(binary)>limit:raise HTTPException(413,'File exceeds 7 MB limit')
+  from .receipt_stamp import MAX_STAMPED_PDF
+  limit=min(7_000_000,MAX_STAMPED_PDF);binary=await image.read(limit+1)
+  if len(binary)>limit:raise HTTPException(413,f'File exceeds {limit//1_000_000} MB limit')
   try:
    image_obj=Image.open(io.BytesIO(binary));image_obj.verify()
    detected=Image.open(io.BytesIO(binary)).format
