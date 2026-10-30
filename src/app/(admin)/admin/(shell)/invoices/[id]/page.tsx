@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { cancelPaymentAction, confirmPaymentAction, invoiceStatusAction, sendInvoiceAction } from '@/actions/finance'
+import { cancelPaymentAction, confirmPaymentAction, ensurePrepaymentAction, invoiceStatusAction, sendInvoiceAction } from '@/actions/finance'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { RecordPaymentForm } from '@/components/admin/RecordPaymentForm'
 import { sql } from '@/server/db'
@@ -15,6 +15,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
   const items = await sql`select * from invoice_items where invoice_id = ${id} order by id`
   const banks = await sql`select * from invoice_bank_instructions where invoice_id = ${id} order by position`
   const payments = await sql`select p.*, r.id as receipt_id, r.number as receipt_number from payments p left join receipts r on r.payment_id = p.id where p.invoice_id = ${id} order by p.id desc`
+  const [prepayment] = await sql`select id, number, status, stamp_required from prepayment_receipts where invoice_id = ${id} order by (status = 'void'), id desc limit 1`
   const accounts = (await sql`select id, bank_name, account_number from bank_accounts where active and currency = ${cur} order by position`).map((b) => ({ id: b.id as number, label: `${b.bankName} · ${b.accountNumber}` }))
   const here = `/admin/invoices/${id}`
   const status = inv.status as string
@@ -44,6 +45,19 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
         {inv.notes ? <p style={{ whiteSpace: 'pre-wrap' }}>{inv.notes as string}</p> : null}
         <div className="admin-panel"><h4>Payment instructions (frozen when the invoice was created)</h4>
           {banks.length ? banks.map((b) => <p key={b.id as number} style={{ fontFamily: 'monospace' }}>{b.bankName as string} · {b.accountNumber as string} · {b.accountHolder as string} · {b.currency as string}{b.swiftCode ? ` · SWIFT ${b.swiftCode}` : ''}</p>) : <p className="note">No payment account was selected for this invoice.</p>}
+        </div>
+        <div className="admin-panel"><h4>Pre-payment receipt</h4>
+          {prepayment ? (
+            <p><a href={`/admin/prepayment-receipts/${prepayment.id}`}>{prepayment.number as string}</a> <span className="status">{(prepayment.status as string).replace('_', ' ')}</span>
+              {' '}· <a href={`/admin/prepayment-receipts/${prepayment.id}/pdf`} target="_blank" rel="noopener">PDF ↗</a>
+              {prepayment.stampRequired ? ' · needs a manual e-meterai (amount above IDR 5,000,000, or foreign currency)' : ' · no e-meterai needed'}
+              {prepayment.status === 'draft' ? <><br /><span className="mini muted">Released when the invoice is issued.</span></> : null}</p>
+          ) : (
+            <>
+              <p className="note">{['draft', 'issued'].includes(status) ? 'This invoice has no pre-payment receipt.' : 'A pre-payment receipt can only be made while the invoice is unpaid.'}</p>
+              {['draft', 'issued'].includes(status) && (inv.totalMinor as number) > 0 ? <form action={ensurePrepaymentAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Create pre-payment receipt</button></form> : null}
+            </>
+          )}
         </div>
         <div className="inline-actions">
           {status === 'draft' ? <form action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue invoice</button></form> : null}

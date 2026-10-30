@@ -95,6 +95,24 @@ export interface DocumentVerificationTokensRow {
   createdAt: Date
 }
 
+export interface DocumentsRow {
+  id: number
+  number: string
+  kind: string
+  language: string
+  status: string
+  customerId: number | null
+  subject: string
+  recipient: string
+  documentDate: string
+  fields: unknown
+  createdBy: number | null
+  issuedBy: number | null
+  createdAt: Date
+  updatedAt: Date
+  issuedAt: Date | null
+}
+
 export interface EmailJobsRow {
   id: number
   event: string
@@ -286,6 +304,22 @@ export interface PaymentsRow {
   confirmedBy: number | null
 }
 
+export interface PrepaymentReceiptsRow {
+  id: number
+  number: string
+  invoiceId: number
+  status: string
+  currency: string
+  amountMinor: number
+  stampRequired: boolean
+  stampStorageKey: string | null
+  stampSha256: string | null
+  stampProviderReference: string | null
+  stampUploadedAt: Date | null
+  stampUploadedBy: number | null
+  createdAt: Date
+}
+
 export interface QuotationApprovalsRow {
   id: number
   quotationId: number
@@ -328,6 +362,8 @@ export interface QuotationsRow {
   taxMinor: number
   totalMinor: number
   createdAt: Date
+  paymentTerms: string
+  termsConditions: string
 }
 
 export interface ReceiptsRow {

@@ -1,6 +1,7 @@
 import { randomBytes, randomInt } from 'node:crypto'
 import type { Db } from './db'
 import { today } from './dates'
+import { DOCUMENT_PREFIXES } from '../content/document-types'
 
 export type OwnerTable = 'customers' | 'leads'
 
@@ -23,12 +24,26 @@ export async function ensurePublicCode(db: Db, table: OwnerTable, id: number): P
   throw new Error('Cannot allocate a unique owner code')
 }
 
+/** Stable, random code of the company itself (V + 10 hex): the owner of documents that are not for one customer. Stored once in the settings. */
+export async function ensureCompanyCode(db: Db): Promise<string> {
+  const read = async () => (await db`select value from settings where key = 'company_code'`)[0]?.value as string | undefined
+  const existing = await read()
+  if (existing && /^V[A-F0-9]{10}$/.test(existing)) return existing
+  await db`insert into settings (key, value, updated_at) values ('company_code', ${'V' + randomBytes(5).toString('hex').toUpperCase()}, now()) on conflict (key) do nothing`
+  const code = await read()
+  if (!code || !/^V[A-F0-9]{10}$/.test(code)) throw new Error('Cannot allocate the company code')
+  return code
+}
+
 const KINDS: Record<string, { table: string; column: string }> = {
   INV: { table: 'invoices', column: 'number' },
   RCP: { table: 'receipts', column: 'number' },
+  PPR: { table: 'prepayment_receipts', column: 'number' },
   QUO: { table: 'quotations', column: 'number' },
   RFQ: { table: 'leads', column: 'reference' },
   INQ: { table: 'leads', column: 'reference' },
+  // General documents (letters, certificates...): one table, one prefix per type.
+  ...Object.fromEntries(DOCUMENT_PREFIXES.map((prefix) => [prefix, { table: 'documents', column: 'number' }])),
 }
 
 /**
@@ -40,7 +55,7 @@ export async function nextNumber(db: Db, kind: string, ownerCode: string, date?:
   kind = kind.toUpperCase()
   const spec = KINDS[kind]
   if (!spec) throw new Error('Unsupported document kind')
-  if (!/^[CL][A-F0-9]{10}$/.test(ownerCode ?? '')) throw new Error('Invalid owner code')
+  if (!/^[CLV][A-F0-9]{10}$/.test(ownerCode ?? '')) throw new Error('Invalid owner code')
   const day = date ?? today()   // the business date in Jakarta, so a lead logged just after midnight there gets the right month
   if (!/^\d{4}-\d{2}-\d{2}/.test(day)) throw new Error('Invalid date')
   const period = day.slice(0, 4) + day.slice(5, 7)

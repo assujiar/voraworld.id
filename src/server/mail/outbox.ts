@@ -6,7 +6,7 @@ import { getMailConfig } from './config'
 import { renderTemplate } from './template'
 import { send, type Attachment } from './transport'
 
-export interface EnqueueOptions { attachmentKind?: 'invoice' | 'receipt' | 'quotation'; attachmentId?: number; force?: boolean; dedupeKey?: string }
+export interface EnqueueOptions { attachmentKind?: 'invoice' | 'receipt' | 'quotation' | 'prepayment'; attachmentId?: number; force?: boolean; dedupeKey?: string }
 export const MAX_ATTEMPTS = 5
 const LEASE_MINUTES = 10
 
@@ -34,8 +34,8 @@ export interface DispatchResult { sent: number; failed: number; reason?: string 
 async function attachmentFor(db: Db, job: { attachmentKind: string; attachmentId: number }, baseUrl: string): Promise<Attachment> {
   const { renderDocumentPdf } = await import('../pdf/documents')
   const kind = job.attachmentKind
-  if (!['invoice', 'receipt', 'quotation'].includes(kind)) throw new Error('Unsupported email attachment')
-  const table = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations' }[kind as 'invoice']
+  if (!['invoice', 'receipt', 'quotation', 'prepayment'].includes(kind)) throw new Error('Unsupported email attachment')
+  const table = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations', prepayment: 'prepayment_receipts' }[kind as 'invoice']
   const [doc] = await db`select * from ${db(table)} where id = ${job.attachmentId}`
   if (!doc || ['void', 'draft', 'pending_stamp', 'pending_confirmation'].includes(doc.status as string)) throw new Error('Attachment is not eligible for sending')
   if (kind === 'receipt') {
@@ -43,6 +43,7 @@ async function attachmentFor(db: Db, job: { attachmentKind: string; attachmentId
     if (payment?.status !== 'recorded') throw new Error('Receipt payment not confirmed')
     if (doc.stampRequired && !doc.stampStorageKey) throw new Error('Required e-meterai not uploaded')
   }
+  if (kind === 'prepayment' && doc.stampRequired && !doc.stampStorageKey) throw new Error('Required e-meterai not uploaded')
   const [ver] = await db`select revoked from document_verification_tokens where kind = ${kind} and document_id = ${job.attachmentId} order by id limit 1`
   if (!ver || ver.revoked) throw new Error('Verification token missing or revoked')
   return { filename: `${doc.number}.pdf`, content: await renderDocumentPdf(db, kind as 'invoice', job.attachmentId, baseUrl) }

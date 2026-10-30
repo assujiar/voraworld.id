@@ -2,6 +2,10 @@
 
 Newest first. Entries from `1.0.0` downwards describe the Python/FastAPI application, which is preserved unchanged on the branch `python-v1.0.0`.
 
+## Unreleased
+
+- **Company-red accent on the footer of every generated PDF** (invoice, quotation, receipt, every page): a short red tab on the footer line and a red edge along the foot of the page, answering the red edge under the header band. One shared routine, `Sheet.footer`; the receipt's QR code moved up 2 pt to keep an even margin above the new edge; pixel-level tests.
+
 ## 2.0.0 | 2026-10-29 | Rewrite in Next.js / React / TypeScript, single `admin` role
 
 Everything below is described, with evidence, in `QA_REPORT.md`. Nothing has run on a live Vercel, Supabase or SMTP account.

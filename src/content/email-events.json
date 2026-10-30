@@ -30,5 +30,9 @@
  "lead_reply": {
   "subject": "Regarding your VORA inquiry #$lead_id",
   "html": "<p>Dear $name,</p><p>$reply_message</p><p>VORA | Freight & Logistics</p>"
+ },
+ "prepayment_receipt_customer": {
+  "subject": "VORA pre-payment receipt $document_number",
+  "html": "<p>Dear $customer_name,</p><p>Please find attached the pre-payment receipt <strong>$document_number</strong> for invoice <strong>$invoice_number</strong>, prepared for your internal payment process.</p><p>It is not proof that payment has been made: VORA issues the official payment receipt once the funds are credited to its bank account. Verify the document through the QR code or <a href=\"$verify_url\">online verification</a>.</p><p>VORA | Freight & Logistics</p>"
  }
 }

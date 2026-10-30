@@ -12,10 +12,30 @@ import { ensurePublicCode, nextNumber } from '../numbering'
 import type { QuotationApprovalsRow } from '../schema'
 import { getObject, putObject } from '../storage'
 import { createVerification, getVerification } from '../verification'
+import { approvalToken } from './approval-token'
 import { moneyErrors, parseLines } from './parse'
 import { inspectSignedQuotation } from './pdf-inspect'
 
-export interface QuotationInput { recipient: string; issuedAt: string; validUntil: string; taxPercent: string; notes: string; items: string }
+export interface QuotationInput {
+  recipient: string; issuedAt: string; validUntil: string; taxPercent: string
+  /** What the customer must pay and when (printed on the quotation and shown before the customer signs). */
+  paymentTerms: string
+  /** The terms and conditions the customer's signature accepts. */
+  termsConditions: string
+  /** Anything else worth printing; optional. */
+  notes: string; items: string
+}
+
+export const MAX_PAYMENT_TERMS = 1000
+export const MAX_TERMS_CONDITIONS = 6000
+
+/** Legal wording is refused when it is too long, never cut short: a truncated clause is worse than none. */
+function requiredText(value: string, label: string, max: number): string {
+  const text = String(value ?? '').replace(/\r\n?/g, '\n').trim()
+  if (text.length < 3) throw new ActionError(`Enter the ${label}`)
+  if (text.length > max) throw new ActionError(`The ${label} are too long (${text.length} of ${max} characters). Shorten them`)
+  return text
+}
 
 export async function createQuotation(actorId: number, input: QuotationInput): Promise<number> {
   const m = /^(customer|lead):(\d{1,9})$/.exec(input.recipient.trim())
@@ -27,6 +47,8 @@ export async function createQuotation(actorId: number, input: QuotationInput): P
   const expiry = isoDay(input.validUntil, issued, 'Valid until')
   if (expiry < issued) throw new ActionError('Validity must not precede the issue date')
   const taxPercent = input.taxPercent.trim().slice(0, 20) || '0'
+  const paymentTerms = requiredText(input.paymentTerms, 'terms of payment', MAX_PAYMENT_TERMS)
+  const termsConditions = requiredText(input.termsConditions, 'terms and conditions', MAX_TERMS_CONDITIONS)
   try {
     return await tx(async (t) => {
       const [owner] = which === 'customer' ? await t`select id, currency from customers where id = ${ownerId}` : await t`select id from leads where id = ${ownerId}`
@@ -35,8 +57,8 @@ export async function createQuotation(actorId: number, input: QuotationInput): P
       const amounts = moneyErrors(() => calcLines(lines, currency, taxPercent))
       const code = await ensurePublicCode(t, which === 'customer' ? 'customers' : 'leads', ownerId)
       const number = await nextNumber(t, 'QUO', code, issued)
-      const [q] = await t`insert into quotations (number, customer_id, lead_id, status, currency, issued_at, valid_until, notes, tax_percent, subtotal_minor, tax_minor, total_minor)
-        values (${number}, ${which === 'customer' ? ownerId : null}, ${which === 'lead' ? ownerId : null}, 'draft', ${currency}, ${issued}, ${expiry}, ${input.notes.slice(0, 2500)},
+      const [q] = await t`insert into quotations (number, customer_id, lead_id, status, currency, issued_at, valid_until, payment_terms, terms_conditions, notes, tax_percent, subtotal_minor, tax_minor, total_minor)
+        values (${number}, ${which === 'customer' ? ownerId : null}, ${which === 'lead' ? ownerId : null}, 'draft', ${currency}, ${issued}, ${expiry}, ${paymentTerms}, ${termsConditions}, ${input.notes.slice(0, 2500)},
                 ${taxPercent}, ${amounts.subtotalMinor}, ${amounts.taxMinor}, ${amounts.totalMinor}) returning id`
       for (const item of amounts.items) {
         await t`insert into quotation_items (quotation_id, description, unit, quantity, price_minor, amount_minor)
@@ -88,10 +110,12 @@ export async function requestApproval(actorId: number, id: number, baseUrl: stri
     if (!conf?.enabled || !rule?.enabled) throw new ActionError('Configure SMTP and enable the quotation approval email rule first', 409)
 
     await t`update quotation_approvals set status = 'revoked' where quotation_id = ${id} and status = 'pending'`
-    const raw = randomBytes(42).toString('base64url')
+    // The link is derived from the request's own number (see approval-token.ts), so the id is taken from the sequence first.
+    const [{ approvalId }] = await t`select nextval(pg_get_serial_sequence('quotation_approvals', 'id'))::int as approval_id`
+    const raw = approvalToken(approvalId as number)
     const endOfValidity = Date.parse((q.validUntil as string) + 'T00:00:00Z') + 86_400_000
     const expiresAt = new Date(Math.min(Date.now() + APPROVAL_LINK_DAYS * 86_400_000, endOfValidity))
-    const [req] = await t`insert into quotation_approvals (quotation_id, token_hash, expires_at, status) values (${id}, ${await sha256Hex(raw)}, ${expiresAt}, 'pending') returning id`
+    const [req] = await t`insert into quotation_approvals (id, quotation_id, token_hash, expires_at, status) values (${approvalId as number}, ${id}, ${await sha256Hex(raw)}, ${expiresAt}, 'pending') returning id`
     const ver = await getVerification(t, 'quotation', id)
     const queued = await enqueue(t, 'quotation_approval_request', recipient.email as string, {
       customer_name: recipient.name, document_number: q.number, valid_until: q.validUntil,
@@ -104,13 +128,17 @@ export async function requestApproval(actorId: number, id: number, baseUrl: stri
   })
 }
 
-export type ApprovalView = QuotationApprovalsRow & { quotationNumber: string; quotationStatus: string }
+/** The approval request plus what the customer is being asked to accept: shown on the private page before anything is signed. */
+export type ApprovalView = QuotationApprovalsRow & {
+  quotationNumber: string; quotationStatus: string
+  validUntil: string; currency: string; totalMinor: number; paymentTerms: string; termsConditions: string
+}
 
 /** Finds an approval request by its bearer token. Only the SHA-256 of the token is stored. */
 export async function approvalByToken(token: string): Promise<ApprovalView | null> {
   if (typeof token !== 'string' || token.length < 36 || token.length > 150) return null
-  const [row] = await sql`select a.*, q.number as quotation_number, q.status as quotation_status from quotation_approvals a
-                          join quotations q on q.id = a.quotation_id where a.token_hash = ${await sha256Hex(token)}`
+  const [row] = await sql`select a.*, q.number as quotation_number, q.status as quotation_status, q.valid_until, q.currency, q.total_minor, q.payment_terms, q.terms_conditions
+                          from quotation_approvals a join quotations q on q.id = a.quotation_id where a.token_hash = ${await sha256Hex(token)}`
   return (row as ApprovalView | undefined) ?? null
 }
 

@@ -6,6 +6,7 @@ import { createBank, updateBank, type BankAction } from '@/server/finance/banks'
 import { saveCustomer } from '@/server/finance/customers'
 import { createInvoice, sendInvoice, setInvoiceStatus } from '@/server/finance/invoices'
 import { cancelPayment, confirmPayment, recordPayment } from '@/server/finance/payments'
+import { ensurePrepayment, sendPrepayment, uploadPrepaymentStamp, voidPrepayment } from '@/server/finance/prepayments'
 import { createQuotation, requestApproval, reviewApproval, setQuotationStatus } from '@/server/finance/quotations'
 import { uploadReceiptStamp, voidReceipt } from '@/server/finance/receipts'
 import { fileBytes, int, rawStr, str } from '@/server/http'
@@ -57,6 +58,7 @@ export async function createQuotationAction(_prev: FormState, form: FormData): P
   return adminRunForm(form, async ({ user }) => {
     const id = await createQuotation(user.id, {
       recipient: str(form, 'recipient', 30), issuedAt: str(form, 'issued_at', 10), validUntil: str(form, 'valid_until', 10), taxPercent: str(form, 'tax_percent', 20),
+      paymentTerms: rawStr(form, 'payment_terms', 20_000), termsConditions: rawStr(form, 'terms_conditions', 20_000),
       notes: rawStr(form, 'notes', 2500), items: rawStr(form, 'items', 30_000),
     })
     return { to: `/admin/quotations/${id}`, notice: 'Quotation draft created' }
@@ -166,5 +168,41 @@ export async function voidReceiptAction(form: FormData) {
     const id = int(form, 'record')
     await voidReceipt(user.id, id)
     return { to: `/admin/receipts/${id}`, notice: 'Receipt voided: the payment was reversed and the invoice recalculated' }
+  })
+}
+
+// ------------------------------------------------------- pre-payment receipts
+export async function ensurePrepaymentAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    const invoiceId = int(form, 'record')
+    const id = await ensurePrepayment(user.id, invoiceId)
+    return { to: `/admin/prepayment-receipts/${id}`, notice: 'Pre-payment receipt created' }
+  })
+}
+
+export async function uploadPrepaymentStampAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    const id = int(form, 'record')
+    await uploadPrepaymentStamp(user.id, id, {
+      providerReference: str(form, 'stamp_provider_reference', 160), reviewed: form.get('approved') === '1', file: await fileBytes(form, 'stamped_pdf', maxUploadBytes()),
+    })
+    return { to: `/admin/prepayment-receipts/${id}`, notice: 'Stamped pre-payment receipt stored privately and released' }
+  })
+}
+
+export async function sendPrepaymentAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    const id = int(form, 'record')
+    await sendPrepayment(user.id, id, publicBaseUrl())
+    sendSoon()
+    return { to: `/admin/prepayment-receipts/${id}`, notice: 'Pre-payment receipt email queued. Check the SMTP outbox for delivery status' }
+  })
+}
+
+export async function voidPrepaymentAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    const id = int(form, 'record')
+    await voidPrepayment(user.id, id)
+    return { to: `/admin/prepayment-receipts/${id}`, notice: 'Pre-payment receipt voided' }
   })
 }

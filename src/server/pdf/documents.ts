@@ -1,13 +1,20 @@
 import type { Db } from '../db'
 import { settingMap } from '../settings'
+import { sha256Hex } from '../crypto'
 import { today } from '../dates'
 import { ActionError } from '../errors'
+import { approvalToken } from '../finance/approval-token'
 import { readStampedReceipt } from '../finance/receipts'
 import { getVerification, type DocumentKind } from '../verification'
-import { renderPaginated } from './invoice'
-import { COMPACT_MAX_ITEMS, renderQuotationOnePage } from './quotation'
+import { documentType } from '../../content/document-types'
+import type { StoredFields } from '../documents/general'
+import { renderCertificate } from './certificate'
+import { renderGeneral } from './general'
+import { renderInvoice } from './invoice'
+import { renderPrepayment } from './prepayment'
+import { renderQuotation } from './quotation'
 import { renderReceipt } from './receipt'
-import type { BankLine, InvoiceData, Issuer, LineData, Party, QuotationData, ReceiptData } from './types'
+import type { BankLine, GeneralDocData, InvoiceData, Issuer, LineData, Party, PrepaymentData, QuotationData, ReceiptData } from './types'
 
 const party = (r: Record<string, unknown> | undefined, name?: string): Party => ({
   name: name ?? String(r?.name ?? ''), address: String(r?.address ?? ''), email: String(r?.email ?? ''), taxId: String(r?.taxId ?? ''),
@@ -18,7 +25,7 @@ const lines = (rows: Array<Record<string, unknown>>): LineData[] => rows.map((i)
 
 async function issuerOf(db: Db): Promise<Issuer> {
   const s = await settingMap(db)
-  return { legalName: s.legal_name || 'PT Satu Arah International', address: s.address || '', email: s.email || 'info@voraworld.id' }
+  return { legalName: s.legal_name || 'PT Satu Arah International', address: s.address || '', email: s.email || 'info@voraworld.id', taxId: (s.tax_id || '').trim() }
 }
 
 async function verifyUrl(db: Db, kind: DocumentKind, id: number, baseUrl: string): Promise<string> {
@@ -28,13 +35,15 @@ async function verifyUrl(db: Db, kind: DocumentKind, id: number, baseUrl: string
 }
 
 /**
- * The PDF of an invoice, quotation or receipt, built from the database. A receipt that needed an e-meterai and has been
+ * The PDF of an invoice, quotation, receipt or pre-payment receipt, built from the database. A (pre-payment) receipt that needed an e-meterai and has been
  * released is NOT regenerated: the stamped file from private storage is returned (after its SHA-256 check), because
  * a re-rendered copy would not carry the stamp.
  */
 export async function renderDocumentPdf(db: Db, kind: DocumentKind, id: number, baseUrl: string): Promise<Uint8Array> {
   if (kind === 'invoice') return invoicePdf(db, id, baseUrl)
   if (kind === 'quotation') return quotationPdf(db, id, baseUrl)
+  if (kind === 'prepayment') return prepaymentPdf(db, id, baseUrl)
+  if (kind === 'document') return generalPdf(db, id, baseUrl)
   return receiptPdf(db, id, baseUrl)
 }
 
@@ -53,7 +62,7 @@ async function invoicePdf(db: Db, id: number, baseUrl: string): Promise<Uint8Arr
     items: lines(items), customer: party(customer),
     banks: banks.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: b.position as number })),
   }
-  return renderPaginated({ kind: 'invoice', ...data }, await issuerOf(db), await verifyUrl(db, 'invoice', id, baseUrl))
+  return renderInvoice(data, await issuerOf(db), await verifyUrl(db, 'invoice', id, baseUrl))
 }
 
 async function quotationPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Array> {
@@ -65,12 +74,21 @@ async function quotationPdf(db: Db, id: number, baseUrl: string): Promise<Uint8A
   if (!recipient) throw new ActionError('The quotation recipient is missing', 409)
   const items = await db`select * from quotation_items where quotation_id = ${id} order by id`
   const data: QuotationData = {
-    number: q.number as string, status: q.status as string, currency: q.currency as string, issuedAt: q.issuedAt as string, validUntil: q.validUntil as string, notes: String(q.notes ?? ''),
+    number: q.number as string, status: q.status as string, currency: q.currency as string, issuedAt: q.issuedAt as string, validUntil: q.validUntil as string,
+    paymentTerms: String(q.paymentTerms ?? ''), termsConditions: String(q.termsConditions ?? ''), notes: String(q.notes ?? ''),
     taxPercent: String(q.taxPercent), subtotalMinor: q.subtotalMinor as number, taxMinor: q.taxMinor as number, totalMinor: q.totalMinor as number, items: lines(items), recipient: party(recipient),
+  }
+  // While a customer approval request is open, its private upload address is printed (and clickable) in the approval area.
+  const [open] = q.status === 'awaiting_approval'
+    ? await db`select id, token_hash from quotation_approvals where quotation_id = ${id} and status = 'pending' and expires_at > now() order by id desc limit 1`
+    : []
+  if (open) {
+    const token = approvalToken(open.id as number)
+    if ((await sha256Hex(token)) === open.tokenHash) data.uploadUrl = `${baseUrl.replace(/\/+$/, '')}/quotation-approval/${token}`   // a link from before addresses were derived has no printable form
   }
   const issuer = await issuerOf(db)
   const url = await verifyUrl(db, 'quotation', id, baseUrl)
-  return data.items.length <= COMPACT_MAX_ITEMS ? renderQuotationOnePage(data, issuer, url) : renderPaginated({ kind: 'quotation', ...data }, issuer, url)
+  return renderQuotation(data, issuer, url)
 }
 
 async function receiptPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Array> {
@@ -90,4 +108,42 @@ async function receiptPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Arr
     payer: party(customer),
   }
   return renderReceipt(data, await issuerOf(db), await verifyUrl(db, 'receipt', id, baseUrl))
+}
+
+async function prepaymentPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Array> {
+  const [p] = await db`select * from prepayment_receipts where id = ${id}`
+  if (!p) throw new ActionError('Pre-payment receipt not found', 404)
+  if (p.stampRequired && p.status === 'issued') return readStampedReceipt(p as never)
+  const [inv] = await db`select * from invoices where id = ${p.invoiceId as number}`
+  const [customer] = await db`select * from customers where id = ${inv.customerId as number}`
+  const banks = await db`select * from invoice_bank_instructions where invoice_id = ${inv.id as number} order by position, id`
+  const data: PrepaymentData = {
+    number: p.number as string, status: p.status as string, stampRequired: Boolean(p.stampRequired), issuedOn: String(inv.issuedAt ?? ''),
+    currency: p.currency as string, amountMinor: p.amountMinor as number,
+    invoice: { number: inv.number as string, issuedAt: String(inv.issuedAt ?? ''), dueAt: String(inv.dueAt ?? ''), poNumber: String(inv.poNumber ?? ''), shipmentReference: String(inv.shipmentReference ?? '') },
+    payer: party(customer),
+    banks: banks.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: b.position as number })),
+  }
+  return renderPrepayment(data, await issuerOf(db), await verifyUrl(db, 'prepayment', id, baseUrl))
+}
+
+/** A general document: a letter, statement, certificate... Drawn from what was typed; a draft and a void one are marked as such on every page. */
+async function generalPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Array> {
+  const [doc] = await db`select * from documents where id = ${id}`
+  if (!doc) throw new ActionError('Document not found', 404)
+  const type = documentType(doc.kind as string)
+  if (!type) throw new ActionError('This document type is no longer supported', 409)
+  const stored = doc.fields as StoredFields
+  const invoices = stored.invoices ?? []
+  // A billing letter pays into the accounts printed on the invoices it lists (frozen on each invoice).
+  const rows = invoices.length ? await db`select bank_name, account_number, account_holder, currency, swift_code, min(position) as position
+    from invoice_bank_instructions where invoice_id in ${db(invoices.map((i) => i.id))} group by bank_name, account_number, account_holder, currency, swift_code order by min(position), bank_name limit 4` : []
+  const data: GeneralDocData = {
+    number: doc.number as string, kind: type.key, language: doc.language as 'id' | 'en', status: doc.status as string, documentDate: String(doc.documentDate),
+    values: stored.values ?? {}, invoices,
+    banks: rows.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: Number(b.position) })),
+  }
+  const issuer = await issuerOf(db)
+  const url = await verifyUrl(db, 'document', id, baseUrl)
+  return type.family === 'certificate' ? renderCertificate(data, issuer, url) : renderGeneral(data, issuer, url)
 }

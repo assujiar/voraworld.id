@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { sha256Hex } from './crypto'
 import type { Db } from './db'
 
-export type DocumentKind = 'invoice' | 'receipt' | 'quotation'
+export type DocumentKind = 'invoice' | 'receipt' | 'quotation' | 'prepayment' | 'document'
 
 /** Opaque public token for the QR code. Only its SHA-256 is needed for lookup; the token is kept to print the URL. */
 export async function createVerification(db: Db, kind: DocumentKind, documentId: number): Promise<string> {

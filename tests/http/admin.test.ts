@@ -135,6 +135,25 @@ describe('the admin', () => {
     }
   })
 
+  it('offers the company NPWP (seeded with the registered number) and the default quotation terms in the site settings', async () => {
+    const html = await c.text('/admin/settings')
+    expect(html).toContain('NPWP (tax ID), printed on documents'); expect(html).toContain('1000 0000 1178 2812')
+    expect(html).toContain('Quotations: default terms of payment'); expect(html).toContain('Quotations: default terms and conditions')
+  })
+
+  it('starts a new quotation from the default terms in the site settings, and requires both', async () => {
+    await db`insert into settings (key, value) values ('quotation_payment_terms', 'DEFAULT-PAYMENT-TERMS'), ('quotation_terms', E'1. DEFAULT clause one\n2. DEFAULT clause two') on conflict (key) do update set value = excluded.value`
+    try {
+      const html = await c.text('/admin/quotations/new')
+      expect(html).toContain('DEFAULT-PAYMENT-TERMS'); expect(html).toContain('1. DEFAULT clause one'); expect(html).toContain('2. DEFAULT clause two')
+      expect(html).toMatch(/name="payment_terms"[^>]*required/); expect(html).toMatch(/name="terms_conditions"[^>]*required/)
+    } finally {
+      await db`delete from settings where key in ('quotation_payment_terms', 'quotation_terms')`
+    }
+    const blank = await c.text('/admin/quotations/new')
+    expect(blank).not.toContain('DEFAULT-PAYMENT-TERMS')
+  })
+
   it('shows every menu entry in the sidebar of every page and none of them is a dead link', async () => {
     const html = await c.text('/admin')
     for (const cat of ADMIN_MENU) for (const l of cat.links) expect(html, l.href).toContain(`href="${l.href}"`)
@@ -188,10 +207,10 @@ describe('the admin', () => {
 
   it('answers 404, never a server error, for ids that are not real record numbers', async () => {
     const bad = ['99999999999999999999', '2147483648', '-1', '0', '1e3', 'abc', '%00', '1.5']
-    for (const section of ['leads', 'articles', 'pages', 'customers', 'quotations', 'invoices', 'receipts']) {
+    for (const section of ['leads', 'articles', 'pages', 'customers', 'quotations', 'invoices', 'receipts', 'prepayment-receipts', 'documents']) {
       for (const id of bad) expect((await c.get(`/admin/${section}/${id}`)).status, `/admin/${section}/${id}`).toBe(404)
     }
-    for (const p of ['/admin/invoices/99999999999/pdf', '/admin/quotations/-5/pdf', '/admin/receipts/abc/pdf', '/admin/quotation-approvals/99999999999/file', '/en/preview/article/99999999999', '/id/preview/page/abc'])
+    for (const p of ['/admin/invoices/99999999999/pdf', '/admin/quotations/-5/pdf', '/admin/receipts/abc/pdf', '/admin/prepayment-receipts/abc/pdf', '/admin/documents/abc/pdf', '/admin/documents/-3/edit', '/admin/prepayment-receipts/99999999999/pdf', '/admin/quotation-approvals/99999999999/file', '/en/preview/article/99999999999', '/id/preview/page/abc'])
       expect((await c.get(p)).status, p).toBe(404)
   })
 

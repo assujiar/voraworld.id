@@ -14,6 +14,7 @@ import { setSender } from '@/server/mail/transport'
 import { today } from '@/server/dates'
 import { act, createUser, q, sessionFor } from './helpers/actions'
 import { makePdf } from './helpers/pdf'
+import { pdfLinks } from './helpers/pdf-text'
 
 process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64')
 process.env.PUBLIC_BASE_URL = 'https://testserver'      // production links are https; the sanitiser drops plain http hrefs
@@ -21,12 +22,12 @@ process.env.VORA_LOCAL_STORAGE_DIR = mkdtempSync(join(tmpdir(), 'vora-finact-'))
 let admin: string
 const as = () => ({ as: admin })
 const pdfFile = (bytes: Uint8Array, name = 'doc.pdf') => new File([bytes as BlobPart], name, { type: 'application/pdf' })
-const sent: Array<{ to: string; subject: string; attachment?: string }> = []
+const sent: Array<{ to: string; subject: string; attachment?: string; content?: Uint8Array }> = []
 
 beforeAll(async () => { admin = await sessionFor(await createUser('finance-actions@example.invalid', 'admin')) })
 beforeEach(async () => {
   sent.length = 0
-  setSender(async (_conf, to, subject, _html, attachment) => { sent.push({ to, subject, attachment: attachment?.filename }) })
+  setSender(async (_conf, to, subject, _html, attachment) => { sent.push({ to, subject, attachment: attachment?.filename, content: attachment?.content }) })
   await sql`truncate customers, bank_accounts, quotations, invoices, payments, receipts, document_verification_tokens, email_jobs, leads, mail_config restart identity cascade`
   await sql`update email_rules set enabled = false`
 })
@@ -157,7 +158,7 @@ describe('the full money flow through the form actions', () => {
 describe('quotation approval through the actions', () => {
   it('requires the email setup, then the customer link carries a submission that Finance reviews', async () => {
     const cid = await customer()
-    const created = await act(createQuotationAction, { recipient: `customer:${cid}`, issued_at: today(), valid_until: '2999-01-01', tax_percent: '0', items: 'Air freight | 1 | 50000 | kg' }, as())
+    const created = await act(createQuotationAction, { recipient: `customer:${cid}`, issued_at: today(), valid_until: '2999-01-01', tax_percent: '0', payment_terms: 'Payment within 14 days of the invoice date', terms_conditions: 'Rates are valid for the period stated.', items: 'Air freight | 1 | 50000 | kg' }, as())
     const id = Number(/quotations\/(\d+)/.exec(created.redirect!)![1])
     await act(quotationStatusAction, { record: String(id), action: 'issue' }, as())
     expect(q((await act(requestApprovalAction, { record: String(id), _back: `/admin/quotations/${id}` }, as())).redirect).get('error')).toMatch(/Configure SMTP/)
@@ -168,6 +169,11 @@ describe('quotation approval through the actions', () => {
     const [job] = await sql`select html from email_jobs where event = 'quotation_approval_request'`
     const token = /quotation-approval\/([A-Za-z0-9_-]+)/.exec(job.html as string)![1]
     const [{ number }] = await sql`select number from quotations where id = ${id}`
+    // The emailed PDF carries the same private address as the email, as a clickable link, and the document's verification address on every page.
+    const [{ verifyToken }] = await sql`select token as verify_token from document_verification_tokens where kind = 'quotation' and document_id = ${id}`
+    const emailed = await pdfLinks(sent[0].content!)
+    expect(emailed.flat()).toContain(`https://testserver/quotation-approval/${token}`)
+    for (const page of emailed) expect(page).toContain(`https://testserver/verify/${verifyToken}`)
 
     // The customer needs no account: this is a public action. Everything goes through one form.
     const form = (o: Record<string, string | Blob>) => ({ token, signer_name: 'Siti Rahma', signer_title: 'Finance Director', ack: 'yes', ...o })
