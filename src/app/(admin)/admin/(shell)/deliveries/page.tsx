@@ -1,4 +1,4 @@
-import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
+import { AdminPage, ListLoad, day, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause } from '@/server/data'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { StepForm } from '@/components/feedback/StepForm'
@@ -10,12 +10,6 @@ export default async function Deliveries({ searchParams }: { searchParams: Promi
   const sp = await searchParams
   const q = (sp.q ?? '').trim().slice(0, 120)
   const status = STATUSES.includes(sp.status ?? '') ? sp.status! : ''
-  const clause = await searchClause(q, ['number', 'consignee_name', 'destination', 'shipment_reference', 'po_number'])
-  const rows = await many('deliveries', (f) => {
-    let b = clause ? f.or(clause) : f
-    if (status) b = b.eq('status', status)
-    return b.order('id', { ascending: false })
-  }, 'id,number,status,consignee_name,destination,delivery_date,delivered_at,created_at', 300)
   return (
     <AdminPage heading="Delivery Notes" sp={sp}>
       <div className="admin-panel">
@@ -28,7 +22,21 @@ export default async function Deliveries({ searchParams }: { searchParams: Promi
           <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s} value={s}>{label(DELIVERY_LABEL, s)}</option>)}</select>
           <AsyncButton className="button">Filter</AsyncButton>
         </StepForm>
-        <table><thead><tr><th>Delivery note</th><th>Consignee</th><th>Destination</th><th>Date</th><th>Status</th><th>Received</th></tr></thead><tbody>
+        <ListLoad filters={[q, status]} what="delivery notes" columns={6}><DeliveryRows q={q} status={status} /></ListLoad>
+      </div>
+    </AdminPage>
+  )
+}
+
+async function DeliveryRows({ q, status }: { q: string; status: string }) {
+  const clause = await searchClause(q, ['number', 'consignee_name', 'destination', 'shipment_reference', 'po_number'])
+  const rows = await many('deliveries', (f) => {
+    let b = clause ? f.or(clause) : f
+    if (status) b = b.eq('status', status)
+    return b.order('id', { ascending: false })
+  }, 'id,number,status,consignee_name,destination,delivery_date,delivered_at,created_at', 300)
+  return (
+      <table><thead><tr><th>Delivery note</th><th>Consignee</th><th>Destination</th><th>Date</th><th>Status</th><th>Received</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>
               <td><a href={`/admin/deliveries/${r.id}`}>{r.number as string}</a></td>
@@ -38,7 +46,5 @@ export default async function Deliveries({ searchParams }: { searchParams: Promi
             </tr>
           )) : <tr><td colSpan={6}>No delivery notes found.</td></tr>}
         </tbody></table>
-      </div>
-    </AdminPage>
   )
 }

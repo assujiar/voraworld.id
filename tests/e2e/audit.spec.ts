@@ -44,10 +44,13 @@ for (const locale of ['en', 'id'] as const) {
         if (m.lang !== locale) problems.push(`${tag} lang="${m.lang}"`)
         if (m.cursor !== 'auto' && m.cursor !== 'default') problems.push(`${tag} custom cursor "${m.cursor}"`)
       }
-      if (width <= 780) {
+      if (width <= 1020) {
         await page.goto(`/${locale}`)
-        await page.click('.mobile-nav summary')
-        if (!(await page.isVisible('.mobile-menu a[href$="/request-quote"]'))) problems.push(`${locale}@${width}: the mobile menu did not open`)
+        await page.click('.v-burger summary')
+        if (!(await page.isVisible('.v-burger__panel a[href$="/request-quote"]'))) problems.push(`${locale}@${width}: the mobile menu did not open`)
+        const switcher = await page.locator('.v-burger__panel .v-lang').getAttribute('href')
+        if (switcher !== `/${locale === 'en' ? 'id' : 'en'}`) problems.push(`${locale}@${width}: language switch in the menu points to ${switcher}`)
+        if (await page.locator('.v-header__end .v-lang').isVisible()) problems.push(`${locale}@${width}: the language switch is still in the header bar`)
       }
       expect([...problems, ...errors]).toEqual([])
       await context.close()
@@ -89,7 +92,7 @@ for (const width of ADMIN_WIDTHS) {
 
     // The menu is grouped; on phones and small tablets it sits behind a button.
     await page.goto('/admin', { waitUntil: 'networkidle' })
-    if (width <= 780) {
+    if (width <= 1020) {
       await page.click('.admin-sidebar summary.sidebar-toggle')
       await expect(page.locator('.logout-button')).toBeVisible()
     }

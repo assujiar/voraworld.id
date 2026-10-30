@@ -1,4 +1,6 @@
-import { dispatchMailAction, retryMailJobAction, saveMailConfigAction, saveMailTemplateAction, setMailRuleAction, testMailAction } from '@/actions/settings'
+import { dispatchMailAction, retryMailJobAction, saveMailConfigAction, saveMailTemplateAction, setMailRuleAction, testMailAction, testTemplateMailAction } from '@/actions/settings'
+import { TemplateEditor } from '@/components/admin/TemplateEditor'
+import { variablesOf } from '@/server/mail/preview'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
 import { many } from '@/server/data'
 import { getMailConfig } from '@/server/mail/config'
@@ -47,14 +49,12 @@ export default async function Mail({ searchParams }: { searchParams: Promise<Not
       </div>
       <div className="admin-panel">
         <h3>Email templates</h3>
-        <p className="note">Available variables for cleared funds: $customer_name, $invoice_number, $payment_amount, $payment_date, $payment_reference, $invoice_status, $outstanding_amount. Use only approved HTML.</p>
+        <p className="note">Each email has its own variables, listed under the text; click one to place it at the cursor. The preview is made by the server with the same safety filter as the message that is sent, so unsupported markup is gone from it too. Use only approved HTML.</p>
         {templates.map((t) => (
           <details key={t.key as string} style={{ marginBottom: 15 }}><summary data-key={t.key as string}><strong>{eventName(t.key as string)}</strong></summary>
-            <PendingForm action={saveMailTemplateAction}><input type="hidden" name="key" value={t.key as string} />{B}
-              <div className="field"><label>Email subject</label><input name="subject" defaultValue={t.subject as string} required /></div>
-              <div className="field"><label>HTML template</label><textarea name="html" rows={6} defaultValue={t.html as string} /></div>
-              <AsyncButton className="button">Save template</AsyncButton>
-            </PendingForm></details>
+            <TemplateEditor name={eventName(t.key as string)} keyName={t.key as string} subject={t.subject as string} html={t.html as string}
+              variables={variablesOf(t.key as string, t.subject as string, t.html as string)} save={saveMailTemplateAction} test={testTemplateMailAction} back={B} />
+          </details>
         ))}
       </div>
       <div className="admin-panel">

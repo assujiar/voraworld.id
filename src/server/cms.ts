@@ -1,4 +1,4 @@
-import { many, one, rpc } from './data'
+import { many, one, rpc, update } from './data'
 import type { PagesRow } from './schema'
 import { cleanHtml } from './sanitize'
 import { slugify } from './slug'
@@ -103,3 +103,60 @@ export async function snapshotPage(p: PagesRow) {
     sections: sections.map((s) => ({ position: s.position, kind: s.kind, layout: s.layout, visible: s.visible, title: s.title, body: s.body, image: s.image, button_label: s.buttonLabel, button_href: s.buttonHref, surface: s.surface })),
   }
 }
+
+// ---------------------------------------------------------------- autosave of drafts
+/** The row's time as the browser last saw it, widened to the millisecond (the database keeps microseconds, a JavaScript Date does not). */
+const withinMs = (base: Date) => ({ from: base.toISOString(), to: new Date(base.getTime() + 1).toISOString() })
+
+/**
+ * Keeps a DRAFT that is being edited. It never touches a published article (visitors read those rows directly) and writes only when the draft is
+ * still the one the editor loaded: if another tab or person saved it since, nothing is overwritten and the editor is told. No revision is made for
+ * each autosave; an explicit save still stores one.
+ */
+export async function autosaveArticle(id: number, base: Date, input: Omit<ArticleInput, 'action'>): Promise<Date> {
+  const row = await one('articles', (q) => q.eq('id', id), 'id,status,slug')
+  if (!row) throw new ActionError('Artikel tidak ditemukan', 404)
+  if (row.status !== 'draft') throw new ActionError('Hanya draf yang disimpan otomatis. Gunakan Save draft atau Publish.', 409)
+  const title = input.title.trim().slice(0, 240)
+  if (!title) throw new ActionError('Judul masih kosong, jadi belum disimpan otomatis.', 422)
+  const slug = slugify(input.slug || (row.slug as string) || title)
+  const { from, to } = withinMs(base)
+  const now = new Date()
+  let saved = now
+  try {
+    const rows = await update('articles', {
+      title, slug, excerpt: input.excerpt.slice(0, 1600), body: cleanHtml(input.body), category: input.category.slice(0, 80) || 'Updates', tags: input.tags.slice(0, 400),
+      locale: input.locale === 'id' ? 'id' : 'en', author: input.author.slice(0, 120) || 'VORA Editorial', seo_title: input.seoTitle.slice(0, 200), seo_description: input.seoDescription.slice(0, 300), updated_at: now,
+    }, (f) => f.eq('id', id).eq('status', 'draft').gte('updated_at', from).lt('updated_at', to))
+    if (!rows.length) throw new ActionError('Draf ini sudah diubah di tempat lain sejak halaman ini dibuka. Muat ulang halaman sebelum melanjutkan, agar perubahan itu tidak tertimpa.', 409)
+    saved = rows[0].updatedAt as Date
+  } catch (e) {
+    if (isUnique(e)) throw new ActionError('Slug itu sudah dipakai artikel lain.', 409)
+    throw e
+  }
+  return saved
+}
+
+export async function autosavePage(id: number, base: Date, input: Omit<PageInput, 'action'>): Promise<Date> {
+  const row = await one('pages', (q) => q.eq('id', id), 'id,status,slug')
+  if (!row) throw new ActionError('Halaman tidak ditemukan', 404)
+  if (row.status !== 'draft') throw new ActionError('Hanya draf yang disimpan otomatis. Gunakan Save draft atau Publish page.', 409)
+  const title = input.title.trim().slice(0, 200)
+  if (!title) throw new ActionError('Judul masih kosong, jadi belum disimpan otomatis.', 422)
+  const slug = slugify(input.slug || (row.slug as string) || title)
+  if (RESERVED_SLUGS.has(slug.split('/')[0])) throw new ActionError('Slug itu dipakai sistem.', 409)
+  const { from, to } = withinMs(base)
+  const now = new Date()
+  let saved = now
+  try {
+    const rows = await update('pages', { title, slug, locale: input.locale === 'id' ? 'id' : 'en', description: input.description.slice(0, 1200), seo_title: input.seoTitle.slice(0, 200), updated_at: now },
+      (f) => f.eq('id', id).eq('status', 'draft').gte('updated_at', from).lt('updated_at', to))
+    if (!rows.length) throw new ActionError('Draf ini sudah diubah di tempat lain sejak halaman ini dibuka. Muat ulang halaman sebelum melanjutkan, agar perubahan itu tidak tertimpa.', 409)
+    saved = rows[0].updatedAt as Date
+  } catch (e) {
+    if (isUnique(e)) throw new ActionError('Slug itu sudah dipakai halaman lain.', 409)
+    throw e
+  }
+  return saved
+}
+

@@ -1,5 +1,5 @@
 import { LEAD_STATUSES } from '@/server/lead-constants'
-import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
+import { AdminPage, ListLoad, day, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause } from '@/server/data'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { StepForm } from '@/components/feedback/StepForm'
@@ -9,8 +9,6 @@ export default async function Leads({ searchParams }: { searchParams: Promise<No
   const sp = await searchParams
   const q = (sp.q ?? '').trim().slice(0, 120)
   const status = LEAD_STATUSES.includes(sp.status ?? '') ? sp.status! : ''
-  const clause = await searchClause(q, ['name', 'company', 'email'])
-  const rows = await many('leads', (f) => (status ? (clause ? f.or(clause) : f).eq('status', status) : clause ? f.or(clause) : f).order('id', { ascending: false }), 'id,reference,name,company,email,type,status,priority,created_at', 250)
   return (
     <AdminPage heading="Leads" sp={sp}>
       <div className="admin-panel">
@@ -20,7 +18,17 @@ export default async function Leads({ searchParams }: { searchParams: Promise<No
           <AsyncButton className="button">Filter</AsyncButton>
           <a className="button-outline" href="/admin/leads.csv">Export CSV</a>
         </StepForm>
-        <table><thead><tr><th>Reference</th><th>Lead</th><th>Type</th><th>Created</th><th>Pipeline</th><th>Priority</th></tr></thead><tbody>
+        <ListLoad filters={[q, status]} what="leads" columns={6}><LeadRows q={q} status={status} /></ListLoad>
+      </div>
+    </AdminPage>
+  )
+}
+
+async function LeadRows({ q, status }: { q: string; status: string }) {
+  const clause = await searchClause(q, ['name', 'company', 'email'])
+  const rows = await many('leads', (f) => (status ? (clause ? f.or(clause) : f).eq('status', status) : clause ? f.or(clause) : f).order('id', { ascending: false }), 'id,reference,name,company,email,type,status,priority,created_at', 250)
+  return (
+      <table><thead><tr><th>Reference</th><th>Lead</th><th>Type</th><th>Created</th><th>Pipeline</th><th>Priority</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>
               <td>{(r.reference as string) || `Legacy #${r.id}`}</td>
@@ -29,7 +37,5 @@ export default async function Leads({ searchParams }: { searchParams: Promise<No
             </tr>
           )) : <tr><td colSpan={6}>No matching leads.</td></tr>}
         </tbody></table>
-      </div>
-    </AdminPage>
   )
 }

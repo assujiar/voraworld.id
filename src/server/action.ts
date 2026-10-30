@@ -4,6 +4,7 @@ import { assertSameOrigin } from './auth/csrf'
 import { currentUser, assertAdmin, type SessionUser } from './auth/guard'
 import { ActionError } from './errors'
 import { HttpError } from './http'
+import { takeStaged } from './staging'
 
 export { ActionError }
 
@@ -45,7 +46,7 @@ export async function adminRun(form: FormData, fn: (c: AdminCtx) => Promise<Done
   const user = await currentUser()
   if (!user) redirect('/admin/login')
   assertAdmin(user)
-  await execute(form, '/admin', () => fn({ form, user }))
+  await execute(form, '/admin', async () => { await takeStaged(form, user.id); return fn({ form, user }) })
 }
 
 /** What a form-state action hands back to its form when the submission is refused: the message and what was typed. */
@@ -74,6 +75,7 @@ export async function adminRunForm(form: FormData, fn: (c: AdminCtx) => Promise<
   assertAdmin(user)
   let result: Done
   try {
+    await takeStaged(form, user.id)
     result = await fn({ form, user })
   } catch (e) {
     if (e instanceof ActionError) return { error: e.message, values: typedValues(form) }

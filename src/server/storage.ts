@@ -1,4 +1,4 @@
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { data } from './data/client'
 import { isProd, supabaseSecretKey, supabaseUrl } from './env'
@@ -80,4 +80,20 @@ export async function getObject(bucket: Bucket, key: string, maxBytes: number): 
 /** Public URL of a media object: Supabase public bucket in production, `/uploads/...` locally. */
 export function mediaUrl(key: string): string {
   return remote() ? data().storage.from(bucketName('media')).getPublicUrl(key).data.publicUrl : `/uploads/${key}`
+}
+
+/** Files directly under a folder of a bucket with the time they were stored. Used only to sweep abandoned uploads. */
+export async function listObjects(bucket: Bucket, folder: string): Promise<Array<{ key: string; storedAt: number }>> {
+  safeKey(folder)
+  if (remote()) {
+    const { data: rows, error } = await data().storage.from(bucketName(bucket)).list(folder, { limit: 200 })
+    if (error || !rows) return []
+    return rows.filter((r) => r.name && r.created_at).map((r) => ({ key: `${folder}/${r.name}`, storedAt: Date.parse(r.created_at as string) }))
+  }
+  try {
+    const dir = join(localRoot(), bucket, folder)
+    return await Promise.all((await readdir(dir)).map(async (name) => ({ key: `${folder}/${name}`, storedAt: (await stat(join(dir, name))).mtimeMs })))
+  } catch {
+    return []
+  }
 }

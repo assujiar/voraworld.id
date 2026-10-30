@@ -9,6 +9,7 @@ import { int, rawStr, str } from '@/server/http'
 import { saveMailConfig } from '@/server/mail/config'
 import { dispatch, retryJob } from '@/server/mail/outbox'
 import { cleanEmailHtml } from '@/server/mail/sanitize-email'
+import { previewTemplate } from '@/server/mail/preview'
 import { saveSettings } from '@/server/settings'
 import { send } from '@/server/mail/transport'
 import { getMailConfig } from '@/server/mail/config'
@@ -99,6 +100,26 @@ export async function saveMailTemplateAction(form: FormData) {
     if (!row) throw new ActionError('Not found', 404)
     await recordAudit(user.id, 'email-template', 'mail', 0, key)
     return { to: '/admin/mail', notice: 'Email template saved' }
+  })
+}
+
+/** Sends the template as it is written in the form (not as it was last saved) to the administrator address, with sample values and a subject that says so. */
+export async function testTemplateMailAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    const conf = await getMailConfig()
+    if (!conf?.enabled || !conf.host) throw new ActionError('Save and enable the SMTP configuration first', 409)
+    const subject = str(form, 'subject', 250).replace(/[\r\n\x00-\x1f]+/g, ' ')
+    const body = str(form, 'html', 20000)
+    if (!subject || !body) throw new ActionError('Subject and body required')
+    const preview = previewTemplate(subject, body)
+    try {
+      await send(conf, conf.adminEmail ?? '', `[Contoh] ${preview.subject}`.slice(0, 250), preview.html)
+      await recordAudit(user.id, 'smtp-test', 'mail-config', 1, 'template ' + str(form, 'key', 60))
+      return { to: '/admin/mail', notice: `Contoh email dikirim ke ${conf.adminEmail}: diterima server SMTP. Isinya memakai data contoh.` }
+    } catch (e) {
+      const detail = `${e instanceof Error ? e.name : 'Error'}: ${e instanceof Error ? e.message : e}`.replace(/\s+/g, ' ').slice(0, 200)
+      return { to: '/admin/mail', notice: 'Contoh email gagal dikirim - ' + detail }
+    }
   })
 }
 

@@ -17,7 +17,7 @@ export default function RouteLinesPlayer({ still }: { still: boolean }) {
     <div ref={box} style={{ width: '100%', height: '100%' }}>
       <Player ref={player} component={RouteLines} durationInFrames={ROUTE_FRAMES} fps={30} compositionWidth={1000} compositionHeight={1000}
         autoPlay={!still} loop={!still} controls={false} clickToPlay={false} doubleClickToFullscreen={false} spaceKeyToPlayOrPause={false}
-        initialFrame={still ? ROUTE_STILL_FRAME : 0} style={{ width: '100%', height: '100%' }} acknowledgeRemotionLicense />
+        initialFrame={still ? ROUTE_STILL_FRAME : 0} style={{ width: '100%', height: '100%' }} numberOfSharedAudioTags={0} acknowledgeRemotionLicense />
     </div>
   )
 }
