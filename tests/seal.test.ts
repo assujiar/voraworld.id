@@ -111,6 +111,42 @@ describe('QR seal on a PDF issued by somebody else', () => {
     }
   })
 
+  it.each([0, 90, 270])('puts a dragged seal exactly where it was dropped, as the reader sees the page (%i degrees)', async (rotate) => {
+    const original = await thirdParty({ rotate })
+    const id = await seal(original, { corner: 'custom', pos_x: '0.3000', pos_y: '0.4000', size: 'small' })
+    await setDocumentStatus(actor, id, 'issue', BASE)
+    const r = rasterize(await renderDocumentPdf('document', id, BASE), 1)
+    if (!r) return                                                                                      // Poppler is not installed: the visual check is skipped
+    const w = r.width, h = r.height
+    const dark = (x0: number, y0: number, x1: number, y1: number) => { let n = 0; for (let y = Math.round(y0); y < y1; y++) for (let x = Math.round(x0); x < x1; x++) { const [R, G, B] = r.at(x, y); if (R < 200 || G < 200 || B < 200) n++ } return n }
+    const left = 0.3 * w, top = 0.4 * h
+    expect(dark(left + 4, top + 4, left + 66, top + 62), `inside the dropped box @${rotate}`).toBeGreaterThan(300)                      // the QR code is there
+    expect(dark(left - 40, top - 40, left - 4, top - 4), `just outside it @${rotate}`).toBe(0)
+    expect(dark(w - 140, h - 80, w - 24, h - 24), `not in the old corner @${rotate}`).toBe(0)
+  })
+
+  it('keeps a dropped seal inside the page, and seals only the page that was chosen', async () => {
+    const original = await thirdParty({ pages: 3 })
+    const id = await seal(original, { corner: 'custom', pos_x: '1', pos_y: '1', pages: 'one', page_number: '2' })
+    await setDocumentStatus(actor, id, 'issue', BASE)
+    const out = await pdfPages(await renderDocumentPdf('document', id, BASE))
+    expect(out.map((t) => squash(t).includes('SEGEL DIGITAL VORA'))).toEqual([false, true, false])
+    const r = rasterize(await renderDocumentPdf('document', id, BASE), 2)
+    if (r) {                                                                                            // dropped past the corner: pulled back inside the page
+      let outside = 0
+      for (let y = 0; y < r.height; y++) for (let x = r.width - 4; x < r.width; x++) { const [R, G, B] = r.at(x, y); if (R < 200 || G < 200 || B < 200) outside++ }
+      expect(outside).toBe(0)
+    }
+  })
+
+  it('refuses a dropped position that is not a position, and a page the PDF does not have', async () => {
+    await refused(seal(await thirdParty(), { corner: 'custom' }), /Drag the seal onto the page/)
+    await refused(seal(await thirdParty(), { corner: 'custom', pos_x: '2', pos_y: '0.5' }), /Drag the seal onto the page/)
+    await refused(seal(await thirdParty(), { corner: 'custom', pos_x: 'left', pos_y: '0.5' }), /Drag the seal onto the page/)
+    await refused(seal(await thirdParty({ pages: 2 }), { pages: 'one', page_number: '3' }), /Choose a page from 1 to 2/)
+    await refused(seal(await thirdParty({ pages: 2 }), { pages: 'one' }), /Choose a page from 1 to 2/)
+  })
+
   it('shows a preview while it is a draft, never stores it, and withdraws the file when the document is voided', async () => {
     const id = await seal(await thirdParty())
     const stored = files.size

@@ -185,7 +185,7 @@ async function sealedFile(doc: Record<string, unknown>, stored: StoredFields, id
   if (!stored.source) throw new ActionError('This document has no PDF to seal', 409)
   const v = stored.values
   return (await sealPdf(await readSource(stored.source), {
-    verificationUrl: await verifyUrl('document', id, baseUrl), number: doc.number as string, lang: doc.language as 'id' | 'en', purpose: v.purpose, pages: v.pages, corner: v.corner, size: v.size,
+    verificationUrl: await verifyUrl('document', id, baseUrl), number: doc.number as string, lang: doc.language as 'id' | 'en', purpose: v.purpose, pages: v.pages, corner: v.corner, size: v.size, pageNumber: v.page_number, posX: v.pos_x, posY: v.pos_y,
     signatoryName: v.signatory_name, signatoryTitle: v.signatory_title, company: 'PT Satu Arah International', sealedAt: `${businessDateTime(new Date())} WIB`, sourceSha256: stored.source.sha256, preview: true,
   })).bytes
 }

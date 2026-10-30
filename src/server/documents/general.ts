@@ -2,6 +2,7 @@ import { many, one, rpc } from '../data'
 import { isIsoDay, today } from '../dates'
 import { ActionError, isUnique } from '../errors'
 import { randomUUID } from 'node:crypto'
+import { fraction } from '../../content/seal-layout'
 import { documentType, isLang, PLACEHOLDER, type Article, type DocumentType, type FieldDef, type Lang } from '../../content/document-types'
 import { sha256Hex } from '../crypto'
 import { maxUploadBytes } from '../env'
@@ -129,6 +130,12 @@ async function prepare(input: DocumentInput, fixed?: { kind: string; language: L
   if (type.family === 'seal') {
     if (!input.source) throw new ActionError('Upload the PDF that is to receive the seal')
     fields.source = input.source
+    // Where the seal goes: a dropped position is a pair of fractions of the page; a chosen page must exist in this PDF.
+    if (values.corner === 'custom' && (fraction(values.pos_x) === null || fraction(values.pos_y) === null)) throw new ActionError('Drag the seal onto the page, or choose a corner')
+    if (values.pages === 'one') {
+      const page = Number(values.page_number)
+      if (!Number.isInteger(page) || page < 1 || page > input.source.pages) throw new ActionError(`Choose a page from 1 to ${input.source.pages}`)
+    }
   }
   return {
     type, lang, fields, date, customerId,
@@ -217,7 +224,7 @@ export async function setDocumentStatus(actorId: number, id: number, action: str
       const sealedAt = new Date()
       const made = await sealPdf(await readSource(stored.source), {
         verificationUrl: `${baseUrl.replace(/\/+$/, '')}/verify/${verification.token}`, number: doc.number as string, lang: p.lang, purpose: p.fields.values.purpose, pages: p.fields.values.pages,
-        corner: p.fields.values.corner, size: p.fields.values.size, signatoryName: p.fields.values.signatory_name, signatoryTitle: p.fields.values.signatory_title,
+        corner: p.fields.values.corner, size: p.fields.values.size, pageNumber: p.fields.values.page_number, posX: p.fields.values.pos_x, posY: p.fields.values.pos_y, signatoryName: p.fields.values.signatory_name, signatoryTitle: p.fields.values.signatory_title,
         company: 'PT Satu Arah International', sealedAt: `${businessDateTime(sealedAt)} WIB`, sourceSha256: stored.source.sha256,
       })
       sealedKey = `seal/${randomUUID()}-sealed.pdf`
