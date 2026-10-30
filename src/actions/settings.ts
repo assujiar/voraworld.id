@@ -50,7 +50,7 @@ export async function addRedirectAction(form: FormData) {
     const newPath = cleanPath(str(form, 'new_path', 400))
     if (oldPath === newPath) throw new ActionError('Redirect loop')
     try {
-      const [row] = await insert('seo_redirects', { old_path, new_path: newPath, status: 301 })
+      const [row] = await insert('seo_redirects', { old_path: oldPath, new_path: newPath, status: 301 })
       await recordAudit(user.id, 'create', 'redirect', row.id as number)
     } catch (e) {
       if ((e as { code?: string }).code === '23505') throw new ActionError('Redirect already defined', 409)
