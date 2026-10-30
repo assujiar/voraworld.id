@@ -3,6 +3,7 @@ import { DOCUMENT_TYPES, LANGS, LANGUAGE_NAMES } from '@/content/document-types'
 import { many, searchClause } from '@/server/data'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { StepForm } from '@/components/feedback/StepForm'
+import { DOCUMENT_LABEL, label } from '@/server/finance/labels'
 
 const STATUSES = ['draft', 'issued', 'void']
 
@@ -44,7 +45,7 @@ export default async function Documents({ searchParams }: { searchParams: Promis
         <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
           <input name="q" defaultValue={q} placeholder="Search number, subject or recipient" />
           <select name="kind" defaultValue={kind}><option value="">All types</option>{DOCUMENT_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label.en}</option>)}</select>
-          <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
+          <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s} value={s}>{label(DOCUMENT_LABEL, s)}</option>)}</select>
           <AsyncButton className="button">Filter</AsyncButton>
         </StepForm>
         <table><thead><tr><th>Document</th><th>Type</th><th>Subject</th><th>For</th><th>Date</th><th>Status</th></tr></thead><tbody>
@@ -55,7 +56,7 @@ export default async function Documents({ searchParams }: { searchParams: Promis
                 <td><a href={`/admin/documents/${r.id}`}>{r.number as string}</a></td>
                 <td>{t?.label.en ?? (r.kind as string)} <small className="muted">· {(r.language as string).toUpperCase()}</small></td>
                 <td>{r.subject as string}</td><td>{r.recipient as string}</td><td>{r.documentDate as string}</td>
-                <td><span className="status">{r.status as string}</span></td>
+                <td><span className="status">{label(DOCUMENT_LABEL, r.status)}</span></td>
               </tr>
             )
           }) : <tr><td colSpan={6}>No documents found.</td></tr>}

@@ -3,6 +3,7 @@ import { many, searchClause, withRelated } from '@/server/data'
 import { money } from '@/server/money'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { StepForm } from '@/components/feedback/StepForm'
+import { INVOICE_LABEL, label } from '@/server/finance/labels'
 
 const STATUSES = ['draft', 'issued', 'partially_paid', 'paid', 'void']
 
@@ -18,14 +19,14 @@ export default async function Invoices({ searchParams }: { searchParams: Promise
       <div className="admin-panel">
         <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
           <input name="q" defaultValue={q} placeholder="Search number, customer, PO or job" />
-          <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
+          <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s} value={s}>{label(INVOICE_LABEL, s)}</option>)}</select>
           <AsyncButton className="button">Filter</AsyncButton>
         </StepForm>
         <table><thead><tr><th>Document no.</th><th>Customer</th><th>Due</th><th>Status</th><th>Total</th><th>Outstanding</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>
               <td><a href={`/admin/invoices/${r.id}`}>{r.number as string}</a></td><td>{r.customer as string}</td><td>{r.dueAt as string}</td>
-              <td><span className="status">{r.status as string}</span></td><td>{money(r.totalMinor as number, r.currency as string)}</td><td>{money(r.outstandingMinor as number, r.currency as string)}</td>
+              <td><span className="status">{label(INVOICE_LABEL, r.status)}</span></td><td>{money(r.totalMinor as number, r.currency as string)}</td><td>{money(r.outstandingMinor as number, r.currency as string)}</td>
             </tr>
           )) : <tr><td colSpan={6}>No invoices found.</td></tr>}
         </tbody></table>

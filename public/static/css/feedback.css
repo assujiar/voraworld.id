@@ -61,3 +61,20 @@ button.is-busy[disabled]{opacity:1}
   .skeleton{animation:none}
   .toast,.confirm-dialog[open],.items-table tbody tr{animation:none}
 }
+
+/* Small answers to the pointer and the keyboard. Each one shows that something responded; none moves on its own. */
+.admin-body .button,.admin-body .button-outline{transition:background-color .16s ease,color .16s ease,box-shadow .16s ease,transform .08s ease}
+.admin-body .button:active:not([disabled]),.admin-body .button-outline:active:not([disabled]){transform:translateY(1px)}
+.admin-body .button[disabled]:not(.is-busy),.admin-body .button-outline[disabled]:not(.is-busy){opacity:.55;cursor:not-allowed}
+.admin-body table tbody tr{transition:background-color .14s ease}
+.admin-body table tbody tr:hover{background:rgba(16,23,32,.035)}
+.admin-sidebar nav a{transition:background-color .16s ease,padding-left .16s ease}
+.admin-sidebar nav a:hover:not(.active){padding-left:calc(var(--sidebar-pad,0px) + 3px)}
+.admin-body details>summary{transition:color .16s ease}
+.admin-body details[open]>*:not(summary){animation:vora-reveal .2s ease-out both}
+.metric[href]{transition:box-shadow .18s ease,transform .18s ease}
+.metric[href]:hover{transform:translateY(-2px)}
+@keyframes vora-reveal{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .admin-body details[open]>*:not(summary),.metric[href]:hover,.admin-body .button:active,.admin-body .button-outline:active{animation:none;transform:none}
+}

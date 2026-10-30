@@ -1,5 +1,6 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { many, type Row } from '@/server/data'
+import { PUBLISH_LABEL, label } from '@/server/finance/labels'
 
 export default async function Pages({ searchParams }: { searchParams: Promise<Notices> }) {
   const rows = await pageRows()
@@ -11,7 +12,7 @@ export default async function Pages({ searchParams }: { searchParams: Promise<No
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>
               <td><a href={`/admin/pages/${r.id}`}>{r.title as string}</a><br /><small>/{r.locale as string}/{r.slug as string}</small></td>
-              <td>{r.locale as string}</td><td><span className="status">{r.status as string}</span></td><td>{r.sections as number}</td><td><a href={`/admin/pages/${r.id}`}>Customize</a></td>
+              <td>{r.locale as string}</td><td><span className="status">{label(PUBLISH_LABEL, r.status)}</span></td><td>{r.sections as number}</td><td><a href={`/admin/pages/${r.id}`}>Customize</a></td>
             </tr>
           )) : <tr><td colSpan={5}>Create a new page to start.</td></tr>}
         </tbody></table>

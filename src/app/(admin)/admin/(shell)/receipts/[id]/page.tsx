@@ -9,6 +9,7 @@ import { money } from '@/server/money'
 import { routeId } from '@/server/http'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { PendingForm } from '@/components/feedback/scope'
+import { RECEIPT_LABEL, label } from '@/server/finance/labels'
 
 export default async function ReceiptDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -28,7 +29,7 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
     <AdminPage heading="Receipt" sp={await searchParams}>
       <div className="admin-panel">
         <h2 style={{ fontSize: '2rem' }}>{r.number as string}</h2>
-        <p>Status: <span className="status">{status.replace('_', ' ')}</span></p>
+        <p>Status: <span className="status">{label(RECEIPT_LABEL, status)}</span></p>
         <p>Invoice <a href={`/admin/invoices/${r.invoiceId}`}>{r.invoiceNumber as string}</a> · <a href={`/admin/customers/${r.customerId}`}>{r.customerName as string}</a>{quotation ? <> · Quotation <a href={`/admin/quotations/${quotation.id}`}>{quotation.number as string}</a></> : null}<br />
           Payment of <strong>{money(r.amountMinor as number, cur)}</strong> on {r.paymentDate as string} · {r.method as string}{r.reference ? ` · ${r.reference}` : ''}<br />
           Confirmed {fmt(r.confirmedAt as Date)} UTC · Invoice balance now {money(r.outstandingMinor as number, cur)}</p>

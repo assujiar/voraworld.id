@@ -22,7 +22,7 @@ export default async function About({ params }: LocaleParams) {
         <div className="wrap split">
           <div>
             <span className="eyebrow">{t('Our thinking', 'Cara berpikir kami')}</span>
-            <h2>{t('Built for the details that move business.', 'Dibangun untuk detail yang menggerakkan bisnis.')}</h2>
+            <h2>{t('Clear scope, named responsibilities.', 'Cakupan yang jelas, tanggung jawab yang disebut.')}</h2>
             <p>{settings.company_description || t('VORA is built around clarity, thoughtful coordination and open conversation about shipment requirements.', 'VORA dibangun di atas kejelasan, koordinasi yang cermat, dan percakapan terbuka tentang kebutuhan pengiriman.')}</p>
             <p>{t('Our capability statements and service coverage are verified during quotation, not asserted without supporting operational data.', 'Pernyataan kapabilitas dan cakupan layanan kami diverifikasi saat penawaran, bukan diklaim tanpa dukungan data operasional.')}</p>
           </div>

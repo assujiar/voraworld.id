@@ -1,7 +1,6 @@
 import { makeT, serviceGroups, serviceModes, siteText, type Locale } from '@/content'
 import { jsonLd } from '@/lib/metadata'
 import { absoluteUrl } from '@/server/site'
-import { CtaBand } from './CtaBand'
 
 export function ServicePage({ locale, group, mode }: { locale: Locale; group: string; mode?: string }) {
   const t = makeT(locale)
@@ -54,7 +53,7 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
       </section>
       <section className="site-section section-paper service-process">
         <div className="wrap">
-          <div className="section-head"><div><span className="eyebrow">{t('How it works', 'Alur layanan')}</span><h2>{t('From brief to coordinated movement.', 'Dari kebutuhan hingga koordinasi pengiriman.')}</h2></div><p>{detail.process}</p></div>
+          <div className="section-head"><div><span className="eyebrow">{t('How it works', 'Alur layanan')}</span><h2>{t('How an inquiry becomes a shipment plan.', 'Bagaimana permintaan menjadi rencana pengiriman.')}</h2></div><p>{detail.process}</p></div>
           <div className="numbered">
             <div className="step"><b>01 / {t('DISCOVER', 'IDENTIFIKASI')}</b><h3>{t('Cargo & route', 'Kargo dan rute')}</h3><p>{t('Provide cargo characteristics, origin, destination, Incoterms when relevant, and requested dates.', 'Sampaikan jenis, berat dan dimensi barang, asal, tujuan, Incoterm bila relevan serta jadwal.')}</p></div>
             <div className="step"><b>02 / {t('DESIGN', 'RENCANA')}</b><h3>{t('Options & quotation', 'Opsi dan penawaran')}</h3><p>{t('Review mode, routing, documentation, operational constraints and commercial inclusions.', 'Tinjau moda, rute, dokumen, batasan operasional dan rincian biaya.')}</p></div>
@@ -64,11 +63,10 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
       </section>
       <section className="service-endnote section-ink">
         <div className="wrap split">
-          <div><span className="eyebrow">VORA / {t('Next step', 'Langkah berikutnya')}</span><h2>{t('Let’s make the details work.', 'Rencanakan pengiriman secara tepat.')}</h2></div>
+          <div><span className="eyebrow">VORA / {t('Next step', 'Langkah berikutnya')}</span><h2>{t('Send us the details.', 'Kirim detailnya kepada kami.')}</h2></div>
           <div><p>{detail.audience}</p><a href={quote} className="button light-button">{siteText[locale].rfq} ↗</a></div>
         </div>
       </section>
-      <CtaBand locale={locale} />
     </>
   )
 }

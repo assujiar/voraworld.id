@@ -93,6 +93,8 @@ export function uploadLabel(text: string): string {
 }
 
 const CONFIRMS: Array<[RegExp, ConfirmSpec]> = [
+  [/^Validate Quotation/i, { title: 'Validasi Quotation ini?', body: 'Pastikan tanda tangan dan cap customer sudah diperiksa secara manual. Setelah divalidasi, Surat Jalan dan Invoice bisa dibuat dari Quotation ini, dan customer mendapat pemberitahuan bila aturan emailnya aktif.', action: 'Validasi Quotation' }],
+  [/^Issue invoice/i, { title: 'Terbitkan Invoice ini?', body: 'Setelah diterbitkan, isi Invoice tidak bisa diubah lagi. Jika ada yang salah, Invoice harus dibatalkan lalu dibuat ulang.', action: 'Terbitkan Invoice' }],
   [/^Konfirmasi Dana Diterima/i, { title: 'Konfirmasi dana sudah diterima?', body: 'Pastikan dana benar-benar sudah masuk ke rekening PT Satu Arah International. Setelah dikonfirmasi, sisa tagihan dihitung ulang dan Official Receipt dibuat. Langkah ini tidak bisa diulang untuk pembayaran yang sama.', action: 'Konfirmasi Dana Diterima' }],
   [/^Void receipt and reverse payment/i, { title: 'Batalkan Receipt dan pembayarannya?', body: 'Receipt dibatalkan, pembayaran dikembalikan dan sisa tagihan Invoice dihitung ulang.', action: 'Batalkan Receipt', danger: true }],
   [/^Void pre-payment receipt/i, { title: 'Batalkan Pre-Payment Receipt?', body: 'Dokumen ini tidak lagi berlaku dan tautan verifikasinya dicabut.', action: 'Batalkan Pre-Payment Receipt', danger: true }],

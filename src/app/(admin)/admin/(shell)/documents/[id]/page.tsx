@@ -9,6 +9,7 @@ import { money } from '@/server/money'
 import type { StoredFields } from '@/server/documents/general'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { PendingForm } from '@/components/feedback/scope'
+import { DOCUMENT_LABEL, label } from '@/server/finance/labels'
 
 export default async function DocumentDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -25,7 +26,7 @@ export default async function DocumentDetail({ params, searchParams }: { params:
   return (
     <AdminPage heading="Document" sp={await searchParams}>
       <div className="admin-panel">
-        <h3>{doc.number as string} <span className="status">{status}</span></h3>
+        <h3>{doc.number as string} <span className="status">{label(DOCUMENT_LABEL, status)}</span></h3>
         <p><strong>{type.label.en}</strong> <small className="muted">({type.label[lang]})</small> · written in {LANGUAGE_NAMES[lang]} · dated {longDate(doc.documentDate as string, lang)}
           {doc.customerName ? <> · customer <a href={`/admin/customers/${doc.customerId}`}>{doc.customerName as string}</a></> : ' · a document of the company'}<br />
           Created {fmt(doc.createdAt as Date)}{doc.issuedAt ? ` · issued ${fmt(doc.issuedAt as Date)}` : ''}</p>
