@@ -1,5 +1,5 @@
 import { one } from '../data'
-import { cleanHtml } from '../sanitize'
+import { cleanEmailHtml } from './sanitize-email'
 
 const escapeHtml = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
@@ -20,9 +20,9 @@ export async function renderTemplate(event: string, context: Record<string, unkn
   const escaped: Record<string, string> = {}
   for (const [k, v] of Object.entries(context)) {
     raw[k] = String(v ?? '')
-    escaped[k] = escapeHtml(raw[k]).replace(/\r?\n/g, '<br>')     // a typed message keeps its line breaks
+    escaped[k] = escapeHtml(raw[k]).replace(/\r?\n/g, '<br>')
   }
   const subject = safeSubstitute(template.subject as string, raw).replace(/[\r\n\x00-\x1f\x7f]+/g, ' ').slice(0, 250)
   if (!subject.trim()) throw new Error('Email template subject is empty')
-  return { subject, html: cleanHtml(safeSubstitute(template.html as string, escaped)) }
+  return { subject, html: cleanEmailHtml(safeSubstitute(template.html as string, escaped)) }
 }
