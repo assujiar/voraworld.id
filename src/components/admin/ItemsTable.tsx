@@ -7,7 +7,7 @@ import { useTypedList } from '@/components/admin/ActionForm'
  * cells are ordinary inputs named `item_<column>` (one value per row, in order), which the server reads back with `rowsFromForm`; a refused
  * submission brings the typed rows back. The amount column is only a convenience: the server recalculates every amount in exact decimal arithmetic.
  */
-export interface Column { key: string; label: string; width?: string; type?: 'text' | 'number'; placeholder?: string; maxLength?: number; required?: boolean }
+export interface Column { key: string; label: string; width?: string; type?: 'text' | 'number'; placeholder?: string; maxLength?: number; required?: boolean; multiline?: boolean }
 export type Row = Record<string, string>
 
 /** Display only: quantity x price, the way the person would do it by hand. */
@@ -48,8 +48,11 @@ export function ItemsTable({ columns, initial, showAmount, currency = 'IDR', add
               <tr key={r._id}>
                 {columns.map((c) => (
                   <td key={c.key}>
-                    <input name={`item_${c.key}`} value={r[c.key] ?? ''} onChange={(e) => edit(i, c.key, e.target.value)} aria-label={`${c.label}, row ${i + 1}`}
-                      inputMode={c.type === 'number' ? 'decimal' : undefined} placeholder={c.placeholder} maxLength={c.maxLength} style={{ width: '100%', minHeight: 40 }} />
+                    {c.multiline
+                      ? <textarea name={`item_${c.key}`} value={r[c.key] ?? ''} onChange={(e) => edit(i, c.key, e.target.value)} aria-label={`${c.label}, row ${i + 1}`}
+                          placeholder={c.placeholder} maxLength={c.maxLength} rows={4} style={{ width: '100%', minHeight: 90 }} />
+                      : <input name={`item_${c.key}`} value={r[c.key] ?? ''} onChange={(e) => edit(i, c.key, e.target.value)} aria-label={`${c.label}, row ${i + 1}`}
+                          inputMode={c.type === 'number' ? 'decimal' : undefined} placeholder={c.placeholder} maxLength={c.maxLength} style={{ width: '100%', minHeight: 40 }} />}
                   </td>
                 ))}
                 {showAmount ? <td className="mini" aria-live="polite">{preview(r.quantity ?? '', r.price ?? '', currency) || '-'}</td> : null}
@@ -80,4 +83,9 @@ export const CARGO_COLUMNS: Column[] = [
   { key: 'quantity', label: 'Quantity', width: '12%', maxLength: 40, placeholder: '24' },
   { key: 'unit', label: 'Unit', width: '12%', maxLength: 30, placeholder: 'ctn' },
   { key: 'remarks', label: 'Remarks', width: '22%', maxLength: 240, placeholder: 'e.g. fragile' },
+]
+
+export const ARTICLE_COLUMNS: Column[] = [
+  { key: 'title', label: 'Article title', width: '28%', maxLength: 120, placeholder: 'e.g. Term' },
+  { key: 'body', label: 'Text of the article', width: '60%', maxLength: 3000, multiline: true, placeholder: 'What the Parties agree in this article' },
 ]

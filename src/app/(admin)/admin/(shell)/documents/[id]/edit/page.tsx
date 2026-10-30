@@ -16,7 +16,7 @@ export default async function EditDocument({ params, searchParams }: { params: P
     <AdminPage heading={`Edit ${doc.number as string}`} sp={await searchParams}>
       {doc.status !== 'draft'
         ? <div className="admin-panel"><p>Only a draft can be edited. <a href={`/admin/documents/${id}`}>Back to the document</a></p></div>
-        : <DocumentForm type={type} lang={doc.language as Lang} record={id} values={stored.values} documentDate={doc.documentDate as string} customerId={doc.customerId as number | null} invoiceIds={(stored.invoices ?? []).map((i) => i.id)} />}
+        : <DocumentForm type={type} lang={doc.language as Lang} record={id} values={stored.values} documentDate={doc.documentDate as string} customerId={doc.customerId as number | null} articles={stored.articles} sourceName={stored.source?.name} invoiceIds={(stored.invoices ?? []).map((i) => i.id)} />}
     </AdminPage>
   )
 }

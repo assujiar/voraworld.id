@@ -7,7 +7,9 @@ import { approvalSecret, approvalToken } from '../finance/approval-token'
 import { readStampedReceipt } from '../finance/receipts'
 import { getVerification, type DocumentKind } from '../verification'
 import { documentType } from '../../content/document-types'
-import type { StoredFields } from '../documents/general'
+import { readSealed, readSource, type StoredFields } from '../documents/general'
+import { sealPdf } from './seal'
+import { businessDateTime } from '../dates'
 import { renderCertificate } from './certificate'
 import { renderGeneral } from './general'
 import { renderInvoice } from './invoice'
@@ -155,15 +157,35 @@ async function generalPdf(id: number, baseUrl: string): Promise<Uint8Array> {
   const type = documentType(doc.kind as string)
   if (!type) throw new ActionError('This document type is no longer supported', 409)
   const stored = doc.fields as StoredFields
+  if (type.family === 'seal') return sealedFile(doc, stored, id, baseUrl)
   const invoices = stored.invoices ?? []
   // A billing letter pays into the accounts printed on the invoices it lists (frozen on each invoice).
   const rows = invoices.length ? acceptedAccounts(await many('invoice_bank_instructions', (q) => q.in('invoice_id', invoices.map((i) => i.id)), 'bank_name,account_number,account_holder,currency,swift_code,position')) : []
   const data: GeneralDocData = {
     number: doc.number as string, kind: type.key, language: doc.language as 'id' | 'en', status: doc.status as string, documentDate: String(doc.documentDate),
-    values: stored.values ?? {}, invoices,
+    values: stored.values ?? {}, invoices, articles: stored.articles ?? [],
     banks: rows.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: Number(b.position) })),
   }
   const issuer = await issuerOf()
   const url = await verifyUrl('document', id, baseUrl)
   return type.family === 'certificate' ? renderCertificate(data, issuer, url) : renderGeneral(data, issuer, url)
+}
+
+/**
+ * A seal document. Issued: the stored sealed file, exactly as it was made (a re-rendered copy would not have the same fingerprint). Draft: a preview of
+ * where the seal will go, made now and never stored. Void: nothing, so that a withdrawn seal cannot be handed out again.
+ */
+async function sealedFile(doc: Record<string, unknown>, stored: StoredFields, id: number, baseUrl: string): Promise<Uint8Array> {
+  const status = doc.status as string
+  if (status === 'void') throw new ActionError('This seal was voided: the file is no longer released', 409)
+  if (status === 'issued') {
+    if (!stored.seal) throw new ActionError('The sealed file is missing', 409)
+    return readSealed(stored.seal)
+  }
+  if (!stored.source) throw new ActionError('This document has no PDF to seal', 409)
+  const v = stored.values
+  return (await sealPdf(await readSource(stored.source), {
+    verificationUrl: await verifyUrl('document', id, baseUrl), number: doc.number as string, lang: doc.language as 'id' | 'en', purpose: v.purpose, pages: v.pages, corner: v.corner, size: v.size,
+    signatoryName: v.signatory_name, signatoryTitle: v.signatory_title, company: 'PT Satu Arah International', sealedAt: `${businessDateTime(new Date())} WIB`, sourceSha256: stored.source.sha256, preview: true,
+  })).bytes
 }

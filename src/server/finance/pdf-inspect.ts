@@ -88,3 +88,33 @@ export const inspectStampedReceipt = (bytes: Uint8Array, receiptNumber: string, 
 export const inspectSignedQuotation = (bytes: Uint8Array, quotationNumber: string) =>
   inspect(bytes, { maxPages: 15, numbers: [quotationNumber], missingNumber: 'The signed file must include the exact VORA quotation number', sizeMessage: `Upload a PDF not exceeding ${megabytes()} MB` })
 
+
+const BYTE_RANGE = PDFName.of('ByteRange')
+
+/**
+ * A PDF issued by somebody else, to be sealed with a QR code. It must be a readable, unencrypted PDF of 1-200 pages without active content. A PDF that
+ * already carries a cryptographic signature is refused: adding anything to it would invalidate that signature, and a seal must not break what it seals.
+ */
+export async function inspectSourcePdf(bytes: Uint8Array): Promise<{ pages: number; sha256: string }> {
+  const header = Buffer.from(bytes.subarray(0, 5)).toString('latin1')
+  if (header !== '%PDF-' || bytes.length > maxUploadBytes() || bytes.length < 300) throw new ActionError(`Only PDF documents up to ${megabytes()} MB are accepted`)
+  let pages: number
+  let refused: string | null = null
+  try {
+    const doc = await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false, throwOnInvalidObject: true })
+    pages = doc.getPageCount()
+    refused = activeContent(doc)
+    if (!refused) {
+      for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+        const dict = obj instanceof PDFStream ? obj.dict : obj instanceof PDFDict ? obj : null
+        if (dict?.has(BYTE_RANGE)) { refused = 'This PDF already carries a digital signature, and adding a seal would invalidate it. Seal an unsigned copy instead'; break }
+      }
+    }
+  } catch (e) {
+    const encrypted = e instanceof Error && /encrypted/i.test(e.message)
+    throw new ActionError(encrypted ? 'The PDF is encrypted: upload a copy without a password' : 'Invalid or damaged PDF')
+  }
+  if (pages < 1 || pages > 200) throw new ActionError('The PDF must have 1 to 200 pages')
+  if (refused) throw new ActionError(refused)
+  return { pages, sha256: await sha256Hex(bytes) }
+}

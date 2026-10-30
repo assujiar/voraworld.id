@@ -58,7 +58,7 @@ beforeEach(async () => {
 })
 
 describe('creating a document', () => {
-  it.each(DOCUMENT_TYPES.map((t) => [t.key, t.prefix] as const))('%s becomes a numbered draft with its own verification link', async (kind, prefix) => {
+  it.each(DOCUMENT_TYPES.filter((t) => !['agreement', 'seal'].includes(t.family)).map((t) => [t.key, t.prefix] as const))('%s becomes a numbered draft with its own verification link', async (kind, prefix) => {
     const customerId = kind === 'billing_letter' ? await customer() : null
     const invoices = kind === 'billing_letter' ? [await invoice(customerId!)] : []
     const id = await createDocument(actor, input(kind, { customerId, invoiceIds: invoices }))
@@ -213,7 +213,7 @@ describe('the document PDFs', () => {
     const id = await createDocument(actor, input(kind, { customerId, invoiceIds, ...o }))
     return id
   }
-  it.each(DOCUMENT_TYPES.map((t) => t.key))('%s renders as a verifiable document: number, QR signature, clickable address, no handwriting', async (kind) => {
+  it.each(DOCUMENT_TYPES.filter((t) => !['agreement', 'seal'].includes(t.family)).map((t) => t.key))('%s renders as a verifiable document: number, QR signature, clickable address, no handwriting', async (kind) => {
     const id = await prepare(kind)
     await setDocumentStatus(actor, id, 'issue')
     const d = await row(id)

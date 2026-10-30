@@ -30,6 +30,7 @@ export default async function DocumentDetail({ params, searchParams }: { params:
           {doc.customerName ? <> · customer <a href={`/admin/customers/${doc.customerId}`}>{doc.customerName as string}</a></> : ' · a document of the company'}<br />
           Created {fmt(doc.createdAt as Date)}{doc.issuedAt ? ` · issued ${fmt(doc.issuedAt as Date)}` : ''}</p>
         {type.publicHolder ? <p className="note">The public verification page of a certificate names the holder ({stored.values.recipient_name}) and the title. Other documents show only their type, number, date and status.</p> : null}
+        {type.family === 'seal' ? <p className="note">The public verification page names the document ({stored.values.source_title}), who issued it ({stored.values.source_issuer}) and the SHA-256 fingerprints. It shows nothing else about the file.</p> : null}
         <dl style={{ margin: '18px 0' }}>
           {shown.map((f) => (
             <div key={f.name} style={{ marginBottom: 10 }}>
@@ -38,6 +39,22 @@ export default async function DocumentDetail({ params, searchParams }: { params:
             </div>
           ))}
         </dl>
+        {stored.articles?.length ? (
+          <div style={{ margin: '6px 0 18px' }}>
+            <h4>Articles</h4>
+            <ol style={{ paddingLeft: 20 }}>{stored.articles.map((a, i) => <li key={i} style={{ marginBottom: 8 }}><strong>{a.title}</strong><div style={{ whiteSpace: 'pre-wrap' }}>{a.body}</div></li>)}</ol>
+          </div>
+        ) : null}
+        {type.family === 'seal' && stored.source ? (
+          <div style={{ margin: '6px 0 18px' }}>
+            <h4>The PDF and its seal</h4>
+            <p className="mini">Original: {stored.source.name} · {stored.source.pages} page{stored.source.pages > 1 ? 's' : ''} · {(stored.source.bytes / 1024).toFixed(0)} KB<br />
+              <span title="SHA-256 recorded when the file arrived">SHA-256 {stored.source.sha256}</span></p>
+            {stored.seal ? <p className="mini">Sealed file: {stored.seal.pagesSealed} page{stored.seal.pagesSealed > 1 ? 's' : ''} carry the seal · made {fmt(new Date(stored.seal.sealedAt))}<br /><span title="SHA-256 of the sealed file; the verification page shows the same">SHA-256 {stored.seal.sha256}</span></p> : <p className="mini muted">Not sealed yet. The preview shows where the seal will go; issuing makes the sealed file and fixes its fingerprint.</p>}
+            <p className="mini muted">This is VORA&apos;s own endorsement and a check against a changed file. It is not a certified electronic signature and does not replace the signature of whoever issued the document.</p>
+            <a className="button-outline" href={`/admin/documents/${id}/source`} target="_blank" rel="noopener">Download the original ↗</a>
+          </div>
+        ) : null}
         {stored.invoices?.length ? (
           <table><thead><tr><th>Invoice</th><th>Issued</th><th>Due</th><th>Outstanding (when saved)</th></tr></thead><tbody>
             {stored.invoices.map((i) => <tr key={i.id}><td><a href={`/admin/invoices/${i.id}`}>{i.number}</a></td><td>{i.issuedAt}</td><td>{i.dueAt}</td><td>{money(i.outstandingMinor, i.currency)}</td></tr>)}
@@ -46,8 +63,8 @@ export default async function DocumentDetail({ params, searchParams }: { params:
         {ver && !ver.revoked && status !== 'void' ? <p className="mini muted">Verification address (printed on the PDF as a QR code and a link): <a href={`/verify/${ver.token}`} target="_blank" rel="noopener">{publicBaseUrl()}/verify/{ver.token as string}</a></p> : null}
         <div className="inline-actions">
           {status === 'draft' ? <a className="button-outline" href={`/admin/documents/${id}/edit`}>Edit draft</a> : null}
-          {status === 'draft' ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue">Issue document</AsyncButton></PendingForm> : null}
-          <a className="button-outline" href={`/admin/documents/${id}/pdf`} target="_blank" rel="noopener">{status === 'issued' ? 'Download PDF' : 'Download PDF (marked ' + status + ')'} ↗</a>
+          {status === 'draft' ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue" busy={type.family === 'seal' ? 'Membubuhkan segel QR pada PDF…' : undefined}>Issue document</AsyncButton></PendingForm> : null}
+          <a className="button-outline" href={`/admin/documents/${id}/pdf`} target="_blank" rel="noopener">{type.family === 'seal' ? (status === 'issued' ? 'Download the sealed PDF' : status === 'draft' ? 'Preview the seal (PDF)' : 'Sealed file withdrawn') : status === 'issued' ? 'Download PDF' : 'Download PDF (marked ' + status + ')'} ↗</a>
           {status !== 'void' ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
         </div>
         {status === 'draft' ? <p className="note mini">A draft is marked DRAFT on every page and its QR code shows DRAFT. Issuing freezes the document; to change an issued document, void it and write a new one.</p> : null}

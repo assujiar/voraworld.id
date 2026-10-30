@@ -30,7 +30,10 @@ export interface FieldDef {
 export interface PartyDef { key: string; caption: Bi; positionRequired?: boolean }
 export interface SignerDef { party: string; role: Bi; /** A box for the e-meterai / stamp duty or the company stamp. */ box?: Bi }
 
-export type Family = 'letter' | 'billing' | 'parties' | 'certificate'
+export type Family = 'letter' | 'billing' | 'parties' | 'certificate' | 'agreement' | 'seal'
+
+/** One article (Pasal) of an agreement. The list is edited as a table; these are the clauses a new agreement starts from. */
+export interface Article { title: string; body: string }
 
 export interface DocumentType {
   key: string
@@ -46,6 +49,8 @@ export interface DocumentType {
   signers?: SignerDef[]
   /** Certificates only: the public verification page names the holder. */
   publicHolder?: boolean
+  /** Agreements only: the articles a new agreement starts from, per language. Every `[isi: ...]` / `[fill in: ...]` must be completed before the agreement can be issued. */
+  articles?: Record<Lang, Article[]>
 }
 
 const T = (id: string, en: string): Bi => ({ id, en })
@@ -78,6 +83,117 @@ const subjectField = (required: boolean, id = '', en = ''): FieldDef => ({
 
 const partiesType = (o: Omit<DocumentType, 'family' | 'fields'> & { parties: PartyDef[]; extra: FieldDef[] }): DocumentType => ({
   ...o, family: 'parties', fields: [place, subjectField(false), ...o.parties.flatMap(partyFields), ...o.extra],
+})
+
+
+/** The two parties of an agreement: the company, who it is represented by, their position and the address. Party one starts as VORA. */
+function agreementParty(key: 'first' | 'second'): FieldDef[] {
+  const caption = key === 'first' ? T('PIHAK PERTAMA', 'FIRST PARTY') : T('PIHAK KEDUA', 'SECOND PARTY')
+  const vora = key === 'first'
+  return [
+    { name: `${key}_company`, label: T('Nama perusahaan / pihak', 'Company / party'), input: 'text', required: true, max: 200, section: caption, ...(vora ? { initial: T('PT Satu Arah International', 'PT Satu Arah International') } : {}) },
+    { name: `${key}_name`, label: T('Diwakili oleh (nama)', 'Represented by (name)'), input: 'text', required: true, max: 160 },
+    { name: `${key}_position`, label: T('Jabatan', 'Position'), input: 'text', required: true, max: 160 },
+    { name: `${key}_address`, label: T('Alamat', 'Address'), input: 'textarea', rows: 2, required: true, max: 400,
+      ...(vora ? { initial: T('Gedung Nucira, Jl. Letjen M.T. Haryono Kav. 27, Tebet, Jakarta Selatan, DKI Jakarta 12810', 'Gedung Nucira, Jl. Letjen M.T. Haryono Kav. 27, Tebet, Jakarta Selatan, DKI Jakarta 12810') } : {}) },
+  ]
+}
+
+const agreementType = (o: { key: string; prefix: string; label: Bi; summary: Bi; subject: Bi; background: Bi; closing: Bi; articles: Record<Lang, Article[]> }): DocumentType => ({
+  key: o.key, prefix: o.prefix, family: 'agreement', label: o.label, summary: o.summary, articles: o.articles,
+  signers: [{ party: 'first', role: T('PIHAK PERTAMA', 'FIRST PARTY'), box: T('Cap perusahaan', 'Company stamp') }, { party: 'second', role: T('PIHAK KEDUA', 'SECOND PARTY'), box: T('Meterai', 'Stamp duty') }],
+  fields: [
+    place,
+    { name: 'subject', label: T('Judul perjanjian', 'Agreement title'), input: 'text', required: true, max: 200, section: T('Perjanjian', 'Agreement'), initial: o.subject },
+    ...agreementParty('first'), ...agreementParty('second'),
+    { name: 'background', label: T('Latar belakang (opsional)', 'Background (optional)'), input: 'textarea', rows: 4, max: 3000, section: T('Latar belakang', 'Background'), initial: o.background,
+      hint: T('Satu butir per baris. Hapus bila tidak diperlukan.', 'One point per line. Delete it if it is not needed.') },
+    { name: 'closing', label: T('Kalimat penutup', 'Closing sentence'), input: 'textarea', rows: 3, required: true, max: 1200, section: T('Penutup', 'Closing'), initial: o.closing },
+  ],
+})
+
+/** Text still to be completed in a template. An agreement with any of these left in it cannot be issued. */
+export const PLACEHOLDER = /\[(isi|fill in):/i
+
+const COOPERATION_ID: Article[] = [
+  { title: 'Maksud dan Tujuan', body: 'Perjanjian ini dibuat untuk mengatur kerja sama antara Para Pihak di bidang [isi: bidang kerja sama].' },
+  { title: 'Ruang Lingkup', body: 'Ruang lingkup kerja sama meliputi: [isi: uraikan layanan atau kegiatan]. Rincian teknis, tarif dan jadwal dituangkan dalam lampiran atau penawaran harga yang disetujui Para Pihak secara tertulis.' },
+  { title: 'Hak dan Kewajiban', body: 'Masing-masing Pihak wajib melaksanakan bagiannya dengan itikad baik, memberikan informasi dan dokumen yang akurat tepat waktu, serta mematuhi peraturan perundang-undangan yang berlaku.' },
+  { title: 'Jangka Waktu', body: 'Perjanjian ini berlaku sejak tanggal ditandatangani selama [isi: jangka waktu] dan dapat diperpanjang dengan persetujuan tertulis Para Pihak.' },
+  { title: 'Biaya dan Pembayaran', body: 'Biaya dan tata cara pembayaran mengikuti penawaran harga atau lampiran yang disetujui. Pembayaran dilakukan ke rekening yang tercantum pada invoice paling lambat [isi: jumlah] hari sejak invoice diterima.' },
+  { title: 'Kerahasiaan', body: 'Para Pihak wajib menjaga kerahasiaan informasi yang diperoleh dari Pihak lain selama dan setelah berakhirnya Perjanjian ini, dan tidak menggunakannya untuk kepentingan di luar Perjanjian ini.' },
+  { title: 'Keadaan Memaksa', body: 'Pihak yang terhalang melaksanakan kewajibannya karena keadaan di luar kendali yang wajar wajib memberitahukan Pihak lainnya secara tertulis sesegera mungkin. Kewajiban yang terhalang ditangguhkan selama keadaan tersebut berlangsung.' },
+  { title: 'Pengakhiran', body: 'Masing-masing Pihak dapat mengakhiri Perjanjian ini dengan pemberitahuan tertulis paling lambat [isi: jumlah] hari sebelumnya. Kewajiban yang telah timbul sebelum pengakhiran tetap harus diselesaikan.' },
+  { title: 'Penyelesaian Perselisihan', body: 'Perselisihan diselesaikan terlebih dahulu secara musyawarah. Bila tidak tercapai kesepakatan, Para Pihak memilih domisili hukum di Pengadilan Negeri [isi: kota].' },
+  { title: 'Ketentuan Penutup', body: 'Perubahan atas Perjanjian ini hanya sah bila dibuat tertulis dan ditandatangani Para Pihak. Perjanjian ini dibuat dalam dua rangkap yang masing-masing mempunyai kekuatan hukum yang sama.' },
+]
+const COOPERATION_EN: Article[] = [
+  { title: 'Purpose', body: 'This Agreement sets out the cooperation between the Parties in the field of [fill in: field of cooperation].' },
+  { title: 'Scope', body: 'The scope of cooperation covers: [fill in: describe the services or activities]. Technical details, rates and schedules are set out in an annex or a quotation approved by the Parties in writing.' },
+  { title: 'Rights and Obligations', body: 'Each Party shall perform its part in good faith, provide accurate information and documents on time, and comply with applicable laws and regulations.' },
+  { title: 'Term', body: 'This Agreement takes effect on the date of signing for [fill in: term] and may be extended with the written consent of the Parties.' },
+  { title: 'Fees and Payment', body: 'Fees and payment terms follow the approved quotation or annex. Payment is made to the account stated on the invoice within [fill in: number] days of receiving the invoice.' },
+  { title: 'Confidentiality', body: 'The Parties shall keep confidential the information obtained from the other Party during and after this Agreement, and shall not use it for any purpose outside this Agreement.' },
+  { title: 'Force Majeure', body: 'A Party prevented from performing by circumstances beyond its reasonable control shall notify the other Party in writing as soon as possible. The affected obligations are suspended while the circumstances last.' },
+  { title: 'Termination', body: 'Either Party may terminate this Agreement by giving at least [fill in: number] days\' written notice. Obligations that arose before termination remain to be performed.' },
+  { title: 'Dispute Resolution', body: 'Disputes shall first be settled by consultation. If no agreement is reached, the Parties choose the domicile of the District Court of [fill in: city].' },
+  { title: 'Closing Provisions', body: 'Amendments are valid only if made in writing and signed by the Parties. This Agreement is made in two originals, each with equal legal force.' },
+]
+const SERVICE_ID: Article[] = [
+  { title: 'Ruang Lingkup Layanan', body: 'Pihak Pertama sebagai penyedia jasa menyediakan layanan logistik bagi Pihak Kedua, yaitu: [isi: pilih dan uraikan, mis. freight forwarding udara/laut, kepabeanan, pergudangan, distribusi domestik, project cargo].' },
+  { title: 'Pemesanan Layanan', body: 'Setiap pengiriman dipesan melalui penawaran harga yang telah disetujui atau instruksi tertulis Pihak Kedua. Rincian muatan, rute, Incoterms dan jadwal dicantumkan pada pesanan tersebut.' },
+  { title: 'Kewajiban Penyedia Jasa', body: 'Pihak Pertama melaksanakan layanan dengan ketelitian yang wajar, menginformasikan perkembangan pengiriman, dan menyerahkan dokumen yang menjadi tanggung jawabnya.' },
+  { title: 'Kewajiban Pengguna Jasa', body: 'Pihak Kedua wajib memberikan data dan dokumen yang benar dan lengkap (termasuk deskripsi barang, kode HS, berat, dimensi dan keterangan barang berbahaya bila ada), serta memastikan barang bukan barang terlarang.' },
+  { title: 'Tarif dan Pembayaran', body: 'Tarif mengikuti penawaran harga yang disetujui. Pihak Pertama menerbitkan invoice, dan Pihak Kedua membayar paling lambat [isi: jumlah] hari sejak invoice diterima ke rekening yang tercantum pada invoice. Pajak mengikuti peraturan yang berlaku.' },
+  { title: 'Tanggung Jawab', body: 'Tanggung jawab Pihak Pertama atas kehilangan atau kerusakan barang dalam penguasaannya diatur menurut peraturan perundang-undangan, konvensi pengangkutan yang berlaku, dan batas yang disepakati: [isi: batas tanggung jawab].' },
+  { title: 'Asuransi', body: 'Asuransi muatan dilakukan atas permintaan tertulis Pihak Kedua. Tanpa permintaan tersebut, muatan tidak diasuransikan oleh Pihak Pertama.' },
+  { title: 'Keadaan Memaksa', body: 'Keterlambatan atau kegagalan yang disebabkan keadaan di luar kendali yang wajar, termasuk cuaca ekstrem, penutupan pelabuhan atau bandara, dan keputusan otoritas, tidak dianggap pelanggaran Perjanjian. Pihak yang terdampak segera memberitahukan Pihak lainnya.' },
+  { title: 'Kerahasiaan', body: 'Para Pihak menjaga kerahasiaan data komersial dan dokumen pengiriman yang diperoleh melalui Perjanjian ini.' },
+  { title: 'Jangka Waktu dan Pengakhiran', body: 'Perjanjian ini berlaku selama [isi: jangka waktu] sejak ditandatangani. Masing-masing Pihak dapat mengakhirinya dengan pemberitahuan tertulis [isi: jumlah] hari sebelumnya; pengiriman yang sedang berjalan tetap diselesaikan.' },
+  { title: 'Penyelesaian Perselisihan', body: 'Perselisihan diselesaikan secara musyawarah. Bila tidak tercapai kesepakatan, Para Pihak memilih domisili hukum di Pengadilan Negeri [isi: kota].' },
+  { title: 'Ketentuan Penutup', body: 'Perubahan atas Perjanjian ini hanya sah bila dibuat tertulis dan ditandatangani Para Pihak. Perjanjian ini dibuat dalam dua rangkap yang masing-masing mempunyai kekuatan hukum yang sama.' },
+]
+const SERVICE_EN: Article[] = [
+  { title: 'Scope of Services', body: 'The First Party, as service provider, supplies logistics services to the Second Party, namely: [fill in: select and describe, e.g. air or sea freight forwarding, customs clearance, warehousing, domestic distribution, project cargo].' },
+  { title: 'Ordering', body: 'Each shipment is ordered through an approved quotation or the Second Party\'s written instruction. Cargo details, route, Incoterms and schedule are stated in that order.' },
+  { title: 'Obligations of the Service Provider', body: 'The First Party performs the services with reasonable care, keeps the Second Party informed of shipment progress, and delivers the documents it is responsible for.' },
+  { title: 'Obligations of the Customer', body: 'The Second Party shall provide correct and complete data and documents (including goods description, HS code, weight, dimensions and dangerous-goods information where applicable) and ensure the goods are not prohibited.' },
+  { title: 'Rates and Payment', body: 'Rates follow the approved quotation. The First Party issues an invoice and the Second Party pays within [fill in: number] days of receiving it, to the account stated on the invoice. Taxes follow applicable regulations.' },
+  { title: 'Liability', body: 'The First Party\'s liability for loss of or damage to goods in its custody is governed by applicable law, the applicable transport conventions and the agreed limit: [fill in: liability limit].' },
+  { title: 'Insurance', body: 'Cargo insurance is arranged on the Second Party\'s written request. Without such a request the cargo is not insured by the First Party.' },
+  { title: 'Force Majeure', body: 'Delay or failure caused by circumstances beyond reasonable control, including extreme weather, port or airport closure and orders of authorities, is not a breach of this Agreement. The affected Party shall notify the other without delay.' },
+  { title: 'Confidentiality', body: 'The Parties keep confidential the commercial data and shipping documents obtained through this Agreement.' },
+  { title: 'Term and Termination', body: 'This Agreement runs for [fill in: term] from signing. Either Party may end it with [fill in: number] days\' written notice; shipments in progress are completed.' },
+  { title: 'Dispute Resolution', body: 'Disputes are settled by consultation. If no agreement is reached, the Parties choose the domicile of the District Court of [fill in: city].' },
+  { title: 'Closing Provisions', body: 'Amendments are valid only if made in writing and signed by the Parties. This Agreement is made in two originals, each with equal legal force.' },
+]
+const NDA_ID: Article[] = [
+  { title: 'Informasi Rahasia', body: 'Informasi Rahasia adalah seluruh informasi non-publik yang diberikan salah satu Pihak kepada Pihak lain, baik tertulis, lisan maupun elektronik, yang berkaitan dengan [isi: tujuan pengungkapan informasi].' },
+  { title: 'Kewajiban Menjaga Kerahasiaan', body: 'Pihak Penerima wajib menjaga kerahasiaan Informasi Rahasia dengan tingkat kehati-hatian yang sama dengan informasinya sendiri, dan tidak mengungkapkannya kepada pihak ketiga tanpa persetujuan tertulis Pihak Pengungkap.' },
+  { title: 'Penggunaan Terbatas', body: 'Informasi Rahasia hanya boleh digunakan untuk tujuan yang disebut pada Pasal 1 dan hanya diteruskan kepada karyawan atau penasihat yang membutuhkannya dan terikat kewajiban kerahasiaan yang setara.' },
+  { title: 'Pengecualian', body: 'Kewajiban ini tidak berlaku atas informasi yang telah menjadi publik bukan karena pelanggaran, telah diketahui Pihak Penerima secara sah sebelumnya, diperoleh secara sah dari pihak ketiga, atau wajib diungkapkan berdasarkan perintah pengadilan atau otoritas yang berwenang (dengan pemberitahuan kepada Pihak Pengungkap bila diizinkan hukum).' },
+  { title: 'Pengembalian dan Pemusnahan', body: 'Atas permintaan tertulis, Pihak Penerima mengembalikan atau memusnahkan Informasi Rahasia dan salinannya, dan menyatakannya secara tertulis.' },
+  { title: 'Jangka Waktu', body: 'Perjanjian ini berlaku sejak ditandatangani. Kewajiban kerahasiaan tetap berlaku selama [isi: jumlah] tahun sejak berakhirnya hubungan atau pengungkapan terakhir.' },
+  { title: 'Pelanggaran', body: 'Pihak yang melanggar Perjanjian ini bertanggung jawab atas kerugian yang timbul bagi Pihak lain, sesuai ketentuan hukum yang berlaku.' },
+  { title: 'Penyelesaian Perselisihan', body: 'Perselisihan diselesaikan secara musyawarah. Bila tidak tercapai kesepakatan, Para Pihak memilih domisili hukum di Pengadilan Negeri [isi: kota].' },
+  { title: 'Ketentuan Penutup', body: 'Perubahan atas Perjanjian ini hanya sah bila dibuat tertulis dan ditandatangani Para Pihak. Perjanjian ini dibuat dalam dua rangkap yang masing-masing mempunyai kekuatan hukum yang sama.' },
+]
+const NDA_EN: Article[] = [
+  { title: 'Confidential Information', body: 'Confidential Information means all non-public information that one Party discloses to the other, whether written, oral or electronic, relating to [fill in: purpose of the disclosure].' },
+  { title: 'Duty of Confidentiality', body: 'The Receiving Party shall protect the Confidential Information with the same care it applies to its own information and shall not disclose it to any third party without the Disclosing Party\'s written consent.' },
+  { title: 'Limited Use', body: 'Confidential Information may be used only for the purpose stated in Article 1 and passed only to employees or advisers who need it and are bound by equivalent confidentiality duties.' },
+  { title: 'Exceptions', body: 'These duties do not apply to information that is or becomes public without breach, was lawfully known to the Receiving Party before, is lawfully obtained from a third party, or must be disclosed by order of a court or competent authority (with notice to the Disclosing Party where the law allows).' },
+  { title: 'Return and Destruction', body: 'On written request, the Receiving Party shall return or destroy the Confidential Information and all copies and confirm this in writing.' },
+  { title: 'Term', body: 'This Agreement takes effect on signing. The confidentiality duties continue for [fill in: number] years after the relationship ends or the last disclosure, whichever is later.' },
+  { title: 'Breach', body: 'A Party that breaches this Agreement is liable for the loss caused to the other Party, in accordance with applicable law.' },
+  { title: 'Dispute Resolution', body: 'Disputes are settled by consultation. If no agreement is reached, the Parties choose the domicile of the District Court of [fill in: city].' },
+  { title: 'Closing Provisions', body: 'Amendments are valid only if made in writing and signed by the Parties. This Agreement is made in two originals, each with equal legal force.' },
+]
+const AGREEMENT_CLOSING = T('Demikian Perjanjian ini dibuat dan ditandatangani oleh Para Pihak pada hari dan tanggal tersebut di atas dalam keadaan sadar, sehat dan tanpa paksaan dari pihak mana pun.',
+  'This Agreement is made and signed by the Parties on the date stated above, of sound mind and without coercion from anyone.')
+
+const sealSelect = (name: string, label: Bi, options: Array<[string, string, string]>, initial: string): FieldDef => ({
+  name, label, input: 'select', required: true, max: 20, options: options.map(([value, id, en]) => ({ value, label: T(id, en) })), initial: T(initial, initial),
 })
 
 export const DOCUMENT_TYPES: DocumentType[] = [
@@ -160,6 +276,42 @@ export const DOCUMENT_TYPES: DocumentType[] = [
       closing('Demikian surat tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab.', 'This assignment letter is issued to be carried out with due responsibility.'),
     ],
   }),
+  agreementType({
+    key: 'cooperation_agreement', prefix: 'PKS', label: T('Perjanjian Kerja Sama', 'Cooperation agreement'),
+    summary: T('Perjanjian kerja sama antara dua pihak: para pihak, latar belakang, pasal-pasal yang bisa diubah, dan kolom tanda tangan dengan kode QR.', 'A cooperation agreement between two parties: the parties, background, editable articles and signature columns with a QR code.'),
+    subject: T('Perjanjian Kerja Sama', 'Cooperation Agreement'),
+    background: T('1. Pihak Pertama bergerak di bidang jasa logistik dan pengiriman barang.\n2. Pihak Kedua membutuhkan jasa tersebut dan bermaksud bekerja sama dengan Pihak Pertama.', '1. The First Party provides logistics and freight services.\n2. The Second Party requires those services and wishes to cooperate with the First Party.'),
+    closing: AGREEMENT_CLOSING, articles: { id: COOPERATION_ID, en: COOPERATION_EN },
+  }),
+  agreementType({
+    key: 'logistics_service_agreement', prefix: 'PLL', label: T('Perjanjian Layanan Logistik', 'Logistics service agreement'),
+    summary: T('Perjanjian antara VORA dan pengguna jasa tentang layanan pengiriman, kepabeanan, pergudangan atau distribusi, dengan pasal-pasal yang bisa diubah.', 'An agreement between VORA and a customer for freight, customs, warehousing or distribution services, with editable articles.'),
+    subject: T('Perjanjian Layanan Logistik', 'Logistics Service Agreement'),
+    background: T('1. Pihak Pertama adalah perusahaan penyedia jasa logistik.\n2. Pihak Kedua bermaksud menggunakan jasa logistik Pihak Pertama.', '1. The First Party is a logistics service provider.\n2. The Second Party wishes to use the First Party\'s logistics services.'),
+    closing: AGREEMENT_CLOSING, articles: { id: SERVICE_ID, en: SERVICE_EN },
+  }),
+  agreementType({
+    key: 'nda', prefix: 'NDA', label: T('Perjanjian Kerahasiaan (NDA)', 'Non-disclosure agreement (NDA)'),
+    summary: T('Perjanjian untuk menjaga kerahasiaan informasi yang dipertukarkan dua pihak, dengan pasal-pasal yang bisa diubah.', 'An agreement to keep information exchanged between two parties confidential, with editable articles.'),
+    subject: T('Perjanjian Kerahasiaan', 'Non-Disclosure Agreement'),
+    background: T('Para Pihak akan saling bertukar informasi yang bersifat rahasia dalam rangka pembicaraan kerja sama dan sepakat untuk melindungi informasi tersebut.', 'The Parties will exchange confidential information in the course of discussing cooperation and agree to protect it.'),
+    closing: AGREEMENT_CLOSING, articles: { id: NDA_ID, en: NDA_EN },
+  }),
+  {
+    key: 'seal', prefix: 'SEL', family: 'seal', label: T('Segel QR pada Dokumen Pihak Lain', 'QR seal on a third-party document'),
+    summary: T('Unggah PDF yang diterbitkan pihak lain secara digital; VORA membubuhkan kode QR pengesahan beserta nama penandatangan. Pemindai QR melihat keaslian dan sidik jari (SHA-256) berkas.', 'Upload a PDF issued digitally by another party; VORA adds a QR code of endorsement with the signatory\'s name. Scanning the QR shows its authenticity and the file\'s fingerprint (SHA-256).'),
+    fields: [
+      { name: 'source_title', label: T('Judul / jenis dokumen', 'Document title / type'), input: 'text', required: true, max: 160, section: T('Dokumen yang disahkan', 'Document to be sealed'), hint: T('Tampil di halaman verifikasi publik.', 'Shown on the public verification page.') },
+      { name: 'source_issuer', label: T('Diterbitkan oleh (pihak lain)', 'Issued by (the other party)'), input: 'text', required: true, max: 160, hint: T('Tampil di halaman verifikasi publik.', 'Shown on the public verification page.') },
+      { name: 'source_reference', label: T('Nomor dokumen asal', 'Number of the original document'), input: 'text', max: 100, hint: T('Tampil di halaman verifikasi publik.', 'Shown on the public verification page.') },
+      { name: 'signatory_name', label: T('Nama penandatangan VORA', 'VORA signatory name'), input: 'text', required: true, max: 160, section: T('Pengesahan', 'Endorsement') },
+      { name: 'signatory_title', label: T('Jabatan penandatangan', 'Signatory position'), input: 'text', required: true, max: 160 },
+      sealSelect('purpose', T('Makna pengesahan', 'Meaning of the endorsement'), [['verified', 'Diperiksa dan disahkan', 'Checked and endorsed'], ['approved', 'Disetujui', 'Approved'], ['acknowledged', 'Diketahui', 'Acknowledged']], 'verified'),
+      sealSelect('pages', T('Halaman yang diberi segel', 'Pages that carry the seal'), [['last', 'Halaman terakhir', 'Last page'], ['first', 'Halaman pertama', 'First page'], ['all', 'Semua halaman', 'Every page']], 'last'),
+      sealSelect('corner', T('Posisi segel', 'Position of the seal'), [['bottom-right', 'Kanan bawah', 'Bottom right'], ['bottom-left', 'Kiri bawah', 'Bottom left'], ['top-right', 'Kanan atas', 'Top right'], ['top-left', 'Kiri atas', 'Top left']], 'bottom-right'),
+      sealSelect('size', T('Ukuran segel', 'Size of the seal'), [['medium', 'Sedang', 'Medium'], ['small', 'Kecil', 'Small']], 'medium'),
+    ],
+  },
   {
     key: 'certificate', prefix: 'CRT', family: 'certificate', label: T('Sertifikat', 'Certificate'), publicHolder: true,
     summary: T('Sertifikat landscape dengan nama penerima, uraian, tanda tangan dan kode QR untuk validasi.', 'A landscape certificate with the holder\'s name, a description, signatures and a QR code for validation.'),

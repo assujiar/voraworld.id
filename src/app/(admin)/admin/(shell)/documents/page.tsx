@@ -20,10 +20,10 @@ export default async function Documents({ searchParams }: { searchParams: Promis
     return b.order('id', { ascending: false })
   }, 'id,number,kind,language,status,subject,recipient,document_date,created_at', 300)
   return (
-    <AdminPage heading="Letters & Certificates" sp={sp}>
+    <AdminPage heading="Documents, Letters & Agreements" sp={sp}>
       <div className="admin-panel">
         <h3>Write a new document</h3>
-        <p className="note">Letters, billing letters, statements, powers of attorney, certification and assignment letters, and certificates. Each has its own layout, VORA letterhead, a number and a QR code that verifies it online. Choose the type and the language the document is written in.</p>
+        <p className="note">Letters, billing letters, statements, powers of attorney, certification and assignment letters, agreements (perjanjian), certificates, and a QR seal for PDFs that another party issued. Each has its own layout, VORA letterhead, a number and a QR code that verifies it online. Choose the type and the language the document is written in.</p>
         <form method="get" action="/admin/documents/new" className="admin-form-grid">
           <div className="field"><label>Type</label>
             <select name="type" required>{DOCUMENT_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label.en} · {t.label.id}</option>)}</select>

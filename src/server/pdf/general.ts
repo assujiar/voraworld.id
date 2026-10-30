@@ -94,6 +94,47 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
       })
     }
   }
+  /** Centred text that wraps onto as many lines as it needs. */
+  const centeredWrap = (text: string, size: number, bold = true, fill = INK) => {
+    for (const row of s.wrap(text, WIDTH, size, bold)) { f.keep(size + 6); f.text(LEFT + (WIDTH - s.width(row, size, bold)) / 2, f.y, row, size, fill, bold); f.y -= size + 6 }
+  }
+  /** An agreement: title, the two parties, the background, the articles one after the other, the closing and a signature column for each party. */
+  const agreement = () => {
+    const id = lang === 'id'
+    centeredWrap(v.subject.toUpperCase(), 12)
+    centered(`${t('number')}: ${d.number}`, 8.4, false, SLATE)
+    gap(LEADING * 0.6)
+    paragraphs(id
+      ? `Perjanjian ini dibuat dan ditandatangani pada tanggal ${longDate(d.documentDate, lang)}, bertempat di ${v.place}, oleh dan antara:`
+      : `This Agreement is made and signed on ${longDate(d.documentDate, lang)}, in ${v.place}, by and between:`)
+    gap(LEADING * 0.3)
+    ;(['first', 'second'] as const).forEach((key, i) => {
+      const caption = key === 'first' ? (id ? 'PIHAK PERTAMA' : 'FIRST PARTY') : (id ? 'PIHAK KEDUA' : 'SECOND PARTY')
+      const represented = id ? `diwakili oleh ${v[`${key}_name`]}, selaku ${v[`${key}_position`]}` : `represented by ${v[`${key}_name`]}, as ${v[`${key}_position`]}`
+      const address = id ? `beralamat di ${v[`${key}_address`]}` : `having its address at ${v[`${key}_address`]}`
+      paragraphs(`${i + 1}. ${v[`${key}_company`]}, ${represented}, ${address}; ${id ? 'selanjutnya disebut' : 'hereinafter called'} "${caption}".`)
+      gap(LEADING * 0.3)
+    })
+    paragraphs(id ? 'PIHAK PERTAMA dan PIHAK KEDUA secara bersama-sama disebut "Para Pihak".' : 'The FIRST PARTY and the SECOND PARTY are together called the "Parties".')
+    if (v.background) {
+      gap(LEADING * 0.6); f.keep(LEADING * 3)
+      f.text(LEFT, f.y, id ? 'Latar belakang' : 'Background', BODY, INK, true); f.y -= LEADING
+      paragraphs(v.background)
+    }
+    gap(LEADING * 0.6)
+    paragraphs(id ? 'Para Pihak sepakat untuk mengadakan Perjanjian dengan ketentuan sebagai berikut:' : 'The Parties agree as follows:')
+    d.articles.forEach((a, i) => {
+      gap(LEADING * 0.7)
+      f.keep(LEADING * 4)
+      centered(`${id ? 'PASAL' : 'ARTICLE'} ${i + 1}`, BODY)
+      centeredWrap(a.title.toUpperCase(), BODY)
+      paragraphs(a.body)
+    })
+    gap(LEADING)
+    paragraphs(v.closing)
+    gap(LEADING)
+    signers(s, f, type, d, lang, qr)
+  }
   const placeAndDate = () => { f.keep(LEADING * 2); f.right(RIGHT, f.y, `${v.place}, ${longDate(d.documentDate, lang)}`, BODY, INK); f.y -= LEADING * 1.6 }
 
   /**
@@ -139,6 +180,8 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
     copies()
     return
   }
+
+  if (type.family === 'agreement') { agreement(); return }
 
   // Parties: heading, the people named, what is declared, the closing and one signature box per signer.
   centered(type.label[lang].toUpperCase(), 12)
@@ -220,7 +263,7 @@ function billing(_s: Sheet, f: Flow, d: GeneralDocData, lang: Lang, paragraphs: 
 function signers(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, lang: Lang, qr: PDFImage): void {
   const list = (type.signers ?? []).filter((x) => d.values[`${x.party}_name`])
   if (!list.length) return
-  const height = METERAI + 78
+  const height = METERAI + 90
   f.keep(height)
   const columnWidth = WIDTH / 2 - 10
   list.forEach((signer: SignerDef, index: number) => {
@@ -247,6 +290,8 @@ function signers(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, lang:
     const rows = s.wrap(name, columnWidth, BODY, true).slice(0, 2)
     rows.forEach((row, i) => f.text(centre - s.width(row, BODY, true) / 2, nameY - i * LEADING, row, BODY, INK, true))
     if (position) f.text(centre - s.width(position.slice(0, 40), 8.2) / 2, nameY - rows.length * LEADING, position.slice(0, 40), 8.2, SLATE)
+    const company = d.values[`${signer.party}_company`]
+    if (company) f.text(centre - s.width(company.slice(0, 40), 8.2) / 2, nameY - (rows.length + (position ? 1 : 0)) * LEADING, company.slice(0, 40), 8.2, SLATE)
   })
   f.y -= height
 }
