@@ -102,3 +102,7 @@ button.is-busy[disabled]{opacity:1}
 .seal-lines i{display:block;height:.5em;border-radius:2px;background:rgba(16,23,32,.2)}
 .seal-lines i:nth-child(3){width:70%}.seal-lines i:nth-child(4){width:50%}
 @media(prefers-reduced-motion:reduce){.seal-box{transition:none}}
+
+.list-skeleton{display:block;padding:2px 0}
+.list-skeleton__row{display:grid;gap:18px;padding:15px 8px;border-bottom:1px solid var(--line,#dce0e1)}
+.list-skeleton__row .skeleton{height:14px}

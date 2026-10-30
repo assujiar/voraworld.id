@@ -16,10 +16,13 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
   let id = '', link = '', number = ''
   await test.step('a draft is written, a refusal keeps what was typed, and it is issued', async () => {
     const seeded = await seedValidatedQuotation('PT Delivery Customer')
-    await admin.goto('/admin/deliveries/new')                                                                         // step 1: the customer
+    await admin.goto('/admin/deliveries/new')                                                                         // one screen: the customer, then their validated quotations
+    await admin.waitForLoadState('networkidle')
+    await expect(admin.locator('select[name=quotation]')).toBeDisabled()                                              // nothing to choose before a customer is
+    await expect(admin.locator('button:has-text("Continue")')).toBeDisabled()
     await admin.selectOption('select[name=customer]', seeded.customerId)
-    await admin.click('button:has-text("Continue")')
-    await admin.selectOption('select[name=quotation]', seeded.quotationId)                                            // step 2: one of their validated quotations
+    await expect(admin.locator('select[name=quotation]')).toBeEnabled()                                                // the list was read for that customer
+    await admin.selectOption('select[name=quotation]', seeded.quotationId)
     await admin.click('button:has-text("Continue")')
     await expect(admin.locator('body')).toContainText(`under quotation ${seeded.number}`)
     await expect(admin.locator('input[name=origin]')).toHaveValue('Jakarta')                                          // prefilled from the quotation

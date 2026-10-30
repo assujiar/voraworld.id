@@ -4,6 +4,7 @@ import { many, one } from '@/server/data'
 import { money } from '@/server/money'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { StepForm } from '@/components/feedback/StepForm'
+import { DependentPicker } from '@/components/admin/DependentPicker'
 
 const id = (v: string | undefined) => (/^\d{1,10}$/.test(v ?? '') && Number(v) <= 2_147_483_647 ? Number(v) : 0)
 
@@ -35,19 +36,13 @@ export default async function NewDelivery({ searchParams }: { searchParams: Prom
       </AdminPage>
     )
   }
-  const customers = await many('customers', (q) => q.order('name'), 'id,name,public_code', 500)
+  const customers = (await many('customers', (q) => q.order('name'), 'id,name,public_code', 500)).map((c) => ({ id: c.id as number, name: c.name as string, code: (c.publicCode as string) || '' }))
   return (
     <AdminPage heading="New delivery note" sp={sp}>
       <div className="admin-panel">
-        <h3>Which customer is it for?</h3>
+        <h3>Which customer, and which validated quotation?</h3>
         <StepForm className="admin-form-grid">
-          <div className="field wide"><label>Customer</label>
-            <select name="customer" required defaultValue="">
-              <option value="" disabled>Choose a customer</option>
-              {customers.map((c) => <option key={c.id as number} value={c.id as number}>{c.name as string} · {(c.publicCode as string) || 'legacy'}</option>)}
-            </select>
-          </div>
-          <div className="field"><AsyncButton className="button" busy="Memuat Quotation Customer…">Continue</AsyncButton></div>
+          <DependentPicker mode="delivery" customers={customers} />
         </StepForm>
       </div>
     </AdminPage>

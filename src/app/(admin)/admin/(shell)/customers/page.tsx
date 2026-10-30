@@ -1,4 +1,4 @@
-import { AdminPage, type Notices } from '@/components/admin/AdminPage'
+import { AdminPage, ListLoad, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause } from '@/server/data'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { StepForm } from '@/components/feedback/StepForm'
@@ -6,8 +6,6 @@ import { StepForm } from '@/components/feedback/StepForm'
 export default async function Customers({ searchParams }: { searchParams: Promise<Notices & { q?: string }> }) {
   const sp = await searchParams
   const q = (sp.q ?? '').trim().slice(0, 120)
-  const clause = await searchClause(q, ['name', 'email', 'public_code', 'phone', 'pic_name', 'pic_email', 'pic_phone'])
-  const rows = await many('customers', (f) => (clause ? f.or(clause) : f).order('id', { ascending: false }), 'id,name,email,phone,pic_name,pic_email,pic_phone,currency,terms_days,public_code', 300)
   return (
     <AdminPage heading="Customers" sp={sp} newHref="/admin/customers/new" newLabel="New customer">
       <div className="admin-panel">
@@ -16,7 +14,17 @@ export default async function Customers({ searchParams }: { searchParams: Promis
           <input name="q" defaultValue={q} placeholder="Search company, owner code, email, contact person or phone" style={{ minWidth: 320 }} />
           <AsyncButton className="button" busy="Mencari Customer…">Search</AsyncButton>
         </StepForm>
-        <table><thead><tr><th>Company / person</th><th>Contact person</th><th>Email / phone</th><th>Currency</th><th>Terms</th><th></th></tr></thead><tbody>
+        <ListLoad filters={[q]} what="customers" columns={6}><CustomerRows q={q} /></ListLoad>
+      </div>
+    </AdminPage>
+  )
+}
+
+async function CustomerRows({ q }: { q: string }) {
+  const clause = await searchClause(q, ['name', 'email', 'public_code', 'phone', 'pic_name', 'pic_email', 'pic_phone'])
+  const rows = await many('customers', (f) => (clause ? f.or(clause) : f).order('id', { ascending: false }), 'id,name,email,phone,pic_name,pic_email,pic_phone,currency,terms_days,public_code', 300)
+  return (
+      <table><thead><tr><th>Company / person</th><th>Contact person</th><th>Email / phone</th><th>Currency</th><th>Terms</th><th></th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>
               <td><a href={`/admin/customers/${r.id}`}>{r.name as string}</a><small> · {(r.publicCode as string) || 'Legacy customer'}</small></td>
@@ -27,7 +35,5 @@ export default async function Customers({ searchParams }: { searchParams: Promis
             </tr>
           )) : <tr><td colSpan={6}>{q ? 'No customer matches that search.' : 'No customers yet.'}</td></tr>}
         </tbody></table>
-      </div>
-    </AdminPage>
   )
 }

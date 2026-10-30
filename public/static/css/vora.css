@@ -170,7 +170,7 @@
 .v-page .v-lead{margin-top:22px}
 .v-crumbs{font-size:.9rem;color:var(--steel);margin-bottom:26px}
 .v-crumbs a:hover{color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:4px}
-@media(max-width:860px){.v-page__grid{grid-template-columns:1fr}.v-page__art{justify-self:start;max-width:300px;order:-1}}
+@media(max-width:860px){.v-page__grid{grid-template-columns:minmax(0,1fr)}.v-page__art{justify-self:start;max-width:300px;order:-1}}
 
 /* Service page parts */
 .v-svc-hero{background:var(--bone);padding:clamp(36px,5vw,72px) 0 0;overflow:hidden}
@@ -323,7 +323,7 @@
 }
 
 .v-search{display:flex;gap:12px;margin-top:26px;max-width:520px}
-.v-search input{flex:1;min-height:52px;padding:0 16px;font:inherit;color:var(--ink);background:var(--white);border:1px solid transparent;border-radius:10px;box-shadow:inset 2px 2px 6px rgba(16,23,32,.1),inset -2px -2px 6px rgba(255,255,255,.9)}
+.v-search input{flex:1;min-width:0;min-height:52px;padding:0 16px;font:inherit;color:var(--ink);background:var(--white);border:1px solid transparent;border-radius:10px;box-shadow:inset 2px 2px 6px rgba(16,23,32,.1),inset -2px -2px 6px rgba(255,255,255,.9)}
 .v-search input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 4px rgba(180,62,49,.16)}
 .v-pages{display:flex;gap:8px;margin-top:36px}
 .v-pages a{display:grid;place-items:center;min-width:44px;min-height:44px;border-radius:10px;background:var(--bone);font-weight:600}

@@ -1,4 +1,4 @@
-import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
+import { AdminPage, ListLoad, day, type Notices } from '@/components/admin/AdminPage'
 import { DOCUMENT_TYPES, LANGS, LANGUAGE_NAMES } from '@/content/document-types'
 import { many, searchClause } from '@/server/data'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
@@ -12,14 +12,7 @@ export default async function Documents({ searchParams }: { searchParams: Promis
   const q = (sp.q ?? '').trim().slice(0, 120)
   const status = STATUSES.includes(sp.status ?? '') ? sp.status! : ''
   const kind = DOCUMENT_TYPES.some((t) => t.key === sp.kind) ? sp.kind! : ''
-  const clause = await searchClause(q, ['number', 'subject', 'recipient'])
   const customers = await many('customers', (f) => f.order('name'), 'id,name', 500)
-  const rows = await many('documents', (f) => {
-    let b = clause ? f.or(clause) : f
-    if (status) b = b.eq('status', status)
-    if (kind) b = b.eq('kind', kind)
-    return b.order('id', { ascending: false })
-  }, 'id,number,kind,language,status,subject,recipient,document_date,created_at', 300)
   return (
     <AdminPage heading="Documents, Letters & Agreements" sp={sp}>
       <div className="admin-panel">
@@ -48,6 +41,22 @@ export default async function Documents({ searchParams }: { searchParams: Promis
           <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s} value={s}>{label(DOCUMENT_LABEL, s)}</option>)}</select>
           <AsyncButton className="button">Filter</AsyncButton>
         </StepForm>
+        <ListLoad filters={[q, status, kind]} what="documents" columns={6}><DocumentRows q={q} status={status} kind={kind} /></ListLoad>
+      </div>
+    </AdminPage>
+  )
+}
+
+async function DocumentRows({ q, status, kind }: { q: string; status: string; kind: string }) {
+  const clause = await searchClause(q, ['number', 'subject', 'recipient'])
+  const rows = await many('documents', (f) => {
+    let b = clause ? f.or(clause) : f
+    if (status) b = b.eq('status', status)
+    if (kind) b = b.eq('kind', kind)
+    return b.order('id', { ascending: false })
+  }, 'id,number,kind,language,status,subject,recipient,document_date,created_at', 300)
+  return (
+    <>
         <table><thead><tr><th>Document</th><th>Type</th><th>Subject</th><th>For</th><th>Date</th><th>Status</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => {
             const t = DOCUMENT_TYPES.find((x) => x.key === r.kind)
@@ -62,7 +71,6 @@ export default async function Documents({ searchParams }: { searchParams: Promis
           }) : <tr><td colSpan={6}>No documents found.</td></tr>}
         </tbody></table>
         <p className="mini muted">Created {rows.length ? day(rows[0].createdAt as Date) : '-'} (latest).</p>
-      </div>
-    </AdminPage>
+    </>
   )
 }
