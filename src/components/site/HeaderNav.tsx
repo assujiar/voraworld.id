@@ -1,6 +1,7 @@
 'use client'
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
+import { LangSwitch } from './ClientBits'
 
 export interface NavGroup { slug: string; name: string; modes: Array<{ slug: string; name: string }> }
 interface Props {
@@ -54,6 +55,7 @@ export function HeaderNav({ locale, items, groups, rfq, words }: Props) {
             </details>
           ) : <a key={item.href} href={`/${locale}${item.href}`}>{item.label}</a>)}
           <a href={`/${locale}/request-quote`} style={{ color: 'var(--red)' }}>{rfq}</a>
+          <LangSwitch locale={locale} named />
         </nav>
       </details>
     </>

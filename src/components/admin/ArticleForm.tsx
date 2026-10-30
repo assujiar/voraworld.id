@@ -2,6 +2,7 @@ import { restoreArticleAction, saveArticleAction } from '@/actions/content'
 import { ArticleBodyEditor } from './ArticleBodyEditor'
 import { Back, fmt } from './AdminPage'
 import type { ArticlesRow } from '@/server/schema'
+import { Autosave } from './Autosave'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { PendingForm } from '@/components/feedback/scope'
 
@@ -24,6 +25,7 @@ export function ArticleForm({ obj, revisions }: { obj: ArticlesRow | null; revis
           <div className="field"><label>SEO description</label><input maxLength={300} name="seo_description" defaultValue={obj?.seoDescription ?? ''} /></div>
         </div>
         <ArticleBodyEditor initialHtml={obj?.body ?? ''} />
+        {obj && obj.status === 'draft' ? <Autosave kind="article" id={obj.id} base={obj.updatedAt.toISOString()} /> : null}
         <div className="inline-actions">
           <AsyncButton className="button" name="action" value="draft" type="submit">Save draft</AsyncButton>
           {obj ? <>

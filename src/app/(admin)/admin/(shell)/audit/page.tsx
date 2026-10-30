@@ -1,4 +1,4 @@
-import { AdminPage, fmt, type Notices } from '@/components/admin/AdminPage'
+import { AdminPage, ListLoad, fmt, type Notices } from '@/components/admin/AdminPage'
 import { many } from '@/server/data'
 
 /** What each kind of record is called, and where its page is. A kind not listed here is shown with its stored name made readable. */
@@ -13,14 +13,21 @@ const OBJECTS: Record<string, { name: string; href?: (id: number) => string }> =
 const readable = (s: string) => { const t = s.replace(/[_-]+/g, ' ').trim(); return t.charAt(0).toUpperCase() + t.slice(1) }
 
 export default async function Audit({ searchParams }: { searchParams: Promise<Notices> }) {
+  return (
+    <AdminPage heading="Activity log" sp={await searchParams}>
+      <div className="admin-panel"><p className="note mini">Who did what, newest first. The log is kept for traceability and cannot be edited.</p>
+        <ListLoad filters={[]} what="the activity log" columns={5}><AuditRows /></ListLoad></div>
+    </AdminPage>
+  )
+}
+
+async function AuditRows() {
   const rows = await many('audit_logs', (q) => q.order('id', { ascending: false }), 'created_at,actor_id,verb,object_type,object_id,summary', 200)
   const ids = [...new Set(rows.map((r) => r.actorId as number | null).filter((x): x is number => x != null))]
   const people = ids.length ? await many('users', (q) => q.in('id', ids), 'id,email') : []
   const who = new Map(people.map((u) => [u.id as number, u.email as string]))
   return (
-    <AdminPage heading="Activity log" sp={await searchParams}>
-      <div className="admin-panel"><p className="note mini">Who did what, newest first. The log is kept for traceability and cannot be edited.</p>
-        <table><thead><tr><th>When</th><th>By</th><th>Action</th><th>Record</th><th>Details</th></tr></thead><tbody>
+      <table><thead><tr><th>When</th><th>By</th><th>Action</th><th>Record</th><th>Details</th></tr></thead><tbody>
           {rows.map((r, i) => {
             const object = OBJECTS[r.objectType as string]
             const id = r.objectId as number
@@ -29,7 +36,6 @@ export default async function Audit({ searchParams }: { searchParams: Promise<No
                 <td>{object?.href ? <a href={object.href(id)}>{object.name} #{id}</a> : `${object?.name ?? readable(r.objectType as string)}${id ? ` #${id}` : ''}`}</td><td>{r.summary as string}</td></tr>
             )
           })}
-        </tbody></table></div>
-    </AdminPage>
+        </tbody></table>
   )
 }

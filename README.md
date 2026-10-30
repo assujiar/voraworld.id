@@ -87,6 +87,10 @@ Other references: `ARCHITECTURE.md`, `NUMBERING_POLICY.md`, `FINANCE_DOCUMENT_DE
 
 Version 1.x was a FastAPI (Python) application. It was rewritten in Next.js/React for 2.0.0. The Python code is preserved, unchanged, on the branch **`python-v1.0.0`**, and the state of `main` before the VORA delivery is preserved on **`backup/main-before-vora-20261029`**. The database schema is the same lineage: migrations `0001`–`0014` are byte-for-byte the ones the Python version used, `0015`–`0018` are new (column defaults, 64-bit money columns, the single admin role, template wording), and password hashes written by the Python version still verify.
 
+## Third-party licences to check
+
+The home page hero draws its route lines with Remotion (`remotion`, `@remotion/player`, `@remotion/paths`, pinned to 4.0.539). Remotion is free for individuals and small companies; a for-profit company above Remotion's size limit needs a paid company licence (see https://www.remotion.pro/license). Whether PT Satu Arah International needs one is a decision for its owner, not something the code can settle. The player is started with `acknowledgeRemotionLicense`, which only silences Remotion's console notice. To drop the dependency, delete `RouteBackdrop` from `src/app/(site)/[locale]/page.tsx`; the hero works without it.
+
 ## Brand and interaction rules
 
 The site keeps the standard browser cursor (no custom cursors, pointer trails or pointer-driven tilt); motion respects `prefers-reduced-motion`. Logos, the A-icon watermark and design tokens are the supplied brand files in `public/static/assets/` and must not be redrawn. `ASSET_MANIFEST.csv` records which illustration sources were selected; the original full-size PNGs are no longer in the tree, only the optimised WebP files the site uses. The PNGs remain in Git history (commit `2e1122b`).
