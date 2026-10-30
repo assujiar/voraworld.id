@@ -1,6 +1,7 @@
 import { saveDocumentAction } from '@/actions/documents'
 import { ActionForm, FCheckbox, FInput, FSelect, FTextarea, Submit } from '@/components/admin/ActionForm'
 import { ARTICLE_COLUMNS, ItemsTable } from '@/components/admin/ItemsTable'
+import { SealPlacer } from '@/components/admin/SealPlacer'
 import { LANGUAGE_NAMES, type Article, type DocumentType, type Lang } from '@/content/document-types'
 import { many } from '@/server/data'
 import { today } from '@/server/dates'
@@ -54,7 +55,7 @@ export async function DocumentForm({ type, lang, record, values, documentDate, c
               <span className="mini muted">Numbered under the customer&apos;s code; a letter to a customer starts from their name and address.</span>
             </div>
           ) : null}
-          {type.fields.map((f) => (
+          {type.fields.filter((f) => !f.hidden).map((f) => (
             <div key={f.name} style={{ display: 'contents' }}>
               {f.section ? <h4 className="wide" style={{ gridColumn: '1 / -1', margin: '14px 0 0' }}>{f.section.en} <small className="muted">{f.section[lang] !== f.section.en ? `(${f.section[lang]})` : ''}</small></h4> : null}
               <div className={`field${f.input === 'textarea' ? ' wide' : ''}`}>
@@ -68,6 +69,7 @@ export async function DocumentForm({ type, lang, record, values, documentDate, c
               </div>
             </div>
           ))}
+          {type.family === 'seal' ? <SealPlacer recordId={record} initial={Object.fromEntries(['pages', 'page_number', 'corner', 'size', 'pos_x', 'pos_y'].flatMap((k) => (values?.[k] ? [[k, values[k]]] : [])))} /> : null}
           {type.family === 'agreement' ? (
             <div className="field wide">
               <h4 style={{ margin: '14px 0 6px' }}>Articles (Pasal)</h4>

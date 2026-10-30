@@ -29,6 +29,8 @@ const security = [
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // PDF.js (the page preview where the seal is placed) mentions the optional Node module `canvas`; the browser build never loads it.
+  webpack: (webpack) => { webpack.resolve.alias = { ...webpack.resolve.alias, canvas: false }; return webpack },
   // unpdf ships its own PDF.js build and uses import.meta: it must be loaded from node_modules, not bundled.
   serverExternalPackages: ['unpdf'],
   reactStrictMode: true,

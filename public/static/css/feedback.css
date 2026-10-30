@@ -78,3 +78,27 @@ button.is-busy[disabled]{opacity:1}
 @media(prefers-reduced-motion:reduce){
   .admin-body details[open]>*:not(summary),.metric[href]:hover,.admin-body .button:active,.admin-body .button-outline:active{animation:none;transform:none}
 }
+
+/* The seal placer: a page of the PDF with the seal as a box to drag onto it. */
+.seal-placer{min-width:0;max-width:100%;overflow-x:hidden}
+.seal-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:8px 0 12px}
+.seal-controls fieldset{border:1px solid var(--line,#dce0e1);border-radius:8px;padding:8px 12px 10px;margin:0}
+.seal-controls legend{font-size:.72rem;font-weight:700;color:var(--muted,#64717c);padding:0 6px}
+.seal-controls label{display:flex;gap:8px;align-items:center;font-weight:400;min-height:32px}
+.seal-controls input[type=radio]{width:auto;min-height:0;margin:0}
+.seal-corners{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seal-corners button{min-height:36px;font-size:.72rem;padding:4px 6px}
+.seal-pager{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.seal-pager>span{flex:1 1 140px;min-width:0}
+.seal-pager .button-outline{min-height:36px}
+.seal-stage{position:relative;max-width:100%;border:1px solid var(--line,#dce0e1);background:#fff;box-shadow:0 8px 24px rgba(16,23,32,.12);line-height:0;user-select:none}
+.seal-stage canvas{display:block;max-width:100%}
+.seal-box{position:absolute;display:flex;gap:6%;align-items:center;padding:3%;box-sizing:border-box;border:1.5px dashed var(--red,#b43e31);border-top:3px solid var(--red,#b43e31);background:rgba(255,255,255,.9);cursor:grab;line-height:1.2;color:var(--ink,#101720);transition:box-shadow .15s ease}
+.seal-box:hover,.seal-box:focus-visible{box-shadow:0 0 0 3px rgba(180,62,49,.25),0 6px 16px rgba(16,23,32,.2);outline:none}
+.seal-box.is-dragging{cursor:grabbing;box-shadow:0 0 0 3px rgba(180,62,49,.35),0 10px 24px rgba(16,23,32,.28)}
+.seal-qr{flex:none;aspect-ratio:1;height:100%;background:repeating-conic-gradient(var(--ink,#101720) 0 25%,#fff 0 50%) 0 0/22% 22%;border:2px solid var(--ink,#101720)}
+.seal-lines{display:grid;gap:3px;min-width:0;flex:1}
+.seal-lines b{font-size:.85em;color:var(--red,#b43e31);white-space:nowrap;overflow:hidden;text-overflow:clip}
+.seal-lines i{display:block;height:.5em;border-radius:2px;background:rgba(16,23,32,.2)}
+.seal-lines i:nth-child(3){width:70%}.seal-lines i:nth-child(4){width:50%}
+@media(prefers-reduced-motion:reduce){.seal-box{transition:none}}
