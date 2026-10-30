@@ -44,3 +44,27 @@ export interface GeneralDocData {
   invoices: Array<{ number: string; issuedAt: string; dueAt: string; currency: string; totalMinor: number; outstandingMinor: number }>
   banks: BankLine[]
 }
+
+/** A delivery note (surat jalan). `captureUrl` is the address in its QR code: where the receiver signs. */
+export interface DeliveryNoteData {
+  number: string; status: string; deliveryDate: string
+  consigneeName: string; consigneeAddress: string; consigneeContact: string; consigneePhone: string; consigneeEmail: string
+  origin: string; destination: string; shipmentReference: string; poNumber: string; carrier: string; vehicle: string; vehiclePlate: string; driverName: string; driverPhone: string
+  notes: string
+  items: Array<{ description: string; quantity: string; unit: string; remarks: string }>
+  captureUrl: string
+}
+
+/** The proof of delivery: the delivery note plus what the receiver gave, and the evidence files themselves. */
+export interface PodData extends Omit<DeliveryNoteData, 'captureUrl'> {
+  /** Where the finished POD can be read (printed and clickable in the footer, and its QR code). */
+  viewUrl: string
+  proof: {
+    status: string; receivedAt: string; deviceTime: string
+    receiverName: string; receiverPosition: string; receiverPhone: string; receiverEmail: string; receiverIdNumber: string
+    condition: string; conditionNote: string
+    latitude: number | null; longitude: number | null; accuracyM: number | null; locationStatus: string; locationNote: string
+    signature: Uint8Array; signatureSha256: string
+    photos: Array<{ bytes: Uint8Array; sha256: string }>
+  }
+}

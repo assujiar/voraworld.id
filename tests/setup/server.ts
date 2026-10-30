@@ -4,9 +4,11 @@ import type { Server } from 'node:http'
 import { join } from 'node:path'
 import postgres, { type Sql } from 'postgres'
 import { runMigrations } from '../../scripts/lib/migrations'
+import type { AddressInfo } from 'node:net'
 import { fakeStorage, storageUrl } from '../http/fake-storage'
 import { admin, adminUrl, withDatabase } from './admin'
 import { startAuthStack, type AuthStack } from './auth-stack'
+import { prepareSupabaseRoles, startRest, type RestStack } from './rest-stack'
 import { ensureAuthAccount } from '../helpers/auth'
 
 export interface TestServer {
@@ -51,6 +53,7 @@ export async function startTestServer({ port, prefix, publicBaseUrl, seed }: Sta
   await a.unsafe(`create database ${name}`)
   await a.end({ timeout: 5 })
   const databaseUrl = withDatabase(adminUrl(), name)
+  await prepareSupabaseRoles(databaseUrl)                        // the roles and default privileges of a Supabase project, before the migrations
   const db = postgres(databaseUrl, { max: 1, onnotice: () => {} })
   try {
     await runMigrations(db, { apply: true })
@@ -60,28 +63,30 @@ export async function startTestServer({ port, prefix, publicBaseUrl, seed }: Sta
   }
 
   const storage: Server = await fakeStorage(auth.secretKey)      // the project's one secret key opens both Auth admin and Storage, as on Supabase
+  // The Data API: a real PostgREST on this database, behind one address that also reaches Auth and Storage, as a Supabase project's address does.
+  const rest: RestStack = await startRest({ database: name, jwtSecret: auth.jwtSecret, authUrl: auth.url, storagePort: (storage.address() as AddressInfo).port })
   const base = `http://localhost:${port}`
   const cronSecret = 'c'.repeat(40)
   const env = {
     ...process.env,
     NODE_ENV: 'production' as const,
-    DATABASE_URL: databaseUrl,
     PUBLIC_BASE_URL: publicBaseUrl ?? base,
-    NEXT_PUBLIC_SUPABASE_URL: auth.url,
+    NEXT_PUBLIC_SUPABASE_URL: rest.url,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: auth.publishableKey,
     SUPABASE_SECRET_KEY: auth.secretKey,
     MAIL_ENCRYPTION_KEY: randomBytes(32).toString('base64'),
     CRON_SECRET: cronSecret,
-    SUPABASE_URL: storageUrl(storage),
   }
   // Run Next directly (not through npx) so SIGTERM reaches the server itself and nothing is left running.
   const proc: ChildProcess = spawn(process.execPath, [join(process.cwd(), 'node_modules/next/dist/bin/next'), 'start', '-p', String(port)], { env, stdio: ['ignore', 'pipe', 'pipe'] })
   let log = ''
-  proc.stdout?.on('data', (d) => (log += d))
-  proc.stderr?.on('data', (d) => (log += d))
+  const keep = (d: Buffer) => { log += d; if (process.env.E2E_SERVER_LOG) process.stderr.write(d) }       // E2E_SERVER_LOG=1 shows what the server under test prints
+  proc.stdout?.on('data', keep)
+  proc.stderr?.on('data', keep)
 
   const stop = async () => {
     proc.kill('SIGTERM')
+    await rest.stop()
     storage.close()
     await auth.stop()
     const b = admin()

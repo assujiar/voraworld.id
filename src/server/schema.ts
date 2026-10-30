@@ -80,6 +80,81 @@ export interface CustomersRow {
   publicCode: string | null
 }
 
+export interface DeliveriesRow {
+  id: number
+  number: string
+  status: string
+  customerId: number | null
+  consigneeName: string
+  consigneeAddress: string
+  consigneeContact: string
+  consigneePhone: string
+  consigneeEmail: string
+  origin: string
+  destination: string
+  shipmentReference: string
+  poNumber: string
+  carrier: string
+  vehicle: string
+  vehiclePlate: string
+  driverName: string
+  driverPhone: string
+  deliveryDate: string
+  notes: string
+  captureToken: string
+  viewToken: string
+  createdBy: number | null
+  createdAt: Date
+  updatedAt: Date
+  issuedAt: Date | null
+  deliveredAt: Date | null
+}
+
+export interface DeliveryItemsRow {
+  id: number
+  deliveryId: number
+  position: number
+  description: string
+  quantity: string
+  unit: string
+  remarks: string
+}
+
+export interface DeliveryProofPhotosRow {
+  id: number
+  proofId: number
+  position: number
+  storageKey: string
+  sha256: string
+}
+
+export interface DeliveryProofsRow {
+  id: number
+  deliveryId: number
+  status: string
+  receiverName: string
+  receiverPosition: string
+  receiverPhone: string
+  receiverEmail: string
+  receiverIdNumber: string
+  receivedCondition: string
+  conditionNote: string
+  signatureKey: string
+  signatureSha256: string
+  latitude: number | null
+  longitude: number | null
+  accuracyM: number | null
+  locationStatus: string
+  locationNote: string
+  deviceTime: string
+  serverTime: Date
+  ip: string
+  userAgent: string
+  rejectedAt: Date | null
+  rejectedBy: number | null
+  rejectReason: string
+}
+
 export interface DocumentSealsRow {
   id: number
   kind: string
@@ -442,6 +517,8 @@ export const DATE_COLUMNS: Readonly<Record<string, readonly string[]>> = {
   bank_accounts: ['createdAt', 'updatedAt'],
   coverage: ['verifiedAt'],
   customers: ['createdAt'],
+  deliveries: ['createdAt', 'updatedAt', 'issuedAt', 'deliveredAt'],
+  delivery_proofs: ['serverTime', 'rejectedAt'],
   document_seals: ['issuedAt'],
   document_verification_tokens: ['createdAt'],
   documents: ['createdAt', 'updatedAt', 'issuedAt'],
