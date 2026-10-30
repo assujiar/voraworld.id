@@ -10,7 +10,7 @@ test('an upload shows the bytes really sent, then the stored result', async ({ b
   test.setTimeout(180_000)
   const problems: string[] = []
   const { context, page } = await openContext(browser)
-  trackProblems(page, 'admin', problems, { strict4xx: true })
+  trackProblems(page, 'admin', problems, { strict4xx: true, benign: /Content Security Policy/ })   // the test server's stand-in storage is not an allowed image host
   await signIn(page)
 
   // Noise does not compress: about 2 MB of PNG, which a 400 KB/s connection needs several seconds to send.

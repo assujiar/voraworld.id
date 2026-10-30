@@ -44,8 +44,7 @@ test('the email template editor previews, lists its variables and saves', async 
     const saved = await scalar(`select html from email_templates where key = 'invoice_customer'`)
     expect(saved).toContain('Body text')
     expect(saved).not.toContain('<script')
-    await page.locator('details:has(summary[data-key=invoice_customer]) summary').click()
-    await page.locator('details:has(summary[data-key=invoice_customer]) summary').click()
+    await page.locator('details:has(summary[data-key=invoice_customer]) summary').click()            // the page was reloaded by the save: the panel is closed again
     await page.locator('button:has-text("Send example to the administrator")').first().click()
     await expect(page.locator('.alert, .toast, [role=status]').filter({ hasText: /SMTP/ }).first()).toBeVisible()
   })
