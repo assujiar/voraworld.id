@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 import { ActionError } from '@/server/errors'
 import { count, ilikeValue, insert, many, one, remove, rpc, slice, update, upsert } from '@/server/data'
+import { setupChecklist } from '@/server/setup-check'
 import { sql } from './helpers/db'
 
 /**
@@ -76,6 +77,20 @@ describe('rows, filters and writes', () => {
     const page = await slice('login_attempts', (q) => q.eq('ip', '10.0.0.1').order('id'), 'id,email', 1000, 5)
     expect(page.map((r) => r.id)).toEqual(all.slice(1000, 1005).map((r) => r.id))
     expect(await many('login_attempts', (q) => q.eq('ip', '10.0.0.1').order('id'), 'id', 3)).toHaveLength(3)
+  })
+
+  it('counts tables that have no id column, and fails loudly on a missing table instead of returning 0', async () => {
+    // The dashboard counts email_rules, which is keyed by `key`; counting through `id` broke the page after login.
+    for (const t of ['email_rules', 'settings', 'email_templates', 'app_secrets']) expect(await count(t), `count ${t}`).toBeGreaterThanOrEqual(0)
+    await expect(count('no_such_table')).rejects.toThrow(/no_such_table/)
+  })
+
+  it('reads everything the admin dashboard reads', async () => {
+    const checks = await setupChecklist()
+    expect(checks.map((c) => c.id)).toContain('admin')
+    expect(await count('leads', (f) => f.eq('status', 'new'))).toBeGreaterThanOrEqual(0)
+    expect(await count('invoices', (f) => f.in('status', ['issued', 'partially_paid']))).toBeGreaterThanOrEqual(0)
+    expect(Array.isArray(await many('invoices', (f) => f.order('id', { ascending: false }), 'id,number,status,outstanding_minor,currency', 8))).toBe(true)
   })
 
   it('upserts on a key and can leave an existing row alone', async () => {

@@ -54,9 +54,13 @@ export async function slice(table: string, build: Build, columns: string, from: 
   return toRows(table, await run<unknown[]>(build(from_(table).select(columns)).range(from, from + size - 1) as never))
 }
 
-/** How many rows match (the database counts them; nothing is transferred). */
+/**
+ * How many rows match (the database counts them; no rows are transferred). It selects `*`, not `id`, because several tables
+ * (email_rules, settings, counters) have no id column. It is a GET with `limit(0)`, not a HEAD: a failed HEAD has no body, so
+ * the error message is empty, and supabase-js reads an empty 404 (a missing table) as "no content" and returns 0 without an error.
+ */
 export async function count(table: string, build: Build = (q) => q): Promise<number> {
-  const { count: n, error } = await (build(from_(table).select('id', { count: 'exact', head: true })) as unknown as PromiseLike<{ count: number | null; error: { code?: string; message: string } | null }>)
+  const { count: n, error } = await (build(from_(table).select('*', { count: 'exact' })).limit(0) as unknown as PromiseLike<{ count: number | null; error: { code?: string; message: string } | null }>)
   if (error) throw failure(error)
   return n ?? 0
 }
