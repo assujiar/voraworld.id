@@ -192,6 +192,10 @@ test('the content portal: articles, pages, FAQ, navigation, coverage, redirects,
     await f.locator('input[name=name]').fill('Dewi Browser')
     await f.locator('input[name=email]').fill('dewi@browser.example')
     await f.locator('input[name=company]').fill('PT Dewi')
+    await f.locator('input[name=phone]').fill('abcdefghij')                                // long enough for minLength, still not a phone number: the pattern stops the form
+    await f.locator('button').last().click()
+    await expect(f.locator('input[name=phone]:invalid')).toHaveCount(1)
+    await f.locator('input[name=phone]').fill('+62 812 3456 7890')
     await f.locator('select[name=mode]').selectOption({ index: 1 })
     await f.locator('input[name=origin]').fill('Jakarta')
     await f.locator('input[name=destination]').fill('Rotterdam')
@@ -201,11 +205,13 @@ test('the content portal: articles, pages, FAQ, navigation, coverage, redirects,
     await anon.waitForURL(/sent=1/)
     await expect(anon.locator('body')).toContainText('Inquiry submitted successfully')
     await expect.poll(() => scalar("select count(*) from leads where email='dewi@browser.example'")).toBe('1')
+    expect(await scalar("select phone from leads where email='dewi@browser.example'")).toBe('+62 812 3456 7890')       // form -> action -> lead_create -> leads.phone
 
     await page.goto('/admin/leads')
     await page.click('a:has-text("Dewi Browser")')
     await page.waitForURL(/\/admin\/leads\/\d+/)
     await settle()
+    await expect(page.locator('body')).toContainText('+62 812 3456 7890')                  // and on the admin detail
     await page.selectOption('select[name=status]', 'qualified')
     await page.selectOption('select[name=priority]', 'urgent')
     await page.fill('input[name=assignee]', 'Rina')
@@ -216,7 +222,9 @@ test('the content portal: articles, pages, FAQ, navigation, coverage, redirects,
     await expect(page.locator('body')).toContainText('Called, wants a quote today')              // the note is in the activity timeline
     const csv = await page.request.get('/admin/leads.csv')
     expect(csv.status()).toBe(200)
-    expect(await csv.text()).toContain('Dewi Browser')
+    const csvText = await csv.text()
+    expect(csvText).toContain('Dewi Browser')
+    expect(csvText).toContain('+62 812 3456 7890')                                          // and in the export
   })
 
   await test.step('SMTP: the test email reports its outcome, with the reason when it fails', async () => {

@@ -1,48 +1,11 @@
-import { expect, test, type Browser } from '@playwright/test'
-import sharp from 'sharp'
-import { BASE_URL, openContext, scalar, signIn, trackProblems } from './helpers'
+import { expect, test } from '@playwright/test'
+import { BASE_URL, fillItems, openContext, phone, received, scalar, seedValidatedQuotation, sign, signIn, trackProblems } from './helpers'
 
 /**
  * A delivery note written in the browser, issued, and recorded on a driver's phone: the driver scans the QR address, the receiver gives their
  * name and signs on that screen, the driver adds a photo and the phone's location is recorded (it must be on). The admin then sees the evidence,
  * the consignee's view works, a wrong proof can be rejected and the same QR address can be used again.
  */
-const photo = () => sharp({ create: { width: 640, height: 480, channels: 3, background: '#7a8c6e' } }).jpeg({ quality: 70 }).toBuffer()
-
-async function phone(browser: Browser, allowLocation: boolean) {
-  const context = await browser.newContext({
-    baseURL: BASE_URL, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
-    ...(allowLocation ? { geolocation: { latitude: -6.2088, longitude: 106.8456, accuracy: 20 }, permissions: ['geolocation'] } : {}),
-  })
-  return { context, page: await context.newPage() }
-}
-
-/** The form was accepted: the thank-you appears. If it does not, the refusal the form showed is the failure. */
-async function received(page: import('@playwright/test').Page) {
-  try {
-    await expect(page.locator('div[role=status]')).toContainText('The delivery of')
-  } catch (e) {
-    throw new Error(`the form was refused: ${(await page.locator('.alert[role=alert]').allInnerTexts()).join(' / ') || 'no message'}\n${e}`)
-  }
-}
-
-async function sign(page: import('@playwright/test').Page, name: string) {
-  await page.waitForLoadState('networkidle')                                      // the page is interactive: strokes before that would be lost
-  await page.fill('#courierName', 'Asep Kurniawan')                               // the driver, who holds the phone
-  await page.fill('#courierPhone', '0812 1111 2222')
-  await page.fill('#receiverName', name)                                           // the receiver, who signs on the driver's phone
-  await page.fill('#receiverPosition', 'Warehouse head')
-  await page.fill('#receiverPhone', '+62 812 3456 789')
-  await page.locator('canvas').scrollIntoViewIfNeeded()                          // the mouse works in viewport coordinates
-  const box = (await page.locator('canvas').boundingBox())!
-  await page.mouse.move(box.x + 30, box.y + 40)
-  await page.mouse.down()
-  for (let i = 1; i <= 24; i++) await page.mouse.move(box.x + 30 + i * 9, box.y + 40 + Math.sin(i / 2) * 30)
-  await page.mouse.up()
-  await page.setInputFiles('#photos', { name: 'goods.jpg', mimeType: 'image/jpeg', buffer: await photo() })
-  await expect(page.locator('img[alt="Photo 1"]')).toBeVisible()
-}
-
 test('a delivery note is issued, signed for on a phone, and its proof is checked', async ({ browser }) => {
   test.setTimeout(240_000)
   const problems: string[] = []
@@ -52,19 +15,26 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
 
   let id = '', link = '', number = ''
   await test.step('a draft is written, a refusal keeps what was typed, and it is issued', async () => {
-    await admin.goto('/admin/deliveries/new')
+    const seeded = await seedValidatedQuotation('PT Delivery Customer')
+    await admin.goto('/admin/deliveries/new')                                                                         // step 1: the customer
+    await admin.selectOption('select[name=customer]', seeded.customerId)
+    await admin.click('button:has-text("Continue")')
+    await admin.selectOption('select[name=quotation]', seeded.quotationId)                                            // step 2: one of their validated quotations
+    await admin.click('button:has-text("Continue")')
+    await expect(admin.locator('body')).toContainText(`under quotation ${seeded.number}`)
+    await expect(admin.locator('input[name=origin]')).toHaveValue('Jakarta')                                          // prefilled from the quotation
     await admin.fill('input[name=consignee_name]', 'PT Penerima Jaya')
     await admin.fill('input[name=consignee_email]', 'gudang@penerima.example')
     await admin.fill('input[name=destination]', 'Bekasi')
     await admin.click('button:has-text("Save draft")')                                                               // no items yet
     await expect(admin.locator('.alert[role=alert]')).toContainText('at least one item')
     await expect(admin.locator('input[name=consignee_name]')).toHaveValue('PT Penerima Jaya')
-    await admin.fill('textarea[name=items]', 'Cartons of spare parts | 24 | ctn | fragile\nPallet of cables | 2')
+    await fillItems(admin, ['description', 'quantity', 'unit', 'remarks'], [['Cartons of spare parts', '24', 'ctn', 'fragile'], ['Pallet of cables', '2', 'pcs', '']], 'Add cargo item')
     await admin.click('button:has-text("Save draft")')
     await admin.waitForURL(/\/admin\/deliveries\/\d+(\?|$)/)
     id = admin.url().match(/deliveries\/(\d+)/)![1]
     number = (await admin.locator('h3').first().innerText()).split(/\s/)[0]
-    expect(number).toMatch(/^DLV-VORA-V[0-9A-F]{10}-\d{6}-\d{5}$/)
+    expect(number).toMatch(/^DLV-VORA-C[0-9A-F]{10}-\d{6}-\d{5}$/)
     await expect(admin.locator('h3 .status')).toContainText('draft')
     expect((await admin.request.get(`/admin/deliveries/${id}/pdf`)).headers()['content-type']).toBe('application/pdf')
     await admin.click('button:has-text("Issue delivery note")')
