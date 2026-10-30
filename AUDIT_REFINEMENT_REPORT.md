@@ -11,7 +11,7 @@ Branch `claude/audit-refinement`, based on `origin/main` at `962e37f` (PR 13, PO
 | F03 Locale and RFQ | The language switch keeps `?mode=` on the quotation form only when the value is on an allow-list built from the real service list; an article switches to its translation, or to the list when no translation exists. |
 | F04 Legal and footer | Settings keys `privacy_id`, `terms_id`, `footer_description_en`, `footer_description_id` (no migration). Indonesian shows its own text or an honest notice that the English text applies. Contents list on long legal texts. |
 | F05 Empty pages | FAQ: 12 reviewed pairs EN/ID (portal entries win when they exist). Network: how a lane is confirmed. Insights: three starter checklists, filters, archive note. |
-| Service pages | Different compositions per family (decision, document, flow, ledger, study) and per mode; no price, transit time, free-time, coverage or ownership claims. |
+| Service pages | Hero and typography are exactly main's (verified: top of the page 0.0% pixel difference at 1440 px on forwarding, air import, LTL, warehousing, services index and home). Below the hero, each mode and group has its own guidance; no price, transit time, free-time, coverage or ownership claims. An earlier version changed global type sizes and the hero; it looked weaker than main and was reverted. |
 | Solutions, About, Services | Solutions bands (what the work looks like, what limits the plan, what to send); headlines from the brief. |
 | Articles | Contents rail, related reading, language-pair link, archive period shown separately from publication and review dates, JSON-LD with real timestamps, hreflang only where both languages exist. |
 | Motion | Hero route drawing plays once to its settled frame, pauses offscreen, follows a reduced-motion change made while the page is open. |
@@ -41,6 +41,7 @@ See the final message for command results and the screenshot manifest summary. F
 
 ## Not done
 
+- Home and About were not recomposed and now match main except for the About headline. Page-by-page recomposition from the brief was deliberately not pursued after the owner judged the earlier result worse than main.
 - Home page recomposition (atlas opening, customer-facing document chain) and the About identity spread were not redesigned; only headlines changed. The clay-tile services section you preferred is untouched.
 - Cover image fields exist but the article view does not render them; alt/caption need the migration.
 - The email-queued wording ("Email masuk antrean pengiriman.") was not changed: existing tests assert the current English notices, and changing them is a separate, small pass.
