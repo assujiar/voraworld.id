@@ -13,6 +13,7 @@ export function InquiryForm({ locale, kind, mode }: { locale: Locale; kind: 'con
       <div className="form-grid">
         <div className="field"><label>{t('Name', 'Nama')} *</label><input required name="name" maxLength={140} /></div>
         <div className="field"><label>Email *</label><input required name="email" type="email" maxLength={200} /></div>
+        <div className="field"><label>{t('Phone / WhatsApp number', 'Nomor telepon / WhatsApp')} *</label><input required name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={40} minLength={7} pattern="\+?[0-9][0-9\s\(\)\.\-]{4,28}[0-9]" placeholder="+62 812 3456 7890" title={t('Digits, spaces and + ( ) - . only, for example +62 812 3456 7890', 'Hanya angka, spasi dan + ( ) - . misalnya +62 812 3456 7890')} /></div>
         <div className="field"><label>{t('Company', 'Perusahaan')}</label><input name="company" maxLength={200} /></div>
         {quote ? (
           <>

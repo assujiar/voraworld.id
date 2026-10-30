@@ -7,7 +7,7 @@ import { INQUIRY_MAX_PER_EMAIL } from '@/server/leads'
 import { act, q } from './helpers/actions'
 
 process.env.MAIL_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64')
-const good = { locale: 'en', name: 'Sample QA', email: 'Qa@Example.Invalid', message: 'Please evaluate shipment', consent: 'yes', company: 'Only for test', _back: '/en/contact' }
+const good = { locale: 'en', name: 'Sample QA', email: 'Qa@Example.Invalid', phone: '+62 812 3456 7890', message: 'Please evaluate shipment', consent: 'yes', company: 'Only for test', _back: '/en/contact' }
 const rfq = { ...good, _back: '/en/request-quote', mode: 'sea-freight', origin: 'Jakarta', destination: 'Singapore', cargo: '12 crates', pickup: '2026-11-10' }
 
 beforeEach(async () => {
@@ -23,7 +23,7 @@ describe('contact form', () => {
     const r = await act(submitContact, good)
     expect(r.redirect).toBe('/en/contact?sent=1')
     const [lead] = await sql`select * from leads`
-    expect(lead).toMatchObject({ type: 'contact', name: 'Sample QA', email: 'qa@example.invalid', status: 'new', source: 'website', mode: '' })
+    expect(lead).toMatchObject({ type: 'contact', name: 'Sample QA', email: 'qa@example.invalid', phone: '+62 812 3456 7890', status: 'new', source: 'website', mode: '' })
     expect(lead.publicCode).toMatch(/^L[0-9A-F]{10}$/)
     expect(lead.reference).toMatch(new RegExp(`^INQ-VORA-${lead.publicCode}-\\d{6}-\\d{5}$`))
   })
@@ -32,6 +32,7 @@ describe('contact form', () => {
       [{ name: '' }, 'Name, message and valid email are required'],
       [{ message: '' }, 'Name, message and valid email are required'],
       [{ email: 'not-an-email' }, 'Name, message and valid email are required'],
+      [{ phone: '' }, 'Phone / WhatsApp number is required'], [{ phone: 'call me' }, 'Enter a valid phone / WhatsApp number, for example +62 812 3456 7890'],
       [{ consent: '' }, 'Consent required'],
     ] as const) {
       const r = await act(submitContact, { ...good, ...patch })
@@ -92,7 +93,7 @@ describe('request-for-quotation form', () => {
 
 describe('notification emails', () => {
   it('queue an admin alert and a customer acknowledgement once SMTP and the rules are on', async () => {
-    await saveMailConfig(sql, { host: 'smtp.example.invalid', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
+    await saveMailConfig({ host: 'smtp.example.invalid', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
     await sql`update email_rules set enabled = true where key in ('lead_admin', 'lead_customer')`
     const sent: Array<[string, string]> = []
     setSender(async (_c, to, subject) => { sent.push([to, subject]) })

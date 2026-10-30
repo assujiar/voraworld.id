@@ -6,7 +6,8 @@ import { dispatch, enqueue } from '@/server/mail/outbox'
 import { setSender } from '@/server/mail/transport'
 import { createBank } from '@/server/finance/banks'
 import { saveCustomer } from '@/server/finance/customers'
-import { createInvoice, sendInvoice, setInvoiceStatus, type InvoiceInput } from '@/server/finance/invoices'
+import { sendInvoice, setInvoiceStatus, type InvoiceInput } from '@/server/finance/invoices'
+import { createInvoice } from './helpers/commercial'
 import { confirmPayment, recordPayment } from '@/server/finance/payments'
 import { ensurePrepayment, sendPrepayment, uploadPrepaymentStamp, voidPrepayment } from '@/server/finance/prepayments'
 import { renderDocumentPdf } from '@/server/pdf/documents'
@@ -23,7 +24,7 @@ vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-
 const BASE = 'https://testserver'
 let actor: number
 
-const customer = (currency = 'IDR') => saveCustomer(actor, null, { name: 'PT Pelanggan Satu', email: 'billing@pelanggan.example', address: 'Jl. Contoh 1\nJakarta', taxId: '01.234.567.8-901.000', currency, termsDays: '14' })
+const customer = (currency = 'IDR') => saveCustomer(actor, null, { name: 'PT Pelanggan Satu', email: 'billing@pelanggan.example', address: 'Jl. Contoh 1\nJakarta', taxId: '01.234.567.8-901.000', currency, termsDays: '14' }, { acknowledgeDuplicates: true })
 const bank = (currency = 'IDR') => createBank(actor, { bankName: 'Bank Contoh', accountNumber: '1234567890', accountHolder: 'PT Satu Arah International', currency, branch: 'Tebet', swiftCode: '', notes: '' })
 /** A plain invoice whose total is exactly `price` (no tax, no withholding, no discount). */
 const invoiceFor = async (customerId: number, price: number | string, o: Partial<InvoiceInput> = {}) => createInvoice(actor, {
@@ -37,7 +38,7 @@ const rejects = async (p: Promise<unknown>, message: RegExp | string, status?: n
   expect(e!.message).toMatch(message)
   if (status) expect(e!.status).toBe(status)
 }
-const sent: Array<{ to: string; subject: string; attachment?: string; content?: Uint8Array }> = []
+const sent: Array<{ to: string; subject: string; attachment?: string; content?: Uint8Array; all?: Array<{ filename: string; content: Uint8Array }> }> = []
 async function smtp(...rules: string[]) {
   await saveMailConfig({ host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
   for (const r of rules) await sql`update email_rules set enabled = true where key = ${r}`
@@ -46,7 +47,10 @@ async function smtp(...rules: string[]) {
 beforeAll(async () => { actor = (await createUser('prepayment@example.invalid', 'admin')).id })
 beforeEach(async () => {
   sent.length = 0
-  setSender(async (_conf, to, subject, _html, attachment) => { sent.push({ to, subject, attachment: attachment?.filename, content: attachment?.content }) })
+  setSender(async (_conf, to, subject, _html, attachment) => {
+    const all = Array.isArray(attachment) ? attachment : attachment ? [attachment] : []
+    sent.push({ to, subject, attachment: all[0]?.filename, content: all[0]?.content, all })
+  })
   await sql`truncate customers, bank_accounts, quotations, invoices, payments, receipts, document_verification_tokens, email_jobs, leads, mail_config restart identity cascade`
   await sql`update email_rules set enabled = false`
 })
@@ -246,7 +250,7 @@ describe('the pre-payment receipt PDF', () => {
   })
 
   it('stays on one page for a long customer name, a long address and many bank accounts', async () => {
-    const cid = await saveCustomer(actor, null, { name: 'PT Perusahaan Pelayaran dan Logistik Nusantara Raya Bersama Sejahtera Abadi Makmur Tbk', email: 'a@b.example', address: 'Jalan Panjang Sekali Nomor 123, Kawasan Industri Terpadu, Blok C-12, Cikarang Barat, Kabupaten Bekasi, Jawa Barat 17530', taxId: '', currency: 'IDR', termsDays: '14' })
+    const cid = await saveCustomer(actor, null, { name: 'PT Perusahaan Pelayaran dan Logistik Nusantara Raya Bersama Sejahtera Abadi Makmur Tbk', email: 'a@b.example', address: 'Jalan Panjang Sekali Nomor 123, Kawasan Industri Terpadu, Blok C-12, Cikarang Barat, Kabupaten Bekasi, Jawa Barat 17530', taxId: '', currency: 'IDR', termsDays: '14' }, { acknowledgeDuplicates: true })
     const banks = []
     for (let i = 0; i < 5; i++) banks.push(await createBank(actor, { bankName: `Bank Nomor ${i + 1}`, accountNumber: `99000${i}`, accountHolder: 'PT Satu Arah International', currency: 'IDR', branch: '', swiftCode: '', notes: '' }))
     const id = await invoiceFor(cid, 12_000_000, { bankAccountIds: banks })
@@ -256,30 +260,31 @@ describe('the pre-payment receipt PDF', () => {
 })
 
 describe('emailing the pre-payment receipt', () => {
-  it('travels with the invoice when released and its rule is on; the stamped file is what is attached', async () => {
+  it('travels with the invoice as the second PDF of ONE email, only once it is released; the stamped file is what is attached', async () => {
     const cid = await customer()
     const id = await invoiceFor(cid, 12_000_000)
     await setInvoiceStatus(actor, id, 'issue')
     const p = await row(id); const [inv] = await sql`select number from invoices where id = ${id}`
     await smtp('invoice_customer', 'prepayment_receipt_customer')
-    // Waiting for its e-meterai: only the invoice goes.
-    await sendInvoice(actor, id, BASE)
+    // Waiting for its e-meterai: the whole package is held back, never the invoice alone.
+    await rejects(sendInvoice(actor, id, BASE), /waiting for its e-meterai/, 409)
     await dispatch(BASE, 10)
-    expect(sent.map((s) => s.attachment)).toEqual([`${inv.number}.pdf`])
+    expect(sent).toHaveLength(0)
+    expect(await sql`select id from email_jobs`).toHaveLength(0)
     await rejects(sendPrepayment(actor, p.id as number, BASE), /upload the stamped PDF first/, 409)
 
     const stamped = await makePdf([p.number as string, inv.number as string, 'stamped'])
     await uploadPrepaymentStamp(actor, p.id as number, { providerReference: 'PERURI-0003', reviewed: true, file: stamped })
-    sent.length = 0
-    await sql`delete from email_jobs`
     await sendInvoice(actor, id, BASE)
     await dispatch(BASE, 10)
-    expect(sent.map((s) => s.attachment).sort()).toEqual([`${inv.number}.pdf`, `${p.number}.pdf`].sort())
-    const mail = sent.find((s) => s.attachment === `${p.number}.pdf`)!
-    expect(mail.subject).toBe(`VORA pre-payment receipt ${p.number}`)
-    expect(Buffer.from(mail.content!).equals(Buffer.from(stamped))).toBe(true)
-    const [job] = await sql`select html from email_jobs where event = 'prepayment_receipt_customer'`
-    expect(job.html).toContain(inv.number as string); expect(job.html).toContain('not proof that payment has been made')
+    expect(sent).toHaveLength(1)                                                                     // ONE message
+    const attachments = sent[0].all!
+    expect(attachments.map((a) => a.filename)).toEqual([`${inv.number}.pdf`, `${p.number}.pdf`])      // with TWO PDFs, the invoice first
+    expect(Buffer.from(attachments[1].content).equals(Buffer.from(stamped))).toBe(true)              // the stamped pre-payment receipt, not a fresh copy
+    expect(sent[0].subject).toBe(`VORA invoice ${inv.number}`)
+    const [job] = await sql`select html, status from email_jobs`
+    expect(job.status).toBe('sent'); expect(job.html).toContain(p.number as string); expect(job.html).toContain('not proof that payment has been made')
+    expect((await sql`select event from email_jobs`).map((j) => j.event)).toEqual(['invoice_customer'])     // no second, automatic pre-payment email
   })
 
   it('has its own button, needs SMTP and the rule, and sends once per minute', async () => {

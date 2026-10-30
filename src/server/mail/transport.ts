@@ -4,7 +4,8 @@ import { emailAddress } from './address'
 import { decryptSecret } from './secret'
 
 export interface Attachment { filename: string; content: Uint8Array }
-export type Sender = (conf: MailConfigRow, to: string, subject: string, html: string, attachment?: Attachment) => Promise<void>
+/** One attachment, or an array when a message carries several (the invoice and its pre-payment receipt). */
+export type Sender = (conf: MailConfigRow, to: string, subject: string, html: string, attachment?: Attachment | Attachment[]) => Promise<void>
 
 const stripTags = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 
@@ -28,7 +29,7 @@ const smtpSender: Sender = async (conf, to, subject, html, attachment) => {
       subject,
       text: stripTags(html),
       html,
-      attachments: attachment ? [{ filename: attachment.filename, content: Buffer.from(attachment.content), contentType: 'application/pdf' }] : [],
+      attachments: (Array.isArray(attachment) ? attachment : attachment ? [attachment] : []).map((a) => ({ filename: a.filename, content: Buffer.from(a.content), contentType: 'application/pdf' })),
     })
   } finally {
     transporter.close()

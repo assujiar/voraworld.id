@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation'
 import { cancelPaymentAction, confirmPaymentAction, ensurePrepaymentAction, invoiceStatusAction, sendInvoiceAction } from '@/actions/finance'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
+import { MailHistory } from '@/components/admin/MailHistory'
 import { RecordPaymentForm } from '@/components/admin/RecordPaymentForm'
+import { DELIVERY_LABEL, INVOICE_LABEL, PAYMENT_LABEL, QUOTATION_LABEL } from '@/server/finance/labels'
+import { mailHistory } from '@/server/mail/history'
 import { many, one, withRelated, type Row } from '@/server/data'
 import { today } from '@/server/dates'
 import { money } from '@/server/money'
@@ -16,6 +19,11 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
   const items = await many('invoice_items', (q) => q.eq('invoice_id', id).order('id'))
   const banks = await many('invoice_bank_instructions', (q) => q.eq('invoice_id', id).order('position'))
   const payments = await paymentsWithReceipts(id)
+  const quotation = inv.quotationId ? await one('quotations', (q) => q.eq('id', inv.quotationId as number), 'id,number,status') : undefined
+  const links = await many('invoice_delivery_notes', (q) => q.eq('invoice_id', id).order('id'), 'delivery_id,released_at')
+  const billedDeliveries = links.length ? await many('deliveries', (q) => q.in('id', links.map((l) => l.deliveryId as number)).order('id'), 'id,number,status,delivery_date') : []
+  const lead = inv.quotationId ? await one('quotations', (q) => q.eq('id', inv.quotationId as number), 'lead_id').then((qq) => (qq?.leadId ? one('leads', (q) => q.eq('id', qq.leadId as number), 'id,reference') : undefined)) : undefined
+  const emails = await mailHistory('invoice', id)
   const prepayment = (await many('prepayment_receipts', (q) => q.eq('invoice_id', id), 'id,number,status,stamp_required')).sort((a, b) => Number(a.status === 'void') - Number(b.status === 'void') || (b.id as number) - (a.id as number))[0]
   const accounts = (await many('bank_accounts', (q) => q.eq('active', true).eq('currency', cur).order('position'), 'id,bank_name,account_number')).map((b) => ({ id: b.id as number, label: `${b.bankName} · ${b.accountNumber}` }))
   const here = `/admin/invoices/${id}`
@@ -28,9 +36,11 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
   return (
     <AdminPage heading="Invoice" sp={await searchParams}>
       <div className="admin-panel">
-        <h3>{inv.number as string} <span className="status">{status}</span></h3>
+        <h3>{inv.number as string} <span className="status">{INVOICE_LABEL[status] ?? status}</span></h3>
         <p><strong>Customer:</strong> <a href={`/admin/customers/${inv.customerId}`}>{inv.customerName as string}</a>{inv.customerEmail ? ` · ${inv.customerEmail}` : ''}<br />
           <strong>Issued:</strong> {inv.issuedAt as string} · <strong>Due:</strong> {inv.dueAt as string}</p>
+        <p className="mini">{quotation ? <>Quotation <a href={`/admin/quotations/${quotation.id}`}>{quotation.number as string}</a> ({QUOTATION_LABEL[quotation.status as string] ?? (quotation.status as string)}){lead ? <> · from lead <a href={`/admin/leads/${lead.id}`}>{(lead.reference as string) || `#${lead.id}`}</a></> : null}</> : 'Made before invoices were linked to a quotation'}
+          {billedDeliveries.length ? <> · Delivery notes: {billedDeliveries.map((d, k) => <span key={d.id as number}>{k ? ', ' : ''}<a href={`/admin/deliveries/${d.id}`}>{d.number as string}</a>{links.find((l) => l.deliveryId === d.id)?.releasedAt ? ' (released)' : ''}</span>)}</> : null}</p>
         {shipment.length ? <p className="mini muted">{shipment.join(' · ')}</p> : null}
         <table><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Amount</th></tr></thead><tbody>
           {items.map((i) => <tr key={i.id as number}><td>{i.description as string}</td><td>{i.quantity as string}</td><td>{i.unit as string}</td><td>{money(i.priceMinor as number, cur)}</td><td>{money(i.amountMinor as number, cur)}</td></tr>)}
@@ -64,17 +74,18 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
           {status === 'draft' ? <form action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue invoice</button></form> : null}
           {['draft', 'issued'].includes(status) ? <form action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
           <a className="button-outline" href={`/admin/invoices/${id}/pdf`} target="_blank" rel="noopener">Download PDF ↗</a>
-          {!['draft', 'void'].includes(status) ? <form action={sendInvoiceAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Email invoice PDF to customer</button></form> : null}
+          {!['draft', 'void'].includes(status) ? <form action={sendInvoiceAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Kirim Invoice &amp; Pre-Payment Receipt</button></form> : null}
         </div>
         {open ? <><hr /><RecordPaymentForm invoiceId={id} currency={cur} today={today()} banks={accounts} /></> : null}
-        <h3 style={{ marginTop: 25 }}>Payment confirmation queue</h3>
+        <p className="note mini">Sending the invoice and its pre-payment receipt is not a payment: the balance changes only when a recorded payment is confirmed as funds received.</p>
+        <h3 style={{ marginTop: 25 }}>Payments</h3>
         <table><thead><tr><th>Receipt</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead><tbody>
           {payments.length ? payments.map((p) => (
             <tr key={p.id as number}>
               <td>{p.receiptId ? <a href={`/admin/receipts/${p.receiptId}`}>{p.receiptNumber as string}</a> : '—'}</td>
               <td>{money(p.amountMinor as number, cur)}<br /><small>{p.method as string}{p.reference ? ` · ${p.reference}` : ''}</small></td>
               <td>{p.date as string}</td>
-              <td><span className="status">{p.status as string}</span>
+              <td><span className="status">{PAYMENT_LABEL[p.status as string] ?? (p.status as string)}</span>
                 {p.status === 'pending_confirmation' ? (
                   <>
                     <form action={confirmPaymentAction} style={{ marginTop: 9 }}>
@@ -85,7 +96,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
                         </div>
                       )}
                       <label className="mini" style={{ display: 'block' }}><input type="checkbox" name="funds_cleared" value="yes" required /> I verified that the funds are effectively credited to PT Satu Arah International</label>
-                      <button className="button" style={{ marginTop: 7 }}>Confirm cleared funds &amp; notify customer</button>
+                      <button className="button" style={{ marginTop: 7 }}>Konfirmasi Dana Diterima</button>
                     </form>
                     <form action={cancelPaymentAction} style={{ marginTop: 5 }}><input type="hidden" name="record" value={p.id as number} /><Back to={here} /><button className="button-outline">Reject / cancel</button></form>
                   </>
@@ -95,6 +106,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
           )) : <tr><td colSpan={4}>No payments yet.</td></tr>}
         </tbody></table>
       </div>
+      <MailHistory lines={emails} />
     </AdminPage>
   )
 }

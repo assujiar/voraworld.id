@@ -10,6 +10,8 @@ export interface InvoiceData {
   poNumber: string; shipmentReference: string; serviceMode: string; origin: string; destination: string; transportDocumentRef: string; notes: string
   taxPercent: string; withholdingPercent: string; discountMinor: number; subtotalMinor: number; taxMinor: number; withholdingMinor: number; totalMinor: number; outstandingMinor: number
   items: LineData[]; banks: BankLine[]; customer: Party
+  /** The validated quotation this invoice comes from and the delivery notes it bills (empty for an invoice made before they were linked). */
+  quotationNumber?: string; deliveryNumbers?: string[]
 }
 
 export interface QuotationData {

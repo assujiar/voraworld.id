@@ -7,6 +7,7 @@ import { createDelivery, deliveryBy, proofEvidence, proofsOf, rejectProof, resen
 import { saveMailConfig } from '@/server/mail/config'
 import { deliveryNotePdf, podPdf } from '@/server/pdf/delivery-render'
 import { createUser } from './helpers/actions'
+import { validatedQuotation } from './helpers/commercial'
 import { sql } from './helpers/db'
 
 // The tests have no Storage service: files go to a map, which is all the service needs of it.
@@ -16,6 +17,7 @@ vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-
 process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64')
 const BASE = 'https://voraworld.id'
 let actor: number
+let customer = 0, quotation = 0       // a customer and one of its validated quotations: every delivery note is made under them
 
 /** The addresses a PDF links to (its clickable links; the QR codes print the same addresses). */
 async function links(bytes: Uint8Array): Promise<string[]> {
@@ -35,14 +37,16 @@ const noise = (w: number, h: number) => { const raw = Buffer.alloc(w * h * 3); f
 let png: string, jpeg: string
 beforeAll(async () => {
   actor = (await createUser('delivery@example.invalid', 'admin')).id
+  customer = await saveCustomer(actor, null, { name: 'PT Pengirim', email: 'c@pengirim.example', address: 'Jl. Kantor 1', taxId: '', currency: 'IDR', termsDays: '14' })
+  quotation = await validatedQuotation(actor, customer)
   png = 'data:image/png;base64,' + (await noise(120, 60).png().toBuffer()).toString('base64')
   jpeg = 'data:image/jpeg;base64,' + (await noise(300, 200).jpeg({ quality: 60 }).toBuffer()).toString('base64')
 })
 
 const note = (o: Partial<DeliveryInput> = {}): DeliveryInput => ({
-  customerId: null, consigneeName: 'PT Penerima', consigneeAddress: 'Jl. Gudang 5, Bekasi', consigneeContact: 'Budi', consigneePhone: '+62 21 555', consigneeEmail: 'gudang@penerima.example',
+  customerId: customer, quotationId: quotation, consigneeName: 'PT Penerima', consigneeAddress: 'Jl. Gudang 5, Bekasi', consigneeContact: 'Budi', consigneePhone: '+62 21 555', consigneeEmail: 'gudang@penerima.example',
   origin: 'Jakarta', destination: 'Bekasi', shipmentReference: 'JOB-1', poNumber: 'PO-9', carrier: 'VORA Trucking', vehicle: 'Wingbox', vehiclePlate: 'B 1234 XYZ', driverName: 'Asep', driverPhone: '0812',
-  deliveryDate: '2026-10-30', notes: 'Handle with care', items: 'Cartons of parts | 24 | ctn | fragile\nPallet of cables | 2', ...o,
+  deliveryDate: '2026-10-30', notes: 'Handle with care', items: [{ description: 'Cartons of parts', quantity: '24', unit: 'ctn', remarks: 'fragile' }, { description: 'Pallet of cables', quantity: '2', unit: '', remarks: '' }], ...o,
 })
 const proof = (token: string, o: Partial<ProofInput> = {}): ProofInput => ({
   token, courierName: 'Asep Kurniawan', courierPhone: '0812 1111 2222', receiverName: 'Siti Aminah', receiverPosition: 'Warehouse head', receiverPhone: '+62 812 3456', receiverEmail: '', receiverIdNumber: '', condition: 'good', conditionNote: '',
@@ -55,28 +59,41 @@ async function issued(o: Partial<DeliveryInput> = {}) {
 }
 
 describe('delivery notes', () => {
-  it('numbers a note under the customer, keeps items in order, and edits only a draft', async () => {
-    const customer = await saveCustomer(actor, null, { name: 'PT Pelanggan', email: 'c@pelanggan.example', address: 'Jl. Kantor 1', taxId: '', currency: 'IDR', termsDays: '14' })
-    const id = await createDelivery(actor, note({ customerId: customer, consigneeName: '', consigneeAddress: '', consigneeEmail: '' }))
+  it('numbers a note under the customer, keeps its quotation and cargo rows in order, and edits only a draft', async () => {
+    const id = await createDelivery(actor, note({ consigneeName: '', consigneeAddress: '', consigneeEmail: '' }))
     const d = (await deliveryBy('id', id))!
     expect(d.number).toMatch(/^DLV-VORA-C[A-F0-9]{10}-202610-\d{5}$/)
-    expect(d).toMatchObject({ status: 'draft', consigneeName: 'PT Pelanggan', consigneeAddress: 'Jl. Kantor 1', consigneeEmail: 'c@pelanggan.example' })
+    expect(d).toMatchObject({ status: 'draft', customerId: customer, quotationId: quotation, consigneeName: 'PT Pengirim', consigneeAddress: 'Jl. Kantor 1', consigneeEmail: 'c@pengirim.example' })
     expect(d.items.map((i) => [i.description, i.quantity, i.unit])).toEqual([['Cartons of parts', '24', 'ctn'], ['Pallet of cables', '2', 'pcs']])
     expect(d.captureToken).not.toEqual(d.viewToken)
-    await updateDelivery(actor, id, note({ customerId: customer, items: 'Only item | 1 | box' }))
+    await updateDelivery(actor, id, note({ items: [{ description: 'Only item', quantity: '1', unit: 'box', remarks: '' }, { description: '', quantity: '', unit: '', remarks: '' }] }))     // an empty row is ignored
     expect((await deliveryBy('id', id))!.items).toHaveLength(1)
+    const other = await saveCustomer(actor, null, { name: 'PT Lain', email: 'x@lain.example', address: '-', taxId: '', currency: 'IDR', termsDays: '14' })
+    await updateDelivery(actor, id, note({ customerId: other, quotationId: null }))                                                   // customer and quotation cannot be changed by an edit
+    expect(await deliveryBy('id', id)).toMatchObject({ customerId: customer, quotationId: quotation })
     await setDeliveryStatus(actor, id, 'issue')
     await expect(updateDelivery(actor, id, note())).rejects.toMatchObject({ status: 409 })
     await expect(setDeliveryStatus(actor, id, 'issue')).rejects.toMatchObject({ status: 409 })
   })
 
+  it('is made only for a customer\'s VALIDATED quotation', async () => {
+    await expect(createDelivery(actor, note({ customerId: null }))).rejects.toThrow(/Select the customer/)
+    await expect(createDelivery(actor, note({ quotationId: null }))).rejects.toThrow(/validated quotations/)
+    const other = await saveCustomer(actor, null, { name: 'PT Orang Lain', email: 'y@orang.example', address: '-', taxId: '', currency: 'IDR', termsDays: '14' })
+    await expect(createDelivery(actor, note({ customerId: other }))).rejects.toThrow(/does not belong to this customer/)
+    const [draft] = await sql`insert into quotations (number, customer_id, status, currency, issued_at, valid_until, payment_terms, terms_conditions) values ('QUO-DRAFT-1', ${customer}, 'draft', 'IDR', '2026-10-01', '2999-01-01', 'x', 'y') returning id`
+    await expect(createDelivery(actor, note({ quotationId: draft.id as number }))).rejects.toMatchObject({ status: 409 })
+    const ids = [await createDelivery(actor, note()), await createDelivery(actor, note())]                                            // many notes under one quotation, each its own number
+    expect(new Set((await sql`select number from deliveries where id in ${sql(ids)}`).map((r) => r.number)).size).toBe(2)
+  })
+
   it('refuses what is wrong instead of cutting it short', async () => {
-    await expect(createDelivery(actor, note({ items: '' }))).rejects.toThrow(/at least one item/)
-    await expect(createDelivery(actor, note({ items: 'no quantity' }))).rejects.toThrow(/description \| quantity/)
+    await expect(createDelivery(actor, note({ items: [] }))).rejects.toThrow(/at least one item of cargo/)
+    await expect(createDelivery(actor, note({ items: [{ description: 'no quantity', quantity: '', unit: '', remarks: '' }] }))).rejects.toThrow(/write the quantity/)
+    await expect(createDelivery(actor, note({ items: [{ description: 'x'.repeat(501), quantity: '1', unit: '', remarks: '' }] }))).rejects.toThrow(/too long/)
     await expect(createDelivery(actor, note({ consigneeName: 'x'.repeat(241) }))).rejects.toThrow(/too long/)
     await expect(createDelivery(actor, note({ deliveryDate: '2026-02-31' }))).rejects.toThrow(/valid date/)
     await expect(createDelivery(actor, note({ consigneeEmail: 'not an email' }))).rejects.toThrow(/valid address/)
-    await expect(createDelivery(actor, note({ customerId: 999999 }))).rejects.toThrow(/existing customer/)
   })
 
   it('prints the note as a PDF whose QR address is the receiver\'s link, marked while it is a draft', async () => {

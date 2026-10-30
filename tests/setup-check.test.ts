@@ -25,7 +25,7 @@ describe('setup checklist', () => {
     process.env.APP_ENV = 'production'; process.env.PUBLIC_BASE_URL = 'https://voraworld.id'
     process.env.SUPABASE_URL = 'https://abc.supabase.co'; process.env.SUPABASE_SECRET_KEY = 'sb_secret_x'
     process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64'); process.env.CRON_SECRET = 'c'.repeat(40)
-    await saveMailConfig(sql, { host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
+    await saveMailConfig({ host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
     await sql`update email_rules set enabled = true where key = 'invoice_customer'`
     await sql`insert into bank_accounts (bank_name, account_number, account_holder, currency, active, is_default, position) values ('B', '1234567890', 'PT', 'IDR', true, true, 1)`
     await put('privacy', '<p>Privacy text</p>'); await put('terms', '<p>Terms text</p>')
@@ -39,7 +39,7 @@ describe('setup checklist', () => {
     await put('privacy', '<p> </p>'); await put('terms', '<p>ok</p>')
     await sql`insert into bank_accounts (bank_name, account_number, account_holder, currency, active, is_default, position) values ('B', '1234567890', 'PT', 'IDR', false, false, 1)`
     await sql`insert into users (email, role, active, auth_user_id) values ('a@x.invalid', 'finance', true, gen_random_uuid()), ('b@x.invalid', 'admin', false, gen_random_uuid()), ('c@x.invalid', 'admin', true, null)`
-    await saveMailConfig(sql, { host: 'smtp.example.invalid', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: false })
+    await saveMailConfig({ host: 'smtp.example.invalid', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: false })
     const c = await by()
     for (const id of ['cron', 'encryption', 'legal', 'bank', 'admin', 'smtp']) expect(c[id].ok, id).toBe(false)
   })

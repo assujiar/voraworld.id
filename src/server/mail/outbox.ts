@@ -1,4 +1,4 @@
-import { insert, one, rpc, toRows, update, upsert } from '../data'
+import { insert, many, one, rpc, toRows, update, upsert } from '../data'
 import { emailAddress } from './address'
 import { getMailConfig } from './config'
 import { renderTemplate } from './template'
@@ -30,13 +30,25 @@ export async function enqueue(event: string, recipient: string, context: Record<
 export interface DispatchResult { sent: number; failed: number; reason?: string }
 
 const ATTACHMENT_TABLE = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations', prepayment: 'prepayment_receipts' } as const
+export type AttachmentKind = keyof typeof ATTACHMENT_TABLE
+
+/** Queues ONE message that carries several attachments, all or nothing, once per `dedupeKey`. The same rules as `enqueue`: SMTP on, the event's rule on. */
+export async function enqueueWithAttachments(event: string, recipient: string, context: Record<string, unknown>, attachments: Array<{ kind: AttachmentKind; id: number }>,
+  opts: { dedupeKey: string; force?: boolean }) {
+  const rule = await one('email_rules', (q) => q.eq('key', event), 'enabled')
+  if (!opts.force && !rule?.enabled) return null
+  const conf = await getMailConfig()
+  if (!conf?.enabled) return null
+  const to = emailAddress(recipient)
+  const { subject, html } = await renderTemplate(event, context)
+  return rpc<{ id: number; status: string; created: boolean }>('mail_enqueue', { p: { event, recipient: to, subject, html, dedupe_key: opts.dedupeKey, attachments: attachments.map((a) => ({ kind: a.kind, id: a.id })) } })
+}
 
 /** Builds the PDF to attach, refusing documents that must not be released yet. */
-async function attachmentFor(job: { attachmentKind: string; attachmentId: number }, baseUrl: string): Promise<Attachment> {
+async function attachmentOf(kind: string, documentId: number, baseUrl: string): Promise<Attachment> {
   const { renderDocumentPdf } = await import('../pdf/documents')
-  const kind = job.attachmentKind
   if (!(kind in ATTACHMENT_TABLE)) throw new Error('Unsupported email attachment')
-  const doc = await one(ATTACHMENT_TABLE[kind as keyof typeof ATTACHMENT_TABLE], (q) => q.eq('id', job.attachmentId))
+  const doc = await one(ATTACHMENT_TABLE[kind as AttachmentKind], (q) => q.eq('id', documentId))
   if (!doc || ['void', 'draft', 'pending_stamp', 'pending_confirmation'].includes(doc.status as string)) throw new Error('Attachment is not eligible for sending')
   if (kind === 'receipt') {
     const payment = await one('payments', (q) => q.eq('id', doc.paymentId as number), 'status')
@@ -44,9 +56,19 @@ async function attachmentFor(job: { attachmentKind: string; attachmentId: number
     if (doc.stampRequired && !doc.stampStorageKey) throw new Error('Required e-meterai not uploaded')
   }
   if (kind === 'prepayment' && doc.stampRequired && !doc.stampStorageKey) throw new Error('Required e-meterai not uploaded')
-  const ver = await one('document_verification_tokens', (q) => q.eq('kind', kind).eq('document_id', job.attachmentId).order('id'), 'revoked')
+  const ver = await one('document_verification_tokens', (q) => q.eq('kind', kind).eq('document_id', documentId).order('id'), 'revoked')
   if (!ver || ver.revoked) throw new Error('Verification token missing or revoked')
-  return { filename: `${doc.number}.pdf`, content: await renderDocumentPdf(kind as 'invoice', job.attachmentId, baseUrl) }
+  return { filename: `${doc.number}.pdf`, content: await renderDocumentPdf(kind as 'invoice', documentId, baseUrl) }
+}
+
+/**
+ * The attachments of a message: those of its own list (a package) or its single one. EVERY attachment must be ready: if one is not, nothing is
+ * sent and the message is retried later - a package is never sent half.
+ */
+async function attachmentsFor(job: { id: number; attachmentKind: string | null; attachmentId: number | null }, baseUrl: string): Promise<Attachment | Attachment[] | undefined> {
+  const list = await many('email_job_attachments', (q) => q.eq('job_id', job.id).order('position').order('id'), 'kind,document_id')
+  if (list.length) return Promise.all(list.map((a) => attachmentOf(a.kind as string, a.documentId as number, baseUrl)))
+  return job.attachmentKind ? attachmentOf(job.attachmentKind, job.attachmentId as number, baseUrl) : undefined
 }
 
 /**
@@ -60,7 +82,7 @@ export async function dispatch(baseUrl: string, limit = 10): Promise<DispatchRes
   const result: DispatchResult = { sent: 0, failed: 0 }
   for (const job of [...jobs].sort((a, b) => (a.id as number) - (b.id as number))) {
     try {
-      const attachment = job.attachmentKind ? await attachmentFor(job as never, baseUrl) : undefined
+      const attachment = await attachmentsFor(job as never, baseUrl)
       await send(conf, job.recipient as string, job.subject as string, job.html as string, attachment)
       await update('email_jobs', { status: 'sent', attempts: (job.attempts as number) + 1, error: '', sent_at: new Date() }, (q) => q.eq('id', job.id as number))
       result.sent++

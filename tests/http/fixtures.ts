@@ -29,8 +29,8 @@ export async function seedFinance(): Promise<Seed> {
   if (!existing) {
     const [admin] = await sql`select id from users where role = 'admin' order by id limit 1`
     const actor = admin.id as number
-    const customer = await saveCustomer(actor, null, { name: 'HTTP Fixture Customer', email: 'billing@fixture.example', address: 'Jl. Fixture 1', taxId: '', currency: 'IDR', termsDays: '14' })
-    const usd = await saveCustomer(actor, null, { name: 'HTTP Fixture USD', email: 'usd@fixture.example', address: '', taxId: '', currency: 'USD', termsDays: '14' })
+    const customer = await saveCustomer(actor, null, { name: 'HTTP Fixture Customer', email: 'billing@fixture.example', address: 'Jl. Fixture 1', taxId: '', currency: 'IDR', termsDays: '14' }, { acknowledgeDuplicates: true })
+    const usd = await saveCustomer(actor, null, { name: 'HTTP Fixture USD', email: 'usd@fixture.example', address: '', taxId: '', currency: 'USD', termsDays: '14' }, { acknowledgeDuplicates: true })
     const bank = await createBank(actor, { bankName: 'Fixture Bank', accountNumber: '9900001111', accountHolder: 'PT Satu Arah International', currency: 'IDR', branch: '', swiftCode: '', notes: '' })
     const usdBank = await createBank(actor, { bankName: 'Fixture USD Bank', accountNumber: '9900002222', accountHolder: 'PT Satu Arah International', currency: 'USD', branch: '', swiftCode: '', notes: '' })
     const invoice = (customerId: number, bankIds: number[], price = '1000000') => createInvoice(actor, {

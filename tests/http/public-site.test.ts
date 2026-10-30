@@ -8,6 +8,8 @@ const GROUPS: Record<string, string[]> = {
   'customs-brokerage': [], '3pl-warehousing': [], 'domestic-distribution': ['ftl', 'ltl', 'fcl', 'lcl', 'air-freight'], 'project-cargo': [],
 }
 const paths = [...CORE, ...Object.entries(GROUPS).flatMap(([g, modes]) => [`/services/${g}`, ...modes.map((m) => `/services/${g}/${m}`)])]
+/** The inquiry forms ask for the visitor's own number; that label is the only place the word may appear. */
+const FORM_LABEL = /Phone \/ WhatsApp number|Nomor telepon \/ WhatsApp/g
 const FORBIDDEN = /tel:|wa\.me|api\.whatsapp|whatsapp|href=["']\/(en\/|id\/)?admin/i
 const EMAIL = 'info@voraworld.id'
 const ADDRESS = 'Gedung Nucira, Jl. Letjen M.T. Haryono Kav. 27, Tebet, Jakarta Selatan, DKI Jakarta 12810'
@@ -21,7 +23,7 @@ describe('public pages', () => {
         const res = await c.get(`/${locale}${p}`)
         expect(res.status, `${locale}${p}`).toBe(200)
         const html = await res.text()
-        expect(html, `${locale}${p}`).not.toMatch(FORBIDDEN)
+        expect(html.replace(FORM_LABEL, ''), `${locale}${p}`).not.toMatch(FORBIDDEN)
         expect(html).toContain('vora-primary.svg')
         expect(html).toContain(`<html lang="${locale}"`)
         expect((html.match(/<h1[ >]/g) ?? []).length, `${locale}${p} h1`).toBe(1)

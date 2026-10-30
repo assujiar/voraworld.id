@@ -78,6 +78,10 @@ export interface CustomersRow {
   termsDays: number
   createdAt: Date
   publicCode: string | null
+  picName: string
+  picPosition: string
+  picEmail: string
+  picPhone: string
 }
 
 export interface DeliveriesRow {
@@ -108,6 +112,7 @@ export interface DeliveriesRow {
   updatedAt: Date
   issuedAt: Date | null
   deliveredAt: Date | null
+  quotationId: number | null
 }
 
 export interface DeliveryItemsRow {
@@ -196,6 +201,14 @@ export interface DocumentsRow {
   issuedAt: Date | null
 }
 
+export interface EmailJobAttachmentsRow {
+  id: number
+  jobId: number
+  position: number
+  kind: string
+  documentId: number
+}
+
 export interface EmailJobsRow {
   id: number
   event: string
@@ -247,6 +260,14 @@ export interface InvoiceBankInstructionsRow {
   position: number
 }
 
+export interface InvoiceDeliveryNotesRow {
+  id: number
+  invoiceId: number
+  deliveryId: number
+  createdAt: Date
+  releasedAt: Date | null
+}
+
 export interface InvoiceItemsRow {
   id: number
   invoiceId: number | null
@@ -281,6 +302,7 @@ export interface InvoicesRow {
   origin: string
   destination: string
   transportDocumentRef: string
+  quotationId: number | null
 }
 
 export interface LeadActivitiesRow {
@@ -313,6 +335,9 @@ export interface LeadsRow {
   updatedAt: Date
   publicCode: string | null
   reference: string | null
+  customerId: number | null
+  convertedAt: Date | null
+  convertedBy: number | null
 }
 
 export interface LoginAttemptsRow {
@@ -447,6 +472,16 @@ export interface QuotationsRow {
   createdAt: Date
   paymentTerms: string
   termsConditions: string
+  picName: string
+  picEmail: string
+  picPhone: string
+  serviceMode: string
+  origin: string
+  destination: string
+  cargoInfo: string
+  customerApprovedAt: Date | null
+  validatedAt: Date | null
+  validatedBy: number | null
 }
 
 export interface ReceiptsRow {
@@ -526,16 +561,17 @@ export const DATE_COLUMNS: Readonly<Record<string, readonly string[]>> = {
   documents: ['createdAt', 'updatedAt', 'issuedAt'],
   email_jobs: ['nextAttemptAt', 'sentAt', 'createdAt'],
   email_templates: ['updatedAt'],
+  invoice_delivery_notes: ['createdAt', 'releasedAt'],
   invoices: ['createdAt'],
   lead_activities: ['createdAt'],
-  leads: ['createdAt', 'updatedAt'],
+  leads: ['createdAt', 'updatedAt', 'convertedAt'],
   login_attempts: ['createdAt'],
   media: ['createdAt'],
   pages: ['updatedAt'],
   payments: ['createdAt', 'confirmedAt'],
   prepayment_receipts: ['stampUploadedAt', 'createdAt'],
   quotation_approvals: ['expiresAt', 'uploadedAt', 'reviewedAt', 'createdAt'],
-  quotations: ['createdAt'],
+  quotations: ['createdAt', 'customerApprovedAt', 'validatedAt'],
   receipts: ['createdAt', 'stampUploadedAt'],
   revisions: ['createdAt'],
   settings: ['updatedAt'],

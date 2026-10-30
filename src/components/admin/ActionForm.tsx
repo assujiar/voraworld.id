@@ -27,7 +27,7 @@ function useTyped(name: string, fallback: string): string {
   const v = useContext(Typed).values?.[name]
   return v === undefined ? fallback : Array.isArray(v) ? v[0] ?? '' : v
 }
-function useTypedList(name: string): string[] | undefined {
+export function useTypedList(name: string): string[] | undefined {
   const v = useContext(Typed).values?.[name]
   return v === undefined ? undefined : Array.isArray(v) ? v : [v]
 }

@@ -2,6 +2,7 @@
 import { ActionError, adminRun, adminRunForm, type FormState } from '@/server/action'
 import { createDelivery, rejectProof, resendReceivedEmail, setDeliveryStatus, updateDelivery, type DeliveryInput } from '@/server/delivery/deliveries'
 import { publicBaseUrl } from '@/server/env'
+import { rowsFromForm } from '@/server/form-rows'
 import { int, rawStr, str } from '@/server/http'
 
 /** One character more than a field allows is read, so that too much text is refused with a message rather than quietly cut short. */
@@ -9,12 +10,13 @@ const text = (form: FormData, key: string, max: number) => rawStr(form, key, max
 
 function inputOf(form: FormData): DeliveryInput {
   return {
-    customerId: int(form, 'customer_id') || null,
+    customerId: int(form, 'customer_id') || null, quotationId: int(form, 'quotation_id') || null,
     consigneeName: text(form, 'consignee_name', 240), consigneeAddress: text(form, 'consignee_address', 1000), consigneeContact: text(form, 'consignee_contact', 160),
     consigneePhone: text(form, 'consignee_phone', 60), consigneeEmail: text(form, 'consignee_email', 200),
     origin: text(form, 'origin', 240), destination: text(form, 'destination', 240), shipmentReference: text(form, 'shipment_reference', 120), poNumber: text(form, 'po_number', 100),
     carrier: text(form, 'carrier', 160), vehicle: text(form, 'vehicle', 120), vehiclePlate: text(form, 'vehicle_plate', 30), driverName: text(form, 'driver_name', 160), driverPhone: text(form, 'driver_phone', 60),
-    deliveryDate: str(form, 'delivery_date', 10), notes: text(form, 'notes', 2000), items: text(form, 'items', 60_000),
+    deliveryDate: str(form, 'delivery_date', 10), notes: text(form, 'notes', 2000),
+    items: rowsFromForm(form, 'item', { description: 500, quantity: 40, unit: 30, remarks: 240 }),
   }
 }
 

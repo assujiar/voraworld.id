@@ -9,7 +9,8 @@ import { sql } from './helpers/db'
 import { createDocument, setDocumentStatus, updateDocument, type DocumentInput } from '@/server/documents/general'
 import { createBank } from '@/server/finance/banks'
 import { saveCustomer } from '@/server/finance/customers'
-import { createInvoice, setInvoiceStatus } from '@/server/finance/invoices'
+import { setInvoiceStatus } from '@/server/finance/invoices'
+import { createInvoice } from './helpers/commercial'
 import { confirmPayment, recordPayment } from '@/server/finance/payments'
 import { renderDocumentPdf } from '@/server/pdf/documents'
 import { Sheet } from '@/server/pdf/kit'
@@ -33,7 +34,7 @@ const MIN: Record<string, Record<string, string>> = {
   certificate: { place: 'Jakarta', title: 'SERTIFIKAT PENGHARGAAN', recipient_name: 'Rina Wijaya', body: 'Atas dedikasinya.', signatory_name: 'Siti Rahma', signatory_title: 'Direktur' },
 }
 const input = (kind: string, o: Partial<DocumentInput> = {}): DocumentInput => ({ kind, language: 'id', customerId: null, documentDate: '2026-10-30', values: MIN[kind], invoiceIds: [], ...o })
-const customer = (currency = 'IDR') => saveCustomer(actor, null, { name: 'PT Pelanggan Satu', email: 'billing@pelanggan.example', address: 'Jl. Contoh 1\nJakarta', taxId: '', currency, termsDays: '14' })
+const customer = (currency = 'IDR') => saveCustomer(actor, null, { name: 'PT Pelanggan Satu', email: 'billing@pelanggan.example', address: 'Jl. Contoh 1\nJakarta', taxId: '', currency, termsDays: '14' }, { acknowledgeDuplicates: true })
 const invoice = async (customerId: number, price = 12_000_000, o: { issue?: boolean; currency?: string } = {}) => {
   const bank = await createBank(actor, { bankName: 'Bank Contoh', accountNumber: `99${randomBytes(3).toString('hex')}`, accountHolder: 'PT Satu Arah International', currency: o.currency ?? 'IDR', branch: '', swiftCode: '', notes: '' })
   const id = await createInvoice(actor, { customerId, issuedAt: '2026-09-01', dueAt: '2026-09-15', taxPercent: '0', withholdingPercent: '0', discount: '0', poNumber: '', shipmentReference: '', serviceMode: '', origin: '', destination: '', transportDocumentRef: '', notes: '', items: `Freight | 1 | ${price} | job`, bankAccountIds: [bank] })
@@ -47,7 +48,7 @@ const rejects = async (p: Promise<unknown>, message: RegExp | string, status?: n
   if (status) expect(e!.status).toBe(status)
 }
 const row = async (id: number) => (await sql`select * from documents where id = ${id}`)[0]
-const text = async (id: number) => squash((await pdfPages(await renderDocumentPdf(sql, 'document', id, BASE))).join(' '))
+const text = async (id: number) => squash((await pdfPages(await renderDocumentPdf('document', id, BASE))).join(' '))
 
 beforeAll(async () => { actor = (await createUser('documents@example.invalid', 'admin')).id })
 beforeEach(async () => {
@@ -216,7 +217,7 @@ describe('the document PDFs', () => {
     const id = await prepare(kind)
     await setDocumentStatus(actor, id, 'issue')
     const d = await row(id)
-    const pdf = await renderDocumentPdf(sql, 'document', id, BASE)
+    const pdf = await renderDocumentPdf('document', id, BASE)
     const t = squash((await pdfPages(pdf)).join(' '))
     expect(t).toContain(d.number as string)
     expect(t).toContain('Ditandatangani secara elektronik')                 // the QR code is the signature
@@ -245,7 +246,7 @@ describe('the document PDFs', () => {
     const paragraphs = Array.from({ length: 60 }, (_, i) => `Paragraf ${i + 1}: kami menyampaikan informasi penting mengenai pengiriman kontainer dan jadwal kapal.`).join('\n\n')
     const id = await prepare('letter', { values: { ...MIN.letter, body: paragraphs } })
     await setDocumentStatus(actor, id, 'issue')
-    const pages = await pdfPages(await renderDocumentPdf(sql, 'document', id, BASE))
+    const pages = await pdfPages(await renderDocumentPdf('document', id, BASE))
     expect(pages.length).toBeGreaterThanOrEqual(2)
     expect(squash(pages.join(' '))).toContain('Paragraf 60')
     expect(squash(pages[pages.length - 1])).toContain('Hormat kami,')
@@ -265,7 +266,7 @@ describe('the document PDFs', () => {
       const id = await prepare('statement', { values })
       const boxes: Array<[number, number]> = []
       const spy = vi.spyOn(Sheet.prototype, 'outline').mockImplementation(function (this: Sheet, _x, _y, w, h, _s, _t, dash) { if (dash) boxes.push([w, h]) })
-      try { await renderDocumentPdf(sql, 'document', id, BASE) } finally { spy.mockRestore() }
+      try { await renderDocumentPdf('document', id, BASE) } finally { spy.mockRestore() }
       return boxes
     }
     const on = await dashed(MIN.statement)
@@ -280,7 +281,7 @@ describe('the document PDFs', () => {
 
   it('draws a certificate on one landscape page with the holder\'s name, however long, and a QR signature per signatory', async () => {
     const id = await prepare('certificate', { values: { ...MIN.certificate, recipient_name: 'Muhammad Abdurrahman Wahid Setiawan Prasetyo Kusumawardhana Hidayatullah Nugroho Santoso', signatory2_name: 'Budi Santoso', signatory2_title: 'Direktur Utama' } })
-    const pdf = await renderDocumentPdf(sql, 'document', id, BASE)
+    const pdf = await renderDocumentPdf('document', id, BASE)
     const doc = await PDFDocument.load(pdf)
     expect(doc.getPageCount()).toBe(1)
     const { width, height } = doc.getPage(0).getSize()
@@ -299,7 +300,7 @@ describe('the document PDFs', () => {
   })
 
   it('refuses a document that does not exist', async () => {
-    await rejects(renderDocumentPdf(sql, 'document', 99999, BASE), 'Document not found', 404)
+    await rejects(renderDocumentPdf('document', 99999, BASE), 'Document not found', 404)
   })
 })
 

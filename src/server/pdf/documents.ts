@@ -50,18 +50,21 @@ export async function renderDocumentPdf(kind: DocumentKind, id: number, baseUrl:
 async function invoicePdf(id: number, baseUrl: string): Promise<Uint8Array> {
   const inv = await one('invoices', (q) => q.eq('id', id))
   if (!inv) throw new ActionError('Invoice not found', 404)
-  const [customer, items, banks] = await Promise.all([
+  const [customer, items, banks, quotation, links] = await Promise.all([
     one('customers', (q) => q.eq('id', inv.customerId as number)),
     many('invoice_items', (q) => q.eq('invoice_id', id).order('id')),
     many('invoice_bank_instructions', (q) => q.eq('invoice_id', id).order('position').order('id')),
+    inv.quotationId ? one('quotations', (q) => q.eq('id', inv.quotationId as number), 'number') : Promise.resolve(undefined),
+    many('invoice_delivery_notes', (q) => q.eq('invoice_id', id).order('id'), 'delivery_id'),
   ])
+  const deliveryRows = links.length ? await many('deliveries', (q) => q.in('id', links.map((l) => l.deliveryId as number)).order('id'), 'number') : []
   const data: InvoiceData = {
     number: inv.number as string, status: inv.status as string, currency: inv.currency as string, issuedAt: String(inv.issuedAt ?? ''), dueAt: String(inv.dueAt ?? ''),
     poNumber: String(inv.poNumber ?? ''), shipmentReference: String(inv.shipmentReference ?? ''), serviceMode: String(inv.serviceMode ?? ''), origin: String(inv.origin ?? ''),
     destination: String(inv.destination ?? ''), transportDocumentRef: String(inv.transportDocumentRef ?? ''), notes: String(inv.notes ?? ''),
     taxPercent: String(inv.taxPercent), withholdingPercent: String(inv.withholdingPercent), discountMinor: inv.discountMinor as number, subtotalMinor: inv.subtotalMinor as number,
     taxMinor: inv.taxMinor as number, withholdingMinor: inv.withholdingMinor as number, totalMinor: inv.totalMinor as number, outstandingMinor: inv.outstandingMinor as number,
-    items: lines(items), customer: party(customer),
+    items: lines(items), customer: party(customer), quotationNumber: quotation ? (quotation.number as string) : undefined, deliveryNumbers: deliveryRows.map((d) => d.number as string),
     banks: banks.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: b.position as number })),
   }
   return renderInvoice(data, await issuerOf(), await verifyUrl('invoice', id, baseUrl))

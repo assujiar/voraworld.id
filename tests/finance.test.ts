@@ -1,8 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { sql } from './helpers/db'
 import { sha256Hex } from '@/server/crypto'
 import { saveMailConfig } from '@/server/mail/config'
@@ -10,9 +8,11 @@ import { dispatch } from '@/server/mail/outbox'
 import { setSender } from '@/server/mail/transport'
 import { createBank, updateBank } from '@/server/finance/banks'
 import { saveCustomer } from '@/server/finance/customers'
-import { createInvoice, recomputeOutstanding, sendInvoice, setInvoiceStatus, type InvoiceInput } from '@/server/finance/invoices'
+import { sendInvoice, setInvoiceStatus, type InvoiceInput } from '@/server/finance/invoices'
+import { createInvoice, createQuotation } from './helpers/commercial'
+import { createQuotation as createQuotationFor } from '@/server/finance/quotations'
 import { cancelPayment, confirmPayment, recordPayment } from '@/server/finance/payments'
-import { approvalByToken, approvalIsOpen, createQuotation, readApprovalFile, requestApproval, reviewApproval, setQuotationStatus, submitApproval } from '@/server/finance/quotations'
+import { approvalByToken, approvalIsOpen, readApprovalFile, requestApproval, reviewApproval, setQuotationStatus, submitApproval } from '@/server/finance/quotations'
 import { readStampedReceipt, uploadReceiptStamp, voidReceipt } from '@/server/finance/receipts'
 import { requiresStamp } from '@/server/finance/pdf-inspect'
 import { today } from '@/server/dates'
@@ -20,12 +20,14 @@ import { createUser } from './helpers/actions'
 import { makePdf } from './helpers/pdf'
 
 process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64')
-process.env.VORA_LOCAL_STORAGE_DIR = mkdtempSync(join(tmpdir(), 'vora-fin-'))
+// No Storage service in the unit tests: stored files go to a map.
+const files = vi.hoisted(() => new Map<string, Uint8Array>())
+vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-storage')).memoryStorage(await original(), files))
 const BASE = 'https://testserver'
 let actor: number
 
 const customer = (o: Partial<{ name: string; email: string; currency: string; termsDays: string }> = {}) =>
-  saveCustomer(actor, null, { name: 'PT Pelanggan Satu', email: 'billing@pelanggan.example', address: 'Jl. Contoh 1\nJakarta', taxId: '01.234.567.8-901.000', currency: 'IDR', termsDays: '14', ...o })
+  saveCustomer(actor, null, { name: 'PT Pelanggan Satu', email: 'billing@pelanggan.example', address: 'Jl. Contoh 1\nJakarta', taxId: '01.234.567.8-901.000', currency: 'IDR', termsDays: '14', ...o }, { acknowledgeDuplicates: true })
 const bank = (o: Partial<Parameters<typeof createBank>[1]> = {}) =>
   createBank(actor, { bankName: 'Bank Contoh', accountNumber: '1234567890', accountHolder: 'PT Satu Arah International', currency: 'IDR', branch: 'Tebet', swiftCode: '', notes: '', ...o })
 const invoiceInput = (customerId: number, o: Partial<InvoiceInput> = {}): InvoiceInput => ({
@@ -63,7 +65,7 @@ describe('customers', () => {
     const [c] = await sql`select * from customers where id = ${id}`
     expect(c.name).toBe('Maju Jaya'); expect(c.publicCode).toMatch(/^C[A-F0-9]{10}$/)
     const code = c.publicCode
-    await saveCustomer(actor, id, { name: 'Maju Jaya Tbk', email: '', address: '', taxId: '', currency: 'IDR', termsDays: '30' })
+    await saveCustomer(actor, id, { name: 'Maju Jaya Tbk', email: '', address: '', taxId: '', currency: 'IDR', termsDays: '30' }, { acknowledgeDuplicates: true })
     const [again] = await sql`select * from customers where id = ${id}`
     expect(again.publicCode).toBe(code); expect(again.termsDays).toBe(30); expect(again.email).toBe('')
     await rejects(customer({ name: '   ' }), 'Customer name required')
@@ -74,9 +76,9 @@ describe('customers', () => {
   it('keep their currency once documents exist', async () => {
     const id = await customer({ currency: 'USD' })
     await quoteFor(id)
-    await rejects(saveCustomer(actor, id, { name: 'x', email: '', address: '', taxId: '', currency: 'IDR', termsDays: '14' }), 'Currency cannot change', 409)
+    await rejects(saveCustomer(actor, id, { name: 'x', email: '', address: '', taxId: '', currency: 'IDR', termsDays: '14' }, { acknowledgeDuplicates: true }), 'Currency cannot change', 409)
     const free = await customer({ currency: 'USD' })
-    await saveCustomer(actor, free, { name: 'x', email: '', address: '', taxId: '', currency: 'EUR', termsDays: '14' })
+    await saveCustomer(actor, free, { name: 'x', email: '', address: '', taxId: '', currency: 'EUR', termsDays: '14' }, { acknowledgeDuplicates: true })
     expect((await sql`select currency from customers where id = ${free}`)[0].currency).toBe('EUR')
   })
 })
@@ -116,7 +118,7 @@ describe('bank accounts', () => {
     const id = await bank({ accountNumber: 'EDIT123456', bankName: 'Editable' })
     await updateBank(actor, id, 'save', { bankName: 'Renamed', accountNumber: '9999999999', accountHolder: 'PT X', currency: 'IDR', branch: '', swiftCode: '', notes: 'internal' })
     expect((await sql`select bank_name, account_number from bank_accounts where id = ${id}`)[0]).toMatchObject({ bankName: 'Renamed', accountNumber: '9999999999' })
-    await rejects(updateBank(actor, 424242, 'save'), 'not found', 404)
+    await rejects(updateBank(actor, 424242, 'save'), /not found|Invalid bank details/)
   })
 })
 
@@ -131,20 +133,21 @@ describe('quotations', () => {
     expect((await sql`select * from quotation_items where quotation_id = ${id}`)[0]).toMatchObject({ description: 'Air freight', quantity: '100', unit: 'kg', priceMinor: 2550, amountMinor: 255000 })
     expect((await sql`select revoked from document_verification_tokens where kind = 'quotation' and document_id = ${id}`)[0].revoked).toBe(false)
   })
-  it('can be addressed to a lead (always IDR) and reject bad input', async () => {
+  it('keep a historical lead-only quotation as it was, never make a new one without a customer, and reject bad input', async () => {
     const [lead] = await sql`insert into leads (type, name, email, message, company) values ('RFQ', 'Budi', 'budi@example.invalid', 'quote please', 'CV Budi') returning id`
     const id = await createQuotation(actor, { recipient: `lead:${lead.id}`, issuedAt: '', validUntil: '', taxPercent: '', paymentTerms: 'Payment within 14 days of the invoice date', termsConditions: 'Rates are valid for the period stated. Services follow the booking conditions of VORA.', notes: '', items: 'Handling | 1 | 1000 | lot' })
     const [q] = await sql`select * from quotations where id = ${id}`
     expect(q).toMatchObject({ currency: 'IDR', leadId: lead.id, customerId: null, issuedAt: today(), validUntil: today() })
     const c = await customer()
+    await expect(createQuotationFor(actor, { customerId: 0, issuedAt: '2026-10-05', validUntil: '2026-11-05', taxPercent: '0', paymentTerms: 'x y z', termsConditions: 'x y z', notes: '', rows: [{ description: 'A', quantity: '1', unit: 'x', price: '1' }] })).rejects.toThrow('Select the customer')
     for (const [o, msg] of [
-      [{ recipient: 'nobody' }, 'Select a customer or lead'], [{ recipient: 'customer:99999' }, 'Recipient unavailable'], [{ items: '' }, '1–100'], [{ items: 'only | two' }, 'description | quantity'],
-      [{ items: ' | 1 | 5 | x' }, 'needs a description'], [{ items: 'A | 0 | 5 | x' }, 'Invalid quantity or price'], [{ items: 'A | 1 | -5 | x' }, 'Invalid quantity or price'], [{ items: 'A | 1 | abc | x' }, 'Invalid monetary value'],
+      [{ recipient: 'customer:99999' }, 'Select an existing customer'], [{ items: '' }, 'Add 1 to 100 charge items'], [{ items: 'only | two' }, 'write the unit price'],
+      [{ items: ' | 1 | 5 | x' }, 'write the description'], [{ items: 'A | 0 | 5 | x' }, 'Invalid quantity or price'], [{ items: 'A | 1 | -5 | x' }, 'Invalid quantity or price'], [{ items: 'A | 1 | abc | x' }, 'Invalid monetary value'],
       [{ taxPercent: '101' }, 'Tax percentage out of range'], [{ issuedAt: '2026-02-30' }, 'valid date'], [{ validUntil: '2026-10-01' }, 'must not precede'],
       [{ paymentTerms: '' }, 'Enter the terms of payment'], [{ paymentTerms: '  \n ' }, 'Enter the terms of payment'], [{ termsConditions: '' }, 'Enter the terms and conditions'],
       [{ paymentTerms: 'x'.repeat(1001) }, 'terms of payment are too long (1001 of 1000'], [{ termsConditions: 'y'.repeat(6001) }, 'terms and conditions are too long (6001 of 6000'],
     ] as Array<[Partial<Parameters<typeof createQuotation>[1]>, string]>) await rejects(quoteFor(c, o), msg)
-    await rejects(quoteFor(c, { items: Array.from({ length: 101 }, (_, i) => `Item ${i} | 1 | 1 | x`).join('\n') }), '1–100')
+    await rejects(quoteFor(c, { items: Array.from({ length: 101 }, (_, i) => `Item ${i} | 1 | 1 | x`).join('\n') }), '1 to 100')
   })
   it('follow the issue/void rules, and voiding revokes the QR link and any open approval link', async () => {
     const id = await quoteFor(await customer())
@@ -346,14 +349,12 @@ describe('e-meterai rules', () => {
     expect(done.stampSha256).toBe(await sha256Hex(good))
     expect(done.stampStorageKey).toMatch(/^receipt-stamps\/\d+\/[A-Za-z0-9_-]+\.pdf$/)
     expect(Buffer.from(await readStampedReceipt(done as never)).equals(Buffer.from(good))).toBe(true)
-    const files = readdirSync(join(process.env.VORA_LOCAL_STORAGE_DIR!, 'documents', 'receipt-stamps', String(r.receiptId)))
-    expect(files).toHaveLength(1)
+    expect([...files.keys()].filter((k) => k.startsWith(`receipt-stamps/${r.receiptId}/`))).toHaveLength(1)
     expect((await sql`select event, attachment_kind from email_jobs order by id`).map((j) => j.event)).toEqual(['payment_confirmed', 'receipt_customer'])
     await rejects(stamp(), 'not waiting for a manual e-meterai', 409)                       // one shot
 
     // Tampering with the stored file is detected on every read.
-    const path = join(process.env.VORA_LOCAL_STORAGE_DIR!, 'documents', done.stampStorageKey as string)
-    writeFileSync(path, Buffer.concat([readFileSync(path), Buffer.from('tampered')]))
+    files.set(done.stampStorageKey as string, Buffer.concat([files.get(done.stampStorageKey as string)!, Buffer.from('tampered')]))
     await rejects(readStampedReceipt(done as never), 'integrity check', 409)
   })
   it('apply to every foreign-currency receipt', async () => {
@@ -418,27 +419,38 @@ describe('voiding a receipt', () => {
 })
 
 async function smtp(enabled = true) {
-  await saveMailConfig(sql, { host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled })
+  await saveMailConfig({ host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled })
 }
 async function rule(key: string, enabled = true) { await sql`update email_rules set enabled = ${enabled} where key = ${key}` }
 
 describe('emailing an invoice', () => {
   beforeEach(async () => { setSender(null); await sql`delete from email_jobs`; await sql`delete from mail_config`; await sql`update email_rules set enabled = false` })
-  it('needs SMTP, the rule, an issued invoice and a billing email; sends once per minute and attaches nothing until rendered', async () => {
+  it('sends the invoice and its pre-payment receipt as ONE email with TWO PDFs: it needs SMTP, the rule, an issued invoice and a billing email, and sends once per minute', async () => {
     const c = await customer(); const noMail = await customer({ email: '' })
-    const id = await createInvoice(actor, invoiceInput(c))
+    const small = (customerId: number) => ({ ...invoiceInput(customerId), items: 'Freight | 1 | 1000000 | job', taxPercent: '0', withholdingPercent: '0', discount: '0' })
+    const id = await createInvoice(actor, small(c))
     await rejects(sendInvoice(actor, id, BASE), 'Issue the invoice', 409)
     await setInvoiceStatus(actor, id, 'issue')
     await rejects(sendInvoice(actor, id, BASE), 'Enable SMTP', 409)
     await smtp(); await rule('invoice_customer')
     await sendInvoice(actor, id, BASE); await sendInvoice(actor, id, BASE)
-    const jobs = await sql`select event, recipient, attachment_kind, subject, html from email_jobs`
-    expect(jobs).toHaveLength(1)
-    expect(jobs[0]).toMatchObject({ event: 'invoice_customer', recipient: 'billing@pelanggan.example', attachmentKind: 'invoice' })
-    expect(jobs[0].subject).toContain((await inv(id)).number as string); expect(jobs[0].html).toContain('/verify/')
+    const jobs = await sql`select id, event, recipient, attachment_kind, subject, html from email_jobs`
+    expect(jobs).toHaveLength(1)                                                       // one message, not an invoice email plus a pre-payment email
+    expect(jobs[0]).toMatchObject({ event: 'invoice_customer', recipient: 'billing@pelanggan.example', attachmentKind: null })
+    expect(jobs[0].subject).toContain((await inv(id)).number as string); expect(jobs[0].html).toContain('/verify/'); expect(jobs[0].html).toContain('pre-payment receipt')
+    const [pre] = await sql`select id, number from prepayment_receipts where invoice_id = ${id}`
+    expect((await sql`select kind, document_id from email_job_attachments where job_id = ${jobs[0].id as number} order by position`).map((a) => [a.kind, a.documentId])).toEqual([['invoice', id], ['prepayment', pre.id as number]])
     const none = await issued(noMail)
-    await rejects(sendInvoice(actor, none, BASE), 'no billing email')
+    await rejects(sendInvoice(actor, none, BASE), /no billing email|waiting for its e-meterai/)
     await rejects(sendInvoice(actor, 99999, BASE), 'not found', 404)
+  })
+  it('blocks the whole package, sending nothing, while the pre-payment receipt still waits for its e-meterai', async () => {
+    const c = await customer()
+    const id = await issued(c)                                                          // a large invoice: its pre-payment receipt needs a manual e-meterai
+    expect((await sql`select status, stamp_required from prepayment_receipts where invoice_id = ${id}`)[0]).toMatchObject({ status: 'pending_stamp', stampRequired: true })
+    await smtp(); await rule('invoice_customer')
+    await rejects(sendInvoice(actor, id, BASE), 'waiting for its e-meterai', 409)
+    expect(await sql`select id from email_jobs`).toHaveLength(0)
   })
 })
 
@@ -469,7 +481,7 @@ describe('customer quotation approval', () => {
   })
 
   it('sends a private expiring link; the upload only submits; Finance approves after a manual review; the file is integrity-checked', async () => {
-    await smtp(); await rule('quotation_approval_request'); await rule('quotation_approved_admin')
+    await smtp(); await rule('quotation_approval_request'); await rule('quotation_customer_approved_admin'); await rule('quotation_validated_customer')
     const { id, number } = await ready()
     await requestApproval(actor, id, BASE)
     expect((await sql`select status from quotations where id = ${id}`)[0].status).toBe('awaiting_approval')
@@ -498,25 +510,30 @@ describe('customer quotation approval', () => {
     const [sub] = await sql`select * from quotation_approvals`
     expect(sub).toMatchObject({ status: 'submitted', signerName: 'Siti Rahma', signerTitle: 'Finance Director' })
     expect(sub.signedPdfSha256).toBe(await sha256Hex(signed))
-    expect((await sql`select status from quotations where id = ${id}`)[0].status).toBe('awaiting_approval')      // an upload alone approves nothing
+    // The upload makes the quotation APPROVED BY THE CUSTOMER, which is not VORA's validation, and tells the administrator.
+    expect((await sql`select status, customer_approved_at, validated_at from quotations where id = ${id}`)[0]).toMatchObject({ status: 'customer_approved', validatedAt: null })
+    expect((await sql`select customer_approved_at from quotations where id = ${id}`)[0].customerApprovedAt).toBeInstanceOf(Date)
+    expect((await sql`select event, recipient from email_jobs order by id`).map((j) => j.event)).toEqual(['quotation_approval_request', 'quotation_customer_approved_admin'])
     await rejects(submit(), 'expired or was already used', 410)                                                  // the link is single use
     expect((await readApprovalFile(sub.id as number)).quotationNumber).toBe(number)
 
     await rejects(reviewApproval(actor, sub.id as number, 'approve', false, ''), 'reviewed manually')
+    await rejects(reviewApproval(actor, sub.id as number, 'reject', false, 'no'), 'Give the reason')
     await rejects(reviewApproval(actor, sub.id as number, 'maybe', true, ''), 'Invalid review outcome')
     await reviewApproval(actor, sub.id as number, 'approve', true, 'Looks right')
     expect((await sql`select status, review_note, reviewed_by from quotation_approvals`)[0]).toMatchObject({ status: 'approved', reviewNote: 'Looks right', reviewedBy: actor })
-    expect((await sql`select status from quotations where id = ${id}`)[0].status).toBe('approved')
-    expect((await sql`select event from email_jobs order by id`).map((j) => j.event)).toEqual(['quotation_approval_request', 'quotation_approved_admin'])
+    expect((await sql`select status, validated_by from quotations where id = ${id}`)[0]).toMatchObject({ status: 'validated', validatedBy: actor })
+    expect((await sql`select validated_at from quotations where id = ${id}`)[0].validatedAt).toBeInstanceOf(Date)
+    expect((await sql`select event, recipient from email_jobs order by id`).map((j) => j.event)).toEqual(['quotation_approval_request', 'quotation_customer_approved_admin', 'quotation_validated_customer'])
     await rejects(reviewApproval(actor, sub.id as number, 'approve', true, ''), 'Only submitted', 409)
 
-    const path = join(process.env.VORA_LOCAL_STORAGE_DIR!, 'documents', sub.signedPdfKey as string)
-    writeFileSync(path, Buffer.concat([readFileSync(path), Buffer.from('x')]))
+    const tamperKey = sub.signedPdfKey as string
+    files.set(tamperKey, Buffer.concat([files.get(tamperKey)!, Buffer.from('x')]))
     await rejects(readApprovalFile(sub.id as number), 'does not match its recorded fingerprint', 409)
     await rejects(readApprovalFile(99999), 'No signed PDF', 404)
   })
 
-  it('a rejection returns the quotation to issued so a new request can be sent; a newer link revokes older ones', async () => {
+  it('a rejection (with its reason) marks the quotation as needing correction so a new request can be sent; a newer link revokes older ones', async () => {
     await smtp(); await rule('quotation_approval_request')
     const { id, number } = await ready()
     await requestApproval(actor, id, BASE); const first = await tokenFrom()
@@ -528,7 +545,7 @@ describe('customer quotation approval', () => {
     await submitApproval({ token: second, signerName: 'Siti Rahma', signerTitle: 'CFO', acknowledged: true, file: pdf })
     const [sub] = await sql`select id from quotation_approvals where status = 'submitted'`
     await reviewApproval(actor, sub.id as number, 'reject', false, 'Stamp missing')
-    expect((await sql`select status from quotations where id = ${id}`)[0].status).toBe('issued')
+    expect((await sql`select status from quotations where id = ${id}`)[0].status).toBe('rejected')
     expect((await sql`select status, review_note from quotation_approvals where id = ${sub.id as number}`)[0]).toMatchObject({ status: 'rejected', reviewNote: 'Stamp missing' })
     await requestApproval(actor, id, BASE)                          // allowed again
   })
@@ -559,7 +576,7 @@ describe('outstanding recomputation', () => {
   it('refuses a ledger where confirmed payments exceed the invoice', async () => {
     const c = await customer(); const id = await issued(c)
     await sql`insert into payments (invoice_id, amount_minor, date, method, reference, status) values (${id}, 999999999, '2026-10-05', 'cash', 'x', 'recorded')`
-    await rejects(recomputeOutstanding(sql, id), 'exceed the invoice total', 409)
+    await rejects(sql`select * from vr_recompute_outstanding(${id})`.then((r) => r), 'exceed the invoice total')
   })
 })
 
