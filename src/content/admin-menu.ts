@@ -1,17 +1,21 @@
-/** Sidebar categories. Every signed-in account has the single admin role, so every link is shown. */
+/**
+ * Sidebar categories, arranged by the work a person does. Every signed-in account has the single admin role, so every link is shown.
+ * Proof of delivery lives on each delivery note, payments on each invoice, and pre-payment receipts beside the official receipts: no menu is
+ * made for a screen that does not exist.
+ */
 export const ADMIN_MENU: Array<{ title: string; links: Array<{ label: string; href: string }> }> = [
-  { title: 'Sales', links: [{ label: 'Leads', href: '/admin/leads' }] },
+  { title: 'Sales & Customers', links: [{ label: 'Leads', href: '/admin/leads' }, { label: 'Customers', href: '/admin/customers' }, { label: 'Quotations', href: '/admin/quotations' }] },
+  { title: 'Delivery', links: [{ label: 'Delivery Notes & Proof', href: '/admin/deliveries' }] },
   { title: 'Finance', links: [
-    { label: 'Customers', href: '/admin/customers' }, { label: 'Quotations', href: '/admin/quotations' }, { label: 'Invoices', href: '/admin/invoices' },
-    { label: 'Receipts', href: '/admin/receipts' }, { label: 'Bank Accounts', href: '/admin/bank-accounts' },
+    { label: 'Invoices & Payments', href: '/admin/invoices' }, { label: 'Receipts', href: '/admin/receipts' }, { label: 'Bank Accounts', href: '/admin/bank-accounts' },
   ] },
-  { title: 'Documents', links: [{ label: 'Letters & Certificates', href: '/admin/documents' }, { label: 'Delivery Notes', href: '/admin/deliveries' }] },
-  { title: 'Website', links: [
+  { title: 'Documents', links: [{ label: 'Letters, Agreements & Seals', href: '/admin/documents' }] },
+  { title: 'Website & Content', links: [
     { label: 'Pages & Sections', href: '/admin/pages' }, { label: 'Articles', href: '/admin/articles' }, { label: 'FAQs', href: '/admin/faq' },
     { label: 'Media Library', href: '/admin/media' }, { label: 'Navigation', href: '/admin/navigation' }, { label: 'Coverage', href: '/admin/coverage' },
     { label: 'SEO & Redirects', href: '/admin/seo' },
   ] },
-  { title: 'System', links: [
-    { label: 'Site Settings', href: '/admin/settings' }, { label: 'SMTP & Email Rules', href: '/admin/mail' }, { label: 'Audit Log', href: '/admin/audit' },
+  { title: 'Settings', links: [
+    { label: 'Company Information', href: '/admin/settings' }, { label: 'Email & Notifications', href: '/admin/mail' }, { label: 'Activity Log', href: '/admin/audit' },
   ] },
 ]

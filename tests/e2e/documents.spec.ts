@@ -33,7 +33,7 @@ test('writing, issuing and verifying a statement and a certificate', async ({ br
     await page.waitForURL(/\/admin\/documents\/\d+(\?|$)/)
     await expect(notice()).toContainText('Document draft created')
     statementId = page.url().match(/documents\/(\d+)/)![1]
-    await expect(page.locator('h3 .status')).toContainText('draft')
+    await expect(page.locator('h3 .status')).toContainText(/draft/i)
     await expect(page.locator('body')).toContainText(/STM-VORA-V[0-9A-F]{10}-\d{6}-\d{5}/)
   })
 
@@ -53,7 +53,7 @@ test('writing, issuing and verifying a statement and a certificate', async ({ br
   await test.step('issuing freezes it; the public page confirms it without saying what it says', async () => {
     await page.click('button:has-text("Issue document")')
     await expect(notice()).toContainText('Document state updated')
-    await expect(page.locator('h3 .status')).toContainText('issued')
+    await expect(page.locator('h3 .status')).toContainText(/issued/i)
     await expect(page.locator('a:has-text("Edit draft")')).toHaveCount(0)
     const number = await scalar(`select number from documents where id=${statementId}`)
     const token = await scalar(`select token from document_verification_tokens where kind='document' and document_id=${statementId}`)
@@ -83,7 +83,7 @@ test('writing, issuing and verifying a statement and a certificate', async ({ br
     await page.waitForURL(/\/admin\/documents\/\d+(\?|$)/)
     certificateId = page.url().match(/documents\/(\d+)/)![1]
     await page.click('button:has-text("Issue document")')
-    await expect(page.locator('h3 .status')).toContainText('issued')
+    await expect(page.locator('h3 .status')).toContainText(/issued/i)
     const token = await scalar(`select token from document_verification_tokens where kind='document' and document_id=${certificateId}`)
     const visitor = await openContext(browser, 390, 900)
     await visitor.page.goto(`/verify/${token}`)
@@ -96,7 +96,7 @@ test('writing, issuing and verifying a statement and a certificate', async ({ br
     await page.goto(`/admin/documents/${certificateId}`)
     await page.click('button:has-text("Void")')
     await confirmAsked(page)
-    await expect(page.locator('h3 .status')).toContainText('void')
+    await expect(page.locator('h3 .status')).toContainText(/void/i)
     const token = await scalar(`select token from document_verification_tokens where kind='document' and document_id=${certificateId}`)
     const visitor = await openContext(browser)
     await visitor.page.goto(`/verify/${token}`)

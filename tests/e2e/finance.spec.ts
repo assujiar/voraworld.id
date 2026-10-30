@@ -152,9 +152,11 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await expect.poll(() => scalar("select count(*) from email_jobs where event = 'quotation_customer_approved_admin'")).toBe('1')   // the admin is told about the upload
     expect(await scalar("select count(*) from email_jobs where event = 'quotation_validated_customer'")).toBe('0')                    // the customer is not told about a validation that has not happened
     await page.click('button:has-text("Validate Quotation")')                                  // the review tick is missing: the server refuses
+    await confirmAsked(page)
     await expect(page.locator('.alert[role=alert]')).toContainText('reviewed manually')
     await page.check('input[name=signature_and_stamp_verified]')
     await page.click('button:has-text("Validate Quotation")')
+    await confirmAsked(page)
     await expect(page.locator('.alert:has-text("Quotation validated")')).toBeVisible()
     await expect(status()).toContainText('Validated')
     await expect.poll(() => scalar("select count(*) from email_jobs where event = 'quotation_validated_customer'")).toBe('1')          // now the customer is told
@@ -175,7 +177,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     deliveryId = page.url().match(/deliveries\/(\d+)/)![1]
     expect(await scalar(`select customer_id || ':' || quotation_id from deliveries where id = ${deliveryId}`)).toBe(`${customerId}:${quotationId}`)
     await page.click('button:has-text("Issue delivery note")')
-    await expect(page.locator('h3 .status')).toContainText('issued')
+    await expect(page.locator('h3 .status')).toContainText(/issued/i)
     const pod = (await page.locator('a[href^="/pod/"]').first().getAttribute('href'))!
     const driver = await phone(browser, true)
     trackProblems(driver.page, 'driver', problems, { strict4xx: true })
@@ -185,7 +187,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await received(driver.page)
     await driver.context.close()
     await page.goto(`/admin/deliveries/${deliveryId}`)
-    await expect(page.locator('h3 .status').first()).toContainText('delivered')
+    await expect(page.locator('h3 .status').first()).toContainText(/delivered/i)
   })
 
   await test.step('a refused invoice form keeps everything that was typed', async () => {
@@ -221,6 +223,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
   let total = 0
   await test.step('issue; the package is refused while the pre-payment receipt waits for its e-meterai; a payment claim leaves the balance alone', async () => {
     await page.click('button:has-text("Issue invoice")')
+    await confirmAsked(page)
     await expect(page.locator('.alert:has-text("Invoice state updated")')).toBeVisible()
     await expect(status()).toContainText('Issued')
     await page.click('button:has-text("Kirim Invoice & Pre-Payment Receipt")')
@@ -245,7 +248,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await page.goto(`/admin/invoices/${invoiceId}`)
     const panel = page.locator('.admin-panel:has(> h4:has-text("Pre-payment receipt"))')
     await expect(panel).toContainText(/PPR-VORA-C[0-9A-F]{10}-\d{6}-\d{5}/)
-    await expect(panel).toContainText('pending stamp'); await expect(panel).toContainText('needs a manual e-meterai')
+    await expect(panel).toContainText('Menunggu E-Meterai'); await expect(panel).toContainText('needs a manual e-meterai')
     await panel.locator('a[href^="/admin/prepayment-receipts/"]:not([href$="/pdf"])').click()
     await page.waitForURL(/\/admin\/prepayment-receipts\/\d+$/)
     prepaymentId = page.url().match(/prepayment-receipts\/(\d+)/)![1]
@@ -288,7 +291,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await page.waitForURL(/\/admin\/receipts\/\d+/)
     await expect(notice()).toContainText('needs a manual e-meterai')
     receiptId = page.url().match(/receipts\/(\d+)/)![1]
-    await expect(page.locator('body')).toContainText(/pending stamp/i)
+    await expect(page.locator('body')).toContainText('Menunggu E-Meterai')
     expect(await scalar("select count(*) from email_jobs where event = 'receipt_customer'")).toBe('0')    // no receipt email before the receipt is released
   })
 

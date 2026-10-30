@@ -3,7 +3,7 @@ import { cancelPaymentAction, confirmPaymentAction, ensurePrepaymentAction, invo
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { MailHistory } from '@/components/admin/MailHistory'
 import { RecordPaymentForm } from '@/components/admin/RecordPaymentForm'
-import { DELIVERY_LABEL, INVOICE_LABEL, PAYMENT_LABEL, QUOTATION_LABEL } from '@/server/finance/labels'
+import { DELIVERY_LABEL, INVOICE_LABEL, PAYMENT_LABEL, QUOTATION_LABEL, RECEIPT_LABEL, label } from '@/server/finance/labels'
 import { mailHistory } from '@/server/mail/history'
 import { many, one, withRelated, type Row } from '@/server/data'
 import { today } from '@/server/dates'
@@ -61,7 +61,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
         </div>
         <div className="admin-panel"><h4>Pre-payment receipt</h4>
           {prepayment ? (
-            <p><a href={`/admin/prepayment-receipts/${prepayment.id}`}>{prepayment.number as string}</a> <span className="status">{(prepayment.status as string).replace('_', ' ')}</span>
+            <p><a href={`/admin/prepayment-receipts/${prepayment.id}`}>{prepayment.number as string}</a> <span className="status">{label(RECEIPT_LABEL, prepayment.status)}</span>
               {' '}· <a href={`/admin/prepayment-receipts/${prepayment.id}/pdf`} target="_blank" rel="noopener">PDF ↗</a>
               {prepayment.stampRequired ? ' · needs a manual e-meterai (amount above IDR 5,000,000, or foreign currency)' : ' · no e-meterai needed'}
               {prepayment.status === 'draft' ? <><br /><span className="mini muted">Released when the invoice is issued.</span></> : null}</p>

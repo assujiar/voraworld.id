@@ -3,6 +3,7 @@ import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause } from '@/server/data'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { StepForm } from '@/components/feedback/StepForm'
+import { LEAD_LABEL, PRIORITY_LABEL, label } from '@/server/finance/labels'
 
 export default async function Leads({ searchParams }: { searchParams: Promise<Notices & { q?: string; status?: string }> }) {
   const sp = await searchParams
@@ -15,7 +16,7 @@ export default async function Leads({ searchParams }: { searchParams: Promise<No
       <div className="admin-panel">
         <StepForm className="inline-actions">
           <input placeholder="Search name, company, email" name="q" defaultValue={q} />
-          <select name="status" defaultValue={status}><option value="">All status</option>{LEAD_STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
+          <select name="status" defaultValue={status}><option value="">All status</option>{LEAD_STATUSES.map((s) => <option key={s} value={s}>{label(LEAD_LABEL, s)}</option>)}</select>
           <AsyncButton className="button">Filter</AsyncButton>
           <a className="button-outline" href="/admin/leads.csv">Export CSV</a>
         </StepForm>
@@ -24,7 +25,7 @@ export default async function Leads({ searchParams }: { searchParams: Promise<No
             <tr key={r.id as number}>
               <td>{(r.reference as string) || `Legacy #${r.id}`}</td>
               <td><a href={`/admin/leads/${r.id}`}>{r.name as string}</a><br /><small>{(r.company as string) || (r.email as string)}</small></td>
-              <td>{r.type as string}</td><td>{day(r.createdAt as Date)}</td><td><span className="status">{r.status as string}</span></td><td>{r.priority as string}</td>
+              <td>{r.type as string}</td><td>{day(r.createdAt as Date)}</td><td><span className="status">{label(LEAD_LABEL, r.status)}</span></td><td>{label(PRIORITY_LABEL, r.priority)}</td>
             </tr>
           )) : <tr><td colSpan={6}>No matching leads.</td></tr>}
         </tbody></table>

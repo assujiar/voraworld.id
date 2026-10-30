@@ -35,10 +35,10 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
     id = admin.url().match(/deliveries\/(\d+)/)![1]
     number = (await admin.locator('h3').first().innerText()).split(/\s/)[0]
     expect(number).toMatch(/^DLV-VORA-C[0-9A-F]{10}-\d{6}-\d{5}$/)
-    await expect(admin.locator('h3 .status')).toContainText('draft')
+    await expect(admin.locator('h3 .status')).toContainText(/draft/i)
     expect((await admin.request.get(`/admin/deliveries/${id}/pdf`)).headers()['content-type']).toBe('application/pdf')
     await admin.click('button:has-text("Issue delivery note")')
-    await expect(admin.locator('h3 .status')).toContainText('issued')
+    await expect(admin.locator('h3 .status')).toContainText(/issued/i)
     link = (await admin.locator('a[href^="/pod/"]').first().getAttribute('href'))!
     expect(link).toMatch(/^\/pod\/[A-Za-z0-9_-]{40,}$/)
   })
@@ -69,7 +69,7 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
   let viewLink = ''
   await test.step('the admin sees the evidence; the consignee\'s view and the PDFs work', async () => {
     await admin.goto(`/admin/deliveries/${id}`)
-    await expect(admin.locator('h3 .status').first()).toContainText('delivered')
+    await expect(admin.locator('h3 .status').first()).toContainText(/delivered/i)
     await expect(admin.locator('body')).toContainText('Siti Aminah')
     await expect(admin.locator('body')).toContainText('Delivered by Asep Kurniawan')
     await expect(admin.locator('body')).toContainText('-6.208800, 106.845600')
@@ -96,7 +96,7 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
     await admin.click('button:has-text("Reject proof")')
     await confirmAsked(admin)
     await expect(admin.locator('.alert').first()).toContainText('QR code can be used again')
-    await expect(admin.locator('h3 .status').first()).toContainText('issued')
+    await expect(admin.locator('h3 .status').first()).toContainText(/issued/i)
     const { context, page } = await phone(browser, false)
     trackProblems(page, 'phone2', problems, { strict4xx: true, benign: /geolocation|Geolocation|permission/i })
     await page.goto(link)

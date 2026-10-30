@@ -3,7 +3,7 @@ import { deliveryStatusAction, rejectProofAction, resendReceivedAction } from '@
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { many, one } from '@/server/data'
 import { deliveryBy, proofsOf } from '@/server/delivery/deliveries'
-import { INVOICE_LABEL } from '@/server/finance/labels'
+import { DELIVERY_LABEL, INVOICE_LABEL, PROOF_LABEL, label } from '@/server/finance/labels'
 import { publicBaseUrl } from '@/server/env'
 import { routeId } from '@/server/http'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
@@ -30,7 +30,7 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
   return (
     <AdminPage heading="Delivery note" sp={await searchParams}>
       <div className="admin-panel">
-        <h3>{d.number} <span className="status">{d.status}</span></h3>
+        <h3>{d.number} <span className="status">{label(DELIVERY_LABEL, d.status)}</span></h3>
         <p className="mini" style={{ marginBottom: 8 }}>{customer ? <>Customer <a href={`/admin/customers/${customer.id}`}>{customer.name as string}</a></> : 'No customer (an earlier note)'}{quotation ? <> · Quotation <a href={`/admin/quotations/${quotation.id}`}>{quotation.number as string}</a></> : null}
           {invoices.length ? <> · Billed on {invoices.map((i, k) => <span key={i.id as number}>{k ? ', ' : ''}<a href={`/admin/invoices/${i.id}`}>{i.number as string}</a> ({INVOICE_LABEL[i.status as string] ?? (i.status as string)})</span>)}</> : d.status === 'delivered' ? ' · Not billed yet' : null}</p>
         <p><strong>{d.consigneeName}</strong><br />
@@ -59,7 +59,7 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
         {!proofs.length ? <p className="note">{d.status === 'issued' ? 'Waiting for the driver to scan the QR code on the printed note and record the delivery.' : 'No proof of delivery yet. It can be given only after the note is issued.'}</p> : null}
         {proofs.map((p) => (
           <div key={p.id} style={{ borderTop: '1px solid var(--rule, #dcdfe1)', paddingTop: 14, marginTop: 14, opacity: p.status === 'rejected' ? 0.7 : 1 }}>
-            <p><span className="status">{p.status}</span> Delivered by <strong>{p.courierName || 'unknown'}</strong>{p.courierPhone ? ` (${p.courierPhone})` : ''}<br />Received by <strong>{p.receiverName}</strong>, {p.receiverPosition} · {p.receiverPhone}{p.receiverEmail ? ` · ${p.receiverEmail}` : ''}{p.receiverIdNumber ? ` · ID ${p.receiverIdNumber}` : ''}<br />
+            <p><span className="status">{label(PROOF_LABEL, p.status)}</span> Delivered by <strong>{p.courierName || 'unknown'}</strong>{p.courierPhone ? ` (${p.courierPhone})` : ''}<br />Received by <strong>{p.receiverName}</strong>, {p.receiverPosition} · {p.receiverPhone}{p.receiverEmail ? ` · ${p.receiverEmail}` : ''}{p.receiverIdNumber ? ` · ID ${p.receiverIdNumber}` : ''}<br />
               Received {fmt(p.serverTime)} (server time){p.deviceTime ? ` · phone clock ${fmt(new Date(p.deviceTime))}` : ''}<br />
               Condition: <strong>{CONDITION[p.condition] ?? p.condition}</strong>{p.conditionNote ? ` · ${p.conditionNote}` : ''}<br />
               {p.locationStatus === 'captured' && p.latitude !== null && p.longitude !== null

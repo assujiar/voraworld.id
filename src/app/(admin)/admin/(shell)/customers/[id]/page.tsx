@@ -5,7 +5,7 @@ import { many, one } from '@/server/data'
 import { money } from '@/server/money'
 import type { CustomersRow } from '@/server/schema'
 import { routeId } from '@/server/http'
-import { QUOTATION_LABEL } from '@/server/finance/labels'
+import { DELIVERY_LABEL, INVOICE_LABEL, PAYMENT_LABEL, QUOTATION_LABEL, RECEIPT_LABEL, label } from '@/server/finance/labels'
 
 export default async function EditCustomer({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -46,7 +46,7 @@ export default async function EditCustomer({ params, searchParams }: { params: P
         <div className="admin-panel" id="deliveries"><h3>Delivery notes</h3>
           <div className="inline-actions" style={{ marginBottom: 8 }}><a className="button-outline" href={`/admin/deliveries/new?customer=${id}`}>New delivery note</a></div>
           <table><thead><tr><th>Number</th><th>Date</th><th>Status</th></tr></thead><tbody>
-            {deliveries.length ? deliveries.map((d) => <tr key={d.id as number}><td><a href={`/admin/deliveries/${d.id}`}>{d.number as string}</a></td><td>{d.deliveryDate as string}</td><td>{d.status as string}</td></tr>) : <tr><td colSpan={3}>None yet.</td></tr>}
+            {deliveries.length ? deliveries.map((d) => <tr key={d.id as number}><td><a href={`/admin/deliveries/${d.id}`}>{d.number as string}</a></td><td>{d.deliveryDate as string}</td><td>{label(DELIVERY_LABEL, d.status)}</td></tr>) : <tr><td colSpan={3}>None yet.</td></tr>}
           </tbody></table>
         </div>
       </div>
@@ -54,12 +54,12 @@ export default async function EditCustomer({ params, searchParams }: { params: P
         <div className="admin-panel" id="invoices"><h3>Invoices</h3>
           <div className="inline-actions" style={{ marginBottom: 8 }}><a className="button-outline" href={`/admin/invoices/new?customer=${id}`}>New invoice</a></div>
           <table><thead><tr><th>Number</th><th>Issued</th><th>Status</th><th>Outstanding</th></tr></thead><tbody>
-            {invoices.length ? invoices.map((i) => <tr key={i.id as number}><td><a href={`/admin/invoices/${i.id}`}>{i.number as string}</a></td><td>{(i.issuedAt as string) || day(null)}</td><td>{i.status as string}</td><td>{money(i.outstandingMinor as number, i.currency as string)}</td></tr>) : <tr><td colSpan={4}>None yet.</td></tr>}
+            {invoices.length ? invoices.map((i) => <tr key={i.id as number}><td><a href={`/admin/invoices/${i.id}`}>{i.number as string}</a></td><td>{(i.issuedAt as string) || day(null)}</td><td>{label(INVOICE_LABEL, i.status)}</td><td>{money(i.outstandingMinor as number, i.currency as string)}</td></tr>) : <tr><td colSpan={4}>None yet.</td></tr>}
           </tbody></table>
         </div>
         <div className="admin-panel" id="payments"><h3>Payments</h3>
           <table><thead><tr><th>Invoice</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-            {payments.length ? payments.map((p) => <tr key={p.id as number}><td><a href={`/admin/invoices/${p.invoiceId}`}>{invoiceNumber.get(p.invoiceId as number)}</a></td><td>{(p.date as string) || '-'}</td><td>{money(p.amountMinor as number, cur)}</td><td>{p.status as string}</td></tr>) : <tr><td colSpan={4}>None yet.</td></tr>}
+            {payments.length ? payments.map((p) => <tr key={p.id as number}><td><a href={`/admin/invoices/${p.invoiceId}`}>{invoiceNumber.get(p.invoiceId as number)}</a></td><td>{(p.date as string) || '-'}</td><td>{money(p.amountMinor as number, cur)}</td><td>{label(PAYMENT_LABEL, p.status)}</td></tr>) : <tr><td colSpan={4}>None yet.</td></tr>}
           </tbody></table>
         </div>
       </div>
@@ -67,7 +67,7 @@ export default async function EditCustomer({ params, searchParams }: { params: P
         <p className="mini muted">Leads that became this customer, and the official receipts issued to it.</p>
         <table><thead><tr><th>Document</th><th>Reference</th><th>Status</th></tr></thead><tbody>
           {leads.map((l) => <tr key={`l${l.id}`}><td>Lead</td><td><a href={`/admin/leads/${l.id}`}>{(l.reference as string) || `#${l.id}`}</a></td><td>{l.type as string}</td></tr>)}
-          {receipts.map((r) => <tr key={`r${r.id}`}><td>Official receipt</td><td><a href={`/admin/receipts/${r.id}`}>{r.number as string}</a></td><td>{r.status as string}</td></tr>)}
+          {receipts.map((r) => <tr key={`r${r.id}`}><td>Official receipt</td><td><a href={`/admin/receipts/${r.id}`}>{r.number as string}</a></td><td>{label(RECEIPT_LABEL, r.status)}</td></tr>)}
           {!leads.length && !receipts.length ? <tr><td colSpan={3}>None.</td></tr> : null}
         </tbody></table>
       </div>

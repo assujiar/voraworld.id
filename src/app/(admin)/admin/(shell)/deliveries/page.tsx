@@ -2,6 +2,7 @@ import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause } from '@/server/data'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { StepForm } from '@/components/feedback/StepForm'
+import { DELIVERY_LABEL, label } from '@/server/finance/labels'
 
 const STATUSES = ['draft', 'issued', 'delivered', 'void']
 
@@ -24,7 +25,7 @@ export default async function Deliveries({ searchParams }: { searchParams: Promi
         </div>
         <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
           <input name="q" defaultValue={q} placeholder="Search number, consignee, destination or reference" />
-          <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
+          <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s} value={s}>{label(DELIVERY_LABEL, s)}</option>)}</select>
           <AsyncButton className="button">Filter</AsyncButton>
         </StepForm>
         <table><thead><tr><th>Delivery note</th><th>Consignee</th><th>Destination</th><th>Date</th><th>Status</th><th>Received</th></tr></thead><tbody>
@@ -32,7 +33,7 @@ export default async function Deliveries({ searchParams }: { searchParams: Promi
             <tr key={r.id as number}>
               <td><a href={`/admin/deliveries/${r.id}`}>{r.number as string}</a></td>
               <td>{r.consigneeName as string}</td><td>{r.destination as string}</td><td>{r.deliveryDate as string}</td>
-              <td><span className="status">{r.status as string}</span></td>
+              <td><span className="status">{label(DELIVERY_LABEL, r.status)}</span></td>
               <td>{r.deliveredAt ? day(r.deliveredAt as Date) : '-'}</td>
             </tr>
           )) : <tr><td colSpan={6}>No delivery notes found.</td></tr>}

@@ -1,6 +1,7 @@
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
 import { many, withRelated } from '@/server/data'
 import { money } from '@/server/money'
+import { RECEIPT_LABEL, label } from '@/server/finance/labels'
 
 export default async function Receipts({ searchParams }: { searchParams: Promise<Notices> }) {
   const r0 = await many('receipts', (f) => f.order('id', { ascending: false }), 'id,number,status,created_at,stamp_required,invoice_id,payment_id', 300)
@@ -18,7 +19,7 @@ export default async function Receipts({ searchParams }: { searchParams: Promise
               <td><a href={`/admin/receipts/${r.id}`}>{r.number as string}</a></td>
               <td><a href={`/admin/invoices/${r.invoiceId}`}>{r.invoiceNumber as string}</a></td>
               <td>{money(r.amountMinor as number, r.currency as string)}</td><td>{day(r.createdAt as Date)}</td>
-              <td><span className="status">{(r.status as string).replace('_', ' ')}</span></td>
+              <td><span className="status">{label(RECEIPT_LABEL, r.status)}</span></td>
               <td>{r.status === 'void' ? '—' : <a href={`/admin/receipts/${r.id}/pdf`}>PDF</a>}</td>
             </tr>
           )) : <tr><td colSpan={6}>No receipts yet.</td></tr>}
@@ -33,7 +34,7 @@ export default async function Receipts({ searchParams }: { searchParams: Promise
               <td><a href={`/admin/prepayment-receipts/${r.id}`}>{r.number as string}</a></td>
               <td><a href={`/admin/invoices/${r.invoiceId}`}>{r.invoiceNumber as string}</a></td>
               <td>{money(r.amountMinor as number, r.currency as string)}</td><td>{day(r.createdAt as Date)}</td>
-              <td><span className="status">{(r.status as string).replace('_', ' ')}</span>{r.stampRequired && r.status === 'pending_stamp' ? ' · e-meterai' : ''}</td>
+              <td><span className="status">{label(RECEIPT_LABEL, r.status)}</span>{r.stampRequired && r.status === 'pending_stamp' ? ' · e-meterai' : ''}</td>
               <td>{r.status === 'void' ? '—' : <a href={`/admin/prepayment-receipts/${r.id}/pdf`}>PDF</a>}</td>
             </tr>
           )) : <tr><td colSpan={6}>No pre-payment receipts yet.</td></tr>}

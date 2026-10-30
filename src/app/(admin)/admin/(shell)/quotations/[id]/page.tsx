@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { quotationStatusAction, requestApprovalAction, reviewApprovalAction } from '@/actions/finance'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { many, one } from '@/server/data'
-import { DELIVERY_LABEL, INVOICE_LABEL, QUOTATION_LABEL } from '@/server/finance/labels'
+import { APPROVAL_LABEL, DELIVERY_LABEL, INVOICE_LABEL, QUOTATION_LABEL, label } from '@/server/finance/labels'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
@@ -80,7 +80,7 @@ export default async function QuotationDetail({ params, searchParams }: { params
             {approvals.map((a) => (
               <tr key={a.id as number}>
                 <td>#{a.id as number}<br /><small>Expires {fmt(a.expiresAt as Date)} UTC</small></td>
-                <td>{a.status as string}</td>
+                <td>{label(APPROVAL_LABEL, a.status)}</td>
                 <td>{a.signerName as string}<br /><small>{a.signerTitle as string}</small></td>
                 <td>{a.signedPdfKey ? <a href={`/admin/quotation-approvals/${a.id}/file`}>Download signed PDF</a> : 'Awaiting upload'}<br />{a.signedPdfSha256 ? <small title="SHA-256 recorded at upload">sha256 {(a.signedPdfSha256 as string).slice(0, 12)}…</small> : null}</td>
                 <td>{a.status === 'submitted' ? (

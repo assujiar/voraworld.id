@@ -7,6 +7,7 @@ import { money } from '@/server/money'
 import { routeId } from '@/server/http'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { PendingForm } from '@/components/feedback/scope'
+import { RECEIPT_LABEL, label } from '@/server/finance/labels'
 
 export default async function PrepaymentReceiptDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -21,7 +22,7 @@ export default async function PrepaymentReceiptDetail({ params, searchParams }: 
     <AdminPage heading="Pre-payment receipt" sp={await searchParams}>
       <div className="admin-panel">
         <h2 style={{ fontSize: '2rem' }}>{r.number as string}</h2>
-        <p>Status: <span className="status">{status.replace('_', ' ')}</span></p>
+        <p>Status: <span className="status">{label(RECEIPT_LABEL, status)}</span></p>
         <p>Invoice <a href={`/admin/invoices/${r.invoiceId}`}>{r.invoiceNumber as string}</a> ({(r.invoiceStatus as string).replace('_', ' ')}) · {r.customerName as string}{r.customerEmail ? ` · ${r.customerEmail}` : ''}<br />
           Amount to be received <strong>{money(r.amountMinor as number, r.currency as string)}</strong> ·{' '}
           {r.stampRequired ? 'e-meterai required (above IDR 5,000,000, or foreign currency)' : 'no e-meterai required'}</p>

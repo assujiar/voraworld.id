@@ -93,7 +93,7 @@ for (const width of ADMIN_WIDTHS) {
       await page.click('.admin-sidebar summary.sidebar-toggle')
       await expect(page.locator('.logout-button')).toBeVisible()
     }
-    expect(await page.locator('.admin-sidebar details.menu-group > summary').allTextContents()).toEqual(['Sales', 'Finance', 'Documents', 'Website', 'System'])
+    expect(await page.locator('.admin-sidebar details.menu-group > summary').allTextContents()).toEqual(['Sales & Customers', 'Delivery', 'Finance', 'Documents', 'Website & Content', 'Settings'])
 
     await Promise.all([page.waitForURL('**/admin/login'), page.click('.logout-button')])
     await page.goto('/admin', { waitUntil: 'networkidle' })
