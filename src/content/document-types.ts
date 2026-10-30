@@ -24,6 +24,8 @@ export interface FieldDef {
   hint?: Bi
   /** A heading shown in the form above this field. */
   section?: Bi
+  /** Supplied by a purpose-built control in the form (the seal placer), not by an input of its own. The value is still validated like any other. */
+  hidden?: boolean
 }
 
 /** One person or company named in the document (the "parties" layout). */
@@ -307,9 +309,12 @@ export const DOCUMENT_TYPES: DocumentType[] = [
       { name: 'signatory_name', label: T('Nama penandatangan VORA', 'VORA signatory name'), input: 'text', required: true, max: 160, section: T('Pengesahan', 'Endorsement') },
       { name: 'signatory_title', label: T('Jabatan penandatangan', 'Signatory position'), input: 'text', required: true, max: 160 },
       sealSelect('purpose', T('Makna pengesahan', 'Meaning of the endorsement'), [['verified', 'Diperiksa dan disahkan', 'Checked and endorsed'], ['approved', 'Disetujui', 'Approved'], ['acknowledged', 'Diketahui', 'Acknowledged']], 'verified'),
-      sealSelect('pages', T('Halaman yang diberi segel', 'Pages that carry the seal'), [['last', 'Halaman terakhir', 'Last page'], ['first', 'Halaman pertama', 'First page'], ['all', 'Semua halaman', 'Every page']], 'last'),
-      sealSelect('corner', T('Posisi segel', 'Position of the seal'), [['bottom-right', 'Kanan bawah', 'Bottom right'], ['bottom-left', 'Kiri bawah', 'Bottom left'], ['top-right', 'Kanan atas', 'Top right'], ['top-left', 'Kiri atas', 'Top left']], 'bottom-right'),
-      sealSelect('size', T('Ukuran segel', 'Size of the seal'), [['medium', 'Sedang', 'Medium'], ['small', 'Kecil', 'Small']], 'medium'),
+      { ...sealSelect('pages', T('Halaman yang diberi segel', 'Pages that carry the seal'), [['last', 'Halaman terakhir', 'Last page'], ['first', 'Halaman pertama', 'First page'], ['all', 'Semua halaman', 'Every page'], ['one', 'Satu halaman pilihan', 'One page I choose']], 'last'), hidden: true },
+      { name: 'page_number', label: T('Nomor halaman', 'Page number'), input: 'text', max: 3, hidden: true },
+      { ...sealSelect('corner', T('Posisi segel', 'Position of the seal'), [['bottom-right', 'Kanan bawah', 'Bottom right'], ['bottom-left', 'Kiri bawah', 'Bottom left'], ['top-right', 'Kanan atas', 'Top right'], ['top-left', 'Kiri atas', 'Top left'], ['custom', 'Digeser sendiri', 'Dragged by hand']], 'bottom-right'), hidden: true },
+      { name: 'pos_x', label: T('Posisi mendatar', 'Horizontal position'), input: 'text', max: 8, hidden: true },
+      { name: 'pos_y', label: T('Posisi tegak', 'Vertical position'), input: 'text', max: 8, hidden: true },
+      { ...sealSelect('size', T('Ukuran segel', 'Size of the seal'), [['medium', 'Sedang', 'Medium'], ['small', 'Kecil', 'Small']], 'medium'), hidden: true },
     ],
   },
   {

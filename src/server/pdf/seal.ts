@@ -2,6 +2,7 @@ import { degrees, PDFDocument, PDFFont, PDFPage, StandardFonts, rgb, type RGB } 
 import QRCode from 'qrcode'
 import { ActionError } from '../errors'
 import type { Lang } from '../../content/document-types'
+import { fraction, placeSeal, SEAL_MARGIN, SEAL_SIZES, sealedPages } from '../../content/seal-layout'
 
 /**
  * Adds a VORA seal (a QR code and the endorsement beside it) to a PDF that somebody else issued. The original content is not touched: the seal is drawn
@@ -13,6 +14,8 @@ import type { Lang } from '../../content/document-types'
 export interface SealOptions {
   verificationUrl: string; number: string; lang: Lang
   purpose: string; pages: string; corner: string; size: string
+  /** The page chosen when `pages` is `one`, and where the seal was dropped when `corner` is `custom` (0 to 1 from the top left). */
+  pageNumber?: string; posX?: string; posY?: string
   signatoryName: string; signatoryTitle: string; company: string; sealedAt: string; sourceSha256: string
   /** A preview shows where the seal will go and is marked as a preview; it is never stored. */
   preview?: boolean
@@ -22,7 +25,6 @@ const INK = rgb(16 / 255, 23 / 255, 32 / 255)
 const RED = rgb(180 / 255, 62 / 255, 49 / 255)
 const SLATE = rgb(100 / 255, 113 / 255, 124 / 255)
 const WHITE = rgb(1, 1, 1)
-const MARGIN = 22
 export const MAX_SEAL_PAGES = 200
 
 const WORDS: Record<Lang, { title: string; purposes: Record<string, string>; scan: string; original: string; note: string; preview: string }> = {
@@ -43,8 +45,6 @@ const WORDS: Record<Lang, { title: string; purposes: Record<string, string>; sca
     preview: 'PREVIEW',
   },
 }
-
-const SIZES: Record<string, { w: number; h: number; text: number }> = { small: { w: 196, h: 66, text: 5.4 }, medium: { w: 270, h: 108, text: 6.6 } }
 
 /** Standard PDF fonts hold Western European text only: anything else prints as "?" rather than failing. */
 function clean(font: PDFFont, value: string): string {
@@ -107,13 +107,6 @@ class View {
   }
 }
 
-/** Which pages receive the seal (zero-based). */
-export function sealedPageIndexes(total: number, which: string): number[] {
-  if (which === 'first') return [0]
-  if (which === 'all') return Array.from({ length: total }, (_, i) => i)
-  return [total - 1]
-}
-
 export async function sealPdf(source: Uint8Array, o: SealOptions): Promise<{ bytes: Uint8Array; pagesSealed: number }> {
   let doc: PDFDocument
   try {
@@ -124,18 +117,19 @@ export async function sealPdf(source: Uint8Array, o: SealOptions): Promise<{ byt
   const total = doc.getPageCount()
   if (total < 1 || total > MAX_SEAL_PAGES) throw new ActionError(`The PDF must have 1 to ${MAX_SEAL_PAGES} pages`)
   const words = WORDS[o.lang]
-  const size = SIZES[o.size] ?? SIZES.medium
+  const size = SEAL_SIZES[o.size] ?? SEAL_SIZES.medium
   const regular = await doc.embedFont(StandardFonts.Helvetica)
   const bold = await doc.embedFont(StandardFonts.HelveticaBold)
   const qr = await doc.embedPng(await QRCode.toBuffer(o.verificationUrl, { errorCorrectionLevel: 'M', margin: 1, scale: 6, type: 'png', color: { dark: '#101720', light: '#FFFFFF' } }))
-  const indexes = sealedPageIndexes(total, o.pages)
+  let indexes: number[]
+  try { indexes = sealedPages(total, o.pages, o.pageNumber ? Number.parseInt(o.pageNumber, 10) : null) } catch { throw new ActionError(`The PDF has ${total} page${total > 1 ? 's' : ''}: choose a page from 1 to ${total}`) }
+  const posX = fraction(o.posX), posY = fraction(o.posY)
 
   for (const index of indexes) {
     const page = doc.getPage(index)
     const view = new View(page)
-    if (view.width < size.w + MARGIN * 2 || view.height < size.h + MARGIN * 2) throw new ActionError(`Page ${index + 1} is too small for the seal: choose the small size`)
-    const left = o.corner.endsWith('left') ? MARGIN : view.width - MARGIN - size.w
-    const bottom = o.corner.startsWith('top') ? view.height - MARGIN - size.h : MARGIN
+    if (view.width < size.w + SEAL_MARGIN * 2 || view.height < size.h + SEAL_MARGIN * 2) throw new ActionError(`Page ${index + 1} is too small for the seal: choose the small size`)
+    const { left, bottom } = placeSeal(view.width, view.height, o.size, o.corner, posX, posY)
     // The card: white, so that the QR code scans over any content, with a thin ink border (dashed for a preview).
     view.rect(left, bottom, size.w, size.h, { fill: WHITE, border: o.preview ? RED : INK, borderWidth: 0.8, dash: o.preview ? [3, 2] : undefined })
     view.rect(left, bottom + size.h - 3, size.w, 3, { fill: RED })

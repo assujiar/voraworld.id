@@ -71,9 +71,34 @@ test('agreement with editable articles, and a QR seal on a PDF from another part
     await page.click('button:has-text("Save draft")', { noWaitAfter: true })
     await expect(page.locator('input[name=source_pdf]:invalid')).toHaveCount(1)                            // no file yet: the browser stops the form
     await page.setInputFiles('input[name=source_pdf]', { name: 'coo.pdf', mimeType: 'application/pdf', buffer: original })
+    // The seal is dragged onto the page, which is drawn here from the chosen file.
+    const stage = page.locator('.seal-stage'); const box = page.locator('.seal-box')
+    await expect(stage.locator('canvas')).toBeVisible()
+    await expect(page.locator('.seal-pager')).toContainText('Page 2 of 2')                                 // "last page" is the default, so the last page is shown
+    await stage.scrollIntoViewIfNeeded()                                                                    // as a person scrolls down to the page
+    const before = (await box.boundingBox())!
+    const page0 = (await stage.boundingBox())!
+    await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(page0.x + page0.width * 0.35, page0.y + page0.height * 0.45, { steps: 8 })
+    await page.mouse.up()
+    const dropped = (await box.boundingBox())!
+    const fx = (dropped.x - page0.x) / page0.width, fy = (dropped.y - page0.y) / page0.height
+    expect(fx).toBeGreaterThan(0.1); expect(fx).toBeLessThan(0.45); expect(fy).toBeGreaterThan(0.3); expect(fy).toBeLessThan(0.55)          // it moved off the corner, to where the mouse was released
+    await expect(page.locator('input[name=corner]')).toHaveValue('custom')
+    expect(Math.abs(Number(await page.locator('input[name=pos_x]').inputValue()) - fx)).toBeLessThan(0.01)         // and the form carries exactly that position
+    expect(Math.abs(Number(await page.locator('input[name=pos_y]').inputValue()) - fy)).toBeLessThan(0.01)
+    await box.focus(); await page.keyboard.press('ArrowRight')                                             // the arrow keys move it too
+    expect(Number(await page.locator('input[name=pos_x]').inputValue())).toBeGreaterThan(fx)
+    await page.click('button:has-text("Previous page")')
+    await expect(page.locator('.seal-pager')).toContainText('no seal on this page')
+    await page.click('button:has-text("Next page")')
+    const pos = { x: Number(await page.locator('input[name=pos_x]').inputValue()), y: Number(await page.locator('input[name=pos_y]').inputValue()) }
     await page.click('button:has-text("Save draft")')
     await page.waitForURL(/\/admin\/documents\/\d+/)
     sealId = page.url().match(/documents\/(\d+)/)![1]
+    expect(await scalar(`select fields->'values'->>'corner' from documents where id = ${sealId}`)).toBe('custom')
+    expect(Math.abs(Number(await scalar(`select fields->'values'->>'pos_x' from documents where id = ${sealId}`)) - pos.x)).toBeLessThan(0.0002)
     await expect(page.locator('body')).toContainText(sha(original))                                         // the fingerprint of what arrived
     const preview = await page.request.get(`/admin/documents/${sealId}/pdf`)
     expect(preview.status()).toBe(200)

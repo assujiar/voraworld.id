@@ -49,7 +49,7 @@ function SaveStatus({ dirty, failed }: { dirty: boolean; failed: boolean }) {
 }
 
 /** The value to show in a field: what the user last typed if the server sent it back, else the saved/default value. */
-function useTyped(name: string, fallback: string): string {
+export function useTypedValue(name: string, fallback: string): string {
   const v = useContext(Typed).values?.[name]
   return v === undefined ? fallback : Array.isArray(v) ? v[0] ?? '' : v
 }
@@ -62,9 +62,9 @@ export function Submit({ children, className = 'button', busy }: { children: Rea
   return <AsyncButton className={className} busy={busy}>{children}</AsyncButton>
 }
 
-export const FInput = ({ fallback = '', ...p }: InputHTMLAttributes<HTMLInputElement> & { name: string; fallback?: string }) => <input {...p} defaultValue={useTyped(p.name, fallback)} />
-export const FTextarea = ({ fallback = '', ...p }: TextareaHTMLAttributes<HTMLTextAreaElement> & { name: string; fallback?: string }) => <textarea {...p} defaultValue={useTyped(p.name, fallback)} />
-export const FSelect = ({ fallback = '', children, ...p }: SelectHTMLAttributes<HTMLSelectElement> & { name: string; fallback?: string; ref?: Ref<HTMLSelectElement> }) => <select {...p} defaultValue={useTyped(p.name, fallback)}>{children}</select>
+export const FInput = ({ fallback = '', ...p }: InputHTMLAttributes<HTMLInputElement> & { name: string; fallback?: string }) => <input {...p} defaultValue={useTypedValue(p.name, fallback)} />
+export const FTextarea = ({ fallback = '', ...p }: TextareaHTMLAttributes<HTMLTextAreaElement> & { name: string; fallback?: string }) => <textarea {...p} defaultValue={useTypedValue(p.name, fallback)} />
+export const FSelect = ({ fallback = '', children, ...p }: SelectHTMLAttributes<HTMLSelectElement> & { name: string; fallback?: string; ref?: Ref<HTMLSelectElement> }) => <select {...p} defaultValue={useTypedValue(p.name, fallback)}>{children}</select>
 
 /** A checkbox that stays ticked (or unticked) the way the user left it after a refused submission. */
 export function FCheckbox({ name, value, fallbackChecked = false, ...p }: InputHTMLAttributes<HTMLInputElement> & { name: string; value: string; fallbackChecked?: boolean }) {
