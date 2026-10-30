@@ -50,6 +50,7 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
   const [condition, setCondition] = useState('good')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [sentOnce, setSentOnce] = useState(false)                                          // a send reached (or tried to reach) the server and was not recorded
   const [stage, setStage] = useState<{ step: 'checking' | 'sending' | 'saving'; percent?: number } | null>(null)
   const [done, setDone] = useState<{ at: string; receiver: string } | null>(null)
 
@@ -127,6 +128,7 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
       }
       setDone({ at: out.at ?? '', receiver: out.receiver ?? '' })
     } catch (err) {
+      setSentOnce(true)
       setError(`${err instanceof Error ? err.message : 'Bukti pengiriman belum berhasil dikirim.'} Isian, tanda tangan, foto, dan lokasi Anda masih ada: tekan "Kirim ulang" untuk mencoba lagi.`)
     } finally { setBusy(false); setStage(null) }
   }
@@ -201,7 +203,7 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
       </div>
 
       <button className="button" disabled={busy} aria-busy={busy} style={{ minHeight: 48, width: '100%', fontSize: 16 }}>
-        {busy ? <><span className="spin" aria-hidden="true" /> {stageText}</> : error ? 'Kirim ulang / Send again' : 'Send proof of delivery / Kirim'}
+        {busy ? <><span className="spin" aria-hidden="true" /> {stageText}</> : sentOnce ? 'Kirim ulang / Send again' : 'Send proof of delivery / Kirim'}
       </button>
       {stage?.step === 'sending' ? <div role="progressbar" aria-label={stageText} aria-valuemin={0} aria-valuemax={100} aria-valuenow={stage.percent ?? 0} style={{ height: 4, background: '#e1e5e7', borderRadius: 2, marginTop: 6 }}><div style={{ height: 4, width: `${stage.percent ?? 0}%`, background: '#b43e31', borderRadius: 2, transition: 'width .15s linear' }} /></div> : null}
       <p className="mini muted" role="status" aria-live="polite" style={{ minHeight: 20 }}>{busy ? 'Jangan tutup halaman ini sampai ada konfirmasi.' : ''}</p>
