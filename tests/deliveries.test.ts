@@ -112,12 +112,17 @@ describe('proof of delivery', () => {
     expect(audit).toMatchObject({ actorId: null, verb: 'receive' })
   })
 
-  it('does not need the location: a receiver who declines still sends the proof', async () => {
+  it('requires the location: a phone with location off cannot record the delivery', async () => {
     const d = await issued()
-    await submitProof(proof(d.captureToken, { locationStatus: 'unavailable', latitude: '', longitude: '', accuracy: '', locationNote: '' }), BASE)
-    const [p] = await proofsOf(d.id)
-    expect(p).toMatchObject({ locationStatus: 'unavailable', latitude: null, longitude: null })
-    expect(Buffer.from(await podPdf(d.id, BASE)).subarray(0, 5).toString()).toBe('%PDF-')
+    for (const o of [
+      { locationStatus: 'unavailable', latitude: '', longitude: '', accuracy: '', locationNote: 'blocked' },
+      { locationStatus: '', latitude: '', longitude: '' },
+      { latitude: '', longitude: '' },
+    ] as Array<Partial<ProofInput>>) await expect(submitProof(proof(d.captureToken, o), BASE)).rejects.toThrow(/Turn on the location|not a valid location/)
+    expect((await deliveryBy('id', d.id))!.status).toBe('issued')
+    await expect(sql`select delivery_submit_proof(${sql.json({ token: d.captureToken, location_status: 'unavailable', photos: [{ key: 'k', sha256: 'h' }] })})`).rejects.toThrow(/Turn on the location/)   // the database refuses too
+    await submitProof(proof(d.captureToken), BASE)
+    expect((await proofsOf(d.id))[0]).toMatchObject({ locationStatus: 'captured', latitude: -6.2, longitude: 106.8 })
   })
 
   it('refuses a bad link, a note not yet issued or cancelled, and bad evidence, and leaves no file behind', async () => {

@@ -1,7 +1,7 @@
 -- Delivery notes (surat jalan) with a proof of delivery (POD).
 -- A delivery note travels with the goods and carries a QR code. The DRIVER or COURIER who delivers the goods scans it, on their own phone, at
 -- the handover: they say who they are, the receiver gives their name and signs on the screen, the driver photographs the goods, and the
--- phone's position (only if the driver allows it) and the time are recorded: that is the POD.
+-- phone's position (the location must be on: a proof without it is refused) and the time are recorded: that is the POD.
 -- The QR code and the emailed "view the POD" link are two different, unguessable tokens (a printed QR must keep working, so they are
 -- stored, not derived from a secret that may be rotated). Evidence files (signature, photos) live in the private documents bucket.
 -- Delivery status: draft -> issued -> delivered (a POD was submitted) -> back to issued when Finance rejects the POD; void from draft or issued.
@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS delivery_items (
 CREATE INDEX IF NOT EXISTS ix_delivery_items_delivery ON delivery_items (delivery_id, position);
 
 -- One live (submitted) proof per delivery; a rejected one stays as history and the delivery can be received again.
--- The location is optional: it is taken only when the receiver allows the phone to share it.
+-- The location is required for a new proof (delivery_submit_proof refuses one without it); 'unavailable' stays allowed by the table so a row
+-- recorded some other way is still valid.
 CREATE TABLE IF NOT EXISTS delivery_proofs (
   id                 SERIAL PRIMARY KEY,
   delivery_id        INTEGER      NOT NULL REFERENCES deliveries (id),
@@ -230,6 +231,9 @@ BEGIN
   IF v_d.status = 'draft' THEN PERFORM vr_fail(409, 'This delivery note has not been issued yet'); END IF;
   IF v_d.status <> 'issued' THEN PERFORM vr_fail(409, 'This delivery note was cancelled'); END IF;
   IF jsonb_typeof(p->'photos') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'photos') = 0 THEN PERFORM vr_fail(422, 'Take at least one photo of the goods'); END IF;
+  IF p->>'location_status' IS DISTINCT FROM 'captured' OR nullif(p->>'latitude', '') IS NULL OR nullif(p->>'longitude', '') IS NULL THEN
+    PERFORM vr_fail(422, 'Turn on the location of your phone: the delivery cannot be recorded without it');
+  END IF;
   INSERT INTO delivery_proofs (delivery_id, status, receiver_name, receiver_position, receiver_phone, receiver_email, receiver_id_number, courier_name, courier_phone, received_condition, condition_note,
       signature_key, signature_sha256, latitude, longitude, accuracy_m, location_status, location_note, device_time, ip, user_agent)
     VALUES (v_d.id, 'submitted', p->>'receiver_name', p->>'receiver_position', p->>'receiver_phone', p->>'receiver_email', p->>'receiver_id_number', p->>'courier_name', p->>'courier_phone', p->>'condition', p->>'condition_note',

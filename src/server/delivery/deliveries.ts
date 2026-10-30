@@ -16,7 +16,7 @@ import { getObject, putObject, removeObject } from '../storage'
  *
  * VORA writes and issues a delivery note; it travels with the goods and carries a QR code. The DRIVER or COURIER who delivers the goods scans
  * it, on their own phone, at the handover: they say who they are, the receiver gives their name and signs on the screen of that phone, the driver
- * photographs the goods; the time is recorded, and the position too when the driver allows the phone to share it. That is the POD: it needs no
+ * photographs the goods; the time is recorded, and so is the phone's position: the location must be switched on, no proof is accepted without it. That is the POD: it needs no
  * account, only the unguessable address in the QR code, and it can be given ONCE (until Finance rejects it). The consignee is emailed a second,
  * different address with which the finished POD can be read.
  *
@@ -203,11 +203,11 @@ export async function submitProof(input: ProofInput, baseUrl: string): Promise<R
   const photos: Uint8Array[] = []
   for (const [i, p] of input.photos.entries()) photos.push(await decodeImage(p, 'jpeg', MAX_PHOTO_BYTES, `Photo ${i + 1}`))
 
-  // The location is optional: the receiver may decline to share it, and then nothing is asked of them.
-  const located = input.locationStatus === 'captured'
-  const latitude = located ? coordinate(input.latitude, -90, 90, 'The latitude') : null
-  const longitude = located ? coordinate(input.longitude, -180, 180, 'The longitude') : null
-  const accuracy = located && String(input.accuracy ?? '').trim() ? coordinate(input.accuracy, 0, 1_000_000, 'The accuracy') : null
+  // The location is required: it proves where the goods were handed over. A phone with location switched off cannot send the proof.
+  if (input.locationStatus !== 'captured') throw new ActionError('Turn on the location of your phone: the delivery cannot be recorded without it')
+  const latitude = coordinate(input.latitude, -90, 90, 'The latitude')
+  const longitude = coordinate(input.longitude, -180, 180, 'The longitude')
+  const accuracy = String(input.accuracy ?? '').trim() ? coordinate(input.accuracy, 0, 1_000_000, 'The accuracy') : null
   const locationNote = oneLine(input.locationNote, 240, 'The note on the location')
   const when = new Date(input.deviceTime)
   const deviceTime = Number.isNaN(when.getTime()) ? '' : when.toISOString()
@@ -229,7 +229,7 @@ export async function submitProof(input: ProofInput, baseUrl: string): Promise<R
       p: {
         token: input.token, receiver_name: name, receiver_position: position, receiver_phone: phone, receiver_email: email, receiver_id_number: idNumber, courier_name: courierName, courier_phone: courierPhone,
         condition, condition_note: conditionNote, signature_key: signatureKey, signature_sha256: await sha256Hex(signature), photos: photoRefs,
-        location_status: located ? 'captured' : 'unavailable', latitude, longitude, accuracy_m: accuracy, location_note: locationNote,
+        location_status: 'captured', latitude, longitude, accuracy_m: accuracy, location_note: locationNote,
         device_time: deviceTime, ip: input.ip.slice(0, 64), user_agent: input.userAgent.slice(0, 300),
       },
     })

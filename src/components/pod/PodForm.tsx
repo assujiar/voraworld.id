@@ -69,15 +69,17 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
     } catch (e) { setError(e instanceof Error ? e.message : 'This photo could not be read: take it again') }
   }
 
-  const share = () => {
-    if (!navigator.geolocation) { setWhere({ status: 'unavailable', note: 'This phone cannot share its location' }); return }
+  /** Reads the phone's position now. The location is required: the delivery is recorded only with it. */
+  const locate = () => new Promise<Extract<Where, { status: 'captured' }> | null>((resolve) => {
+    if (!navigator.geolocation) { setWhere({ status: 'unavailable', note: 'This phone cannot give its location' }); resolve(null); return }
     setWhere({ status: 'asking' })
     navigator.geolocation.getCurrentPosition(
-      (p) => setWhere({ status: 'captured', latitude: p.coords.latitude, longitude: p.coords.longitude, accuracy: p.coords.accuracy }),
-      (e) => setWhere({ status: 'unavailable', note: e.code === 1 ? 'Location access was not allowed' : 'The location could not be read' }),
+      (p) => { const here = { status: 'captured' as const, latitude: p.coords.latitude, longitude: p.coords.longitude, accuracy: p.coords.accuracy }; setWhere(here); resolve(here) },
+      (e) => { setWhere({ status: 'unavailable', note: e.code === 1 ? 'Location access is blocked for this page' : 'The location could not be read' }); resolve(null) },
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
     )
-  }
+  })
+  useEffect(() => { void locate() }, [])
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -85,14 +87,14 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
     const f = new FormData(e.currentTarget)
     if (!signed) { setError('Sign in the box before sending'); return }
     if (!photos.length) { setError('Take at least one photo of the goods'); return }
-    const loc = where.status === 'captured' ? where : null
+    const loc = await locate()                                                         // read again now: the location must be on at the moment of sending
+    if (!loc) { setError('Turn on the location of your phone and allow it for this page, then press Send again. The delivery cannot be recorded without it.'); return }
     const body = {
       courierName: f.get('courierName'), courierPhone: f.get('courierPhone'),
       receiverName: f.get('receiverName'), receiverPosition: f.get('receiverPosition'), receiverPhone: f.get('receiverPhone'), receiverEmail: f.get('receiverEmail'),
       receiverIdNumber: f.get('receiverIdNumber'), condition, conditionNote: f.get('conditionNote'),
       signature: canvas.current!.toDataURL('image/png'), photos,
-      locationStatus: loc ? 'captured' : 'unavailable', latitude: loc ? String(loc.latitude) : '', longitude: loc ? String(loc.longitude) : '', accuracy: loc ? String(loc.accuracy) : '',
-      locationNote: where.status === 'unavailable' ? where.note : loc ? '' : 'Not shared by the driver',
+      locationStatus: 'captured', latitude: String(loc.latitude), longitude: String(loc.longitude), accuracy: String(loc.accuracy), locationNote: '',
       deviceTime: new Date().toISOString(),
     }
     setBusy(true)
@@ -162,12 +164,14 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
       </div>
 
       <div className="field">
-        <label>Location (optional) / Lokasi (opsional)</label>
-        <p className="mini muted" style={{ margin: '0 0 8px' }}>Sharing your phone&apos;s location helps VORA confirm where the goods were delivered. Your phone will ask for permission; you may decline and still send this form. The time of delivery is always recorded.</p>
+        <label>Location of the delivery / Lokasi pengiriman * <small className="muted">(required)</small></label>
+        <p className="mini muted" style={{ margin: '0 0 8px' }}>The location of your phone is recorded together with the time, to prove where the goods were delivered. Switch on the location of your phone and allow it for this page; the delivery cannot be recorded without it. / Aktifkan lokasi ponsel Anda dan izinkan untuk halaman ini.</p>
         {where.status === 'captured'
-          ? <p role="status">Location captured (accuracy about {Math.round(where.accuracy)} m). <button type="button" className="button-outline" onClick={() => setWhere({ status: 'idle' })} style={{ minHeight: 44 }}>Do not share</button></p>
-          : <button type="button" className="button-outline" onClick={share} disabled={where.status === 'asking'} style={{ minHeight: 44 }}>{where.status === 'asking' ? 'Reading your location…' : 'Share my location'}</button>}
-        {where.status === 'unavailable' ? <p className="mini muted" role="status">{where.note}. You can still send this form.</p> : null}
+          ? <p role="status">Location on (accuracy about {Math.round(where.accuracy)} m).</p>
+          : where.status === 'unavailable'
+            ? <p className="alert" role="status">{where.note}. Turn on location in your phone settings and allow it for this page.</p>
+            : <p role="status">Reading your location…</p>}
+        <button type="button" className="button-outline" onClick={() => void locate()} disabled={where.status === 'asking'} style={{ minHeight: 44 }}>{where.status === 'captured' ? 'Read the location again' : 'Turn on / try the location again'}</button>
       </div>
 
       <button className="button" disabled={busy} aria-busy={busy} style={{ minHeight: 48, width: '100%', fontSize: 16 }}>{busy ? 'Sending…' : 'Send proof of delivery / Kirim'}</button>

@@ -162,8 +162,8 @@ export async function renderDeliveryNote(d: DeliveryNoteData, issuer: Issuer): P
     for (const row of s.wrap(id, w, 6.6)) { f.text(x, y, row, 6.6, SLATE); y -= 8.6 }
     y -= 3
   }
-  f.text(x, y - 2, 'The time is recorded; your location only if you allow it.', 7.2, INK, true)
-  f.text(x, y - 11, 'Waktu terekam; lokasi hanya jika Anda mengizinkan.', 6.4, SLATE)
+  f.text(x, y - 2, 'Turn on your phone location: time and location are recorded.', 7.2, INK, true)
+  f.text(x, y - 11, 'Aktifkan lokasi ponsel: waktu dan lokasi terekam.', 6.4, SLATE)
   const linkTop = top - 14 - qrSize - 10
   if (s.linkHeight(d.captureUrl, qrSize + 2 * 14 + 380, 5.6) > 30) throw new PdfLayoutError('The delivery link is too long to print')
   f.put(() => s.linkLines(LEFT + 14, linkTop, d.captureUrl, WIDTH - 28, 5.6, INK))
