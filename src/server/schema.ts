@@ -137,6 +137,8 @@ export interface DeliveryProofsRow {
   receiverPhone: string
   receiverEmail: string
   receiverIdNumber: string
+  courierName: string
+  courierPhone: string
   receivedCondition: string
   conditionNote: string
   signatureKey: string

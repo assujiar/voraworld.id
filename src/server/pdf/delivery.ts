@@ -4,9 +4,9 @@ import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } fro
 import type { DeliveryNoteData, Issuer, PodData } from './types'
 
 /**
- * The delivery note (surat jalan): who the goods are for, how they travel, what they are, and the QR code with which the receiver
- * signs for them on their own phone. English first, Indonesian under it. No handwriting is asked for: the receiver signs on the
- * screen, and the QR code is how that page is reached. Items flow over as many pages as they need; the receiver's block is never split.
+ * The delivery note (surat jalan): who the goods are for, how they travel, what they are, and the QR code that the DRIVER or COURIER
+ * scans at the handover to record the delivery on their own phone (the receiver signs on that screen). English first, Indonesian under it.
+ * No handwriting is asked for. Items flow over as many pages as they need; the QR block is never split.
  */
 export const LEFT = 44
 export const RIGHT = W - 44
@@ -140,7 +140,7 @@ export async function renderDeliveryNote(d: DeliveryNoteData, issuer: Issuer): P
     f.y -= 6
   }
 
-  // The receiver's block: the QR code is how the receiver reaches the page where they sign. Never split from its instructions.
+  // The driver's block: the QR code is how the driver reaches the page that records the delivery. Never split from its instructions.
   const BOX = 150
   f.keep(BOX + 10)
   const top = f.y + 4
@@ -150,20 +150,20 @@ export async function renderDeliveryNote(d: DeliveryNoteData, issuer: Issuer): P
   const x = LEFT + 14 + qrSize + 20
   const w = RIGHT - x - 12
   let y = top - 22
-  f.text(x, y, 'RECEIVER: SCAN TO CONFIRM RECEIPT', 9.2, INK, true); y -= 11
-  f.text(x, y, 'Penerima: pindai untuk konfirmasi penerimaan', 7.4, SLATE); y -= 17
+  f.text(x, y, 'DRIVER / COURIER: SCAN TO RECORD DELIVERY', 9.2, INK, true); y -= 11
+  f.text(x, y, 'Pengantar: pindai untuk mencatat pengiriman', 7.4, SLATE); y -= 17
   const steps: Array<[string, string]> = [
-    ['1. Check the goods against this note.', 'Periksa barang sesuai surat jalan ini.'],
-    ['2. Scan the QR code with your phone camera.', 'Pindai kode QR dengan kamera ponsel.'],
-    ['3. Sign on the screen, photograph the goods and give your details.', 'Tanda tangan di layar, foto barang, dan isi data Anda.'],
+    ['1. Hand the goods over; the receiver checks them against this note.', 'Serahkan barang; penerima memeriksanya sesuai surat jalan ini.'],
+    ['2. Scan the QR code with your phone camera.', 'Pindai kode QR dengan kamera ponsel Anda.'],
+    ['3. Enter the receiver\'s name, have them sign on the screen and photograph the goods.', 'Isi nama penerima, minta tanda tangan di layar, dan foto barang.'],
   ]
   for (const [en, id] of steps) {
     for (const row of s.wrap(en, w, 7.8)) { f.text(x, y, row, 7.8, INK); y -= 10 }
     for (const row of s.wrap(id, w, 6.6)) { f.text(x, y, row, 6.6, SLATE); y -= 8.6 }
     y -= 3
   }
-  f.text(x, y - 2, 'Your location and the time are recorded automatically.', 7.2, INK, true)
-  f.text(x, y - 11, 'Lokasi dan waktu Anda terekam otomatis.', 6.4, SLATE)
+  f.text(x, y - 2, 'The time is recorded; your location only if you allow it.', 7.2, INK, true)
+  f.text(x, y - 11, 'Waktu terekam; lokasi hanya jika Anda mengizinkan.', 6.4, SLATE)
   const linkTop = top - 14 - qrSize - 10
   if (s.linkHeight(d.captureUrl, qrSize + 2 * 14 + 380, 5.6) > 30) throw new PdfLayoutError('The delivery link is too long to print')
   f.put(() => s.linkLines(LEFT + 14, linkTop, d.captureUrl, WIDTH - 28, 5.6, INK))
@@ -200,9 +200,10 @@ export async function renderPod(d: PodData, issuer: Issuer): Promise<Uint8Array>
   itemsTable(s, f, d.items)
 
   f.keep(150)
-  f.text(LEFT, f.y, 'RECEIPT OF GOODS / PENERIMAAN BARANG', 7.2, RED, true)
+  f.text(LEFT, f.y, 'DELIVERY AND RECEIPT / PENGIRIMAN DAN PENERIMAAN', 7.2, RED, true)
   f.rule(f.y - 5)
   f.y -= 18
+  fact(s, f, LEFT, WIDTH, 'Delivered by', [p.courierName, p.courierPhone].filter(Boolean).join(' / '))
   fact(s, f, LEFT, WIDTH, 'Received by', p.receiverName)
   fact(s, f, LEFT, WIDTH, 'Position', p.receiverPosition)
   fact(s, f, LEFT, WIDTH, 'Phone', p.receiverPhone)
@@ -215,7 +216,7 @@ export async function renderPod(d: PodData, issuer: Issuer): Promise<Uint8Array>
   if (p.locationStatus === 'captured' && p.latitude !== null && p.longitude !== null) {
     fact(s, f, LEFT, WIDTH, 'Location', `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}${p.accuracyM !== null ? ` (accuracy ${Math.round(p.accuracyM)} m)` : ''}`)
   } else {
-    fact(s, f, LEFT, WIDTH, 'Location', `Not shared by the receiver${p.locationNote ? `: ${p.locationNote}` : ''}`)
+    fact(s, f, LEFT, WIDTH, 'Location', `Not shared by the driver${p.locationNote ? `: ${p.locationNote}` : ''}`)
   }
   if (p.status === 'rejected') fact(s, f, LEFT, WIDTH, 'Status', 'REJECTED by VORA Finance')
   f.y -= 6

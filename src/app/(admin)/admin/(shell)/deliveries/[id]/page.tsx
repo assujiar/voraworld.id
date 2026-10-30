@@ -46,15 +46,15 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
 
       <div className="admin-panel">
         <h3>Proof of delivery</h3>
-        {!proofs.length ? <p className="note">{d.status === 'issued' ? 'Waiting for the receiver to scan the QR code on the printed note.' : 'No proof of delivery yet. It can be given only after the note is issued.'}</p> : null}
+        {!proofs.length ? <p className="note">{d.status === 'issued' ? 'Waiting for the driver to scan the QR code on the printed note and record the delivery.' : 'No proof of delivery yet. It can be given only after the note is issued.'}</p> : null}
         {proofs.map((p) => (
           <div key={p.id} style={{ borderTop: '1px solid var(--rule, #dcdfe1)', paddingTop: 14, marginTop: 14, opacity: p.status === 'rejected' ? 0.7 : 1 }}>
-            <p><span className="status">{p.status}</span> <strong>{p.receiverName}</strong>, {p.receiverPosition} · {p.receiverPhone}{p.receiverEmail ? ` · ${p.receiverEmail}` : ''}{p.receiverIdNumber ? ` · ID ${p.receiverIdNumber}` : ''}<br />
+            <p><span className="status">{p.status}</span> Delivered by <strong>{p.courierName || 'unknown'}</strong>{p.courierPhone ? ` (${p.courierPhone})` : ''}<br />Received by <strong>{p.receiverName}</strong>, {p.receiverPosition} · {p.receiverPhone}{p.receiverEmail ? ` · ${p.receiverEmail}` : ''}{p.receiverIdNumber ? ` · ID ${p.receiverIdNumber}` : ''}<br />
               Received {fmt(p.serverTime)} (server time){p.deviceTime ? ` · phone clock ${fmt(new Date(p.deviceTime))}` : ''}<br />
               Condition: <strong>{CONDITION[p.condition] ?? p.condition}</strong>{p.conditionNote ? ` · ${p.conditionNote}` : ''}<br />
               {p.locationStatus === 'captured' && p.latitude !== null && p.longitude !== null
                 ? <>Location: <a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noopener noreferrer">{p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}</a>{p.accuracyM !== null ? ` (accuracy ${Math.round(p.accuracyM)} m)` : ''}</>
-                : <>Location: not shared by the receiver{p.locationNote ? ` (${p.locationNote})` : ''}</>}<br />
+                : <>Location: not shared by the driver{p.locationNote ? ` (${p.locationNote})` : ''}</>}<br />
               <span className="mini muted">From {p.ip || 'unknown address'} · {p.userAgent.slice(0, 120)}</span>
               {p.status === 'rejected' ? <><br />Rejected {p.rejectedAt ? fmt(p.rejectedAt) : ''}: {p.rejectReason}</> : null}</p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>

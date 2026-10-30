@@ -22,7 +22,8 @@ async function reduce(file: File): Promise<string> {
   return url
 }
 
-export function PodForm({ token, number }: { token: string; number: string }) {
+/** Filled in by the driver or courier at the handover, on their own phone; the receiver gives their name and signs on this screen. */
+export function PodForm({ token, number, driverName, driverPhone }: { token: string; number: string; driverName: string; driverPhone: string }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const drawing = useRef(false)
   const [signed, setSigned] = useState(false)
@@ -73,7 +74,7 @@ export function PodForm({ token, number }: { token: string; number: string }) {
     setWhere({ status: 'asking' })
     navigator.geolocation.getCurrentPosition(
       (p) => setWhere({ status: 'captured', latitude: p.coords.latitude, longitude: p.coords.longitude, accuracy: p.coords.accuracy }),
-      (e) => setWhere({ status: 'unavailable', note: e.code === 1 ? 'The receiver did not allow location access' : 'The location could not be read' }),
+      (e) => setWhere({ status: 'unavailable', note: e.code === 1 ? 'Location access was not allowed' : 'The location could not be read' }),
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
     )
   }
@@ -86,11 +87,12 @@ export function PodForm({ token, number }: { token: string; number: string }) {
     if (!photos.length) { setError('Take at least one photo of the goods'); return }
     const loc = where.status === 'captured' ? where : null
     const body = {
+      courierName: f.get('courierName'), courierPhone: f.get('courierPhone'),
       receiverName: f.get('receiverName'), receiverPosition: f.get('receiverPosition'), receiverPhone: f.get('receiverPhone'), receiverEmail: f.get('receiverEmail'),
       receiverIdNumber: f.get('receiverIdNumber'), condition, conditionNote: f.get('conditionNote'),
       signature: canvas.current!.toDataURL('image/png'), photos,
       locationStatus: loc ? 'captured' : 'unavailable', latitude: loc ? String(loc.latitude) : '', longitude: loc ? String(loc.longitude) : '', accuracy: loc ? String(loc.accuracy) : '',
-      locationNote: where.status === 'unavailable' ? where.note : loc ? '' : 'Not shared by the receiver',
+      locationNote: where.status === 'unavailable' ? where.note : loc ? '' : 'Not shared by the driver',
       deviceTime: new Date().toISOString(),
     }
     setBusy(true)
@@ -107,7 +109,7 @@ export function PodForm({ token, number }: { token: string; number: string }) {
   if (done) {
     return (
       <div role="status" className="note" style={{ marginTop: 18 }}>
-        <strong>Thank you. The receipt of {number} has been recorded.</strong><br />
+        <strong>Thank you. The delivery of {number} has been recorded.</strong><br />
         Diterima oleh {done.receiver}{done.at ? ` pada ${new Date(done.at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB` : ''}. You can close this page.
       </div>
     )
@@ -116,13 +118,18 @@ export function PodForm({ token, number }: { token: string; number: string }) {
   const field = { style: { display: 'block', width: '100%', minHeight: 44, fontSize: 16 } } as const
   return (
     <form onSubmit={submit} style={{ marginTop: 22 }} noValidate>
-      <h2 style={{ fontSize: '1.2rem' }}>Confirm receipt / Konfirmasi penerimaan</h2>
+      <h2 style={{ fontSize: '1.2rem' }}>Record the delivery / Catat pengiriman</h2>
+      <p className="mini muted">For the driver or courier, at the handover. Fill this in on your phone and let the receiver sign on the screen.</p>
       {error ? <div className="alert" role="alert">{error}</div> : null}
-      <div className="field"><label htmlFor="receiverName">Your full name / Nama lengkap *</label><input id="receiverName" name="receiverName" autoComplete="name" required maxLength={160} {...field} /></div>
-      <div className="field"><label htmlFor="receiverPosition">Position / Jabatan *</label><input id="receiverPosition" name="receiverPosition" required maxLength={160} {...field} /></div>
-      <div className="field"><label htmlFor="receiverPhone">Phone / Telepon *</label><input id="receiverPhone" name="receiverPhone" type="tel" autoComplete="tel" required maxLength={60} {...field} /></div>
-      <div className="field"><label htmlFor="receiverEmail">Email (optional)</label><input id="receiverEmail" name="receiverEmail" type="email" autoComplete="email" maxLength={200} {...field} /></div>
-      <div className="field"><label htmlFor="receiverIdNumber">ID number / No. identitas (optional)</label><input id="receiverIdNumber" name="receiverIdNumber" maxLength={40} {...field} /></div>
+      <h3 style={{ fontSize: '1rem', margin: '16px 0 4px' }}>You: driver / courier <small className="muted">(Pengantar)</small></h3>
+      <div className="field"><label htmlFor="courierName">Your full name / Nama lengkap Anda *</label><input id="courierName" name="courierName" autoComplete="name" required maxLength={160} defaultValue={driverName} {...field} /></div>
+      <div className="field"><label htmlFor="courierPhone">Your phone / Telepon Anda *</label><input id="courierPhone" name="courierPhone" type="tel" autoComplete="tel" required maxLength={60} defaultValue={driverPhone} {...field} /></div>
+      <h3 style={{ fontSize: '1rem', margin: '20px 0 4px' }}>The receiver <small className="muted">(Penerima)</small></h3>
+      <div className="field"><label htmlFor="receiverName">Receiver&apos;s full name / Nama lengkap penerima *</label><input id="receiverName" name="receiverName" autoComplete="name" required maxLength={160} {...field} /></div>
+      <div className="field"><label htmlFor="receiverPosition">Receiver&apos;s position / Jabatan penerima *</label><input id="receiverPosition" name="receiverPosition" required maxLength={160} {...field} /></div>
+      <div className="field"><label htmlFor="receiverPhone">Receiver&apos;s phone / Telepon penerima *</label><input id="receiverPhone" name="receiverPhone" type="tel" autoComplete="tel" required maxLength={60} {...field} /></div>
+      <div className="field"><label htmlFor="receiverEmail">Receiver&apos;s email (optional)</label><input id="receiverEmail" name="receiverEmail" type="email" autoComplete="email" maxLength={200} {...field} /></div>
+      <div className="field"><label htmlFor="receiverIdNumber">Receiver&apos;s ID number / No. identitas (optional)</label><input id="receiverIdNumber" name="receiverIdNumber" maxLength={40} {...field} /></div>
 
       <fieldset className="field" style={{ border: 0, padding: 0, margin: '14px 0' }}>
         <legend style={{ fontWeight: 600 }}>Condition of the goods / Kondisi barang *</legend>
@@ -135,7 +142,7 @@ export function PodForm({ token, number }: { token: string; number: string }) {
       <div className="field"><label htmlFor="conditionNote">{condition === 'good' ? 'Note (optional)' : 'What is damaged or missing? *'}</label><textarea id="conditionNote" name="conditionNote" rows={3} maxLength={1000} {...field} /></div>
 
       <div className="field">
-        <label id="sig-label">Signature / Tanda tangan *</label>
+        <label id="sig-label">Receiver&apos;s signature / Tanda tangan penerima * <small className="muted">(they sign here, on your screen)</small></label>
         <canvas ref={canvas} width={SIGNATURE.w} height={SIGNATURE.h} aria-labelledby="sig-label" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
           style={{ width: '100%', aspectRatio: `${SIGNATURE.w} / ${SIGNATURE.h}`, touchAction: 'none', background: '#fff', border: '1.5px dashed #8a959c', borderRadius: 10, cursor: 'crosshair' }} />
         <button type="button" className="button-outline" onClick={clear} style={{ minHeight: 44, marginTop: 8 }}>Clear signature</button>
@@ -156,7 +163,7 @@ export function PodForm({ token, number }: { token: string; number: string }) {
 
       <div className="field">
         <label>Location (optional) / Lokasi (opsional)</label>
-        <p className="mini muted" style={{ margin: '0 0 8px' }}>Sharing your location helps VORA confirm where the goods were received. Your phone will ask for permission; you may decline and still send this form. The time of receipt is always recorded.</p>
+        <p className="mini muted" style={{ margin: '0 0 8px' }}>Sharing your phone&apos;s location helps VORA confirm where the goods were delivered. Your phone will ask for permission; you may decline and still send this form. The time of delivery is always recorded.</p>
         {where.status === 'captured'
           ? <p role="status">Location captured (accuracy about {Math.round(where.accuracy)} m). <button type="button" className="button-outline" onClick={() => setWhere({ status: 'idle' })} style={{ minHeight: 44 }}>Do not share</button></p>
           : <button type="button" className="button-outline" onClick={share} disabled={where.status === 'asking'} style={{ minHeight: 44 }}>{where.status === 'asking' ? 'Reading your location…' : 'Share my location'}</button>}
@@ -164,7 +171,7 @@ export function PodForm({ token, number }: { token: string; number: string }) {
       </div>
 
       <button className="button" disabled={busy} aria-busy={busy} style={{ minHeight: 48, width: '100%', fontSize: 16 }}>{busy ? 'Sending…' : 'Send proof of delivery / Kirim'}</button>
-      <p className="mini muted" style={{ marginTop: 10 }}>By sending, you confirm that you received the goods listed above. Your name, signature, photos and the time are recorded with VORA.</p>
+      <p className="mini muted" style={{ marginTop: 10 }}>By sending, you confirm that you delivered the goods listed above to the person named as receiver. Names, the signature, photos and the time are recorded with VORA.</p>
     </form>
   )
 }

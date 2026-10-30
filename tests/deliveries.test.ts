@@ -11,12 +11,7 @@ import { sql } from './helpers/db'
 
 // The tests have no Storage service: files go to a map, which is all the service needs of it.
 const files = vi.hoisted(() => new Map<string, Uint8Array>())
-vi.mock('@/server/storage', async (original) => ({
-  ...(await original<typeof import('@/server/storage')>()),
-  putObject: async (_bucket: string, key: string, bytes: Uint8Array) => { if (files.has(key)) throw new Error('exists'); files.set(key, bytes) },
-  removeObject: async (_bucket: string, key: string) => { files.delete(key) },
-  getObject: async (_bucket: string, key: string) => { const f = files.get(key); if (!f) throw new Error('missing'); return f },
-}))
+vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-storage')).memoryStorage(await original(), files))
 
 process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64')
 const BASE = 'https://voraworld.id'
@@ -50,7 +45,7 @@ const note = (o: Partial<DeliveryInput> = {}): DeliveryInput => ({
   deliveryDate: '2026-10-30', notes: 'Handle with care', items: 'Cartons of parts | 24 | ctn | fragile\nPallet of cables | 2', ...o,
 })
 const proof = (token: string, o: Partial<ProofInput> = {}): ProofInput => ({
-  token, receiverName: 'Siti Aminah', receiverPosition: 'Warehouse head', receiverPhone: '+62 812 3456', receiverEmail: '', receiverIdNumber: '', condition: 'good', conditionNote: '',
+  token, courierName: 'Asep Kurniawan', courierPhone: '0812 1111 2222', receiverName: 'Siti Aminah', receiverPosition: 'Warehouse head', receiverPhone: '+62 812 3456', receiverEmail: '', receiverIdNumber: '', condition: 'good', conditionNote: '',
   signature: png, photos: [jpeg], latitude: '-6.2', longitude: '106.8', accuracy: '12.5', locationStatus: 'captured', locationNote: '', deviceTime: '2026-10-30T03:00:00.000Z', ip: '203.0.113.9', userAgent: 'Test phone', ...o,
 })
 async function issued(o: Partial<DeliveryInput> = {}) {
@@ -103,7 +98,7 @@ describe('proof of delivery', () => {
     expect(after.status).toBe('delivered')
     expect(after.deliveredAt).toBeInstanceOf(Date)
     const [p] = await proofsOf(d.id)
-    expect(p).toMatchObject({ status: 'submitted', condition: 'good', locationStatus: 'captured', latitude: -6.2, longitude: 106.8, accuracyM: 12.5, ip: '203.0.113.9' })
+    expect(p).toMatchObject({ status: 'submitted', courierName: 'Asep Kurniawan', courierPhone: '0812 1111 2222', condition: 'good', locationStatus: 'captured', latitude: -6.2, longitude: 106.8, accuracyM: 12.5, ip: '203.0.113.9' })
     expect(p.serverTime).toBeInstanceOf(Date)
     expect(p.photos).toHaveLength(1)
     expect((await proofEvidence(p, 'signature'))!.type).toBe('image/png')
@@ -137,6 +132,8 @@ describe('proof of delivery', () => {
       ['no photo', { photos: [] }, /at least one photo/],
       ['five photos', { photos: [jpeg, jpeg, jpeg, jpeg, jpeg] }, /at most 4/],
       ['a photo that is not a JPEG', { photos: [png] }, /not a valid photo/],
+      ['no driver name', { courierName: '' }, /driver's name is required/],
+      ['a bad driver phone', { courierPhone: 'call me' }, /driver's phone number/],
       ['a bad condition', { condition: 'broken' }, /condition/],
       ['damage without a note', { condition: 'damaged' }, /Describe what is damaged/],
       ['a bad phone number', { receiverPhone: 'call me' }, /phone number/],

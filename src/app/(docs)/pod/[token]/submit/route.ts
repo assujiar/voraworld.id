@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     if (!b || typeof b !== 'object' || Array.isArray(b)) throw new ActionError('The form could not be read: reload the page and try again', 400)
     const photos = Array.isArray(b.photos) ? b.photos.slice(0, 8).map((p) => text(p, 2_000_000)) : []
     const received = await submitProof({
-      token: (await params).token,
+      token: (await params).token, courierName: text(b.courierName, 400), courierPhone: text(b.courierPhone, 100),
       receiverName: text(b.receiverName, 400), receiverPosition: text(b.receiverPosition, 400), receiverPhone: text(b.receiverPhone, 100), receiverEmail: text(b.receiverEmail, 300),
       receiverIdNumber: text(b.receiverIdNumber, 100), condition: text(b.condition, 20), conditionNote: text(b.conditionNote, 1_100),
       signature: text(b.signature, 600_000), photos,
