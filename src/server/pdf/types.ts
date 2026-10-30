@@ -52,6 +52,10 @@ export interface GeneralDocData {
 /** A delivery note (surat jalan). `captureUrl` is the address in its QR code: where the receiver signs. */
 export interface DeliveryNoteData {
   number: string; status: string; deliveryDate: string
+  /** The customer and quotation the note was made under (references only: neither is a party of the shipment). */
+  customerName: string; quotationNumber: string
+  /** The shipper (pengirim). All empty on a note written before shippers were recorded: the PDF says so and invents nothing. */
+  shipperName: string; shipperAddress: string; shipperContact: string; shipperPhone: string; shipperEmail: string
   consigneeName: string; consigneeAddress: string; consigneeContact: string; consigneePhone: string; consigneeEmail: string
   origin: string; destination: string; shipmentReference: string; poNumber: string; carrier: string; vehicle: string; vehiclePlate: string; driverName: string; driverPhone: string
   notes: string

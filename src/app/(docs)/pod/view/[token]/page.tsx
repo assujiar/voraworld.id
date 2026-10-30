@@ -18,7 +18,7 @@ export default async function PodView({ params }: { params: Promise<{ token: str
       <div className="form-panel" style={{ marginTop: 20 }}>
         <span className="eyebrow">Proof of delivery / Bukti pengiriman</span>
         <h1 style={{ fontSize: '1.7rem', margin: '6px 0 12px' }}>{proof ? 'RECEIVED' : 'NOT AVAILABLE'}</h1>
-        <p><strong>Delivery note:</strong> {d.number}<br /><strong>Consignee:</strong> {d.consigneeName}{d.destination ? <><br /><strong>Destination:</strong> {d.destination}</> : null}</p>
+        <p><strong>Delivery note:</strong> {d.number}<br />{d.shipperName ? <><strong>Sender:</strong> {d.shipperName}<br /></> : null}<strong>Consignee:</strong> {d.consigneeName}{d.destination ? <><br /><strong>Destination:</strong> {d.destination}</> : null}</p>
         {!proof ? <p className="note">There is no proof of delivery to show for this delivery note.</p> : (
           <>
             <p><strong>Delivered by:</strong> {proof.courierName || '-'}<br />

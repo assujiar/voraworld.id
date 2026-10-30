@@ -33,10 +33,20 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
         <h3>{d.number} <span className="status">{label(DELIVERY_LABEL, d.status)}</span></h3>
         <p className="mini" style={{ marginBottom: 8 }}>{customer ? <>Customer <a href={`/admin/customers/${customer.id}`}>{customer.name as string}</a></> : 'No customer (an earlier note)'}{quotation ? <> · Quotation <a href={`/admin/quotations/${quotation.id}`}>{quotation.number as string}</a></> : null}
           {invoices.length ? <> · Billed on {invoices.map((i, k) => <span key={i.id as number}>{k ? ', ' : ''}<a href={`/admin/invoices/${i.id}`}>{i.number as string}</a> ({INVOICE_LABEL[i.status as string] ?? (i.status as string)})</span>)}</> : d.status === 'delivered' ? ' · Not billed yet' : null}</p>
-        <p><strong>{d.consigneeName}</strong><br />
-          {d.consigneeAddress ? <>{d.consigneeAddress}<br /></> : null}
-          {[d.consigneeContact, d.consigneePhone, d.consigneeEmail].filter(Boolean).join(' · ')}<br />
-          Created {fmt(d.createdAt)}{d.issuedAt ? ` · issued ${fmt(d.issuedAt)}` : ''}{d.deliveredAt ? ` · received ${fmt(d.deliveredAt)}` : ''}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, margin: '8px 0' }}>
+          <div><span className="mini muted">SHIPPER / PENGIRIM</span>
+            {d.shipperName ? <p style={{ margin: '2px 0' }}><strong>{d.shipperName}</strong><br />
+              <span style={{ whiteSpace: 'pre-wrap' }}>{d.shipperAddress}</span><br />
+              {[d.shipperContact, d.shipperPhone, d.shipperEmail].filter(Boolean).join(' · ')}</p>
+              : <p className="muted" style={{ margin: '2px 0' }}>Not recorded: this note was written before shippers were kept.</p>}
+          </div>
+          <div><span className="mini muted">CONSIGNEE / PENERIMA</span>
+            <p style={{ margin: '2px 0' }}><strong>{d.consigneeName}</strong><br />
+              {d.consigneeAddress ? <><span style={{ whiteSpace: 'pre-wrap' }}>{d.consigneeAddress}</span><br /></> : null}
+              {[d.consigneeContact, d.consigneePhone, d.consigneeEmail].filter(Boolean).join(' · ')}</p>
+          </div>
+        </div>
+        <p className="mini muted">Created {fmt(d.createdAt)}{d.issuedAt ? ` · issued ${fmt(d.issuedAt)}` : ''}{d.deliveredAt ? ` · received ${fmt(d.deliveredAt)}` : ''}</p>
         <dl style={{ margin: '14px 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
           {facts.filter(([, v]) => v).map(([k, v]) => <div key={k}><dt className="mini muted">{k}</dt><dd style={{ margin: 0 }}>{v}</dd></div>)}
         </dl>

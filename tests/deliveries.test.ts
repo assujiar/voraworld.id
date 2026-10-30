@@ -6,13 +6,16 @@ import { saveCustomer } from '@/server/finance/customers'
 import { createDelivery, deliveryBy, proofEvidence, proofsOf, rejectProof, resendReceivedEmail, setDeliveryStatus, submitProof, updateDelivery, type DeliveryInput, type ProofInput } from '@/server/delivery/deliveries'
 import { saveMailConfig } from '@/server/mail/config'
 import { deliveryNotePdf, podPdf } from '@/server/pdf/delivery-render'
+import { classifyProviderError, putObject } from '@/server/storage'
+import { pdfPages, squash } from './helpers/pdf-text'
 import { createUser } from './helpers/actions'
 import { validatedQuotation } from './helpers/commercial'
 import { sql } from './helpers/db'
 
 // The tests have no Storage service: files go to a map, which is all the service needs of it.
 const files = vi.hoisted(() => new Map<string, Uint8Array>())
-vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-storage')).memoryStorage(await original(), files))
+const storage = vi.hoisted(() => ({ failWith: null as 'type' | 'size' | 'denied' | 'unavailable' | null, failAfter: 0, uploads: [] as Array<{ key: string; contentType: string; size: number }> }))
+vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-storage')).memoryStorage(await original(), files, storage))
 
 process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64')
 const BASE = 'https://voraworld.id'
@@ -44,7 +47,7 @@ beforeAll(async () => {
 })
 
 const note = (o: Partial<DeliveryInput> = {}): DeliveryInput => ({
-  customerId: customer, quotationId: quotation, consigneeName: 'PT Penerima', consigneeAddress: 'Jl. Gudang 5, Bekasi', consigneeContact: 'Budi', consigneePhone: '+62 21 555', consigneeEmail: 'gudang@penerima.example',
+  customerId: customer, quotationId: quotation, shipperName: 'PT Pengirim Utama', shipperAddress: 'Jl. Pabrik 9, Kawasan Industri, Cikarang, Jawa Barat 17530', shipperContact: 'Rina', shipperPhone: '+62 21 888', shipperEmail: 'gudang@pengirim.example', consigneeName: 'PT Penerima', consigneeAddress: 'Jl. Gudang 5, Bekasi', consigneeContact: 'Budi', consigneePhone: '+62 21 555', consigneeEmail: 'gudang@penerima.example',
   origin: 'Jakarta', destination: 'Bekasi', shipmentReference: 'JOB-1', poNumber: 'PO-9', carrier: 'VORA Trucking', vehicle: 'Wingbox', vehiclePlate: 'B 1234 XYZ', driverName: 'Asep', driverPhone: '0812',
   deliveryDate: '2026-10-30', notes: 'Handle with care', items: [{ description: 'Cartons of parts', quantity: '24', unit: 'ctn', remarks: 'fragile' }, { description: 'Pallet of cables', quantity: '2', unit: '', remarks: '' }], ...o,
 })
@@ -60,10 +63,10 @@ async function issued(o: Partial<DeliveryInput> = {}) {
 
 describe('delivery notes', () => {
   it('numbers a note under the customer, keeps its quotation and cargo rows in order, and edits only a draft', async () => {
-    const id = await createDelivery(actor, note({ consigneeName: '', consigneeAddress: '', consigneeEmail: '' }))
+    const id = await createDelivery(actor, note())
     const d = (await deliveryBy('id', id))!
     expect(d.number).toMatch(/^DLV-VORA-C[A-F0-9]{10}-202610-\d{5}$/)
-    expect(d).toMatchObject({ status: 'draft', customerId: customer, quotationId: quotation, consigneeName: 'PT Pengirim', consigneeAddress: 'Jl. Kantor 1', consigneeEmail: 'c@pengirim.example' })
+    expect(d).toMatchObject({ status: 'draft', customerId: customer, quotationId: quotation, consigneeName: 'PT Penerima', consigneeAddress: 'Jl. Gudang 5, Bekasi', consigneeEmail: 'gudang@penerima.example' })
     expect(d.items.map((i) => [i.description, i.quantity, i.unit])).toEqual([['Cartons of parts', '24', 'ctn'], ['Pallet of cables', '2', 'pcs']])
     expect(d.captureToken).not.toEqual(d.viewToken)
     await updateDelivery(actor, id, note({ items: [{ description: 'Only item', quantity: '1', unit: 'box', remarks: '' }, { description: '', quantity: '', unit: '', remarks: '' }] }))     // an empty row is ignored
@@ -210,5 +213,122 @@ describe('proof of delivery', () => {
     expect(jobs[1].html).toContain(`${BASE}/pod/view/${d.viewToken}`)
     await resendReceivedEmail(actor, d.id, BASE)
     await expect(resendReceivedEmail(actor, (await issued()).id, BASE)).rejects.toMatchObject({ status: 409 })
+  })
+})
+
+
+describe('proof of delivery when storage misbehaves', () => {
+  const stored = () => [...files.keys()].filter((k) => k.startsWith('pod/'))
+  const proofs = async (id: number) => Number((await sql`select count(*) as n from delivery_proofs where delivery_id = ${id}`)[0].n)
+
+  it('stores the PNG signature and JPEG photos in a bucket that allows exactly what the migrations allow, and refuses other types', async () => {
+    const d = await issued()
+    storage.uploads.length = 0
+    await submitProof(proof(d.captureToken), BASE)
+    expect(storage.uploads.map((u) => u.contentType).sort()).toEqual(['image/jpeg', 'image/png'])
+    await expect(putObject('documents', 'x/y.html', new Uint8Array([1]), 'text/html')).rejects.toMatchObject({ status: 415, failure: 'type' })
+    await expect(putObject('documents', 'x/y.pdf', new Uint8Array([1]), 'application/pdf')).resolves.toBeUndefined()
+    await expect(putObject('documents', 'x/big.png', new Uint8Array(11 * 1024 * 1024), 'image/png')).rejects.toMatchObject({ status: 413, failure: 'size' })
+  })
+
+  it('records nothing when storage refuses: the note stays open, no proof, no stray file, a clear message, and the same form can be sent again', async () => {
+    const d = await issued()
+    storage.failWith = 'denied'
+    await expect(submitProof(proof(d.captureToken), BASE)).rejects.toMatchObject({ status: 502, failure: 'denied' })
+    expect(await proofs(d.id)).toBe(0)
+    expect((await deliveryBy('id', d.id))!.status).toBe('issued')
+    expect(stored().filter((k) => k.startsWith(`pod/${d.id}/`))).toEqual([])
+    storage.failWith = 'unavailable'
+    await expect(submitProof(proof(d.captureToken), BASE)).rejects.toMatchObject({ status: 503, failure: 'unavailable' })
+    storage.failWith = null
+    await expect(submitProof(proof(d.captureToken), BASE)).resolves.toMatchObject({ receiver: 'Siti Aminah' })        // retry with the same data works
+    expect(await proofs(d.id)).toBe(1)
+    expect((await deliveryBy('id', d.id))!.status).toBe('delivered')
+  })
+
+  it('removes the signature already stored when a photo then fails, and sending the same proof twice records it once', async () => {
+    const d = await issued()
+    storage.uploads.length = 0
+    storage.failWith = 'unavailable'; storage.failAfter = 1                                                             // the signature goes through, the first photo fails
+    await expect(submitProof(proof(d.captureToken), BASE)).rejects.toMatchObject({ failure: 'unavailable' })
+    expect(stored().filter((k) => k.startsWith(`pod/${d.id}/`))).toEqual([])                                           // no orphan
+    storage.failWith = null; storage.failAfter = 0
+    await Promise.all([submitProof(proof(d.captureToken), BASE), submitProof(proof(d.captureToken), BASE)].map((p) => p.catch((e) => e)))
+    expect(await proofs(d.id)).toBe(1)
+    expect(stored().filter((k) => k.startsWith(`pod/${d.id}/`))).toHaveLength(2)                                       // one signature and one photo: the loser's files are gone
+    await expect(submitProof(proof(d.captureToken), BASE)).rejects.toMatchObject({ status: 409 })
+    expect(await proofs(d.id)).toBe(1)
+  })
+
+  it('tells the provider\'s refusals apart and never puts the bucket, a policy or a key in the message', async () => {
+    expect(classifyProviderError({ message: 'mime type image/png is not supported', statusCode: '415' })).toBe('type')
+    expect(classifyProviderError({ message: 'The object exceeded the maximum allowed size', statusCode: '413' })).toBe('size')
+    expect(classifyProviderError({ message: 'new row violates row-level security policy', statusCode: '403' })).toBe('denied')
+    expect(classifyProviderError({ message: 'The resource already exists', statusCode: '409' })).toBe('conflict')
+    expect(classifyProviderError({ message: 'fetch failed' })).toBe('unavailable')
+    expect(classifyProviderError({ message: 'something else' })).toBe('unknown')
+  })
+})
+
+
+describe('shipper and consignee are separate parties', () => {
+  const parties = {
+    shipperName: 'PT Sumber Barang Nusantara', shipperAddress: 'Jl. Raya Industri No. 12, Kawasan Jababeka, Cikarang, Bekasi, Jawa Barat 17530. Gerbang belakang, hubungi satpam.', shipperContact: 'Rina Marlina', shipperPhone: '+62 21 8900 111', shipperEmail: 'logistik@sumber.example',
+    consigneeName: 'CV Tujuan Makmur', consigneeAddress: 'Jl. Pelabuhan Raya No. 77, Tanjung Priok, Jakarta Utara, DKI Jakarta 14310', consigneeContact: 'Joko Santoso', consigneePhone: '+62 21 4300 222', consigneeEmail: 'gudang@tujuan.example',
+  }
+
+  it('keeps every field of each party, apart from each other and from the customer', async () => {
+    const id = await createDelivery(actor, note(parties))
+    expect(await deliveryBy('id', id)).toMatchObject({
+      customerId: customer, shipperName: parties.shipperName, shipperAddress: parties.shipperAddress, shipperContact: 'Rina Marlina', shipperPhone: '+62 21 8900 111', shipperEmail: 'logistik@sumber.example',
+      consigneeName: 'CV Tujuan Makmur', consigneeAddress: parties.consigneeAddress, consigneeContact: 'Joko Santoso', consigneePhone: '+62 21 4300 222', consigneeEmail: 'gudang@tujuan.example',
+    })
+    const row = (await sql`select shipper_name, consignee_name from deliveries where id = ${id}`)[0]
+    expect([row.shipperName, row.consigneeName]).toEqual(['PT Sumber Barang Nusantara', 'CV Tujuan Makmur'])      // neither became the customer ('PT Pengirim')
+  })
+
+  it('refuses a note without a named shipper or consignee and a full address, and never fills them from the customer', async () => {
+    await expect(createDelivery(actor, note({ shipperName: '' }))).rejects.toThrow(/Shipper name is required/)
+    await expect(createDelivery(actor, note({ shipperAddress: '  ' }))).rejects.toThrow(/Shipper address is required/)
+    await expect(createDelivery(actor, note({ consigneeName: '' }))).rejects.toThrow(/Consignee name is required/)
+    await expect(createDelivery(actor, note({ consigneeAddress: '' }))).rejects.toThrow(/Consignee address is required/)
+    await expect(createDelivery(actor, note({ shipperEmail: 'not an email' }))).rejects.toThrow(/Shipper email is not a valid address/)
+    await expect(createDelivery(actor, note({ consigneePhone: 'call me' }))).rejects.toThrow(/Consignee phone may hold only digits/)
+    // The database repeats the rule for anything that does not come through the application.
+    await expect(sql`select delivery_create(${actor}, ${sql.json({ customer_id: customer, quotation_id: quotation, shipper_name: 'X', shipper_address: '', consignee_name: 'Y', consignee_address: 'Z', delivery_date: '2026-10-30', items: [{ description: 'a', quantity: '1', unit: 'pcs', remarks: '' }] })})`).rejects.toThrow(/shipper/i)
+  })
+
+  it('prints both parties in full on the delivery note and on the proof of delivery, long addresses wrapped, with the references and the QR links intact', async () => {
+    const d = await issued(parties)
+    const text = squash((await pdfPages(await deliveryNotePdf(d.id, BASE))).join(' '))
+    for (const part of ['SHIPPER / PENGIRIM', 'CONSIGNEE / PENERIMA', 'PT Sumber Barang Nusantara', 'Jl. Raya Industri No. 12', 'Gerbang belakang, hubungi satpam', 'Rina Marlina', '+62 21 8900 111', 'logistik@sumber.example',
+      'CV Tujuan Makmur', 'Jl. Pelabuhan Raya No. 77', 'Jakarta Utara, DKI Jakarta 14310', 'Joko Santoso', '+62 21 4300 222', 'gudang@tujuan.example', 'SHIPMENT DETAILS', 'PT Pengirim', 'Cartons of parts']) {
+      expect(text, part).toContain(part)
+    }
+    expect(await links(await deliveryNotePdf(d.id, BASE))).toContain(`${BASE}/pod/${d.captureToken}`)
+    await submitProof(proof(d.captureToken), BASE)
+    const pod = squash((await pdfPages(await podPdf(d.id, BASE))).join(' '))
+    for (const part of ['SHIPPER / PENGIRIM', 'PT Sumber Barang Nusantara', 'Jl. Raya Industri No. 12', 'CV Tujuan Makmur', 'Jl. Pelabuhan Raya No. 77', 'Siti Aminah', 'Asep Kurniawan']) expect(pod, part).toContain(part)
+  })
+
+  it('leaves a note written before shippers were kept readable, says so, and invents nothing', async () => {
+    const [row] = await sql`insert into deliveries (number, status, customer_id, quotation_id, consignee_name, consignee_address, delivery_date, capture_token, view_token)
+      values ('DLV-LEGACY-1', 'issued', ${customer}, ${quotation}, 'PT Lama', 'Jl. Lama 1', '2026-09-01', ${'L' + randomBytes(40).toString('hex')}, ${'V' + randomBytes(40).toString('hex')}) returning id`
+    await sql`insert into delivery_items (delivery_id, position, description, quantity, unit) values (${row.id}, 0, 'Old cargo', '3', 'ctn')`
+    const d = (await deliveryBy('id', row.id))!
+    expect(d).toMatchObject({ shipperName: '', shipperAddress: '', consigneeName: 'PT Lama' })
+    expect(squash((await pdfPages(await deliveryNotePdf(row.id, BASE))).join(' '))).toContain('Not recorded on this delivery note')
+    await submitProof(proof(d.captureToken), BASE)                                                                   // it can still be received: the table rule does not block a note without a shipper
+    expect((await deliveryBy('id', row.id))!.status).toBe('delivered')
+    expect(await podPdf(row.id, BASE)).toBeInstanceOf(Uint8Array)
+  })
+
+  it('does not rewrite the parties of a note once it is issued: it must be voided and written again', async () => {
+    const d = await issued(parties)
+    await expect(updateDelivery(actor, d.id, note({ ...parties, shipperName: 'Someone else' }))).rejects.toMatchObject({ status: 409 })
+    expect((await deliveryBy('id', d.id))!.shipperName).toBe('PT Sumber Barang Nusantara')
+    const draft = await createDelivery(actor, note(parties))
+    await updateDelivery(actor, draft, note({ ...parties, shipperName: 'PT Sumber Baru', shipperAddress: 'Jl. Baru 3, Cikarang' }))
+    expect(await deliveryBy('id', draft)).toMatchObject({ shipperName: 'PT Sumber Baru', shipperAddress: 'Jl. Baru 3, Cikarang' })
   })
 })

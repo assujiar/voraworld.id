@@ -1,6 +1,7 @@
 import { businessDateTime } from '../dates'
 import { deliveryBy, proofEvidence, proofsOf, type DeliveryView } from '../delivery/deliveries'
 import { ActionError } from '../errors'
+import { one } from '../data'
 import { settingMap } from '../settings'
 import { renderDeliveryNote, renderPod } from './delivery'
 import type { DeliveryNoteData, Issuer } from './types'
@@ -10,8 +11,16 @@ async function issuerOf(): Promise<Issuer> {
   return { legalName: s.legal_name || 'PT Satu Arah International', address: s.address || '', email: s.email || 'info@voraworld.id', taxId: (s.tax_id || '').trim() }
 }
 
-const noteData = (d: DeliveryView, captureUrl: string): DeliveryNoteData => ({
-  number: d.number, status: d.status, deliveryDate: d.deliveryDate,
+/** The names of the customer and quotation a note was made under, for its reference line. */
+async function references(d: DeliveryView): Promise<{ customerName: string; quotationNumber: string }> {
+  const customer = d.customerId ? await one('customers', (q) => q.eq('id', d.customerId!), 'name') : undefined
+  const quotation = d.quotationId ? await one('quotations', (q) => q.eq('id', d.quotationId!), 'number') : undefined
+  return { customerName: String(customer?.name ?? ''), quotationNumber: String(quotation?.number ?? '') }
+}
+
+const noteData = (d: DeliveryView, captureUrl: string, ref: { customerName: string; quotationNumber: string }): DeliveryNoteData => ({
+  number: d.number, status: d.status, deliveryDate: d.deliveryDate, customerName: ref.customerName, quotationNumber: ref.quotationNumber,
+  shipperName: d.shipperName, shipperAddress: d.shipperAddress, shipperContact: d.shipperContact, shipperPhone: d.shipperPhone, shipperEmail: d.shipperEmail,
   consigneeName: d.consigneeName, consigneeAddress: d.consigneeAddress, consigneeContact: d.consigneeContact, consigneePhone: d.consigneePhone, consigneeEmail: d.consigneeEmail,
   origin: d.origin, destination: d.destination, shipmentReference: d.shipmentReference, poNumber: d.poNumber, carrier: d.carrier, vehicle: d.vehicle, vehiclePlate: d.vehiclePlate,
   driverName: d.driverName, driverPhone: d.driverPhone, notes: d.notes, items: d.items, captureUrl,
@@ -21,7 +30,7 @@ const noteData = (d: DeliveryView, captureUrl: string): DeliveryNoteData => ({
 export async function deliveryNotePdf(id: number, baseUrl: string): Promise<Uint8Array> {
   const d = await deliveryBy('id', id)
   if (!d) throw new ActionError('Delivery note not found', 404)
-  return renderDeliveryNote(noteData(d, `${baseUrl.replace(/\/+$/, '')}/pod/${d.captureToken}`), await issuerOf())
+  return renderDeliveryNote(noteData(d, `${baseUrl.replace(/\/+$/, '')}/pod/${d.captureToken}`, await references(d)), await issuerOf())
 }
 
 /** The proof of delivery as a PDF: the live proof, or the latest rejected one (marked) when none is live. */
@@ -33,7 +42,7 @@ export async function podPdf(id: number, baseUrl: string): Promise<Uint8Array> {
   if (!proof) throw new ActionError('This delivery has no recorded proof of delivery', 409)
   const signature = await proofEvidence(proof, 'signature')
   const photos = await Promise.all(proof.photos.map(async (_photo, i) => (await proofEvidence(proof, `photo-${i + 1}`))!.bytes))
-  const { captureUrl: _none, ...note } = noteData(d, '')
+  const { captureUrl: _none, ...note } = noteData(d, '', await references(d))
   return renderPod({
     ...note, viewUrl: `${baseUrl.replace(/\/+$/, '')}/pod/view/${d.viewToken}`,
     proof: {
