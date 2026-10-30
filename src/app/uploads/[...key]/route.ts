@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { isProd } from '@/server/env'
+import { isProd, supabaseUrl } from '@/server/env'
 import { localRoot } from '@/server/storage'
 
 export const dynamic = 'force-dynamic'
@@ -10,7 +10,7 @@ const TYPES: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg
 export async function GET(_req: Request, ctx: { params: Promise<{ key: string[] }> }) {
   const key = (await ctx.params).key.join('/')
   const ext = key.slice(key.lastIndexOf('.')).toLowerCase()
-  if (isProd() || process.env.SUPABASE_URL || !/^[A-Za-z0-9_-]+\.[a-z0-9]+$/.test(key) || !TYPES[ext]) return new Response('Not found', { status: 404 })
+  if (isProd() || supabaseUrl() || !/^[A-Za-z0-9_-]+\.[a-z0-9]+$/.test(key) || !TYPES[ext]) return new Response('Not found', { status: 404 })
   try {
     const bytes = await readFile(join(localRoot(), 'media', key))
     return new Response(bytes, { headers: { 'content-type': TYPES[ext], 'x-content-type-options': 'nosniff', 'cache-control': 'public, max-age=3600' } })

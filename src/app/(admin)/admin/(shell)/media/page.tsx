@@ -1,9 +1,9 @@
 import { uploadMediaAction } from '@/actions/content'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 
 export default async function Media({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = await sql`select id, filename, url, alt, size from media order by id desc limit 80`
+  const rows = await many('media', (q) => q.order('id', { ascending: false }), 'id,filename,url,alt,size', 80)
   return (
     <AdminPage heading="Media library" sp={await searchParams}>
       <div className="admin-panel">

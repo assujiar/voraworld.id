@@ -1,12 +1,11 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many, searchClause } from '@/server/data'
 
 export default async function Customers({ searchParams }: { searchParams: Promise<Notices & { q?: string }> }) {
   const sp = await searchParams
   const q = (sp.q ?? '').trim().slice(0, 120)
-  const like = '%' + q.replace(/[\\%_]/g, (c) => '\\' + c) + '%'
-  const rows = await sql`select id, name, email, currency, terms_days, public_code from customers
-    where (${q} = '' or name ilike ${like} or email ilike ${like} or public_code ilike ${like}) order by id desc limit 300`
+  const clause = await searchClause(q, ['name', 'email', 'public_code'])
+  const rows = await many('customers', (f) => (clause ? f.or(clause) : f).order('id', { ascending: false }), 'id,name,email,currency,terms_days,public_code', 300)
   return (
     <AdminPage heading="Customers" sp={sp} newHref="/admin/customers/new" newLabel="New customer">
       <div className="admin-panel">

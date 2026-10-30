@@ -1,6 +1,5 @@
-import { hashPassword } from '../../src/server/auth/password'
-import { startTestServer } from '../setup/server'
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from './credentials'
+import { addPortalAccount, startTestServer } from '../setup/server'
+import { ADMIN_EMAIL, ADMIN_PASSWORD, RESET_EMAIL, RESET_PASSWORD } from './credentials'
 
 /**
  * One production-mode server and one fresh database for the whole browser run. PUBLIC_BASE_URL is https so that links in
@@ -12,8 +11,9 @@ export default async function globalSetup() {
     port,
     prefix: 'vora_e2e',
     publicBaseUrl: `https://localhost:${port}`,
-    seed: async (db) => {
-      await db`insert into users (email, password_hash, role) values (${ADMIN_EMAIL}, ${await hashPassword(ADMIN_PASSWORD)}, 'admin')`
+    seed: async (db, auth) => {
+      await addPortalAccount(db, auth, ADMIN_EMAIL, ADMIN_PASSWORD)
+      await addPortalAccount(db, auth, RESET_EMAIL, RESET_PASSWORD)
       await db`insert into leads (type, name, company, email, message, reference, public_code, status, mode, origin, destination)
                values ('RFQ', 'Dewi Lestari', 'PT Contoh Maju', 'dewi@example.invalid', 'Need FCL quote', 'RFQ-VORA-L000000AB12-202610-00001', 'L000000AB12', 'new', 'sea-export', 'Jakarta', 'Rotterdam')`
       await db`insert into articles (title, slug, excerpt, body, status, locale, category)
@@ -27,5 +27,6 @@ export default async function globalSetup() {
   })
   process.env.E2E_BASE_URL = server.base
   process.env.E2E_DATABASE_URL = server.databaseUrl
+  process.env.E2E_AUTH_URL = server.auth.url
   return () => server.stop()
 }

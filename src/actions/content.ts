@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { ActionError, adminRun } from '@/server/action'
 import { recordAudit } from '@/server/audit'
 import { addSection, cleanPath, restoreArticle, restorePage, saveArticle, savePage, saveSection } from '@/server/cms'
-import { sql } from '@/server/db'
+import { insert, one, remove, update } from '@/server/data'
 import { maxUploadBytes } from '@/server/env'
 import { int, rawStr, str } from '@/server/http'
 import { detectImage } from '@/server/images'
@@ -69,8 +69,8 @@ export async function addFaqAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
     const q = str(form, 'question', 400), a = str(form, 'answer', 4000)
     if (!q || !a) throw new ActionError('Question and answer are required')
-    const [row] = await sql`insert into faqs (question, answer, visible) values (${q}, ${a}, true) returning id`
-    await recordAudit(sql, user.id, 'create', 'faq', row.id as number)
+    const [row] = await insert('faqs', { question: q, answer: a, visible: true })
+    await recordAudit(user.id, 'create', 'faq', row.id as number)
     return { to: '/admin/faq', notice: 'FAQ published' }
   })
 }
@@ -78,11 +78,10 @@ export async function addFaqAction(form: FormData) {
 export async function updateFaqAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
     const id = int(form, 'record')
-    const [x] = await sql`select id from faqs where id = ${id}`
-    if (!x) throw new ActionError('FAQ not found', 404)
-    if (form.get('delete') === '1') await sql`delete from faqs where id = ${id}`
-    else await sql`update faqs set question = ${str(form, 'question', 400)}, answer = ${str(form, 'answer', 4000)} where id = ${id}`
-    await recordAudit(sql, user.id, 'update', 'faq', id)
+    if (!(await one('faqs', (f) => f.eq('id', id), 'id'))) throw new ActionError('FAQ not found', 404)
+    if (form.get('delete') === '1') await remove('faqs', (f) => f.eq('id', id))
+    else await update('faqs', { question: str(form, 'question', 400), answer: str(form, 'answer', 4000) }, (f) => f.eq('id', id))
+    await recordAudit(user.id, 'update', 'faq', id)
     return { to: '/admin/faq', notice: 'FAQ updated' }
   })
 }
@@ -93,8 +92,8 @@ export async function addNavigationAction(form: FormData) {
     if (isAdminNavigation(href)) throw new ActionError('Internal admin routes cannot be added to public navigation')
     const label = str(form, 'label', 100)
     if (!label) throw new ActionError('A label is required')
-    const [row] = await sql`insert into navigation_items (label, href, location, position, visible) values (${label}, ${href}, ${form.get('location') === 'footer' ? 'footer' : 'header'}, ${int(form, 'position', 50)}, true) returning id`
-    await recordAudit(sql, user.id, 'create', 'navigation', row.id as number)
+    const [row] = await insert('navigation_items', { label, href, location: form.get('location') === 'footer' ? 'footer' : 'header', position: int(form, 'position', 50), visible: true })
+    await recordAudit(user.id, 'create', 'navigation', row.id as number)
     return { to: '/admin/navigation', notice: 'Navigation item saved' }
   })
 }
@@ -102,9 +101,9 @@ export async function addNavigationAction(form: FormData) {
 export async function deleteNavigationAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
     const id = int(form, 'record')
-    const [x] = await sql`delete from navigation_items where id = ${id} returning id`
+    const [x] = await remove('navigation_items', (f) => f.eq('id', id))
     if (!x) throw new ActionError('Not found', 404)
-    await recordAudit(sql, user.id, 'delete', 'navigation', id)
+    await recordAudit(user.id, 'delete', 'navigation', id)
     return { to: '/admin/navigation', notice: 'Navigation removed' }
   })
 }
@@ -127,8 +126,8 @@ export async function uploadMediaAction(form: FormData) {
       if (e instanceof StorageError) throw new ActionError(e.message, e.status)
       throw e
     }
-    const [row] = await sql`insert into media (filename, storage_key, url, alt, mime, size) values (${file.name.split(/[\\/]/).pop()!.slice(0, 250) || 'upload'}, ${key}, ${mediaUrl(key)}, ${alt}, ${type.mime}, ${bytes.length}) returning id`
-    await recordAudit(sql, user.id, 'upload', 'media', row.id as number)
+    const [row] = await insert('media', { filename: file.name.split(/[\\/]/).pop()!.slice(0, 250) || 'upload', storage_key: key, url: mediaUrl(key), alt, mime: type.mime, size: bytes.length })
+    await recordAudit(user.id, 'upload', 'media', row.id as number)
     return { to: '/admin/media', notice: 'Image uploaded' }
   })
 }

@@ -2,21 +2,22 @@ import { notFound } from 'next/navigation'
 import { cancelPaymentAction, confirmPaymentAction, ensurePrepaymentAction, invoiceStatusAction, sendInvoiceAction } from '@/actions/finance'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { RecordPaymentForm } from '@/components/admin/RecordPaymentForm'
-import { sql } from '@/server/db'
+import { many, one, withRelated, type Row } from '@/server/data'
 import { today } from '@/server/dates'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
 
 export default async function InvoiceDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
-  const [inv] = id > 0 && id < 2_147_483_647 ? await sql`select i.*, c.name as customer_name, c.email as customer_email, c.address as customer_address, c.tax_id as customer_tax_id from invoices i join customers c on c.id = i.customer_id where i.id = ${id}` : []
+  const invoice = id > 0 && id < 2_147_483_647 ? await one('invoices', (q) => q.eq('id', id)) : undefined
+  const [inv] = invoice ? await withRelated([invoice], 'customers', 'customerId', { name: 'customerName', email: 'customerEmail', address: 'customerAddress', tax_id: 'customerTaxId' }) : []
   if (!inv) notFound()
   const cur = inv.currency as string
-  const items = await sql`select * from invoice_items where invoice_id = ${id} order by id`
-  const banks = await sql`select * from invoice_bank_instructions where invoice_id = ${id} order by position`
-  const payments = await sql`select p.*, r.id as receipt_id, r.number as receipt_number from payments p left join receipts r on r.payment_id = p.id where p.invoice_id = ${id} order by p.id desc`
-  const [prepayment] = await sql`select id, number, status, stamp_required from prepayment_receipts where invoice_id = ${id} order by (status = 'void'), id desc limit 1`
-  const accounts = (await sql`select id, bank_name, account_number from bank_accounts where active and currency = ${cur} order by position`).map((b) => ({ id: b.id as number, label: `${b.bankName} · ${b.accountNumber}` }))
+  const items = await many('invoice_items', (q) => q.eq('invoice_id', id).order('id'))
+  const banks = await many('invoice_bank_instructions', (q) => q.eq('invoice_id', id).order('position'))
+  const payments = await paymentsWithReceipts(id)
+  const prepayment = (await many('prepayment_receipts', (q) => q.eq('invoice_id', id), 'id,number,status,stamp_required')).sort((a, b) => Number(a.status === 'void') - Number(b.status === 'void') || (b.id as number) - (a.id as number))[0]
+  const accounts = (await many('bank_accounts', (q) => q.eq('active', true).eq('currency', cur).order('position'), 'id,bank_name,account_number')).map((b) => ({ id: b.id as number, label: `${b.bankName} · ${b.accountNumber}` }))
   const here = `/admin/invoices/${id}`
   const status = inv.status as string
   const open = ['issued', 'partially_paid'].includes(status)
@@ -96,4 +97,15 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
       </div>
     </AdminPage>
   )
+}
+
+/** Each payment of the invoice with the receipt it produced, if any. */
+async function paymentsWithReceipts(invoiceId: number): Promise<Row[]> {
+  const payments = await many('payments', (q) => q.eq('invoice_id', invoiceId).order('id', { ascending: false }))
+  if (!payments.length) return payments
+  const receipts = await many('receipts', (q) => q.in('payment_id', payments.map((p) => p.id as number)), 'id,number,payment_id')
+  return payments.map((p) => {
+    const r = receipts.find((x) => x.paymentId === p.id)
+    return { ...p, receiptId: r?.id, receiptNumber: r?.number }
+  })
 }

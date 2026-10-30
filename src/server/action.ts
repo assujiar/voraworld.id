@@ -1,8 +1,7 @@
-import { cookies, headers } from 'next/headers'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { assertSameOrigin } from './auth/csrf'
-import { userFromToken, assertAdmin, type SessionUser } from './auth/guard'
-import { SESSION_COOKIE } from './auth/session'
+import { currentUser, assertAdmin, type SessionUser } from './auth/guard'
 import { ActionError } from './errors'
 import { HttpError } from './http'
 
@@ -43,7 +42,7 @@ async function execute(form: FormData, back: string, run: () => Promise<Done | v
  */
 export async function adminRun(form: FormData, fn: (c: AdminCtx) => Promise<Done | void>): Promise<void> {
   assertSameOrigin(await headers())
-  const user = await userFromToken((await cookies()).get(SESSION_COOKIE)?.value)
+  const user = await currentUser()
   if (!user) redirect('/admin/login')
   assertAdmin(user)
   await execute(form, '/admin', () => fn({ form, user }))
@@ -70,7 +69,7 @@ function typedValues(form: FormData): Record<string, string | string[]> {
  */
 export async function adminRunForm(form: FormData, fn: (c: AdminCtx) => Promise<Done>): Promise<FormState> {
   assertSameOrigin(await headers())
-  const user = await userFromToken((await cookies()).get(SESSION_COOKIE)?.value)
+  const user = await currentUser()
   if (!user) redirect('/admin/login')
   assertAdmin(user)
   let result: Done

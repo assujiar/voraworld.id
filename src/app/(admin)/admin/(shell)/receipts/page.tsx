@@ -1,12 +1,13 @@
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many, withRelated } from '@/server/data'
 import { money } from '@/server/money'
 
 export default async function Receipts({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = await sql`select r.id, r.number, r.status, r.created_at, r.stamp_required, i.id as invoice_id, i.number as invoice_number, i.currency, p.amount_minor
-    from receipts r join invoices i on i.id = r.invoice_id join payments p on p.id = r.payment_id order by r.id desc limit 300`
-  const pre = await sql`select p.id, p.number, p.status, p.created_at, p.stamp_required, p.amount_minor, p.currency, i.id as invoice_id, i.number as invoice_number
-    from prepayment_receipts p join invoices i on i.id = p.invoice_id order by p.id desc limit 300`
+  const r0 = await many('receipts', (f) => f.order('id', { ascending: false }), 'id,number,status,created_at,stamp_required,invoice_id,payment_id', 300)
+  const r1 = await withRelated(r0, 'invoices', 'invoiceId', { number: 'invoiceNumber', currency: 'currency' })
+  const rows = await withRelated(r1, 'payments', 'paymentId', { amount_minor: 'amountMinor' })
+  const p0 = await many('prepayment_receipts', (f) => f.order('id', { ascending: false }), 'id,number,status,created_at,stamp_required,amount_minor,currency,invoice_id', 300)
+  const pre = await withRelated(p0, 'invoices', 'invoiceId', { number: 'invoiceNumber' })
   return (
     <AdminPage heading="Receipts" sp={await searchParams}>
       <div className="admin-panel">

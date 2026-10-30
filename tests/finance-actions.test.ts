@@ -8,7 +8,7 @@ import {
   cancelPaymentAction, confirmPaymentAction, createBankAction, createInvoiceAction, createQuotationAction, invoiceStatusAction, quotationStatusAction, recordPaymentAction,
   requestApprovalAction, reviewApprovalAction, saveCustomerAction, sendInvoiceAction, updateBankAction, uploadStampAction, voidReceiptAction,
 } from '@/actions/finance'
-import { sql } from '@/server/db'
+import { sql } from './helpers/db'
 import { saveMailConfig } from '@/server/mail/config'
 import { setSender } from '@/server/mail/transport'
 import { today } from '@/server/dates'

@@ -8,7 +8,7 @@ export const STORAGE_KEY = 'sb_secret_httpTestKey_0123456789abcdef'
  * a new-style `sb_secret_` key is accepted in `apikey` only (never as a Bearer token: "Invalid JWT"), private buckets need
  * the key, only the media bucket is publicly readable, and an upload never overwrites (`x-upsert: false`).
  */
-export function fakeStorage(): Promise<Server> {
+export function fakeStorage(secret: string = STORAGE_KEY): Promise<Server> {
   const objects = new Map<string, { type: string; body: Buffer }>()
   const server = createServer((req, res) => {
     const reply = (status: number, body: string, type = 'application/json') => { res.writeHead(status, { 'content-type': type }); res.end(body) }
@@ -21,7 +21,7 @@ export function fakeStorage(): Promise<Server> {
       return o ? reply(200, o.body as unknown as string, o.type) : reply(400, '{"message":"Bucket not found"}')
     }
     if (bearer && !bearer.startsWith('eyJ')) return reply(401, '{"message":"Invalid JWT"}')
-    if (req.headers.apikey !== STORAGE_KEY) return reply(401, '{"message":"Invalid API key"}')
+    if (req.headers.apikey !== secret) return reply(401, '{"message":"Invalid API key"}')
     if (req.method === 'POST') {
       const chunks: Buffer[] = []
       req.on('data', (c) => chunks.push(c))
@@ -32,6 +32,7 @@ export function fakeStorage(): Promise<Server> {
       })
       return
     }
+    if (req.method === 'DELETE') { objects.delete(`${bucket}/${key}`); return reply(200, '{"message":"Successfully deleted"}') }
     const o = objects.get(`${bucket}/${key}`)
     return o ? reply(200, o.body as unknown as string, o.type) : reply(404, '{"message":"Object not found"}')
   })

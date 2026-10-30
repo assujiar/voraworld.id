@@ -1,20 +1,20 @@
 import { notFound } from 'next/navigation'
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
 import { CustomerForm } from '@/components/admin/CustomerForm'
-import { sql } from '@/server/db'
+import { many, one } from '@/server/data'
 import { money } from '@/server/money'
 import type { CustomersRow } from '@/server/schema'
 import { routeId } from '@/server/http'
 
 export default async function EditCustomer({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
-  const [c] = id > 0 && id < 2_147_483_647 ? await sql`select * from customers where id = ${id}` : []
+  const c = id > 0 && id < 2_147_483_647 ? await one('customers', (f) => f.eq('id', id)) : undefined
   if (!c) notFound()
-  const quotations = await sql`select id, number, status, total_minor, currency from quotations where customer_id = ${id} order by id desc limit 50`
-  const invoices = await sql`select id, number, status, total_minor, outstanding_minor, currency, issued_at from invoices where customer_id = ${id} order by id desc limit 50`
+  const quotations = await many('quotations', (f) => f.eq('customer_id', id).order('id', { ascending: false }), 'id,number,status,total_minor,currency', 50)
+  const invoices = await many('invoices', (f) => f.eq('customer_id', id).order('id', { ascending: false }), 'id,number,status,total_minor,outstanding_minor,currency,issued_at', 50)
   return (
     <AdminPage heading="Edit customer" sp={await searchParams}>
-      <CustomerForm customer={c as CustomersRow} />
+      <CustomerForm customer={c as unknown as CustomersRow} />
       <div className="dashboard-split">
         <div className="admin-panel"><h3>Quotations</h3>
           <table><thead><tr><th>Number</th><th>Status</th><th>Total</th></tr></thead><tbody>

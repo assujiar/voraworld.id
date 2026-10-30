@@ -1,8 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { sql } from '@/server/db'
+import { sql } from './helpers/db'
 import { act, createUser, sessionFor } from './helpers/actions'
+import { forgedSessions, revokeSession } from './helpers/auth'
 
 /**
  * Every Server Action is a public HTTP endpoint. This file proves, for ALL actions found in src/actions/,
@@ -13,7 +14,7 @@ const DIR = join(process.cwd(), 'src/actions')
 const FILES = readdirSync(DIR).filter((f) => f.endsWith('.ts')).sort()
 
 /** Actions that visitors may call without signing in. Adding one here is a deliberate, reviewed decision. */
-const PUBLIC_ACTIONS = new Set(['login', 'logout', 'submitContact', 'submitQuote', 'submitApprovalAction'])
+const PUBLIC_ACTIONS = new Set(['login', 'logout', 'forgotPassword', 'submitContact', 'submitQuote', 'submitApprovalAction'])
 
 interface Found { file: string; name: string; body: string }
 const found: Found[] = []
@@ -125,23 +126,27 @@ describe('every admin action, executed', () => {
     expect(await fingerprint()).toEqual(before)
   })
 
-  it('refuses a deactivated account and a session issued before a password change', async () => {
+  it('refuses a deactivated account and a session that Supabase Auth has ended', async () => {
     const u = await createUser('guard-stale@example.invalid', 'admin')
     const token = await sessionFor(u)
     await sql`update users set active = false where id = ${u.id}`
     const before = await fingerprint()
     for (const a of adminActions) expect((await act(a.fn, formFor(a.body), { as: token })).redirect, `${a.name} (deactivated)`).toBe('/admin/login')
     expect(await fingerprint()).toEqual(before)
-    await sql`update users set active = true, password_hash = ${'pbkdf2_sha256$310000$c2FsdA$' + 'a'.repeat(43)} where id = ${u.id}`
-    const afterReset = await fingerprint()
-    for (const a of adminActions) expect((await act(a.fn, formFor(a.body), { as: token })).redirect, `${a.name} (stale)`).toBe('/admin/login')
-    expect(await fingerprint()).toEqual(afterReset)
+    await sql`update users set active = true where id = ${u.id}`
+    await revokeSession(token)
+    const afterRevoke = await fingerprint()
+    for (const a of adminActions) expect((await act(a.fn, formFor(a.body), { as: token })).redirect, `${a.name} (signed out)`).toBe('/admin/login')
+    expect(await fingerprint()).toEqual(afterRevoke)
   })
 
-  it('refuses a forged session cookie', async () => {
+  it('refuses a forged or tampered session', async () => {
     const before = await fingerprint()
-    for (const token of ['', 'x', 'a.b', 'eyJpZCI6MSwicm9sZSI6ImFkbWluIn0.AAAA', admin.slice(0, -2) + 'AA']) {
-      for (const a of adminActions) expect((await act(a.fn, formFor(a.body), { as: token })).redirect, `${a.name} (${token.slice(0, 10)})`).toBe('/admin/login')
+    for (const [kind, session] of Object.entries(forgedSessions(admin))) {
+      for (const a of adminActions) expect((await act(a.fn, formFor(a.body), { as: session })).redirect, `${a.name} (${kind})`).toBe('/admin/login')
+    }
+    for (const session of ['[]', '[["sb-127-auth-token","x"]]']) {
+      for (const a of adminActions) expect((await act(a.fn, formFor(a.body), { as: session })).redirect, `${a.name} (${session})`).toBe('/admin/login')
     }
     expect(await fingerprint()).toEqual(before)
   })

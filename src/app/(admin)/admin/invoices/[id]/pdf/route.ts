@@ -1,4 +1,4 @@
-import { sql } from '@/server/db'
+import { one } from '@/server/data'
 import { publicBaseUrl } from '@/server/env'
 import { requireUser } from '@/server/auth/guard'
 import { ActionError } from '@/server/errors'
@@ -9,9 +9,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     await requireUser(request)
     const id = routeId((await params).id)
-    const [doc] = id > 0 && id < 2_147_483_647 ? await sql`select number from invoices where id = ${id}` : []
+    const doc = id > 0 && id < 2_147_483_647 ? await one('invoices', (q) => q.eq('id', id), 'number') : undefined
     if (!doc) throw new ActionError('Not found', 404)
-    return pdfResponse(await renderDocumentPdf(sql, 'invoice', id, publicBaseUrl()), `${doc.number}.pdf`)
+    return pdfResponse(await renderDocumentPdf('invoice', id, publicBaseUrl()), `${doc.number}.pdf`)
   } catch (e) {
     return errorResponse(e)
   }

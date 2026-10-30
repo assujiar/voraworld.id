@@ -1,9 +1,8 @@
 import { spawnSync } from 'node:child_process'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { hashPassword } from '@/server/auth/password'
-import { SESSION_COOKIE, createSessionToken } from '@/server/auth/session'
 import { Client } from './client'
+import { account, browserFor } from './accounts'
 import { seedFinance, type Seed } from './fixtures'
 
 /** Documents, QR verification, customer links and the cron endpoint, through the real production server. */
@@ -14,11 +13,7 @@ let admin: Client
 const anon = new Client()
 
 beforeAll(async () => {
-  process.env.SESSION_SECRET = process.env.HTTP_SESSION_SECRET
-  const hash = await hashPassword('Correct-horse-battery-9')
-  const [u] = await db`insert into users (email, password_hash, role) values ('finance-http@example.invalid', ${hash}, 'admin') on conflict (email) do update set active = true returning id`
-  admin = new Client()
-  admin.cookies.set(SESSION_COOKIE, await createSessionToken({ id: u.id as number, passwordHash: hash, role: 'admin' }))
+  admin = await browserFor(await account(db, 'finance-http@example.invalid', 'admin'))
   seed = await seedFinance()
 })
 

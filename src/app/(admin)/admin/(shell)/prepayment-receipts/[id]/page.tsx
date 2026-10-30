@@ -1,15 +1,16 @@
 import { notFound } from 'next/navigation'
 import { sendPrepaymentAction, uploadPrepaymentStampAction, voidPrepaymentAction } from '@/actions/finance'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { one, withRelated } from '@/server/data'
 import { maxUploadBytes } from '@/server/env'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
 
 export default async function PrepaymentReceiptDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
-  const [r] = id > 0 && id < 2_147_483_647 ? await sql`select p.*, i.number as invoice_number, i.status as invoice_status, c.name as customer_name, c.email as customer_email
-    from prepayment_receipts p join invoices i on i.id = p.invoice_id join customers c on c.id = i.customer_id where p.id = ${id}` : []
+  const found = id > 0 && id < 2_147_483_647 ? await one('prepayment_receipts', (q) => q.eq('id', id)) : undefined
+  const withInvoice = found ? await withRelated([found], 'invoices', 'invoiceId', { number: 'invoiceNumber', status: 'invoiceStatus', customer_id: 'customerId' }) : []
+  const [r] = await withRelated(withInvoice, 'customers', 'customerId', { name: 'customerName', email: 'customerEmail' })
   if (!r) notFound()
   const here = `/admin/prepayment-receipts/${id}`
   const status = r.status as string

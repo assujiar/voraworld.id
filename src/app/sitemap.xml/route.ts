@@ -1,5 +1,5 @@
 import { CORE_PAGES, LOCALES, serviceGroups } from '@/content'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 import { absoluteUrl, getSettings } from '@/server/site'
 
 export const dynamic = 'force-dynamic'
@@ -20,8 +20,8 @@ export async function GET() {
       for (const mode of group.modes) paths.add(`/${loc}/services/${slug}/${mode}`)
     }
   }
-  for (const a of await sql`select locale, slug from articles where status = 'published'`) paths.add(`/${a.locale}/insights/${a.slug}`)
-  for (const p of await sql`select locale, slug from pages where status = 'published'`) if (!CORE_SLUGS.has(p.slug as string)) paths.add(`/${p.locale}/${p.slug}`)
+  for (const a of await many('articles', (q) => q.eq('status', 'published'), 'locale,slug')) paths.add(`/${a.locale}/insights/${a.slug}`)
+  for (const p of await many('pages', (q) => q.eq('status', 'published'), 'locale,slug')) if (!CORE_SLUGS.has(p.slug as string)) paths.add(`/${p.locale}/${p.slug}`)
   const xml = '<?xml version="1.0" encoding="utf-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
     [...paths].sort().map((p) => `<url><loc>${esc(absoluteUrl(p))}</loc></url>`).join('') + '</urlset>'
   return new Response(xml, { headers: { 'content-type': 'application/xml; charset=utf-8' } })

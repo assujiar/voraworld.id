@@ -1,16 +1,17 @@
 import { notFound } from 'next/navigation'
 import { uploadStampAction, voidReceiptAction } from '@/actions/finance'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { one, withRelated } from '@/server/data'
 import { maxUploadBytes } from '@/server/env'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
 
 export default async function ReceiptDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
-  const [r] = id > 0 && id < 2_147_483_647 ? await sql`select r.*, i.number as invoice_number, i.currency, i.total_minor, i.outstanding_minor, c.name as customer_name,
-      p.amount_minor, p.date as payment_date, p.method, p.reference, p.confirmed_at
-    from receipts r join invoices i on i.id = r.invoice_id join customers c on c.id = i.customer_id join payments p on p.id = r.payment_id where r.id = ${id}` : []
+  const found = id > 0 && id < 2_147_483_647 ? await one('receipts', (q) => q.eq('id', id)) : undefined
+  const withInvoice = found ? await withRelated([found], 'invoices', 'invoiceId', { number: 'invoiceNumber', currency: 'currency', total_minor: 'totalMinor', outstanding_minor: 'outstandingMinor', customer_id: 'customerId' }) : []
+  const withCustomer = await withRelated(withInvoice, 'customers', 'customerId', { name: 'customerName' })
+  const [r] = await withRelated(withCustomer, 'payments', 'paymentId', { amount_minor: 'amountMinor', date: 'paymentDate', method: 'method', reference: 'reference', confirmed_at: 'confirmedAt' })
   if (!r) notFound()
   const cur = r.currency as string
   const here = `/admin/receipts/${id}`

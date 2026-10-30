@@ -1,7 +1,7 @@
 import { saveDocumentAction } from '@/actions/documents'
 import { ActionForm, FCheckbox, FInput, FSelect, FTextarea, Submit } from '@/components/admin/ActionForm'
 import { LANGUAGE_NAMES, type DocumentType, type Lang } from '@/content/document-types'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 import { today } from '@/server/dates'
 import { money } from '@/server/money'
 
@@ -16,9 +16,9 @@ export interface DocumentFormProps {
 
 /** One form for every document type: the fields, their limits and their starting wording all come from the type. */
 export async function DocumentForm({ type, lang, record, values, documentDate, customerId, invoiceIds }: DocumentFormProps) {
-  const customers = type.family === 'billing' ? [] : await sql`select id, name from customers order by name limit 500`
+  const customers = type.family === 'billing' ? [] : await many('customers', (q) => q.order('name'), 'id,name', 500)
   const open = type.family === 'billing' && customerId
-    ? await sql`select id, number, due_at, currency, outstanding_minor from invoices where customer_id = ${customerId} and status in ('issued', 'partially_paid') and outstanding_minor > 0 order by issued_at, id limit 200`
+    ? await many('invoices', (q) => q.eq('customer_id', customerId).in('status', ['issued', 'partially_paid']).gt('outstanding_minor', 0).order('issued_at').order('id'), 'id,number,due_at,currency,outstanding_minor', 200)
     : []
   const current = (name: string, initial?: string) => values ? (values[name] ?? '') : (initial ?? '')
   return (

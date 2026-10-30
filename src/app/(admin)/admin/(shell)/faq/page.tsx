@@ -1,9 +1,9 @@
 import { addFaqAction, updateFaqAction } from '@/actions/content'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 
 export default async function Faq({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = await sql`select id, question, answer from faqs order by position, id`
+  const rows = await many('faqs', (q) => q.order('position').order('id'), 'id,question,answer')
   return (
     <AdminPage heading="FAQs" sp={await searchParams}>
       <div className="admin-panel">

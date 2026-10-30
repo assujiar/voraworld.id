@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { documentStatusAction } from '@/actions/documents'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { documentType, LANGUAGE_NAMES, longDate, type Lang } from '@/content/document-types'
-import { sql } from '@/server/db'
+import { one, withRelated } from '@/server/data'
 import { publicBaseUrl } from '@/server/env'
 import { routeId } from '@/server/http'
 import { money } from '@/server/money'
@@ -10,13 +10,14 @@ import type { StoredFields } from '@/server/documents/general'
 
 export default async function DocumentDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
-  const [doc] = id > 0 && id < 2_147_483_647 ? await sql`select d.*, c.name as customer_name from documents d left join customers c on c.id = d.customer_id where d.id = ${id}` : []
+  const found = id > 0 && id < 2_147_483_647 ? await one('documents', (q) => q.eq('id', id)) : undefined
+  const [doc] = found ? await withRelated([found], 'customers', 'customerId', { name: 'customerName' }) : []
   const type = doc ? documentType(doc.kind as string) : undefined
   if (!doc || !type) notFound()
   const lang = doc.language as Lang
   const stored = doc.fields as StoredFields
   const status = doc.status as string
-  const [ver] = await sql`select token, revoked from document_verification_tokens where kind = 'document' and document_id = ${id} order by id limit 1`
+  const ver = await one('document_verification_tokens', (q) => q.eq('kind', 'document').eq('document_id', id).order('id'), 'token,revoked')
   const here = `/admin/documents/${id}`
   const shown = type.fields.filter((f) => stored.values[f.name])
   return (

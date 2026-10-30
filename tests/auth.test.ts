@@ -1,101 +1,94 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { sql } from '@/server/db'
-import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from '@/server/auth/password'
-import { createSessionToken, credentialFingerprint, readSessionToken } from '@/server/auth/session'
-import { signToken, verifyToken } from '@/server/crypto'
-import { requireUser, userFromToken } from '@/server/auth/guard'
-import { attemptLogin, LOGIN_MAX_PER_EMAIL, LOGIN_MAX_PER_IP } from '@/server/auth/login'
+import { describe, expect, it } from 'vitest'
+import { sql } from './helpers/db'
+import { requireUser, userFromRequest } from '@/server/auth/guard'
+import { attemptLogin, LOGIN_MAX_PER_EMAIL, LOGIN_MAX_PER_IP, requestPasswordReset } from '@/server/auth/login'
 import { assertSameOrigin } from '@/server/auth/csrf'
 import { ADMIN_ROLE, isAdminRole } from '@/server/auth/roles'
-import { clientIp, parseCookies } from '@/server/auth/cookies'
+import { clientIp } from '@/server/auth/cookies'
+import { MIN_PASSWORD_LENGTH } from '@/server/auth/policy'
 import { HttpError } from '@/server/http'
+import { resetPassword } from '@/actions/auth'
+import { GET as authCallback } from '@/app/(admin)/admin/auth/callback/route'
+import { act, cookiesAfter, createUser, hasSessionCookie, provision, q, sessionFor } from './helpers/actions'
+import { authAdmin, authMails, cookieHeaderOf, ensureAuthAccount, forgedSessions, revokeSession, signInCookies } from './helpers/auth'
 
-// Produced by the previous Python implementation (hashlib.pbkdf2_hmac, 310000 rounds, salt 00..1f).
-const PYTHON_HASH = 'pbkdf2_sha256$310000$000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f$67cd1dea9a72f37ea164bd70a81235aac5af9ddea3c01b57b450e681c7f445b8'
-
-async function makeUser(email: string, role = 'admin', password = 'A-long-test-password-1') {
-  const passwordHash = await hashPassword(password)
-  const [u] = await sql`insert into users (email, password_hash, role) values (${email}, ${passwordHash}, ${role}) returning id`
-  return { id: u.id as number, passwordHash, role }
+/**
+ * Everything here runs against a real Supabase Auth server (GoTrue) in Docker: passwords, sessions, refresh, sign-out and the recovery email are
+ * Supabase's own. What these tests prove is the application's side: who counts as an administrator, what happens to every other kind of account,
+ * and that no session that Supabase Auth would refuse is ever accepted.
+ */
+const req = (as?: string) => new Request('http://x/', { headers: as ? { cookie: cookieHeaderOf(as) } : {} })
+const ctxCookies = () => (globalThis as unknown as { __voraRequestContext: { cookies: Map<string, string>; headers: Headers } }).__voraRequestContext
+/** Sign-in attempts run as a browser would: with an empty cookie jar and a request context. */
+function browser(ip = '10.0.0.1') {
+  const c = ctxCookies()
+  c.cookies.clear()
+  c.headers = new Headers({ host: 'testserver', 'x-real-ip': ip })
 }
 
-describe('passwords', () => {
-  it('accepts hashes written by the Python version and rejects other passwords', async () => {
-    expect(await verifyPassword('LocalTestPass!9', PYTHON_HASH)).toBe(true)
-    expect(await verifyPassword('LocalTestPass!8', PYTHON_HASH)).toBe(false)
+describe('guard', () => {
+  it('lets an active administrator in and answers 401 to anyone without a valid Supabase session', async () => {
+    const admin = await sessionFor(await createUser('admin-guard@invalid.example', 'admin'))
+    await expect(requireUser(req(admin))).resolves.toMatchObject({ role: 'admin', email: 'admin-guard@invalid.example' })
+    await expect(requireUser(req())).rejects.toMatchObject({ status: 401 })
+    await expect(requireUser(new Request('http://x/', { headers: { cookie: 'sb-127-auth-token=garbage' } }))).rejects.toMatchObject({ status: 401 })
   })
-  it('hashes with a random salt and the same wire format', async () => {
-    const a = await hashPassword('same-password-twice')
-    const b = await hashPassword('same-password-twice')
-    expect(a).not.toBe(b)
-    expect(a).toMatch(/^pbkdf2_sha256\$310000\$[0-9a-f]{64}\$[0-9a-f]{64}$/)
-    expect(await verifyPassword('same-password-twice', a)).toBe(true)
-  })
-  it('never throws on malformed stored values', async () => {
-    for (const bad of ['', 'x', 'pbkdf2_sha256$abc$00$00', 'md5$1$00$00', 'pbkdf2_sha256$310000$zz$zz', DUMMY_PASSWORD_HASH]) {
-      expect(await verifyPassword('anything', bad)).toBe(false)
+
+  it('answers 403 to an account whose role is not admin', async () => {
+    for (const role of ['viewer', 'editor', 'sales', 'finance', 'superadmin', 'ADMIN', '']) {
+      const session = await sessionFor(await createUser(`role-${role || 'blank'}@invalid.example`, role))
+      await expect(requireUser(req(session)), role).rejects.toMatchObject({ status: 403 })
     }
   })
-})
 
-describe('signed tokens and sessions', () => {
-  afterEach(() => vi.useRealTimers())
-  it('round-trips and rejects tampering, wrong secret and wrong salt', async () => {
-    const token = await signToken({ a: 1 }, 'secret-one', 'salt')
-    expect((await verifyToken(token, 'secret-one', 'salt', 60))?.a).toBe(1)
-    expect(await verifyToken(token, 'secret-two', 'salt', 60)).toBeNull()
-    expect(await verifyToken(token, 'secret-one', 'other', 60)).toBeNull()
-    const [body, mac] = token.split('.')
-    expect(await verifyToken(`${body}x.${mac}`, 'secret-one', 'salt', 60)).toBeNull()
-    expect(await verifyToken(`${body}.${mac}x`, 'secret-one', 'salt', 60)).toBeNull()
-    for (const junk of ['', 'abc', '.', 'a.b', undefined, null]) expect(await verifyToken(junk as never, 'secret-one', 'salt', 60)).toBeNull()
+  it('takes the role from public.users and never from what the Auth account says about itself', async () => {
+    const u = await createUser('metadata@invalid.example', 'viewer')
+    const authId = await provision(u)
+    const { error } = await authAdmin().updateUserById(authId, { user_metadata: { role: 'admin' }, app_metadata: { role: 'admin' } })
+    expect(error).toBeNull()
+    const session = await signInCookies(u.email, u.password)
+    await expect(requireUser(req(session))).rejects.toMatchObject({ status: 403 })
   })
-  it('expires after the maximum age', async () => {
-    vi.useFakeTimers()
-    const token = await signToken({}, 's', 'salt')
-    vi.advanceTimersByTime(59_000)
-    expect(await verifyToken(token, 's', 'salt', 60)).not.toBeNull()
-    vi.advanceTimersByTime(2_000)
-    expect(await verifyToken(token, 's', 'salt', 60)).toBeNull()
-  })
-  it('session tokens expire after 8 hours', async () => {
-    vi.useFakeTimers()
-    const token = await createSessionToken({ id: 7, passwordHash: 'h', role: 'viewer' })
-    expect((await readSessionToken(token))?.id).toBe(7)
-    vi.advanceTimersByTime(8 * 3600_000 + 5_000)
-    expect(await readSessionToken(token)).toBeNull()
-  })
-})
 
-describe('guard', () => {
-  it('ends the session on password change, role change, deactivation and deletion', async () => {
-    const u = await makeUser('guard@invalid.example', 'admin')
-    const token = await createSessionToken(u)
-    expect(await userFromToken(token)).toMatchObject({ email: 'guard@invalid.example', role: 'admin' })
-    const changed = await hashPassword('A-new-password-after-reset')
-    await sql`update users set password_hash = ${changed} where id = ${u.id}`
-    expect(await userFromToken(token)).toBeNull()
-    const fresh = await createSessionToken({ id: u.id, passwordHash: changed, role: 'admin' })
-    expect(await userFromToken(fresh)).not.toBeNull()
-    await sql`update users set role = 'viewer' where id = ${u.id}`
-    expect(await userFromToken(fresh)).toBeNull()   // a role change signs the user out, so the cookie's role is never stale
-    await sql`update users set role = 'admin' where id = ${u.id}`
-    expect(await userFromToken(fresh)).not.toBeNull()
+  it('refuses a Supabase account that has no row in public.users', async () => {
+    await ensureAuthAccount('stranger@invalid.example', 'Stranger-password-1234')
+    const session = await signInCookies('stranger@invalid.example', 'Stranger-password-1234')
+    await expect(requireUser(req(session))).rejects.toMatchObject({ status: 401 })
+    expect(await userFromRequest(req(session))).toBeNull()
+  })
+
+  it('stops accepting a session the moment the account is deactivated, and again after it is reactivated', async () => {
+    const u = await createUser('deactivated@invalid.example', 'admin')
+    const session = await sessionFor(u)
+    await expect(requireUser(req(session))).resolves.toMatchObject({ id: u.id })
     await sql`update users set active = false where id = ${u.id}`
-    expect(await userFromToken(fresh)).toBeNull()
-    await sql`delete from users where id = ${u.id}`
-    expect(await userFromToken(fresh)).toBeNull()
-    expect(await credentialFingerprint('a', 'x')).not.toBe(await credentialFingerprint('b', 'x'))
-    expect(await credentialFingerprint('a', 'x')).not.toBe(await credentialFingerprint('a', 'y'))
+    await expect(requireUser(req(session))).rejects.toMatchObject({ status: 401 })
+    await sql`update users set active = true where id = ${u.id}`
+    await expect(requireUser(req(session))).resolves.toMatchObject({ id: u.id })
+    await sql`update users set role = 'viewer' where id = ${u.id}`
+    await expect(requireUser(req(session))).rejects.toMatchObject({ status: 403 })   // a role change applies at once: nothing is cached in the cookie
   })
-  it('requireUser answers 401 for anonymous and 403 for any account that is not an admin', async () => {
-    const legacy = await makeUser('legacy-guard@invalid.example', 'viewer')
-    const admin = await makeUser('admin-guard@invalid.example', 'admin')
-    const req = (cookie?: string) => new Request('http://x/', { headers: cookie ? { cookie } : {} })
-    await expect(requireUser(req())).rejects.toMatchObject({ status: 401 })
-    await expect(requireUser(req('vora_session=garbage'))).rejects.toMatchObject({ status: 401 })
-    await expect(requireUser(req(`vora_session=${await createSessionToken(legacy)}`))).rejects.toMatchObject({ status: 403 })
-    await expect(requireUser(req(`vora_session=${await createSessionToken(admin)}`))).resolves.toMatchObject({ role: 'admin', email: 'admin-guard@invalid.example' })
+
+  it('stops accepting a session that Supabase Auth has ended (sign-out elsewhere) or whose account was deleted', async () => {
+    const out = await sessionFor(await createUser('signed-out@invalid.example', 'admin'))
+    await expect(requireUser(req(out))).resolves.toBeTruthy()
+    await revokeSession(out)
+    await expect(requireUser(req(out))).rejects.toMatchObject({ status: 401 })
+
+    const gone = await createUser('deleted@invalid.example', 'admin')
+    const session = await sessionFor(gone)
+    const [{ authUserId }] = await sql`select auth_user_id from users where id = ${gone.id}`
+    const { error } = await authAdmin().deleteUser(authUserId as string)
+    expect(error).toBeNull()
+    await expect(requireUser(req(session))).rejects.toMatchObject({ status: 401 })
+  })
+
+  it('refuses sessions that were forged or tampered with', async () => {
+    const real = await sessionFor(await createUser('forged@invalid.example', 'admin'))
+    await expect(requireUser(req(real))).resolves.toBeTruthy()
+    const forged = forgedSessions(real)
+    expect(Object.keys(forged).length).toBeGreaterThanOrEqual(6)
+    for (const [kind, session] of Object.entries(forged)) await expect(requireUser(req(session)), kind).rejects.toMatchObject({ status: 401 })
   })
 })
 
@@ -109,31 +102,143 @@ describe('roles', () => {
 
 describe('login', () => {
   it('signs in, audits, and treats unknown accounts exactly like wrong passwords', async () => {
-    await makeUser('login@invalid.example', 'admin', 'Correct-horse-battery-1')
+    const u = await createUser('login@invalid.example', 'admin', 'Correct-horse-battery-1')
+    await provision(u)
+    browser('10.0.0.1')
     const wrong = await attemptLogin('login@invalid.example', 'nope', '10.0.0.1')
     const unknown = await attemptLogin('ghost@invalid.example', 'nope', '10.0.0.1')
     expect(wrong).toEqual(unknown)
     expect(wrong).toEqual({ status: 'invalid' })
+    expect(hasSessionCookie()).toBe(false)
     const ok = await attemptLogin('  LOGIN@invalid.example ', 'Correct-horse-battery-1', '10.0.0.2')
     expect(ok.status).toBe('ok')
-    const [{ n }] = await sql`select count(*)::int as n from audit_logs where verb = 'login'`
+    expect(hasSessionCookie()).toBe(true)
+    const [{ n }] = await sql`select count(*)::int as n from audit_logs where verb = 'login' and actor_id = ${u.id}`
     expect(n).toBe(1)
   })
+
+  it('does not let a Supabase account in unless it is an active administrator, and leaves no session behind', async () => {
+    await ensureAuthAccount('no-row@invalid.example', 'No-row-password-1234')
+    const viewer = await createUser('viewer-login@invalid.example', 'viewer', 'Viewer-password-1234')
+    await provision(viewer)
+    const inactive = await createUser('inactive-login@invalid.example', 'admin', 'Inactive-password-1234')
+    await provision(inactive)
+    await sql`update users set active = false where id = ${inactive.id}`
+    for (const [email, password] of [['no-row@invalid.example', 'No-row-password-1234'], [viewer.email, viewer.password], [inactive.email, inactive.password]]) {
+      browser('10.0.1.1')
+      expect(await attemptLogin(email, password, '10.0.1.1'), email).toEqual({ status: 'invalid' })
+      expect(hasSessionCookie(), email).toBe(false)
+    }
+  })
+
   it('locks an email out after repeated failures, even for the right password', async () => {
-    await makeUser('lock@invalid.example', 'admin', 'Correct-horse-battery-2')
-    for (let i = 0; i < LOGIN_MAX_PER_EMAIL; i++) expect((await attemptLogin('lock@invalid.example', 'bad', `10.1.0.${i}`)).status).toBe('invalid')
+    const lock = await createUser('lock@invalid.example', 'admin', 'Correct-horse-battery-2')
+    await provision(lock)
+    for (let i = 0; i < LOGIN_MAX_PER_EMAIL; i++) { browser(`10.1.0.${i}`); expect((await attemptLogin('lock@invalid.example', 'bad', `10.1.0.${i}`)).status).toBe('invalid') }
+    browser('10.1.9.9')
     expect((await attemptLogin('lock@invalid.example', 'Correct-horse-battery-2', '10.1.9.9')).status).toBe('blocked')
-    await makeUser('other@invalid.example', 'admin', 'Correct-horse-battery-3')
+    expect(hasSessionCookie()).toBe(false)
+    const other = await createUser('other@invalid.example', 'admin', 'Correct-horse-battery-3')
+    await provision(other)
+    browser('10.1.9.10')
     expect((await attemptLogin('other@invalid.example', 'Correct-horse-battery-3', '10.1.9.10')).status).toBe('ok')
   })
+
   it('locks an IP address out after many failures across accounts', async () => {
+    browser('10.2.0.1')
     for (let i = 0; i < LOGIN_MAX_PER_IP; i++) await attemptLogin(`spray${i}@invalid.example`, 'bad', '10.2.0.1')
     expect((await attemptLogin('spray-final@invalid.example', 'bad', '10.2.0.1')).status).toBe('blocked')
   })
+
   it('does not count old failures', async () => {
-    await makeUser('old@invalid.example', 'admin', 'Correct-horse-battery-4')
+    const u = await createUser('old@invalid.example', 'admin', 'Correct-horse-battery-4')
+    await provision(u)
     await sql`insert into login_attempts (email, ip, succeeded, created_at) select 'old@invalid.example', '10.3.0.1', false, now() - interval '20 minutes' from generate_series(1, 10)`
+    browser('10.3.0.2')
     expect((await attemptLogin('old@invalid.example', 'Correct-horse-battery-4', '10.3.0.2')).status).toBe('ok')
+  })
+})
+
+describe('password reset', () => {
+  const redirectTo = 'http://localhost:3000/admin/auth/callback?next=%2Fadmin%2Freset-password'
+
+  /** The address in the recovery email that GoTrue sent, opened the way the person's browser would: it answers with a redirect carrying the code. */
+  async function codeFromEmail(to: string): Promise<{ code: string; mail: Awaited<ReturnType<typeof authMails>>[number] }> {
+    const mail = (await authMails()).filter((m) => m.to === to).at(-1)
+    expect(mail, `a recovery email for ${to}`).toBeTruthy()
+    const href = /href="([^"]+)"/.exec(mail!.body)?.[1].replace(/&amp;/g, '&')
+    expect(href, 'a link in the email').toMatch(/\/verify\?token=pkce_/)
+    const hop = await fetch(href!, { redirect: 'manual' })
+    const location = hop.headers.get('location') ?? ''
+    expect(location, 'Supabase sends the person back to the application').toMatch(/^http:\/\/localhost:3000\/admin\/auth\/callback\?/)
+    const code = new URL(location).searchParams.get('code')
+    expect(code, 'a one-time code').toBeTruthy()
+    return { code: code!, mail: mail! }
+  }
+
+  it('emails an administrator a one-time link; the same answer is given for an address that is not one, and nothing is sent to it', async () => {
+    await authMails(true)
+    const u = await createUser('reset@invalid.example', 'admin', 'Old-password-for-reset-1')
+    await provision(u)
+    const viewer = await createUser('reset-viewer@invalid.example', 'viewer'); await provision(viewer)
+    ctxCookies().cookies.clear()
+    ctxCookies().headers = new Headers({ host: 'testserver' })
+    for (const email of ['reset@invalid.example', 'reset-viewer@invalid.example', 'ghost-reset@invalid.example']) {
+      expect(await requestPasswordReset(email, '10.4.0.1', redirectTo), email).toBe('sent-or-ignored')
+    }
+    const recipients = (await authMails()).map((m) => m.to)
+    expect(recipients).toEqual(['reset@invalid.example'])
+  })
+
+  it('signs the administrator in through the emailed link once, lets them choose a new password, and the link cannot be used again', async () => {
+    await authMails(true)
+    const u = await createUser('reset-flow@invalid.example', 'admin', 'Old-password-for-flow-1')
+    await provision(u)
+    browser('10.4.1.1')
+    await requestPasswordReset(u.email, '10.4.1.1', redirectTo)
+    const verifier = new Map(ctxCookies().cookies)            // the browser keeps the PKCE verifier cookie while the person reads their mail
+    expect([...verifier.keys()].some((k) => k.endsWith('code-verifier'))).toBe(true)
+    const { code } = await codeFromEmail(u.email)
+
+    const land = async (c: string) => {
+      browser('10.4.1.2')
+      for (const [k, v] of verifier) ctxCookies().cookies.set(k, v)
+      return authCallback(new Request(`http://testserver/admin/auth/callback?code=${encodeURIComponent(c)}&next=${encodeURIComponent('/admin/reset-password')}`))
+    }
+    const res = await land(code)
+    expect(res.status).toBe(303)
+    expect(new URL(res.headers.get('location')!, 'http://x').pathname).toBe('/admin/reset-password')
+    expect(hasSessionCookie()).toBe(true)
+    const session = JSON.stringify([...cookiesAfter()].filter(([k]) => /^sb-.*-auth-token/.test(k) && !k.endsWith('code-verifier')))
+
+    const newPassword = 'A-brand-new-password-2026'
+    expect(newPassword.length).toBeGreaterThanOrEqual(MIN_PASSWORD_LENGTH)
+    expect(q((await act(resetPassword, { password: 'short', confirm: 'short' }, { as: session })).redirect).get('error')).toMatch(/at least/)
+    expect(q((await act(resetPassword, { password: newPassword, confirm: newPassword + 'x' }, { as: session })).redirect).get('error')).toMatch(/do not match/)
+    const done = await act(resetPassword, { password: newPassword, confirm: newPassword }, { as: session })
+    expect(done.redirect).toMatch(/^\/admin\?notice=/)
+
+    await expect(signInCookies(u.email, 'Old-password-for-flow-1')).rejects.toBeTruthy()
+    await expect(signInCookies(u.email, newPassword)).resolves.toBeTruthy()
+
+    const again = await land(code)                              // used already
+    expect(new URL(again.headers.get('location')!, 'http://x').pathname).toBe('/admin/login')
+    expect(new URL(again.headers.get('location')!, 'http://x').searchParams.get('error')).toMatch(/expired or was already used/)
+  })
+
+  it('does not accept an empty, oversized or invented code at the callback', async () => {
+    for (const c of ['', 'x', 'a'.repeat(500), 'pkce_' + 'b'.repeat(40)]) {
+      browser('10.4.2.1')
+      const res = await authCallback(new Request(`http://testserver/admin/auth/callback?code=${c}&next=/admin`))
+      expect(new URL(res.headers.get('location')!, 'http://x').pathname, c.slice(0, 8)).toBe('/admin/login')
+      expect(hasSessionCookie()).toBe(false)
+    }
+  })
+
+  it('only follows a local /admin path after the callback', async () => {
+    browser('10.4.3.1')
+    const res = await authCallback(new Request('http://testserver/admin/auth/callback?code=&next=https://evil.example'))
+    expect(res.headers.get('location')).toMatch(/^\/admin\/login\?error=/)       // a relative path: the person stays on the address they came by
   })
 })
 
@@ -148,10 +253,7 @@ describe('origin check', () => {
     expect(() => assertSameOrigin(h({ host: 'app.example', origin: 'http://app.example.evil.example' }))).toThrow(HttpError)
     expect(() => assertSameOrigin(h({ origin: 'http://app.example' }))).toThrow(HttpError)
   })
-  it('parses cookies and client IPs', () => {
-    expect(parseCookies('a=1; b=two%20words; a=ignored')).toEqual({ a: '1', b: 'two words' })
-    // A cookie set by someone else with a broken escape must not make the whole request fail.
-    expect(parseCookies('x=%E0%A4%A; vora_session=abc.def')).toEqual({ x: '%E0%A4%A', vora_session: 'abc.def' })
+  it('reads the client address from the proxy headers', () => {
     expect(clientIp(new Headers({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8' }))).toBe('1.2.3.4')
     expect(clientIp(new Headers({ 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.2.3.4' }))).toBe('9.9.9.9')
     expect(clientIp(new Headers())).toBe('')

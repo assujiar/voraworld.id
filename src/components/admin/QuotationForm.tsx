@@ -1,13 +1,13 @@
 import { createQuotationAction } from '@/actions/finance'
 import { ActionForm, FInput, FSelect, FTextarea, Submit } from '@/components/admin/ActionForm'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 import { today } from '@/server/dates'
 import { MAX_PAYMENT_TERMS, MAX_TERMS_CONDITIONS } from '@/server/finance/quotations'
 import { settingMap } from '@/server/settings'
 
 export async function QuotationForm() {
-  const customers = await sql`select id, name, currency from customers order by name limit 500`
-  const leads = await sql`select id, name, company, email from leads order by id desc limit 300`
+  const customers = await many('customers', (q) => q.order('name'), 'id,name,currency', 500)
+  const leads = await many('leads', (q) => q.order('id', { ascending: false }), 'id,name,company,email', 300)
   const settings = await settingMap()
   const day = today()
   return (

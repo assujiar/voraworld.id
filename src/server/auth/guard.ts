@@ -1,22 +1,30 @@
-import { sql } from '../db'
+import { cache } from 'react'
+import { one } from '../data'
 import { HttpError } from '../http'
-import { safeEqual } from '../crypto'
+import { supabaseForRequest, supabaseFromCookieHeader } from '../supabase/clients'
 import { isAdminRole } from './roles'
-import { SESSION_COOKIE, credentialFingerprint, readSessionToken } from './session'
-import { readCookie } from './cookies'
 
 export interface SessionUser { id: number; email: string; role: string }
 
-/** Loads the signed-in user: valid signature, account still active, credential unchanged since sign-in. */
-export async function userFromToken(token: string | undefined | null): Promise<SessionUser | null> {
-  const session = await readSessionToken(token)
-  if (!session) return null
-  const [u] = await sql`select id, email, role, active, password_hash from users where id = ${session.id}`
-  if (!u || !u.active || !safeEqual(session.pv, await credentialFingerprint(u.passwordHash as string, u.role as string))) return null
+type AuthClient = Awaited<ReturnType<typeof supabaseForRequest>>
+
+/**
+ * Who is signed in, proven by Supabase Auth: getUser() asks the Auth server to validate the access token, so a revoked session or a deleted
+ * account is refused at once (the signature alone would not show that). Then the person must have an ACTIVE row in public.users linked to that
+ * Auth account: the role comes from this table, never from anything the user can edit.
+ */
+async function memberFrom(client: AuthClient): Promise<SessionUser | null> {
+  const { data, error } = await client.auth.getUser()
+  if (error || !data.user) return null
+  const u = await one('users', (q) => q.eq('auth_user_id', data.user.id), 'id,email,role,active')
+  if (!u || !u.active) return null
   return { id: u.id as number, email: u.email as string, role: u.role as string }
 }
 
-export const userFromRequest = (request: Request) => userFromToken(readCookie(request, SESSION_COOKIE))
+/** The signed-in user of the current request (cookies from next/headers). One lookup per request, however many components ask. */
+export const currentUser = cache(async (): Promise<SessionUser | null> => memberFrom(await supabaseForRequest()))
+
+export const userFromRequest = (request: Request): Promise<SessionUser | null> => memberFrom(supabaseFromCookieHeader(request.headers.get('cookie')))
 
 /** Only the admin role may use the portal. */
 export function assertAdmin(user: SessionUser): void {

@@ -1,11 +1,11 @@
 import { createBankAction, updateBankAction } from '@/actions/finance'
 import { ActionForm, FCheckbox, FInput, Submit } from '@/components/admin/ActionForm'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 import type { BankAccountsRow } from '@/server/schema'
 
 export default async function BankAccounts({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = (await sql`select * from bank_accounts order by currency, position, id`) as unknown as BankAccountsRow[]
+  const rows = (await many('bank_accounts', (q) => q.order('currency').order('position').order('id'))) as unknown as BankAccountsRow[]
   return (
     <AdminPage heading="Company bank accounts" sp={await searchParams}>
       <div className="admin-panel">

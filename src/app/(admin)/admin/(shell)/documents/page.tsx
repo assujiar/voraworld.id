@@ -1,6 +1,6 @@
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
 import { DOCUMENT_TYPES, LANGS, LANGUAGE_NAMES } from '@/content/document-types'
-import { sql } from '@/server/db'
+import { many, searchClause } from '@/server/data'
 
 const STATUSES = ['draft', 'issued', 'void']
 
@@ -9,12 +9,14 @@ export default async function Documents({ searchParams }: { searchParams: Promis
   const q = (sp.q ?? '').trim().slice(0, 120)
   const status = STATUSES.includes(sp.status ?? '') ? sp.status! : ''
   const kind = DOCUMENT_TYPES.some((t) => t.key === sp.kind) ? sp.kind! : ''
-  const like = '%' + q.replace(/[\\%_]/g, (c) => '\\' + c) + '%'
-  const rows = await sql`select d.id, d.number, d.kind, d.language, d.status, d.subject, d.recipient, d.document_date, d.created_at
-    from documents d
-    where (${q} = '' or d.number ilike ${like} or d.subject ilike ${like} or d.recipient ilike ${like}) and (${status} = '' or d.status = ${status}) and (${kind} = '' or d.kind = ${kind})
-    order by d.id desc limit 300`
-  const customers = await sql`select id, name from customers order by name limit 500`
+  const clause = await searchClause(q, ['number', 'subject', 'recipient'])
+  const customers = await many('customers', (f) => f.order('name'), 'id,name', 500)
+  const rows = await many('documents', (f) => {
+    let b = clause ? f.or(clause) : f
+    if (status) b = b.eq('status', status)
+    if (kind) b = b.eq('kind', kind)
+    return b.order('id', { ascending: false })
+  }, 'id,number,kind,language,status,subject,recipient,document_date,created_at', 300)
   return (
     <AdminPage heading="Letters & Certificates" sp={sp}>
       <div className="admin-panel">

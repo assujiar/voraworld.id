@@ -1,8 +1,8 @@
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 
 export default async function Articles({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = await sql`select id, title, slug, locale, status, updated_at from articles order by updated_at desc`
+  const rows = await many('articles', (q) => q.order('updated_at', { ascending: false }), 'id,title,slug,locale,status,updated_at')
   return (
     <AdminPage heading="Articles" sp={await searchParams} newHref="/admin/articles/new" newLabel="New article">
       <div className="admin-panel"><table><thead><tr><th>Title</th><th>Locale</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { sql, tx } from '@/server/db'
+import { sql } from './helpers/db'
 import { ensurePublicCode, nextNumber } from '@/server/numbering'
 import { createVerification, findVerification, getVerification } from '@/server/verification'
 import { cleanHtml } from '@/server/sanitize'

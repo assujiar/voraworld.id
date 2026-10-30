@@ -1,8 +1,8 @@
 import type { Browser, Page } from '@playwright/test'
 import postgres from 'postgres'
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from './credentials'
+import { ADMIN_EMAIL, ADMIN_PASSWORD, RESET_EMAIL, RESET_PASSWORD } from './credentials'
 
-export { ADMIN_EMAIL, ADMIN_PASSWORD }
+export { ADMIN_EMAIL, ADMIN_PASSWORD, RESET_EMAIL, RESET_PASSWORD }
 export const PORT = Number(process.env.E2E_PORT || 3310)
 export const BASE_URL = `http://localhost:${PORT}`
 

@@ -1,14 +1,10 @@
-import type { Db } from '../db'
-
 /**
- * Runs a notification inside the caller's transaction without letting it undo the accounting around it.
- * A savepoint isolates SQL failures; any other failure is only logged: the money has moved, the email can be retried.
+ * Runs a notification after the accounting it follows has been committed, without letting a mail problem change the outcome. The money has
+ * moved and the document exists; a failed email is only logged and can be queued again from the invoice or receipt page.
  */
-export async function bestEffort(t: Db, what: string, fn: (s: Db) => Promise<unknown>): Promise<void> {
+export async function bestEffort(what: string, fn: () => Promise<unknown>): Promise<void> {
   try {
-    const tt = t as unknown as { savepoint?: (f: (s: Db) => Promise<unknown>) => Promise<unknown> }
-    if (tt.savepoint) await tt.savepoint((s) => fn(s))
-    else await fn(t)
+    await fn()
   } catch (e) {
     console.error(`notification skipped (${what}):`, e instanceof Error ? e.message : e)
   }

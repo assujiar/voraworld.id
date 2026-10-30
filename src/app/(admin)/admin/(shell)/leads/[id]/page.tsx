@@ -1,17 +1,17 @@
 import { notFound } from 'next/navigation'
 import { replyLeadAction, updateLeadAction } from '@/actions/crm'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many, one } from '@/server/data'
 import { LEAD_PRIORITIES, LEAD_STATUSES } from '@/server/lead-constants'
 import type { LeadsRow } from '@/server/schema'
 import { routeId } from '@/server/http'
 
 export default async function LeadDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
-  const [lead] = await sql`select * from leads where id = ${id}`
+  const lead = id > 0 ? await one('leads', (q) => q.eq('id', id)) : undefined
   if (!lead) notFound()
-  const o = lead as LeadsRow
-  const activities = await sql`select created_at, message from lead_activities where lead_id = ${id} order by id desc`
+  const o = lead as unknown as LeadsRow
+  const activities = await many('lead_activities', (q) => q.eq('lead_id', id).order('id', { ascending: false }), 'created_at,message')
   return (
     <AdminPage heading="Lead detail" sp={await searchParams}>
       <div className="dashboard-split">

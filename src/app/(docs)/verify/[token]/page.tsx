@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { documentType, type Lang } from '@/content/document-types'
 import { today } from '@/server/dates'
-import { sql } from '@/server/db'
+import { one } from '@/server/data'
 import { findVerification } from '@/server/verification'
 
 const KINDS = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations', prepayment: 'prepayment_receipts', document: 'documents' } as const
@@ -14,20 +14,20 @@ const LABELS = { invoice: 'Invoice', receipt: 'Receipt', quotation: 'Price Agree
  */
 export default async function Verify({ params }: { params: Promise<{ token: string }> }) {
   const token = (await params).token
-  const row = await findVerification(sql, token)
+  const row = await findVerification(token)
   const table = row ? KINDS[row.kind as keyof typeof KINDS] : undefined
   if (!row || !table) notFound()
-  const [doc] = await sql`select * from ${sql(table)} where id = ${row.documentId}`
+  const doc = await one(table, (q) => q.eq('id', row.documentId))
   if (!doc) notFound()
   const kind = row.kind
   const state = doc.status as string
   const status = row.revoked || state === 'void' ? 'VOID' : (kind === 'receipt' || kind === 'prepayment') && state === 'pending_stamp' ? 'PENDING E-METERAI' : state === 'draft' ? 'DRAFT' : 'AUTHENTIC'
   // A pre-payment receipt is no proof of payment: the page shows the state of the invoice it belongs to, and the official receipt is a separate document.
-  const [invoice] = kind === 'prepayment' ? await sql`select status, issued_at from invoices where id = ${doc.invoiceId as number}` : [doc]
+  const invoice = kind === 'prepayment' ? await one('invoices', (q) => q.eq('id', doc.invoiceId as number), 'status,issued_at') : doc
   const invoiceState = invoice?.status as string
   const live = !row.revoked && state !== 'void' && !(kind === 'prepayment' && invoiceState === 'void')
   const payment = (kind === 'invoice' || kind === 'prepayment') && live ? (invoiceState === 'paid' ? 'OFFICIALLY PAID' : invoiceState === 'partially_paid' ? 'PARTIALLY PAID' : 'AWAITING PAYMENT') : ''
-  const date = kind === 'receipt' ? today(doc.createdAt as Date) : String(kind === 'prepayment' ? invoice.issuedAt : kind === 'document' ? doc.documentDate : doc.issuedAt)
+  const date = kind === 'receipt' ? today(doc.createdAt as Date) : String(kind === 'prepayment' ? invoice!.issuedAt : kind === 'document' ? doc.documentDate : doc.issuedAt)
   // A general document is named by its own type, in its own language. Only a certificate says who holds it: that is what a certificate is for.
   const general = kind === 'document' ? documentType(doc.kind as string) : undefined
   const label = general ? general.label[doc.language as Lang] : LABELS[kind as keyof typeof LABELS]

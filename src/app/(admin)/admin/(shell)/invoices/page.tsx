@@ -1,5 +1,5 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many, searchClause, withRelated } from '@/server/data'
 import { money } from '@/server/money'
 
 const STATUSES = ['draft', 'issued', 'partially_paid', 'paid', 'void']
@@ -8,11 +8,9 @@ export default async function Invoices({ searchParams }: { searchParams: Promise
   const sp = await searchParams
   const q = (sp.q ?? '').trim().slice(0, 120)
   const status = STATUSES.includes(sp.status ?? '') ? sp.status! : ''
-  const like = '%' + q.replace(/[\\%_]/g, (c) => '\\' + c) + '%'
-  const rows = await sql`select i.id, i.number, i.due_at, i.status, i.total_minor, i.outstanding_minor, i.currency, c.name as customer
-    from invoices i join customers c on c.id = i.customer_id
-    where (${q} = '' or i.number ilike ${like} or c.name ilike ${like} or i.po_number ilike ${like} or i.shipment_reference ilike ${like}) and (${status} = '' or i.status = ${status})
-    order by i.id desc limit 300`
+  const clause = await searchClause(q, ['number', 'po_number', 'shipment_reference'], [{ table: 'customers', columns: ['name'], fk: 'customer_id' }])
+  const found = await many('invoices', (f) => (status ? (clause ? f.or(clause) : f).eq('status', status) : clause ? f.or(clause) : f).order('id', { ascending: false }), 'id,number,due_at,status,total_minor,outstanding_minor,currency,customer_id', 300)
+  const rows = await withRelated(found, 'customers', 'customerId', { name: 'customer' })
   return (
     <AdminPage heading="Invoices" sp={sp} newHref="/admin/invoices/new" newLabel="New invoice">
       <div className="admin-panel">

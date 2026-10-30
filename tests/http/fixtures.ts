@@ -13,8 +13,8 @@ export interface Seed {
 export async function seedFinance(): Promise<Seed> {
   process.env.DATABASE_URL = process.env.HTTP_DATABASE_URL
   process.env.SUPABASE_URL = process.env.HTTP_SUPABASE_URL                       // the stand-in storage service the server also uses
-  process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.HTTP_SUPABASE_KEY
-  const { sql } = await import('@/server/db')
+  process.env.SUPABASE_SECRET_KEY = process.env.HTTP_SUPABASE_KEY
+  const { sql } = await import('../helpers/db')
   const { createBank } = await import('@/server/finance/banks')
   const { saveCustomer } = await import('@/server/finance/customers')
   const { createInvoice, setInvoiceStatus } = await import('@/server/finance/invoices')
