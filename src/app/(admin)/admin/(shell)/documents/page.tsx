@@ -1,6 +1,8 @@
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
 import { DOCUMENT_TYPES, LANGS, LANGUAGE_NAMES } from '@/content/document-types'
 import { many, searchClause } from '@/server/data'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 const STATUSES = ['draft', 'issued', 'void']
 
@@ -32,19 +34,19 @@ export default async function Documents({ searchParams }: { searchParams: Promis
           <div className="field"><label>Customer (needed for a billing letter)</label>
             <select name="customer" defaultValue=""><option value="">None</option>{customers.map((c) => <option key={c.id as number} value={c.id as number}>{c.name as string}</option>)}</select>
           </div>
-          <div className="field" style={{ alignSelf: 'end' }}><button className="button">Continue</button></div>
+          <div className="field" style={{ alignSelf: 'end' }}><AsyncButton className="button">Continue</AsyncButton></div>
         </form>
         <ul className="mini muted" style={{ marginTop: 14 }}>
           {DOCUMENT_TYPES.map((t) => <li key={t.key}><strong>{t.label.en}</strong> ({t.label.id}): {t.summary.en}</li>)}
         </ul>
       </div>
       <div className="admin-panel">
-        <form method="get" className="inline-actions" style={{ marginBottom: 14 }}>
+        <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
           <input name="q" defaultValue={q} placeholder="Search number, subject or recipient" />
           <select name="kind" defaultValue={kind}><option value="">All types</option>{DOCUMENT_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label.en}</option>)}</select>
           <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
-          <button className="button">Filter</button>
-        </form>
+          <AsyncButton className="button">Filter</AsyncButton>
+        </StepForm>
         <table><thead><tr><th>Document</th><th>Type</th><th>Subject</th><th>For</th><th>Date</th><th>Status</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => {
             const t = DOCUMENT_TYPES.find((x) => x.key === r.kind)

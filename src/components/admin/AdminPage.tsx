@@ -1,3 +1,4 @@
+import { Notice } from '@/components/feedback/Notice'
 import { businessDateTime, today } from '@/server/dates'
 
 export interface Notices { notice?: string; error?: string }
@@ -7,11 +8,10 @@ export function AdminPage({ heading, sp, newHref, newLabel, children }: { headin
   return (
     <>
       <div className="admin-top">
-        <h1><small>VORA / BUSINESS CONTROL</small>{heading}</h1>
+        <h1>{heading}</h1>
         <div className="inline-actions">{newHref ? <a className="button" href={newHref}>+ {newLabel}</a> : null}</div>
       </div>
-      {sp?.notice ? <div className="alert" role="status">{sp.notice}</div> : null}
-      {sp?.error ? <div className="alert" role="alert">{sp.error}</div> : null}
+      {sp?.notice || sp?.error ? <Notice key={`${sp.notice ?? ""}|${sp.error ?? ""}`} notice={sp.notice} error={sp.error} /> : null}
       {children}
     </>
   )

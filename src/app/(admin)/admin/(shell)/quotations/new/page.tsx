@@ -1,6 +1,8 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { QuotationForm } from '@/components/admin/QuotationForm'
 import { many } from '@/server/data'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 const id = (v: string | undefined) => (/^\d{1,10}$/.test(v ?? '') && Number(v) <= 2_147_483_647 ? Number(v) : 0)
 
@@ -15,15 +17,15 @@ export default async function NewQuotation({ searchParams }: { searchParams: Pro
       <div className="admin-panel">
         <h3>Which customer is it for?</h3>
         <p className="note">Every quotation is for a customer. A lead is optional: if the business came from one, save the lead as a customer from the lead&apos;s page. A customer you know already can be chosen here directly.</p>
-        <form method="get" className="admin-form-grid">
+        <StepForm className="admin-form-grid">
           <div className="field wide"><label>Customer</label>
             <select name="customer" required defaultValue="">
               <option value="" disabled>Choose a customer</option>
               {customers.map((c) => <option key={c.id as number} value={c.id as number}>{c.name as string} · {(c.publicCode as string) || 'legacy'} · {c.currency as string}</option>)}
             </select>
           </div>
-          <div className="field"><button className="button">Continue</button> <a className="button-outline" href="/admin/customers/new">New customer</a></div>
-        </form>
+          <div className="field"><AsyncButton className="button" busy="Menyiapkan form Quotation…">Continue</AsyncButton> <a className="button-outline" href="/admin/customers/new">New customer</a></div>
+        </StepForm>
       </div>
     </AdminPage>
   )

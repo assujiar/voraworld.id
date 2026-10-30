@@ -3,6 +3,8 @@ import { many, searchClause, withRelated, type Row } from '@/server/data'
 import { money } from '@/server/money'
 
 import { QUOTATION_LABEL, QUOTATION_STATUSES as STATUSES } from '@/server/finance/labels'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 export default async function Quotations({ searchParams }: { searchParams: Promise<Notices & { q?: string; status?: string }> }) {
   const sp = await searchParams
@@ -16,11 +18,11 @@ export default async function Quotations({ searchParams }: { searchParams: Promi
     <AdminPage heading="Quotations" sp={sp} newHref="/admin/quotations/new" newLabel="New quotation">
       <div className="admin-panel">
         <p className="note">Quotation numbers are generated once and never change. Make one for a customer: directly from the customer, or after saving a lead as a customer.</p>
-        <form method="get" className="inline-actions" style={{ marginBottom: 14 }}>
+        <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
           <input name="q" defaultValue={q} placeholder="Search number or recipient" />
           <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s} value={s}>{QUOTATION_LABEL[s]}</option>)}</select>
-          <button className="button">Filter</button>
-        </form>
+          <AsyncButton className="button">Filter</AsyncButton>
+        </StepForm>
         <table><thead><tr><th>Quotation</th><th>Recipient</th><th>Valid until</th><th>Status</th><th>Total</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>

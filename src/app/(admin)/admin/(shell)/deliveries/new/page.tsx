@@ -2,6 +2,8 @@ import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { DeliveryForm } from '@/components/admin/DeliveryForm'
 import { many, one } from '@/server/data'
 import { money } from '@/server/money'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 const id = (v: string | undefined) => (/^\d{1,10}$/.test(v ?? '') && Number(v) <= 2_147_483_647 ? Number(v) : 0)
 
@@ -18,7 +20,7 @@ export default async function NewDelivery({ searchParams }: { searchParams: Prom
         <div className="admin-panel">
           <h3>Which validated quotation of {customer.name as string}?</h3>
           {quotations.length ? (
-            <form method="get" className="admin-form-grid">
+            <StepForm className="admin-form-grid">
               <input type="hidden" name="customer" value={customer.id as number} />
               <div className="field wide"><label>Validated quotation</label>
                 <select name="quotation" required defaultValue="">
@@ -26,8 +28,8 @@ export default async function NewDelivery({ searchParams }: { searchParams: Prom
                   {quotations.map((q) => <option key={q.id as number} value={q.id as number}>{q.number as string} · {money(q.totalMinor as number, q.currency as string)}{q.origin ? ` · ${q.origin as string} → ${q.destination as string}` : ''}</option>)}
                 </select>
               </div>
-              <div className="field"><button className="button">Continue</button> <a className="button-outline" href="/admin/deliveries/new">Another customer</a></div>
-            </form>
+              <div className="field"><AsyncButton className="button" busy="Memuat data Quotation…">Continue</AsyncButton> <a className="button-outline" href="/admin/deliveries/new">Another customer</a></div>
+            </StepForm>
           ) : <p className="note">This customer has no validated quotation. A quotation becomes validated after the customer has signed it and VORA has checked it. <a href={`/admin/customers/${customer.id}`}>Open the customer</a></p>}
         </div>
       </AdminPage>
@@ -38,15 +40,15 @@ export default async function NewDelivery({ searchParams }: { searchParams: Prom
     <AdminPage heading="New delivery note" sp={sp}>
       <div className="admin-panel">
         <h3>Which customer is it for?</h3>
-        <form method="get" className="admin-form-grid">
+        <StepForm className="admin-form-grid">
           <div className="field wide"><label>Customer</label>
             <select name="customer" required defaultValue="">
               <option value="" disabled>Choose a customer</option>
               {customers.map((c) => <option key={c.id as number} value={c.id as number}>{c.name as string} · {(c.publicCode as string) || 'legacy'}</option>)}
             </select>
           </div>
-          <div className="field"><button className="button">Continue</button></div>
-        </form>
+          <div className="field"><AsyncButton className="button" busy="Memuat Quotation Customer…">Continue</AsyncButton></div>
+        </StepForm>
       </div>
     </AdminPage>
   )

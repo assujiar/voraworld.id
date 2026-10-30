@@ -1,6 +1,8 @@
 import { LEAD_STATUSES } from '@/server/lead-constants'
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause } from '@/server/data'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 export default async function Leads({ searchParams }: { searchParams: Promise<Notices & { q?: string; status?: string }> }) {
   const sp = await searchParams
@@ -11,12 +13,12 @@ export default async function Leads({ searchParams }: { searchParams: Promise<No
   return (
     <AdminPage heading="Leads" sp={sp}>
       <div className="admin-panel">
-        <form method="get" className="inline-actions">
+        <StepForm className="inline-actions">
           <input placeholder="Search name, company, email" name="q" defaultValue={q} />
           <select name="status" defaultValue={status}><option value="">All status</option>{LEAD_STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
-          <button className="button">Filter</button>
+          <AsyncButton className="button">Filter</AsyncButton>
           <a className="button-outline" href="/admin/leads.csv">Export CSV</a>
-        </form>
+        </StepForm>
         <table><thead><tr><th>Reference</th><th>Lead</th><th>Type</th><th>Created</th><th>Pipeline</th><th>Priority</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>

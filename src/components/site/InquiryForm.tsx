@@ -1,12 +1,14 @@
 import { makeT, serviceGroups, serviceModes, type Locale } from '@/content'
 import { submitContact, submitQuote } from '@/actions/public'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export function InquiryForm({ locale, kind, mode }: { locale: Locale; kind: 'contact' | 'quote'; mode?: string }) {
   const t = makeT(locale)
   const quote = kind === 'quote'
   const page = `/${locale}/${quote ? 'request-quote' : 'contact'}`
   return (
-    <form action={quote ? submitQuote : submitContact} {...(quote ? { 'data-vora-rfq': '' } : {})}>
+    <PendingForm action={quote ? submitQuote : submitContact} {...(quote ? { 'data-vora-rfq': '' } : {})}>
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="_back" value={page} />
       <div className="hide"><label>Website<input name="website" autoComplete="off" tabIndex={-1} /></label></div>
@@ -50,7 +52,7 @@ export function InquiryForm({ locale, kind, mode }: { locale: Locale; kind: 'con
           <strong>{t('Choose a service and enter the shipment route.', 'Pilih layanan dan isi rute pengiriman.')}</strong>
         </div>
       ) : null}
-      <button className="button" type="submit">{t('Send inquiry', 'Kirim permintaan')} ↗</button>
-    </form>
+      <AsyncButton className="button" busy={t('Sending your inquiry…', 'Mengirim permintaan Anda…')}>{t('Send inquiry', 'Kirim permintaan')}</AsyncButton>
+    </PendingForm>
   )
 }

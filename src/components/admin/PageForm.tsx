@@ -2,6 +2,8 @@ import { addSectionAction, restorePageAction, savePageAction, saveSectionAction 
 import { SECTION_KINDS, SECTION_LAYOUTS, SECTION_SURFACES } from '@/server/cms-constants'
 import type { PagesRow, SectionsRow } from '@/server/schema'
 import { Back, fmt } from './AdminPage'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export function PageForm({ obj, sections, revisions }: { obj: PagesRow | null; sections: SectionsRow[]; revisions: Array<{ id: number; createdAt: Date }> }) {
   const back = obj ? `/admin/pages/${obj.id}` : '/admin/pages/new'
@@ -9,7 +11,7 @@ export function PageForm({ obj, sections, revisions }: { obj: PagesRow | null; s
     <>
       <div className="admin-panel">
         <h3>Page settings</h3>
-        <form action={savePageAction}>
+        <PendingForm action={savePageAction}>
           <input type="hidden" name="record" value={obj?.id ?? ''} /><Back to={back} />
           <div className="admin-form-grid">
             <div className="field"><label>Page title</label><input required name="title" defaultValue={obj?.title ?? ''} /></div>
@@ -19,29 +21,29 @@ export function PageForm({ obj, sections, revisions }: { obj: PagesRow | null; s
             <div className="field wide"><label>Excerpt / meta description</label><textarea name="description" defaultValue={obj?.description ?? ''} /></div>
           </div>
           <div className="inline-actions">
-            <button className="button" name="action" value="draft">Save draft</button>
+            <AsyncButton className="button" name="action" value="draft">Save draft</AsyncButton>
             {obj ? <>
-              <button className="button" name="action" value="publish">Publish page</button>
-              <button className="button-outline" name="action" value="unpublish">Unpublish</button>
+              <AsyncButton className="button" name="action" value="publish">Publish page</AsyncButton>
+              <AsyncButton className="button-outline" name="action" value="unpublish">Unpublish</AsyncButton>
               <a className="button-outline" href={`/${obj.locale}/preview/page/${obj.id}`} target="_blank" rel="noopener">Preview draft ↗</a>
             </> : null}
           </div>
-        </form>
+        </PendingForm>
       </div>
       {obj ? <>
         <div className="admin-panel">
           <h3>Editorial sections <span className="muted mini">(ordered)</span></h3>
           {sections.map((sec, i) => (
             <div className="layout-preview" key={sec.id}>
-              <form action={saveSectionAction}>
+              <PendingForm action={saveSectionAction}>
                 <input type="hidden" name="record" value={sec.id} /><Back to={back} />
                 {/* Pressing Enter in a field submits the FIRST submit button of the form: make that "save", never "move up" or "delete". */}
-                <button name="save" value="1" tabIndex={-1} aria-hidden="true" style={{ position: 'absolute', width: 1, height: 1, opacity: 0, overflow: 'hidden', pointerEvents: 'none' }} />
+                <AsyncButton name="save" value="1" tabIndex={-1} aria-hidden="true" style={{ position: 'absolute', width: 1, height: 1, opacity: 0, overflow: 'hidden', pointerEvents: 'none' }} />
                 <div className="inline-actions" style={{ marginBottom: 12 }}>
                   <strong>Section {i + 1}</strong><span className="status">{sec.kind} · {sec.layout}</span>
-                  <button className="button-outline" name="move" value="up">↑ Up</button>
-                  <button className="button-outline" name="move" value="down">↓ Down</button>
-                  <button className="button-outline" name="delete" value="1">Delete</button>
+                  <AsyncButton className="button-outline" name="move" value="up">↑ Up</AsyncButton>
+                  <AsyncButton className="button-outline" name="move" value="down">↓ Down</AsyncButton>
+                  <AsyncButton className="button-outline" name="delete" value="1">Delete</AsyncButton>
                 </div>
                 <div className="admin-form-grid">
                   <div className="field"><label>Title</label><input name="title" defaultValue={sec.title} /></div>
@@ -54,17 +56,17 @@ export function PageForm({ obj, sections, revisions }: { obj: PagesRow | null; s
                   <div className="field"><label>CTA path</label><input name="button_href" defaultValue={sec.buttonHref} /></div>
                   <div className="field"><label><input type="checkbox" name="visible" value="1" defaultChecked={sec.visible} /> Visible</label></div>
                 </div>
-                <button className="button" name="save" value="1">Save section</button>
-              </form>
+                <AsyncButton className="button" name="save" value="1">Save section</AsyncButton>
+              </PendingForm>
             </div>
           ))}
-          <form action={addSectionAction}><input type="hidden" name="record" value={obj.id} /><Back to={back} /><button className="button-outline">+ Add editorial section</button></form>
+          <PendingForm action={addSectionAction}><input type="hidden" name="record" value={obj.id} /><Back to={back} /><AsyncButton className="button-outline">+ Add editorial section</AsyncButton></PendingForm>
         </div>
         {revisions.length ? (
           <div className="admin-panel"><h3>Published revisions</h3>
             {revisions.map((r) => (
-              <form key={r.id} action={restorePageAction}><input type="hidden" name="record" value={obj.id} /><input type="hidden" name="revision" value={r.id} /><Back to={back} />
-                {fmt(r.createdAt)} <button className="button-outline">Restore #{r.id}</button></form>
+              <PendingForm key={r.id} action={restorePageAction}><input type="hidden" name="record" value={obj.id} /><input type="hidden" name="revision" value={r.id} /><Back to={back} />
+                {fmt(r.createdAt)} <AsyncButton className="button-outline">Restore #{r.id}</AsyncButton></PendingForm>
             ))}
           </div>
         ) : null}

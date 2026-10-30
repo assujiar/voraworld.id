@@ -28,6 +28,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
         <link rel="stylesheet" href="/static/css/site.css" />
         <link rel="stylesheet" href="/static/css/experience.css?v=4" />
         <link rel="stylesheet" href="/static/css/motion.css?v=2" />
+        <link rel="stylesheet" href="/static/css/feedback.css?v=1" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body>

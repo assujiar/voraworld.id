@@ -2,6 +2,8 @@ import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { InvoiceForm } from '@/components/admin/InvoiceForm'
 import { many, one } from '@/server/data'
 import { money } from '@/server/money'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 const id = (v: string | undefined) => (/^\d{1,10}$/.test(v ?? '') && Number(v) <= 2_147_483_647 ? Number(v) : 0)
 type SP = Notices & { customer?: string; quotation?: string; delivery?: string | string[]; picked?: string }
@@ -31,7 +33,7 @@ export default async function NewInvoice({ searchParams }: { searchParams: Promi
             <h3>Which delivery notes does this invoice bill?</h3>
             <p className="note">Quotation {quotation.number as string} · {customer.name as string}. Only delivery notes with a recorded proof of delivery can be billed, and each only once.</p>
             {delivered.length ? (
-              <form method="get">
+              <StepForm>
                 <input type="hidden" name="customer" value={customer.id as number} /><input type="hidden" name="quotation" value={quotationId} />
                 <table><thead><tr><th></th><th>Delivery note</th><th>Date</th><th>Destination</th><th>Billing</th></tr></thead><tbody>
                   {delivered.map((d) => {
@@ -45,8 +47,8 @@ export default async function NewInvoice({ searchParams }: { searchParams: Promi
                     )
                   })}
                 </tbody></table>
-                <div className="inline-actions" style={{ marginTop: 12 }}><button className="button">Continue</button> <a className="button-outline" href={`/admin/invoices/new?customer=${customer.id}`}>Another quotation</a></div>
-              </form>
+                <div className="inline-actions" style={{ marginTop: 12 }}><AsyncButton className="button" busy="Menyiapkan form Invoice…">Continue</AsyncButton> <a className="button-outline" href={`/admin/invoices/new?customer=${customer.id}`}>Another quotation</a></div>
+              </StepForm>
             ) : <p className="note">This quotation has no delivery note with a recorded proof of delivery yet. <a href={`/admin/deliveries/new?customer=${customer.id}&quotation=${quotationId}`}>Make a delivery note</a></p>}
           </div>
         </AdminPage>
@@ -60,7 +62,7 @@ export default async function NewInvoice({ searchParams }: { searchParams: Promi
         <div className="admin-panel">
           <h3>Which validated quotation of {customer.name as string}?</h3>
           {quotations.length ? (
-            <form method="get" className="admin-form-grid">
+            <StepForm className="admin-form-grid">
               <input type="hidden" name="customer" value={customer.id as number} />
               <div className="field wide"><label>Validated quotation</label>
                 <select name="quotation" required defaultValue="">
@@ -68,8 +70,8 @@ export default async function NewInvoice({ searchParams }: { searchParams: Promi
                   {quotations.map((q) => <option key={q.id as number} value={q.id as number}>{q.number as string} · {money(q.totalMinor as number, q.currency as string)}</option>)}
                 </select>
               </div>
-              <div className="field"><button className="button">Continue</button> <a className="button-outline" href="/admin/invoices/new">Another customer</a></div>
-            </form>
+              <div className="field"><AsyncButton className="button" busy="Memuat Surat Jalan…">Continue</AsyncButton> <a className="button-outline" href="/admin/invoices/new">Another customer</a></div>
+            </StepForm>
           ) : <p className="note">This customer has no validated quotation. An invoice is made from a validated quotation, after the delivery. <a href={`/admin/customers/${customer.id}`}>Open the customer</a></p>}
         </div>
       </AdminPage>
@@ -80,15 +82,15 @@ export default async function NewInvoice({ searchParams }: { searchParams: Promi
     <AdminPage heading="Create invoice" sp={sp}>
       <div className="admin-panel">
         <h3>Which customer is it for?</h3>
-        <form method="get" className="admin-form-grid">
+        <StepForm className="admin-form-grid">
           <div className="field wide"><label>Customer</label>
             <select name="customer" required defaultValue="">
               <option value="" disabled>Choose a customer</option>
               {customers.map((c) => <option key={c.id as number} value={c.id as number}>{c.name as string} · {(c.publicCode as string) || 'legacy'}</option>)}
             </select>
           </div>
-          <div className="field"><button className="button">Continue</button></div>
-        </form>
+          <div className="field"><AsyncButton className="button" busy="Memuat Quotation Customer…">Continue</AsyncButton></div>
+        </StepForm>
       </div>
     </AdminPage>
   )

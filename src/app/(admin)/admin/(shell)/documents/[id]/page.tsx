@@ -7,6 +7,8 @@ import { publicBaseUrl } from '@/server/env'
 import { routeId } from '@/server/http'
 import { money } from '@/server/money'
 import type { StoredFields } from '@/server/documents/general'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export default async function DocumentDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -44,9 +46,9 @@ export default async function DocumentDetail({ params, searchParams }: { params:
         {ver && !ver.revoked && status !== 'void' ? <p className="mini muted">Verification address (printed on the PDF as a QR code and a link): <a href={`/verify/${ver.token}`} target="_blank" rel="noopener">{publicBaseUrl()}/verify/{ver.token as string}</a></p> : null}
         <div className="inline-actions">
           {status === 'draft' ? <a className="button-outline" href={`/admin/documents/${id}/edit`}>Edit draft</a> : null}
-          {status === 'draft' ? <form action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue document</button></form> : null}
+          {status === 'draft' ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue">Issue document</AsyncButton></PendingForm> : null}
           <a className="button-outline" href={`/admin/documents/${id}/pdf`} target="_blank" rel="noopener">{status === 'issued' ? 'Download PDF' : 'Download PDF (marked ' + status + ')'} ↗</a>
-          {status !== 'void' ? <form action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
+          {status !== 'void' ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
         </div>
         {status === 'draft' ? <p className="note mini">A draft is marked DRAFT on every page and its QR code shows DRAFT. Issuing freezes the document; to change an issued document, void it and write a new one.</p> : null}
       </div>

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { BASE_URL, fillItems, openContext, overflow, phone, received, scalar, sign, signIn, trackProblems } from './helpers'
+import { BASE_URL, fillItems, openContext, overflow, phone, received, scalar, sign, signIn, trackProblems, confirmAsked } from './helpers'
 
 /**
  * PATH B, the whole commercial workflow in a real browser against the Server Actions of a production build, with NO LEAD anywhere:
@@ -79,7 +79,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await expect(page.locator('.alert:has-text("SMTP configuration saved")')).toBeVisible()
     expect((await page.content()).includes('secret-pass')).toBe(false)                         // the password is never shown again
     for (const rule of ['quotation_approval_request', 'quotation_customer_approved_admin', 'quotation_validated_customer', 'invoice_customer', 'receipt_customer']) {
-      await page.locator('tr', { has: page.locator('td', { hasText: new RegExp('^' + rule + '$') }) }).locator('button:has-text("Enable")').click()
+      await page.locator(`tr[data-key="${rule}"] button:has-text("Enable")`).click()
       await expect.poll(() => scalar(`select enabled from email_rules where key = '${rule}'`)).toBe('true')
     }
   })
@@ -278,10 +278,13 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
   await test.step('cleared funds above IDR 5,000,000 lead to a receipt that waits for its e-meterai', async () => {
     await page.goto(`/admin/invoices/${invoiceId}`)
     const confirm = page.locator('form:has(input[name=funds_cleared])')
-    await confirm.locator('button:has-text("Konfirmasi Dana Diterima")').click()               // the checkbox is `required`: the browser blocks it
+    await confirm.locator('button:not(.confirm-yes):has-text("Konfirmasi Dana Diterima")').click()               // the checkbox is `required`: the browser blocks it
     expect(await scalar('select status from payments order by id limit 1')).toBe('pending_confirmation')
     await confirm.locator('input[name=funds_cleared]').check()
-    await confirm.locator('button:has-text("Konfirmasi Dana Diterima")').click()
+    await confirm.locator('button:not(.confirm-yes):has-text("Konfirmasi Dana Diterima")').click()
+    await expect(page.locator('dialog[open]')).toContainText('Konfirmasi dana sudah diterima?')       // the question comes first; nothing has been confirmed yet
+    expect(await scalar('select status from payments order by id limit 1')).toBe('pending_confirmation')
+    await confirmAsked(page)
     await page.waitForURL(/\/admin\/receipts\/\d+/)
     await expect(notice()).toContainText('needs a manual e-meterai')
     receiptId = page.url().match(/receipts\/(\d+)/)![1]
@@ -326,7 +329,8 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await expect(page.locator('.alert:has-text("waiting for bank confirmation")')).toBeVisible()
     const confirm = page.locator('form:has(input[name=funds_cleared])').first()
     await confirm.locator('input[name=funds_cleared]').check()
-    await confirm.locator('button:has-text("Konfirmasi Dana Diterima")').click()
+    await confirm.locator('button:not(.confirm-yes):has-text("Konfirmasi Dana Diterima")').click()
+    await confirmAsked(page)
     await page.waitForLoadState('networkidle')
     await page.goto(`/admin/invoices/${invoiceId}`)
     await expect(status()).toContainText('Paid')

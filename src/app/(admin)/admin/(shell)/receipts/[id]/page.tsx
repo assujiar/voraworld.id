@@ -7,6 +7,8 @@ import { mailHistory } from '@/server/mail/history'
 import { maxUploadBytes } from '@/server/env'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export default async function ReceiptDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -35,23 +37,23 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
             <h3>Manual e-meterai required</h3>
             <p className="note">Download the draft receipt, apply an authentic e-meterai manually through an authorised provider, then upload the stamped PDF. The receipt is not released to the customer, and cannot be verified as final, before this step. VORA calls no external API and does not check the stamp itself: that review is yours.</p>
             <a className="button-outline" href={`/admin/receipts/${id}/pdf`} target="_blank" rel="noopener">Download PDF for stamping ↗</a>
-            <form action={uploadStampAction} encType="multipart/form-data" style={{ marginTop: 16 }}>
+            <PendingForm action={uploadStampAction} style={{ marginTop: 16 }}>
               <input type="hidden" name="record" value={id} /><Back to={here} />
               <div className="admin-form-grid">
                 <div className="field"><label>Official e-meterai serial / reference *</label><input name="stamp_provider_reference" required minLength={6} maxLength={160} /></div>
                 <div className="field"><label>Final stamped PDF (max {maxMb} MB) *</label><input type="file" name="stamped_pdf" accept="application/pdf" required /></div>
               </div>
               <div className="field"><label><input type="checkbox" name="approved" value="1" required /> I reviewed the original document and the applied e-meterai.</label></div>
-              <button className="button">Save final stamped receipt</button>
-            </form>
+              <AsyncButton className="button">Save final stamped receipt</AsyncButton>
+            </PendingForm>
           </div>
         ) : r.stampRequired && status !== 'void' ? (
           <p className="note">Stamped PDF uploaded and stored privately (SHA-256 {(r.stampSha256 as string)?.slice(0, 16)}…). Official e-meterai reference: {r.stampProviderReference as string}</p>
         ) : null}
         <div className="inline-actions">
-          {status === 'issued' ? <form action={resendReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Send the receipt to the customer again</button></form> : null}
+          {status === 'issued' ? <PendingForm action={resendReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Send the receipt to the customer again</AsyncButton></PendingForm> : null}
           {status !== 'void' ? <a className="button" href={`/admin/receipts/${id}/pdf`} target="_blank" rel="noopener">{status === 'pending_stamp' ? 'Download PDF draft' : 'Download final PDF'} ↗</a> : null}
-          {status !== 'void' ? <form action={voidReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Void receipt and reverse payment</button></form> : null}
+          {status !== 'void' ? <PendingForm action={voidReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Void receipt and reverse payment</AsyncButton></PendingForm> : null}
         </div>
       </div>
       <MailHistory lines={emails} />

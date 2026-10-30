@@ -6,6 +6,8 @@ import { deliveryBy, proofsOf } from '@/server/delivery/deliveries'
 import { INVOICE_LABEL } from '@/server/finance/labels'
 import { publicBaseUrl } from '@/server/env'
 import { routeId } from '@/server/http'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 const CONDITION: Record<string, string> = { good: 'Good', damaged: 'Damaged', partial: 'Partial' }
 
@@ -45,9 +47,9 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
         {d.status === 'issued' ? <p className="mini muted">Receiver&apos;s address (the QR code on the PDF opens it; share it only with the receiver): <a href={`/pod/${d.captureToken}`} target="_blank" rel="noopener">{base}/pod/{d.captureToken}</a></p> : null}
         <div className="inline-actions">
           {d.status === 'draft' ? <a className="button-outline" href={`/admin/deliveries/${id}/edit`}>Edit draft</a> : null}
-          {d.status === 'draft' ? <form action={deliveryStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue delivery note</button></form> : null}
+          {d.status === 'draft' ? <PendingForm action={deliveryStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue">Issue delivery note</AsyncButton></PendingForm> : null}
           <a className="button-outline" href={`/admin/deliveries/${id}/pdf`} target="_blank" rel="noopener">{d.status === 'draft' || d.status === 'void' ? `Download PDF (marked ${d.status})` : 'Download PDF'} ↗</a>
-          {d.status === 'draft' || d.status === 'issued' ? <form action={deliveryStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
+          {d.status === 'draft' || d.status === 'issued' ? <PendingForm action={deliveryStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
         </div>
         {d.status === 'draft' ? <p className="note mini">A draft is marked DRAFT on every page and its QR code does not work yet. Issuing makes the QR code live; to change an issued note, void it and write a new one.</p> : null}
       </div>
@@ -75,10 +77,10 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
           <div className="inline-actions" style={{ marginTop: 16 }}>
             <a className="button-outline" href={`/admin/deliveries/${id}/pod-pdf`} target="_blank" rel="noopener">Download proof of delivery (PDF) ↗</a>
             <a className="button-outline" href={`/pod/view/${d.viewToken}`} target="_blank" rel="noopener">Open the consignee&apos;s view ↗</a>
-            {d.consigneeEmail ? <form action={resendReceivedAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Email the proof to the consignee again</button></form> : null}
-            <form action={rejectProofAction} className="inline-actions"><input type="hidden" name="record" value={id} /><Back to={here} />
+            {d.consigneeEmail ? <PendingForm action={resendReceivedAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Email the proof to the consignee again</AsyncButton></PendingForm> : null}
+            <PendingForm action={rejectProofAction} className="inline-actions"><input type="hidden" name="record" value={id} /><Back to={here} />
               <input name="reason" placeholder="Why is this proof wrong? (at least 5 characters)" required minLength={5} maxLength={500} style={{ minWidth: 280 }} />
-              <button className="button-outline">Reject proof</button></form>
+              <AsyncButton className="button-outline">Reject proof</AsyncButton></PendingForm>
           </div>
         ) : null}
       </div>

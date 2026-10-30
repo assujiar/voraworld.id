@@ -3,6 +3,8 @@ import { submitApprovalAction } from '@/actions/approval'
 import { approvalByToken, approvalIsOpen } from '@/server/finance/quotations'
 import { maxUploadBytes } from '@/server/env'
 import { money } from '@/server/money'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export const metadata = { title: { absolute: 'Customer approval | VORA' } }
 
@@ -40,14 +42,14 @@ export default async function QuotationApproval({ params, searchParams }: { para
               <li>Sign in the <strong>Authorized signature</strong> box, apply your company stamp in the <strong>Company stamp</strong> box, and write your name, position and the date.</li>
               <li>Upload the complete signed PDF below. VORA reviews every submission manually; uploading is not an automatic approval.</li>
             </ol>
-            <form action={submitApprovalAction}>
+            <PendingForm action={submitApprovalAction}>
               <input type="hidden" name="token" value={token} />
               <div className="field"><label>Full name of the authorised signatory</label><input name="signer_name" maxLength={180} required /></div>
               <div className="field"><label>Position / title</label><input name="signer_title" maxLength={180} required /></div>
               <div className="field"><label>Signed and company-stamped Price Agreement Letter, PDF (max {Math.floor(maxUploadBytes() / 1048576)} MB)</label><input name="signed_pdf" type="file" accept="application/pdf" required /></div>
               <div className="field"><label style={{ fontWeight: 400 }}><input type="checkbox" name="ack" value="yes" required style={{ width: 'auto', minHeight: 0, marginRight: 8 }} />I confirm that I am authorised to agree to this Price Agreement Letter on behalf of my company, including the terms shown above, and to submit the signed and company-stamped PDF for review by VORA.</label></div>
-              <button className="button">Submit for VORA review</button>
-            </form>
+              <AsyncButton className="button">Submit for VORA review</AsyncButton>
+            </PendingForm>
           </>
         ) : (
           <>
