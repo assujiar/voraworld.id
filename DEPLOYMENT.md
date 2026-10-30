@@ -10,9 +10,11 @@ Do the steps in order. Steps 1-4 are done once; step 5 onward is also what you r
 * **New project:** paste `SUPABASE_MANUAL_SETUP.sql` and run it once.
 * **Project that already has VORA tables (migrations 0001-0022 applied):** run these two files, in this order, one after the other:
   `migrations/0023_supabase_auth.sql`, then `migrations/0024_data_api.sql`.
+* **Project that was set up with 0024 (and 0025) already:** run `migrations/0025_deliveries.sql` if it is not there yet, then `migrations/0026_commercial_workflow.sql` (Phase 3A: the customer is the commercial entity; lead optional; validated quotations; delivery notes and invoices linked to them; one email with two PDFs). Both are forward-only and safe to run once; each records itself in `schema_migrations`.
+* After 0026, in *Admin > SMTP & Email Rules* switch on the rules the new workflow uses: `quotation_customer_approved_admin` (tells you the customer uploaded a signature), `quotation_validated_customer` (tells the customer the quotation is validated), and `invoice_customer` (the one email with the invoice and the pre-payment receipt). Every rule starts off.
 * Then run `SUPABASE_VERIFICATION.sql`. Every line must say PASS (or INFO/WARN with a reason you accept). Any FAIL: stop and fix before continuing.
 
-Run the SQL **before** you deploy: the new code calls the functions that 0024 creates.
+Run the SQL **before** you deploy: the new code calls the functions that 0024, 0025 and 0026 create. Without 0026 the customer, quotation, delivery and invoice pages fail on columns and functions that do not exist yet.
 
 ## 2. Supabase: Authentication
 
