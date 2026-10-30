@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION pg_temp.vora_verify()
 RETURNS TABLE (check_name text, status text, detail text) LANGUAGE plpgsql AS $fn$
 DECLARE
   expected_tables text[] := ARRAY['articles','audit_logs','bank_accounts','counters','coverage','customers','document_seals',
-    'document_verification_tokens','email_jobs','email_rules','email_templates','faqs','invoice_bank_instructions','invoice_items',
+    'document_verification_tokens','documents','email_jobs','email_rules','email_templates','faqs','invoice_bank_instructions','invoice_items',
     'invoices','lead_activities','leads','login_attempts','mail_config','media','navigation_items','pages','payments','prepayment_receipts',
     'quotation_approvals','quotation_items','quotations','receipts','revisions','sections','seo_redirects','settings','users'];
   expected_events text[] := ARRAY['lead_admin','lead_customer','lead_reply','invoice_customer','receipt_customer',
@@ -41,7 +41,7 @@ BEGIN
     COALESCE('not bigint (amounts above IDR 2.1 billion would fail): ' || missing, 'every *_minor column holds amounts above IDR 2.1 billion');
 
   -- 2. Integrity guards for document identifiers ------------------------------
-  FOREACH v IN ARRAY ARRAY['invoices.number','quotations.number','receipts.number','prepayment_receipts.number','leads.reference','leads.public_code','customers.public_code'] LOOP
+  FOREACH v IN ARRAY ARRAY['invoices.number','quotations.number','receipts.number','prepayment_receipts.number','documents.number','leads.reference','leads.public_code','customers.public_code'] LOOP
     SELECT count(*) INTO n FROM pg_index i JOIN pg_class t ON t.oid = i.indrelid
       JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY (i.indkey)
       WHERE i.indisunique AND i.indnatts = 1 AND t.relname = split_part(v, '.', 1) AND a.attname = split_part(v, '.', 2);
@@ -53,7 +53,7 @@ BEGIN
     RETURN QUERY SELECT 'migration history', 'WARN', 'schema_migrations table absent (fine if you ran the SQL files by hand)';
   ELSE
     EXECUTE 'SELECT count(*), max(name) FROM schema_migrations' INTO n, v;
-    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 21 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (21 expected), latest ' || COALESCE(v, 'none');
+    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 22 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (22 expected), latest ' || COALESCE(v, 'none');
   END IF;
 
   -- 4. Seed data the application depends on ------------------------------------

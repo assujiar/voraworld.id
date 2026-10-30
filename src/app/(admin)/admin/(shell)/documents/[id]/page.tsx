@@ -1,0 +1,54 @@
+import { notFound } from 'next/navigation'
+import { documentStatusAction } from '@/actions/documents'
+import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
+import { documentType, LANGUAGE_NAMES, longDate, type Lang } from '@/content/document-types'
+import { sql } from '@/server/db'
+import { publicBaseUrl } from '@/server/env'
+import { routeId } from '@/server/http'
+import { money } from '@/server/money'
+import type { StoredFields } from '@/server/documents/general'
+
+export default async function DocumentDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
+  const id = routeId((await params).id)
+  const [doc] = id > 0 && id < 2_147_483_647 ? await sql`select d.*, c.name as customer_name from documents d left join customers c on c.id = d.customer_id where d.id = ${id}` : []
+  const type = doc ? documentType(doc.kind as string) : undefined
+  if (!doc || !type) notFound()
+  const lang = doc.language as Lang
+  const stored = doc.fields as StoredFields
+  const status = doc.status as string
+  const [ver] = await sql`select token, revoked from document_verification_tokens where kind = 'document' and document_id = ${id} order by id limit 1`
+  const here = `/admin/documents/${id}`
+  const shown = type.fields.filter((f) => stored.values[f.name])
+  return (
+    <AdminPage heading="Document" sp={await searchParams}>
+      <div className="admin-panel">
+        <h3>{doc.number as string} <span className="status">{status}</span></h3>
+        <p><strong>{type.label.en}</strong> <small className="muted">({type.label[lang]})</small> · written in {LANGUAGE_NAMES[lang]} · dated {longDate(doc.documentDate as string, lang)}
+          {doc.customerName ? <> · customer <a href={`/admin/customers/${doc.customerId}`}>{doc.customerName as string}</a></> : ' · a document of the company'}<br />
+          Created {fmt(doc.createdAt as Date)}{doc.issuedAt ? ` · issued ${fmt(doc.issuedAt as Date)}` : ''}</p>
+        {type.publicHolder ? <p className="note">The public verification page of a certificate names the holder ({stored.values.recipient_name}) and the title. Other documents show only their type, number, date and status.</p> : null}
+        <dl style={{ margin: '18px 0' }}>
+          {shown.map((f) => (
+            <div key={f.name} style={{ marginBottom: 10 }}>
+              <dt className="mini muted">{f.label.en}</dt>
+              <dd style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{f.input === 'date' ? longDate(stored.values[f.name], lang) : stored.values[f.name]}</dd>
+            </div>
+          ))}
+        </dl>
+        {stored.invoices?.length ? (
+          <table><thead><tr><th>Invoice</th><th>Issued</th><th>Due</th><th>Outstanding (when saved)</th></tr></thead><tbody>
+            {stored.invoices.map((i) => <tr key={i.id}><td><a href={`/admin/invoices/${i.id}`}>{i.number}</a></td><td>{i.issuedAt}</td><td>{i.dueAt}</td><td>{money(i.outstandingMinor, i.currency)}</td></tr>)}
+          </tbody></table>
+        ) : null}
+        {ver && !ver.revoked && status !== 'void' ? <p className="mini muted">Verification address (printed on the PDF as a QR code and a link): <a href={`/verify/${ver.token}`} target="_blank" rel="noopener">{publicBaseUrl()}/verify/{ver.token as string}</a></p> : null}
+        <div className="inline-actions">
+          {status === 'draft' ? <a className="button-outline" href={`/admin/documents/${id}/edit`}>Edit draft</a> : null}
+          {status === 'draft' ? <form action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue document</button></form> : null}
+          <a className="button-outline" href={`/admin/documents/${id}/pdf`} target="_blank" rel="noopener">{status === 'issued' ? 'Download PDF' : 'Download PDF (marked ' + status + ')'} ↗</a>
+          {status !== 'void' ? <form action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
+        </div>
+        {status === 'draft' ? <p className="note mini">A draft is marked DRAFT on every page and its QR code shows DRAFT. Issuing freezes the document; to change an issued document, void it and write a new one.</p> : null}
+      </div>
+    </AdminPage>
+  )
+}

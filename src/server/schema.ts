@@ -95,6 +95,24 @@ export interface DocumentVerificationTokensRow {
   createdAt: Date
 }
 
+export interface DocumentsRow {
+  id: number
+  number: string
+  kind: string
+  language: string
+  status: string
+  customerId: number | null
+  subject: string
+  recipient: string
+  documentDate: string
+  fields: unknown
+  createdBy: number | null
+  issuedBy: number | null
+  createdAt: Date
+  updatedAt: Date
+  issuedAt: Date | null
+}
+
 export interface EmailJobsRow {
   id: number
   event: string

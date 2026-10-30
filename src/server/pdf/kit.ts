@@ -1,4 +1,4 @@
-import { PDFDocument, PDFFont, PDFImage, PDFPage, PDFString, StandardFonts, rgb, setCharacterSpacing, type RGB } from 'pdf-lib'
+import { degrees, PDFDocument, PDFFont, PDFImage, PDFPage, PDFString, StandardFonts, rgb, setCharacterSpacing, type RGB } from 'pdf-lib'
 import QRCode from 'qrcode'
 import { ActionError } from '../errors'
 import { PDF_ASSETS } from './brand-assets'
@@ -33,20 +33,22 @@ export class Sheet {
   private constructor(
     readonly doc: PDFDocument, private regular: PDFFont, private bold: PDFFont, private chars: Set<number>,
     private logo: PDFImage, private watermarkImage: PDFImage, public page: PDFPage,
+    /** The page size: A4 portrait, or A4 landscape for a certificate. */
+    readonly w: number = W, readonly h: number = H,
   ) {}
 
-  static async create(meta: { title: string; author: string; subject: string }): Promise<Sheet> {
+  static async create(meta: { title: string; author: string; subject: string; landscape?: boolean }): Promise<Sheet> {
     const doc = await PDFDocument.create()
     doc.setTitle(meta.title); doc.setAuthor(meta.author); doc.setSubject(meta.subject); doc.setCreator('VORA'); doc.setProducer('VORA')
     const regular = await doc.embedFont(StandardFonts.Courier)
     const bold = await doc.embedFont(StandardFonts.CourierBold)
     const logo = await doc.embedPng(Buffer.from(PDF_ASSETS.logoReverse, 'base64'))
     const watermark = await doc.embedPng(Buffer.from(PDF_ASSETS.watermark, 'base64'))
-    const sheet = new Sheet(doc, regular, bold, new Set(regular.getCharacterSet()), logo, watermark, doc.addPage([W, H]))
-    return sheet
+    const [w, h] = meta.landscape ? [H, W] : [W, H]
+    return new Sheet(doc, regular, bold, new Set(regular.getCharacterSet()), logo, watermark, doc.addPage([w, h]), w, h)
   }
 
-  newPage(): PDFPage { this.page = this.doc.addPage([W, H]); return this.page }
+  newPage(): PDFPage { this.page = this.doc.addPage([this.w, this.h]); return this.page }
 
   /** Standard PDF fonts hold Western European text only: anything else prints as "?" rather than failing. */
   clean(value: unknown): string {
@@ -109,7 +111,7 @@ export class Sheet {
 
   /** White page background plus the official A mark as a faint watermark (never a redrawn logo). */
   background(watermark: { x: number; y: number; w: number; h: number }): void {
-    this.rect(0, 0, W, H, WHITE)
+    this.rect(0, 0, this.w, this.h, WHITE)
     this.page.drawImage(this.watermarkImage, { x: watermark.x, y: watermark.y, width: watermark.w, height: watermark.h })
   }
   /**
@@ -118,8 +120,9 @@ export class Sheet {
    * that width, and the address and NPWP are wrapped inside it, all flush with the logo's left edge.
    */
   header(o: { x: number; logoWidth: number; info: { address: string; taxId: string } }): void {
-    this.rect(0, H - BAND_H, W, BAND_H, INK)
-    this.rect(0, H - BAND_H - BAND_EDGE, W, BAND_EDGE, RED)
+    const H = this.h
+    this.rect(0, H - BAND_H, this.w, BAND_H, INK)
+    this.rect(0, H - BAND_H - BAND_EDGE, this.w, BAND_EDGE, RED)
     const logoHeight = o.logoWidth * (this.logo.height / this.logo.width)        // the artwork's own proportions, never stretched
     const top = H - 18
     this.page.drawImage(this.logo, { x: o.x, y: top - logoHeight, width: o.logoWidth, height: logoHeight })
@@ -195,7 +198,17 @@ export class Sheet {
   footer(ruleY: number, left: number, right: number, edge = 4): void {
     this.rule(ruleY, left, right)
     this.rect(left, ruleY - 1.1, 31, 2.5, RED)
-    this.rect(0, 0, W, edge, RED)
+    this.rect(0, 0, this.w, edge, RED)
+  }
+
+  /** A large faint word across the middle of the page (DRAFT, VOID): the page must not pass for the real thing. */
+  stampWord(word: string, fill = '#B43E31'): void {
+    const size = Math.min(110, (this.w * 0.78) / (word.length * 0.6))
+    const angle = 35 * Math.PI / 180
+    const width = this.width(word, size, true)
+    const x = this.w / 2 - (width / 2) * Math.cos(angle) + (size * 0.3) * Math.sin(angle)
+    const y = this.h / 2 - (width / 2) * Math.sin(angle) - (size * 0.3) * Math.cos(angle)
+    this.page.drawText(this.clean(word), { x, y, size, font: this.bold, color: color(fill), opacity: 0.1, rotate: degrees(35) })
   }
 
   save(): Promise<Uint8Array> { return this.doc.save() }

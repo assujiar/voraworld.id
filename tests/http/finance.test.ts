@@ -60,6 +60,22 @@ describe('QR verification page', () => {
     expect(voided).toContain('VOID'); expect(voided).not.toContain('AWAITING PAYMENT')
     expect((await page(seed.tokens.stampPrepayment)).html).toContain('PENDING E-METERAI')
   })
+  it('names a general document by its type in its own language and shows nothing of what it says; a certificate names its holder', async () => {
+    const letter = (await page(seed.tokens.document)).html
+    const [d] = await db`select number from documents where id = ${seed.ids.documents}`
+    expect(letter).toContain('AUTHENTIC'); expect(letter).toContain('Surat Umum'); expect(letter).toContain(d.number as string); expect(letter).toContain('2026-10-30')
+    for (const secret of ['Rahasia', 'PT Penerima', 'Isi surat', 'Siti Rahma']) expect(letter, secret).not.toContain(secret)
+    const certificate = (await page(seed.tokens.certificate)).html
+    expect(certificate).toContain('AUTHENTIC'); expect(certificate).toContain('Sertifikat'); expect(certificate).toContain('Awarded to:'); expect(certificate).toContain('Rina Wijaya')
+    expect(certificate).toContain('SERTIFIKAT PENGHARGAAN'); expect(certificate).toContain('2027-10-30'); expect(certificate).not.toContain('Atas dedikasinya')
+    const draft = (await page(seed.tokens.draftDocument)).html
+    expect(draft).toContain('DRAFT'); expect(draft).toContain('Surat Pernyataan'); expect(draft).not.toContain('Budi Draft')
+    const voided = (await page(seed.tokens.voidDocument)).html
+    expect(voided).toContain('VOID'); expect(voided).toContain('General letter')               // written in English, so named in English
+    await db`update documents set status = 'draft' where id = ${seed.ids.certificates}`
+    expect((await page(seed.tokens.certificate)).html).not.toContain('Rina Wijaya')            // nobody is named before the certificate is issued
+    await db`update documents set status = 'issued' where id = ${seed.ids.certificates}`
+  })
   it('follows a revoked link to VOID and answers 404 for anything unknown', async () => {
     await db`update document_verification_tokens set revoked = true where token = ${seed.tokens.receipt}`
     expect((await page(seed.tokens.receipt)).html).toContain('VOID')
@@ -70,20 +86,21 @@ describe('QR verification page', () => {
 
 describe('PDF downloads', () => {
   const kinds: Array<[string, () => number]> = [['invoices', () => seed.ids.invoices], ['quotations', () => seed.ids.quotations], ['receipts', () => seed.ids.receipts], ['receipts', () => seed.ids.stampReceipt],
-    ['prepayment-receipts', () => seed.ids.prepayments], ['prepayment-receipts', () => seed.ids.stampPrepayment], ['prepayment-receipts', () => seed.ids.draftPrepayment]]
+    ['prepayment-receipts', () => seed.ids.prepayments], ['prepayment-receipts', () => seed.ids.stampPrepayment], ['prepayment-receipts', () => seed.ids.draftPrepayment],
+    ['documents', () => seed.ids.documents], ['documents', () => seed.ids.certificates], ['documents', () => seed.ids.draftDocument]]
   it.each(kinds)('%s render as real, private PDFs for an admin', async (kind, id) => {
     const res = await admin.get(`/admin/${kind}/${id()}/pdf`)
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('application/pdf')
     expect(res.headers.get('cache-control')).toContain('no-store')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    expect(res.headers.get('content-disposition')).toMatch(/^inline; filename="(INV|QUO|RCP|PPR)-VORA-C[0-9A-F]{10}-\d{6}-\d{5}\.pdf"$/)
+    expect(res.headers.get('content-disposition')).toMatch(/^inline; filename="(INV|QUO|RCP|PPR|LTR|CRT|STM)-VORA-[CV][0-9A-F]{10}-\d{6}-\d{5}\.pdf"$/)
     const bytes = new Uint8Array(await res.arrayBuffer())
     expect(Buffer.from(bytes.subarray(0, 5)).toString()).toBe('%PDF-')
-    if (hasPoppler) expect(pdfText(bytes)).toMatch(/INVOICE|PRICE AGREEMENT LETTER|RECEIPT|PRE-PAYMENT RECEIPT/)
+    if (hasPoppler) expect(pdfText(bytes)).toMatch(/INVOICE|PRICE AGREEMENT LETTER|RECEIPT|PRE-PAYMENT RECEIPT|SURAT UMUM|SERTIFIKAT|SURAT PERNYATAAN/)
   })
   it('refuse what does not exist or cannot be issued yet', async () => {
-    for (const kind of ['invoices', 'quotations', 'receipts', 'prepayment-receipts']) expect((await admin.get(`/admin/${kind}/99999/pdf`)).status, kind).toBe(404)
+    for (const kind of ['invoices', 'quotations', 'receipts', 'prepayment-receipts', 'documents']) expect((await admin.get(`/admin/${kind}/99999/pdf`)).status, kind).toBe(404)
     await db`update payments set status = 'pending_confirmation' where id = (select payment_id from receipts where id = ${seed.ids.receipts})`
     expect((await admin.get(`/admin/receipts/${seed.ids.receipts}/pdf`)).status).toBe(409)
     await db`update payments set status = 'recorded' where id = (select payment_id from receipts where id = ${seed.ids.receipts})`

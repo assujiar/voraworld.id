@@ -36,3 +36,11 @@ export interface PrepaymentData {
   invoice: { number: string; issuedAt: string; dueAt: string; poNumber: string; shipmentReference: string }
   payer: Party; banks: BankLine[]
 }
+
+/** A general document (letter, statement, certificate...): what was typed, plus the invoices and bank accounts a billing letter lists. */
+export interface GeneralDocData {
+  number: string; kind: string; language: 'id' | 'en'; status: string; documentDate: string
+  values: Record<string, string>
+  invoices: Array<{ number: string; issuedAt: string; dueAt: string; currency: string; totalMinor: number; outstandingMinor: number }>
+  banks: BankLine[]
+}

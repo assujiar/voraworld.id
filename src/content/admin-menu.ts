@@ -5,6 +5,7 @@ export const ADMIN_MENU: Array<{ title: string; links: Array<{ label: string; hr
     { label: 'Customers', href: '/admin/customers' }, { label: 'Quotations', href: '/admin/quotations' }, { label: 'Invoices', href: '/admin/invoices' },
     { label: 'Receipts', href: '/admin/receipts' }, { label: 'Bank Accounts', href: '/admin/bank-accounts' },
   ] },
+  { title: 'Documents', links: [{ label: 'Letters & Certificates', href: '/admin/documents' }] },
   { title: 'Website', links: [
     { label: 'Pages & Sections', href: '/admin/pages' }, { label: 'Articles', href: '/admin/articles' }, { label: 'FAQs', href: '/admin/faq' },
     { label: 'Media Library', href: '/admin/media' }, { label: 'Navigation', href: '/admin/navigation' }, { label: 'Coverage', href: '/admin/coverage' },

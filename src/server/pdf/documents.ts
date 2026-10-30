@@ -6,11 +6,15 @@ import { ActionError } from '../errors'
 import { approvalToken } from '../finance/approval-token'
 import { readStampedReceipt } from '../finance/receipts'
 import { getVerification, type DocumentKind } from '../verification'
+import { documentType } from '../../content/document-types'
+import type { StoredFields } from '../documents/general'
+import { renderCertificate } from './certificate'
+import { renderGeneral } from './general'
 import { renderInvoice } from './invoice'
 import { renderPrepayment } from './prepayment'
 import { renderQuotation } from './quotation'
 import { renderReceipt } from './receipt'
-import type { BankLine, InvoiceData, Issuer, LineData, Party, PrepaymentData, QuotationData, ReceiptData } from './types'
+import type { BankLine, GeneralDocData, InvoiceData, Issuer, LineData, Party, PrepaymentData, QuotationData, ReceiptData } from './types'
 
 const party = (r: Record<string, unknown> | undefined, name?: string): Party => ({
   name: name ?? String(r?.name ?? ''), address: String(r?.address ?? ''), email: String(r?.email ?? ''), taxId: String(r?.taxId ?? ''),
@@ -39,6 +43,7 @@ export async function renderDocumentPdf(db: Db, kind: DocumentKind, id: number, 
   if (kind === 'invoice') return invoicePdf(db, id, baseUrl)
   if (kind === 'quotation') return quotationPdf(db, id, baseUrl)
   if (kind === 'prepayment') return prepaymentPdf(db, id, baseUrl)
+  if (kind === 'document') return generalPdf(db, id, baseUrl)
   return receiptPdf(db, id, baseUrl)
 }
 
@@ -120,4 +125,25 @@ async function prepaymentPdf(db: Db, id: number, baseUrl: string): Promise<Uint8
     banks: banks.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: b.position as number })),
   }
   return renderPrepayment(data, await issuerOf(db), await verifyUrl(db, 'prepayment', id, baseUrl))
+}
+
+/** A general document: a letter, statement, certificate... Drawn from what was typed; a draft and a void one are marked as such on every page. */
+async function generalPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Array> {
+  const [doc] = await db`select * from documents where id = ${id}`
+  if (!doc) throw new ActionError('Document not found', 404)
+  const type = documentType(doc.kind as string)
+  if (!type) throw new ActionError('This document type is no longer supported', 409)
+  const stored = doc.fields as StoredFields
+  const invoices = stored.invoices ?? []
+  // A billing letter pays into the accounts printed on the invoices it lists (frozen on each invoice).
+  const rows = invoices.length ? await db`select bank_name, account_number, account_holder, currency, swift_code, min(position) as position
+    from invoice_bank_instructions where invoice_id in ${db(invoices.map((i) => i.id))} group by bank_name, account_number, account_holder, currency, swift_code order by min(position), bank_name limit 4` : []
+  const data: GeneralDocData = {
+    number: doc.number as string, kind: type.key, language: doc.language as 'id' | 'en', status: doc.status as string, documentDate: String(doc.documentDate),
+    values: stored.values ?? {}, invoices,
+    banks: rows.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: Number(b.position) })),
+  }
+  const issuer = await issuerOf(db)
+  const url = await verifyUrl(db, 'document', id, baseUrl)
+  return type.family === 'certificate' ? renderCertificate(data, issuer, url) : renderGeneral(data, issuer, url)
 }

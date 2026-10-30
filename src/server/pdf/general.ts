@@ -1,0 +1,252 @@
+import type { PDFImage } from 'pdf-lib'
+import { BILLING_HEADINGS, documentType, longDate, WORDS, type DocumentType, type Lang, type SignerDef } from '../../content/document-types'
+import { daysBetween } from '../dates'
+import { money } from '../money'
+import { Flow } from './flow'
+import { BAND_H, H, INK, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
+import type { GeneralDocData, Issuer } from './types'
+
+/**
+ * Letters, billing letters, statements, powers of attorney, certification and assignment letters: one flowing A4 layout under the VORA
+ * letterhead, in the language the document was written in. Text runs over as many pages as it needs (nothing is clipped); a signature
+ * block is never split from the text it signs. Every page carries the verification QR code and its clickable address. A draft or void
+ * document is marked across every page so it cannot pass for an issued one.
+ */
+const LEFT = 50
+const RIGHT = W - 50
+const WIDTH = RIGHT - LEFT
+const FOOTER_TOP = 86
+const LIMIT = FOOTER_TOP + 14
+const TOP = H - BAND_H - 30
+const BODY = 9.2
+const LEADING = 13
+const METERAI = 72
+/** The QR code that signs a document. */
+const QR_SIZE = 72
+
+const MARKER = /^(\s*(?:\d+[.)]|[a-z][.)]|[-*•]))\s+/
+
+export async function renderGeneral(d: GeneralDocData, issuer: Issuer, verificationUrl: string): Promise<Uint8Array> {
+  const type = documentType(d.kind)
+  if (!type || type.family === 'certificate') throw new PdfLayoutError('This document type has no page layout')
+  const lang = d.language
+  const title = type.label[lang].toUpperCase()
+  const s = await Sheet.create({ title: `${type.label[lang]} | ${d.number}`, author: issuer.legalName, subject: 'Document with online verification' })
+  const qr = await s.qr(verificationUrl)
+  const f = new Flow(s, { top: TOP, limit: LIMIT, left: LEFT, right: RIGHT })
+
+  layout(s, f, type, d, issuer, qr)
+
+  const pageWord = lang === 'id' ? ['HALAMAN', 'DARI'] : ['PAGE', 'OF']
+  f.draw((pageNo, total) => {
+    s.background({ x: W / 2 - 168, y: H / 2 - 101, w: 336, h: 202 })
+    if (d.status === 'draft') s.stampWord('DRAFT')
+    if (d.status === 'void') s.stampWord('VOID')
+    s.header({ x: LEFT, logoWidth: 144, info: { address: issuer.address, taxId: issuer.taxId } })
+    s.right(RIGHT, H - 46, title, title.length > 22 ? 13 : 16, WHITE, true)
+    s.right(RIGHT, H - 66, d.number, 6.8, WHITE)
+    if (d.status !== 'issued') s.right(RIGHT, H - 86, d.status.toUpperCase(), 7, '#E8B3AA', true)
+    s.footer(FOOTER_TOP, LEFT, RIGHT)
+    s.text(LEFT, 71, lang === 'id' ? 'VORA / VERIFIKASI DOKUMEN' : 'VORA / DOCUMENT VERIFICATION', 7.7, SLATE, true)
+    s.text(LEFT, 60, WORDS.verifyOnline[lang], 6.4, SLATE)
+    s.linkLines(LEFT, 50, verificationUrl, WIDTH, 5.9, INK)
+    s.text(LEFT, 36, issuer.email, 7.2, INK)
+    s.text(LEFT, 24, `${title}  /  ${pageWord[0]} ${pageNo} ${pageWord[1]} ${total}`, 7.1, SLATE)
+  })
+  return s.save()
+}
+
+function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer: Issuer, qr: PDFImage): void {
+  const lang = d.language
+  const v = d.values
+  const t = (key: keyof typeof WORDS) => WORDS[key][lang]
+
+  /** Wraps `content` and draws it, moving to the next page whenever a line would not fit. A list marker keeps its indent. */
+  const paragraphs = (content: string, o: { x?: number; width?: number; size?: number; leading?: number; bold?: boolean; fill?: string } = {}) => {
+    const x = o.x ?? LEFT, width = o.width ?? WIDTH, size = o.size ?? BODY, leading = o.leading ?? LEADING
+    for (const line of content.split('\n')) {
+      if (!line.trim()) { f.keep(leading); f.y -= leading * 0.6; continue }
+      const marker = MARKER.exec(line)
+      const hang = marker ? s.width(`${marker[1].trim()} `, size, o.bold) : 0
+      const rows = s.wrap(marker ? line.slice(marker[0].length) : line.trim(), width - hang, size, o.bold)
+      rows.forEach((row, i) => {
+        f.keep(leading)
+        if (marker && i === 0) f.text(x, f.y, marker[1].trim(), size, o.fill ?? INK, o.bold)
+        if (row) f.text(x + hang, f.y, row, size, o.fill ?? INK, o.bold)
+        f.y -= leading
+      })
+    }
+  }
+  const gap = (h: number) => { f.y -= h }
+  const centered = (text: string, size: number, bold = true, fill = INK) => { f.keep(size + 6); f.text(LEFT + (WIDTH - s.width(text, size, bold)) / 2, f.y, text, size, fill, bold); f.y -= size + 6 }
+  /** "Label : value" with the values lined up in one column. */
+  const definition = (rows: Array<[string, string]>, labelWidth: number, x = LEFT, bold = false) => {
+    for (const [label, value] of rows) {
+      if (!value) continue
+      const lines = s.wrap(value, WIDTH - (x - LEFT) - labelWidth - 10, BODY, bold)
+      f.keep(LEADING * Math.min(lines.length, 2))
+      f.text(x, f.y, label, BODY, SLATE)
+      f.text(x + labelWidth, f.y, ':', BODY, SLATE)
+      lines.forEach((row, i) => {
+        if (i) f.keep(LEADING)
+        if (row) f.text(x + labelWidth + 10, f.y, row, BODY, INK, bold)
+        f.y -= LEADING
+      })
+    }
+  }
+  const placeAndDate = () => { f.keep(LEADING * 2); f.right(RIGHT, f.y, `${v.place}, ${longDate(d.documentDate, lang)}`, BODY, INK); f.y -= LEADING * 1.6 }
+
+  /**
+   * The signature block, kept in one piece: greeting, company, the QR code that IS the signature (no handwriting), name and position.
+   * Scanning the code opens the document's verification page.
+   */
+  const signature = (name: string, position: string) => {
+    f.keep(LEADING * 4 + QR_SIZE + 14)
+    f.text(LEFT, f.y, t('regards'), BODY, INK); f.y -= LEADING
+    f.text(LEFT, f.y, issuer.legalName, BODY, INK, true); f.y -= 10
+    const top = f.y
+    f.put(() => s.page.drawImage(qr, { x: LEFT, y: top - QR_SIZE, width: QR_SIZE, height: QR_SIZE }))
+    f.text(LEFT + QR_SIZE + 12, top - 16, t('eSigned'), 8.2, INK, true)
+    s.wrap(t('eSignedHow'), WIDTH - QR_SIZE - 12, 7.2).forEach((row, i) => f.text(LEFT + QR_SIZE + 12, top - 29 - i * 9.5, row, 7.2, SLATE))
+    f.y -= QR_SIZE + 14
+    if (name) { f.text(LEFT, f.y, name, BODY, INK, true); f.y -= LEADING }
+    if (position) { f.text(LEFT, f.y, position, BODY, SLATE); f.y -= LEADING }
+  }
+  const copies = () => {
+    if (!v.cc) return
+    gap(LEADING * 0.8)
+    f.keep(LEADING * 2)
+    f.text(LEFT, f.y, `${t('copyTo')}:`, 8.2, SLATE, true); f.y -= LEADING
+    paragraphs(v.cc.split('\n').map((c) => `- ${c.trim().replace(MARKER, '')}`).join('\n'), { size: 8.2, leading: 11.5 })
+  }
+
+  if (type.family === 'letter' || type.family === 'billing') {
+    placeAndDate()
+    definition([[t('number'), d.number], [t('attachments'), v.attachments ?? ''], [t('subject'), v.subject ?? '']], 62)
+    gap(LEADING)
+    f.keep(LEADING * 4)
+    f.text(LEFT, f.y, t('to'), BODY, INK); f.y -= LEADING
+    paragraphs(v.recipient_name, { bold: true })
+    if (v.recipient_address) paragraphs(v.recipient_address)
+    if (v.attention) paragraphs(`${t('attention')} ${v.attention}`)
+    gap(LEADING * 0.8)
+    paragraphs(v.body)
+    if (type.family === 'billing') billing(s, f, d, lang, paragraphs, gap)
+    gap(LEADING * 0.4)
+    paragraphs(v.closing)
+    gap(LEADING)
+    signature(v.signatory_name, v.signatory_title)
+    copies()
+    return
+  }
+
+  // Parties: heading, the people named, what is declared, the closing and one signature box per signer.
+  centered(type.label[lang].toUpperCase(), 12)
+  centered(`${t('number')}: ${d.number}`, 8.4, false, SLATE)
+  if (v.subject) { gap(2); centered(v.subject, 9.2, true) }
+  gap(LEADING * 0.8)
+  const parties = type.parties ?? []
+  parties.forEach((party) => {
+    f.keep(LEADING * 5)
+    f.text(LEFT, f.y, party.caption[lang], BODY, INK, true); f.y -= LEADING
+    definition([[t('name'), v[`${party.key}_name`] ?? ''], [t('idNumber'), v[`${party.key}_id_number`] ?? ''], [t('position'), v[`${party.key}_position`] ?? ''], [t('address'), v[`${party.key}_address`] ?? '']], 84, LEFT + 14)
+    gap(LEADING * 0.6)
+  })
+  if (type.lead) { paragraphs(type.lead[lang]); gap(LEADING * 0.2) }
+  paragraphs(v.body)
+  definition([[t('location'), v.location ?? ''], [type.key === 'authorization' ? t('validity') : t('period'), v.period ?? '']], 84)
+  gap(LEADING * 0.4)
+  paragraphs(v.closing)
+  gap(LEADING)
+  placeAndDate()
+  signers(s, f, type, d, lang, qr)
+}
+
+/** The table of open invoices, the total, the pay-by date and the bank accounts. */
+function billing(_s: Sheet, f: Flow, d: GeneralDocData, lang: Lang, paragraphs: (c: string, o?: { size?: number; leading?: number; bold?: boolean; fill?: string }) => void, gap: (h: number) => void): void {
+  const t = (key: keyof typeof WORDS) => WORDS[key][lang]
+  const invoices = d.invoices
+  if (!invoices.length) throw new PdfLayoutError('A billing letter lists at least one invoice')
+  const currency = invoices[0].currency
+  const heading = BILLING_HEADINGS[d.values.level ?? 'first'] ?? BILLING_HEADINGS.first
+  gap(6)
+  f.keep(60)
+  f.text(LEFT, f.y, heading[lang], 8.6, RED, true)
+  f.rule(f.y - 5)
+  f.y -= 20
+  const size = 7.8
+  const head = () => {
+    f.roundRect(LEFT, f.y - 8, WIDTH, 19, 4, '#F7F7F4')
+    f.text(LEFT + 6, f.y - 2, t('invoiceNo').toUpperCase(), 6.6, SLATE, true)
+    f.text(LEFT + 188, f.y - 2, t('issued').toUpperCase(), 6.6, SLATE, true)
+    f.text(LEFT + 246, f.y - 2, t('due').toUpperCase(), 6.6, SLATE, true)
+    f.text(LEFT + 314, f.y - 2, t('overdue').toUpperCase(), 6.6, SLATE, true)
+    f.right(RIGHT - 6, f.y - 2, t('outstanding').toUpperCase(), 6.6, SLATE, true)
+    f.y -= 22
+  }
+  head()
+  let total = 0
+  for (const inv of invoices) {
+    if (f.keep(16)) head()
+    const late = daysBetween(inv.dueAt, d.documentDate)
+    f.text(LEFT + 6, f.y, inv.number, size)
+    f.text(LEFT + 188, f.y, inv.issuedAt, size)
+    f.text(LEFT + 246, f.y, inv.dueAt, size)
+    f.text(LEFT + 314, f.y, late > 0 ? `${late} ${t('days')}` : t('notDue'), size, late > 0 ? RED : SLATE, late > 0)
+    f.right(RIGHT - 6, f.y, money(inv.outstandingMinor, currency), size, INK, true)
+    total += inv.outstandingMinor
+    f.rule(f.y - 5, LEFT, RIGHT)
+    f.y -= 15
+  }
+  f.keep(70)
+  f.y -= 18
+  f.roundRect(LEFT, f.y - 9, WIDTH, 24, 5, INK)
+  f.text(LEFT + 8, f.y - 1, t('total'), 8, WHITE, true)
+  f.right(RIGHT - 8, f.y - 1, money(total, currency), 9.6, WHITE, true)
+  f.y -= 34
+  paragraphs(`${t('payBy')}: ${longDate(d.values.pay_by ?? '', lang)}`, { bold: true })
+  const banks = d.banks
+  if (banks.length) {
+    gap(4)
+    paragraphs(t('transferTo'))
+    for (const b of banks) paragraphs([b.bankName, b.accountNumber, b.accountHolder, b.swiftCode && `SWIFT ${b.swiftCode}`].filter(Boolean).join(' / '), { size: 8.4, leading: 12 })
+  }
+}
+
+/**
+ * One signature column per signer: the QR code that signs the document and, beside it, the square (1:1) for the stamp duty or the
+ * company stamp when the type has one. There is no handwritten signature: the name and position are printed under the QR code.
+ */
+function signers(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, lang: Lang, qr: PDFImage): void {
+  const list = (type.signers ?? []).filter((x) => d.values[`${x.party}_name`])
+  if (!list.length) return
+  const height = METERAI + 78
+  f.keep(height)
+  const columnWidth = WIDTH / 2 - 10
+  list.forEach((signer: SignerDef, index: number) => {
+    const x = list.length === 1 ? LEFT + WIDTH - columnWidth : LEFT + index * (WIDTH / 2 + 10)
+    const centre = x + columnWidth / 2
+    const top = f.y
+    f.text(centre - s.width(signer.role[lang], BODY, true) / 2, top, signer.role[lang], BODY, INK, true)
+    const hidden = type.key === 'statement' && d.values.stamp_duty === 'no'
+    const box = signer.box && !hidden ? signer.box[lang].toUpperCase() : ''
+    const together = box ? QR_SIZE * 2 + 14 : QR_SIZE
+    const qrX = centre - together / 2
+    const qrTop = top - 10
+    f.put(() => s.page.drawImage(qr, { x: qrX, y: qrTop - QR_SIZE, width: QR_SIZE, height: QR_SIZE }))
+    if (box) {
+      const boxX = qrX + QR_SIZE + 14
+      f.outline(boxX, qrTop - METERAI, METERAI, METERAI, SLATE, 0.8, [3, 2])                    // a 1:1 square, dashed: "put it here"
+      f.text(boxX + (METERAI - s.width(box, 6.4, true)) / 2, qrTop - METERAI / 2 - 2, box, 6.4, '#AEB6BA', true)
+    }
+    const caption = WORDS.eSigned[lang]
+    f.text(qrX + (QR_SIZE - s.width(caption, 5.6)) / 2, qrTop - QR_SIZE - 8, caption, 5.6, SLATE)
+    const name = d.values[`${signer.party}_name`]
+    const position = d.values[`${signer.party}_position`] ?? ''
+    const nameY = qrTop - QR_SIZE - 24
+    const rows = s.wrap(name, columnWidth, BODY, true).slice(0, 2)
+    rows.forEach((row, i) => f.text(centre - s.width(row, BODY, true) / 2, nameY - i * LEADING, row, BODY, INK, true))
+    if (position) f.text(centre - s.width(position.slice(0, 40), 8.2) / 2, nameY - rows.length * LEADING, position.slice(0, 40), 8.2, SLATE)
+  })
+  f.y -= height
+}
