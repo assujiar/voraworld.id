@@ -11,6 +11,7 @@ const SAMPLE: Record<string, string> = {
   document_number: 'INV-VORA-C0000000000-202610-00001', document_date: '30 Oct 2026', prepayment_number: 'PPR-VORA-C0000000000-202610-00001',
   invoice_number: 'INV-VORA-C0000000000-202610-00001', invoice_status: 'Lunas', payment_amount: 'IDR 12.500.000', payment_date: '30 Oct 2026', payment_reference: 'TRF-88421',
   outstanding_amount: 'IDR 0', consignee_name: 'PT Penerima Jaya', receiver_name: 'Siti Aminah', delivered_at: '30 Oct 2026 14:20 WIB',
+  valid_until: '30 Nov 2026', approval_expiry: '14 Nov 2026', reply_message: 'Terima kasih, kami kirim penawaran besok pagi.', delivery_number: 'DLV-VORA-C0000000000-202610-00001', received_at: '30 Oct 2026 14:20 WIB', signer_title: 'Direktur',
   admin_url: '/admin', pod_url: '/pod/view/contoh', verify_url: '/verify/contoh', approval_url: '/quotation-approval/contoh', signer_name: 'Budi Santoso',
 }
 

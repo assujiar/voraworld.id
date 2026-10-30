@@ -17,10 +17,23 @@ export function TemplateEditor({ name, keyName, subject: initialSubject, html: i
   const [subject, setSubject] = useState(initialSubject)
   const [html, setHtml] = useState(initialHtml)
   const [preview, setPreview] = useState<Preview>({ state: 'loading' })
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
   const area = useRef<HTMLTextAreaElement>(null)
   const dirty = subject !== initialSubject || html !== initialHtml
 
+  // Thirteen templates sit in closed panels: only the open one is previewed, so nothing is requested or drawn for the others.
   useEffect(() => {
+    const details = root.current?.closest('details')
+    if (!details) { setOpen(true); return }
+    const sync = () => setOpen(details.open)
+    sync()
+    details.addEventListener('toggle', sync)
+    return () => details.removeEventListener('toggle', sync)
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
     const abort = new AbortController()
     setPreview({ state: 'loading' })
     const timer = setTimeout(() => {
@@ -33,7 +46,7 @@ export function TemplateEditor({ name, keyName, subject: initialSubject, html: i
         .catch((e) => { if (!abort.signal.aborted) setPreview({ state: 'error', message: e instanceof Error ? e.message : 'Pratinjau tidak bisa dibuat.' }) })
     }, 350)                                                               // typing does not ask the server once per key
     return () => { clearTimeout(timer); abort.abort() }
-  }, [subject, html])
+  }, [subject, html, open])
 
   const insert = (variable: string) => {
     const el = area.current
@@ -46,7 +59,7 @@ export function TemplateEditor({ name, keyName, subject: initialSubject, html: i
 
   const fields = <><input type="hidden" name="key" value={keyName} />{back}<input type="hidden" name="subject" value={subject} /><input type="hidden" name="html" value={html} /></>
   return (
-    <div className="tpl-editor">
+    <div className="tpl-editor" ref={root}>
       <div className="tpl-editor__edit">
         <div className="field"><label htmlFor={`s-${keyName}`}>Email subject</label><input id={`s-${keyName}`} value={subject} onChange={(e) => setSubject(e.target.value)} required /></div>
         <div className="field"><label htmlFor={`h-${keyName}`}>HTML template</label><textarea id={`h-${keyName}`} ref={area} rows={9} value={html} onChange={(e) => setHtml(e.target.value)} spellCheck={false} /></div>
