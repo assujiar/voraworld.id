@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openContext, overflow, scalar, signIn, trackProblems } from './helpers'
+import { openContext, overflow, scalar, signIn, trackProblems, confirmAsked } from './helpers'
 
 /**
  * Letters, statements and certificates written in the browser: pick a type and a language, fill in the form (a refused form keeps what
@@ -95,6 +95,7 @@ test('writing, issuing and verifying a statement and a certificate', async ({ br
   await test.step('voiding stops the QR code from verifying', async () => {
     await page.goto(`/admin/documents/${certificateId}`)
     await page.click('button:has-text("Void")')
+    await confirmAsked(page)
     await expect(page.locator('h3 .status')).toContainText('void')
     const token = await scalar(`select token from document_verification_tokens where kind='document' and document_id=${certificateId}`)
     const visitor = await openContext(browser)

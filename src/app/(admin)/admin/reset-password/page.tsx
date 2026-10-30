@@ -1,6 +1,8 @@
 import { resetPassword } from '@/actions/auth'
 import { MIN_PASSWORD_LENGTH } from '@/server/auth/policy'
 import { requirePageUser } from '@/server/page-auth'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 /** Opened from the emailed link, which has already signed the administrator in. */
 export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -13,12 +15,12 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
         <span className="eyebrow">Secure administration</span>
         <h1 style={{ fontSize: '2.3rem' }}>Choose a new password</h1>
         {sp.error ? <div className="alert" role="alert">{sp.error}</div> : null}
-        <form action={resetPassword}>
+        <PendingForm action={resetPassword}>
           <input type="hidden" name="_back" value="/admin/reset-password" />
           <div className="field"><label>New password (at least {MIN_PASSWORD_LENGTH} characters)</label><input type="password" name="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required /></div>
           <div className="field"><label>Repeat the new password</label><input type="password" name="confirm" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required /></div>
-          <button className="button" style={{ width: '100%' }}>Change password</button>
-        </form>
+          <AsyncButton className="button" style={{ width: '100%' }}>Change password</AsyncButton>
+        </PendingForm>
       </div>
     </main>
   )

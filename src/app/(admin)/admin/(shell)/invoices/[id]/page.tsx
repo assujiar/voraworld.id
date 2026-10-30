@@ -9,6 +9,8 @@ import { many, one, withRelated, type Row } from '@/server/data'
 import { today } from '@/server/dates'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export default async function InvoiceDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -66,15 +68,15 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
           ) : (
             <>
               <p className="note">{['draft', 'issued'].includes(status) ? 'This invoice has no pre-payment receipt.' : 'A pre-payment receipt can only be made while the invoice is unpaid.'}</p>
-              {['draft', 'issued'].includes(status) && (inv.totalMinor as number) > 0 ? <form action={ensurePrepaymentAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Create pre-payment receipt</button></form> : null}
+              {['draft', 'issued'].includes(status) && (inv.totalMinor as number) > 0 ? <PendingForm action={ensurePrepaymentAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Create pre-payment receipt</AsyncButton></PendingForm> : null}
             </>
           )}
         </div>
         <div className="inline-actions">
-          {status === 'draft' ? <form action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue invoice</button></form> : null}
-          {['draft', 'issued'].includes(status) ? <form action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
+          {status === 'draft' ? <PendingForm action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue">Issue invoice</AsyncButton></PendingForm> : null}
+          {['draft', 'issued'].includes(status) ? <PendingForm action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
           <a className="button-outline" href={`/admin/invoices/${id}/pdf`} target="_blank" rel="noopener">Download PDF ↗</a>
-          {!['draft', 'void'].includes(status) ? <form action={sendInvoiceAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Kirim Invoice &amp; Pre-Payment Receipt</button></form> : null}
+          {!['draft', 'void'].includes(status) ? <PendingForm action={sendInvoiceAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Kirim Invoice &amp; Pre-Payment Receipt</AsyncButton></PendingForm> : null}
         </div>
         {open ? <><hr /><RecordPaymentForm invoiceId={id} currency={cur} today={today()} banks={accounts} /></> : null}
         <p className="note mini">Sending the invoice and its pre-payment receipt is not a payment: the balance changes only when a recorded payment is confirmed as funds received.</p>
@@ -88,7 +90,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
               <td><span className="status">{PAYMENT_LABEL[p.status as string] ?? (p.status as string)}</span>
                 {p.status === 'pending_confirmation' ? (
                   <>
-                    <form action={confirmPaymentAction} style={{ marginTop: 9 }}>
+                    <PendingForm action={confirmPaymentAction} style={{ marginTop: 9 }}>
                       <input type="hidden" name="record" value={p.id as number} /><Back to={here} />
                       {p.receivingBankSnapshot ? <p className="mini muted">Receiving account: {(p.receivingBankSnapshot as Record<string, string>).bank_name} · {(p.receivingBankSnapshot as Record<string, string>).account_number}</p> : (
                         <div className="field"><label className="mini">VORA account that received the money</label>
@@ -96,9 +98,9 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
                         </div>
                       )}
                       <label className="mini" style={{ display: 'block' }}><input type="checkbox" name="funds_cleared" value="yes" required /> I verified that the funds are effectively credited to PT Satu Arah International</label>
-                      <button className="button" style={{ marginTop: 7 }}>Konfirmasi Dana Diterima</button>
-                    </form>
-                    <form action={cancelPaymentAction} style={{ marginTop: 5 }}><input type="hidden" name="record" value={p.id as number} /><Back to={here} /><button className="button-outline">Reject / cancel</button></form>
+                      <AsyncButton className="button" style={{ marginTop: 7 }}>Konfirmasi Dana Diterima</AsyncButton>
+                    </PendingForm>
+                    <PendingForm action={cancelPaymentAction} style={{ marginTop: 5 }}><input type="hidden" name="record" value={p.id as number} /><Back to={here} /><AsyncButton className="button-outline">Reject / cancel</AsyncButton></PendingForm>
                   </>
                 ) : p.status === 'recorded' ? <small style={{ display: 'block' }}>Confirmed {fmt(p.confirmedAt as Date)} UTC</small> : null}
               </td>

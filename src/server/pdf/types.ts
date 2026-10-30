@@ -45,6 +45,8 @@ export interface GeneralDocData {
   values: Record<string, string>
   invoices: Array<{ number: string; issuedAt: string; dueAt: string; currency: string; totalMinor: number; outstandingMinor: number }>
   banks: BankLine[]
+  /** The articles of an agreement. */
+  articles: Array<{ title: string; body: string }>
 }
 
 /** A delivery note (surat jalan). `captureUrl` is the address in its QR code: where the receiver signs. */

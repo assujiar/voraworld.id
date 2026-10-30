@@ -9,6 +9,8 @@ import { CURRENCIES } from '@/server/finance/parse'
 import { money } from '@/server/money'
 import type { LeadsRow } from '@/server/schema'
 import { routeId } from '@/server/http'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export default async function LeadDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -33,23 +35,23 @@ export default async function LeadDetail({ params, searchParams }: { params: Pro
         </div>
         <div className="admin-panel">
           <h3>Pipeline &amp; follow-up</h3>
-          <form action={updateLeadAction}>
+          <PendingForm action={updateLeadAction}>
             <input type="hidden" name="record" value={o.id} /><Back to={`/admin/leads/${o.id}`} />
             <div className="field"><label>Status</label><select name="status" defaultValue={o.status}>{LEAD_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="field"><label>Priority</label><select name="priority" defaultValue={o.priority}>{LEAD_PRIORITIES.map((s) => <option key={s}>{s}</option>)}</select></div>
             <div className="field"><label>Assignee</label><input name="assignee" defaultValue={o.assignee} /></div>
             <div className="field"><label>Follow-up</label><input name="followup" type="date" defaultValue={o.followup} /></div>
             <div className="field"><label>Internal note (appends to activity timeline)</label><textarea name="note" /></div>
-            <button className="button">Save lead</button>
-          </form>
+            <AsyncButton className="button">Save lead</AsyncButton>
+          </PendingForm>
           {o.email ? (
-            <form action={replyLeadAction} style={{ marginTop: 25 }}>
+            <PendingForm action={replyLeadAction} style={{ marginTop: 25 }}>
               <input type="hidden" name="record" value={o.id} /><Back to={`/admin/leads/${o.id}`} />
               <h3>Reply by email</h3>
               <div className="field"><label>Message to {o.email}</label><textarea name="message" required minLength={2} maxLength={6000} rows={5} /></div>
-              <button className="button-outline">Send reply</button>
+              <AsyncButton className="button-outline">Send reply</AsyncButton>
               <p className="muted mini" style={{ marginTop: 8 }}>Needs SMTP and the <code>lead_reply</code> notification switched on. The reply is recorded in the activity below.</p>
-            </form>
+            </PendingForm>
           ) : null}
           <h3 style={{ marginTop: 25 }}>Activity</h3>
           {activities.length ? activities.map((a, i) => <p className="mini" key={i}>{fmt(a.createdAt as Date)} · {a.message as string}</p>) : <p className="muted">No notes yet.</p>}
@@ -64,7 +66,7 @@ export default async function LeadDetail({ params, searchParams }: { params: Pro
             <div className="inline-actions"><a className="button" href={`/admin/quotations/new?customer=${customer.id}&lead=${o.id}`}>Buat Quotation</a><a className="button-outline" href={`/admin/customers/${customer.id}`}>Open the customer</a></div>
           </>
         ) : (
-          <form action={convertLeadAction}>
+          <PendingForm action={convertLeadAction}>
             <input type="hidden" name="record" value={o.id} />
             <p className="note">A quotation is always for a customer. Save this lead as a customer first (or link one that already exists), then make the quotation. Check the details before saving; nothing is merged for you.</p>
             {matches.length ? (
@@ -94,10 +96,10 @@ export default async function LeadDetail({ params, searchParams }: { params: Pro
               {matches.length ? <div className="field wide"><label style={{ fontWeight: 400 }}><input type="checkbox" name="different_customer" value="yes" style={{ width: 'auto', minHeight: 0, marginRight: 8 }} /> This is a different customer, even if it looks like one of the above</label></div> : null}
             </div>
             <div className="inline-actions">
-              <button className="button-outline">Simpan sebagai Customer</button>
-              <button className="button" name="then" value="quotation">Simpan sebagai Customer &amp; Buat Quotation</button>
+              <AsyncButton className="button-outline">Simpan sebagai Customer</AsyncButton>
+              <AsyncButton className="button" name="then" value="quotation">Simpan sebagai Customer &amp; Buat Quotation</AsyncButton>
             </div>
-          </form>
+          </PendingForm>
         )}
         {quotations.length ? (
           <>

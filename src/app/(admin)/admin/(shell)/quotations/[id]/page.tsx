@@ -5,6 +5,8 @@ import { many, one } from '@/server/data'
 import { DELIVERY_LABEL, INVOICE_LABEL, QUOTATION_LABEL } from '@/server/finance/labels'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export default async function QuotationDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -43,18 +45,18 @@ export default async function QuotationDetail({ params, searchParams }: { params
         {q.termsConditions ? <><h4>Terms and conditions</h4><p style={{ whiteSpace: 'pre-wrap' }}>{q.termsConditions as string}</p></> : null}
         {q.notes ? <><h4>Notes</h4><p style={{ whiteSpace: 'pre-wrap' }}>{q.notes as string}</p></> : null}
         <div className="inline-actions">
-          {q.status === 'draft' ? <form action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue quotation</button></form> : null}
-          {q.status !== 'void' && (q.customerId || !['validated'].includes(q.status as string)) ? <form action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}
+          {q.status === 'draft' ? <PendingForm action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue">Issue quotation</AsyncButton></PendingForm> : null}
+          {q.status !== 'void' && (q.customerId || !['validated'].includes(q.status as string)) ? <PendingForm action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
           <a className="button-outline" href={`/admin/quotations/${id}/pdf`} target="_blank" rel="noopener">View PDF ↗</a>
         </div>
       </div>
       {['issued', 'awaiting_approval', 'rejected'].includes(q.status as string) ? (
-        <form action={requestApprovalAction} className="admin-panel">
+        <PendingForm action={requestApprovalAction} className="admin-panel">
           <input type="hidden" name="record" value={id} /><Back to={here} />
           <h4>Customer signature &amp; company stamp</h4>
           <p className="note">{q.status === 'rejected' ? 'The signed document was rejected and the quotation needs correction. When it is right, send it again. ' : ''}Sends the quotation PDF through the configured SMTP with a private, expiring link. The customer uploads the signed and stamped PDF: the quotation then becomes <em>approved by the customer</em>. It is validated only when VORA has checked the signature and stamp by hand. A new request revokes earlier links.</p>
-          <button className="button">{q.status === 'rejected' ? 'Send again for customer approval' : 'Send quotation for customer approval'}</button>
-        </form>
+          <AsyncButton className="button">{q.status === 'rejected' ? 'Send again for customer approval' : 'Send quotation for customer approval'}</AsyncButton>
+        </PendingForm>
       ) : null}
       <div className="admin-panel"><h4>Related records</h4>
         {q.status === 'validated' ? (
@@ -82,12 +84,12 @@ export default async function QuotationDetail({ params, searchParams }: { params
                 <td>{a.signerName as string}<br /><small>{a.signerTitle as string}</small></td>
                 <td>{a.signedPdfKey ? <a href={`/admin/quotation-approvals/${a.id}/file`}>Download signed PDF</a> : 'Awaiting upload'}<br />{a.signedPdfSha256 ? <small title="SHA-256 recorded at upload">sha256 {(a.signedPdfSha256 as string).slice(0, 12)}…</small> : null}</td>
                 <td>{a.status === 'submitted' ? (
-                  <form action={reviewApprovalAction}>
+                  <PendingForm action={reviewApprovalAction}>
                     <input type="hidden" name="record" value={a.id as number} /><Back to={here} />
                     <label><input type="checkbox" name="signature_and_stamp_verified" value="yes" /> Signature and stamp reviewed manually</label>
                     <textarea name="review_note" placeholder="Notes (required when rejecting: say what must be corrected)" />
-                    <div className="inline-actions"><button className="button" name="action" value="approve">Validate Quotation</button><button className="button-outline" name="action" value="reject">Reject: needs correction</button></div>
-                  </form>
+                    <div className="inline-actions"><AsyncButton className="button" name="action" value="approve">Validate Quotation</AsyncButton><AsyncButton className="button-outline" name="action" value="reject">Reject: needs correction</AsyncButton></div>
+                  </PendingForm>
                 ) : (a.reviewNote as string) || '—'}</td>
               </tr>
             ))}

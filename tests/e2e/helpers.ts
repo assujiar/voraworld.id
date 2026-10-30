@@ -121,3 +121,10 @@ export async function sign(page: Page, name: string) {
   await expect(page.locator('img[alt="Photo 1"]')).toBeVisible()
 }
 
+
+/** Answers the question a destructive or financial button asks first ("Batalkan...?", "Konfirmasi dana sudah diterima?"). */
+export async function confirmAsked(page: Page) {
+  const yes = page.locator('dialog[open] .confirm-yes')
+  await yes.waitFor({ state: 'visible' })
+  await yes.click()
+}

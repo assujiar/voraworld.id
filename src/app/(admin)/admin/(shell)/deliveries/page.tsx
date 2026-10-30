@@ -1,5 +1,7 @@
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause } from '@/server/data'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 const STATUSES = ['draft', 'issued', 'delivered', 'void']
 
@@ -20,11 +22,11 @@ export default async function Deliveries({ searchParams }: { searchParams: Promi
           <p className="note" style={{ margin: 0 }}>A delivery note (surat jalan) carries a QR code. The receiver scans it, signs on their phone and photographs the goods: that is the proof of delivery.</p>
           <a className="button" href="/admin/deliveries/new">New delivery note</a>
         </div>
-        <form method="get" className="inline-actions" style={{ marginBottom: 14 }}>
+        <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
           <input name="q" defaultValue={q} placeholder="Search number, consignee, destination or reference" />
           <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
-          <button className="button">Filter</button>
-        </form>
+          <AsyncButton className="button">Filter</AsyncButton>
+        </StepForm>
         <table><thead><tr><th>Delivery note</th><th>Consignee</th><th>Destination</th><th>Date</th><th>Status</th><th>Received</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>

@@ -10,7 +10,7 @@ export const viewport: Viewport = { themeColor: '#101720', width: 'device-width'
 export default function DocsRoot({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head><link rel="stylesheet" href="/static/css/site.css" /></head>
+      <head><link rel="stylesheet" href="/static/css/site.css" /><link rel="stylesheet" href="/static/css/feedback.css?v=1" /></head>
       <body>{children}</body>
     </html>
   )

@@ -1,0 +1,63 @@
+/* Processing feedback: the loader inside a busy button, notices, confirmation dialogs, skeletons.
+   Everything here is small and functional. Loaders turn only while something is really pending, and stand still for people who ask for less motion. */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* A busy button keeps its place, ignores clicks and shows a ring beside what it is doing. */
+button.is-busy{position:relative;cursor:progress;gap:10px;opacity:1}
+button.is-busy[disabled]{opacity:1}
+.spin{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:vora-spin .8s linear infinite}
+@keyframes vora-spin{to{transform:rotate(360deg)}}
+/* No number is shown: a form post cannot report how much has gone up, so the bar only says "still working". */
+.bar-wait{position:absolute;left:0;right:0;bottom:0;height:3px;overflow:hidden;border-radius:0 0 5px 5px;background:rgba(255,255,255,.2)}
+.bar-wait::after{content:"";position:absolute;inset:0 auto 0 -40%;width:40%;background:var(--red,#b43e31);animation:vora-wait 1.1s ease-in-out infinite}
+.button-outline.is-busy .bar-wait{background:rgba(16,23,32,.12)}
+@keyframes vora-wait{to{left:100%}}
+
+/* Where the form stands: edited, saving, refused. Reserved height, so the line appearing never moves the page. */
+.form-status{min-height:1.4em;margin:10px 0 0;font-size:.78rem;color:var(--muted,#64717c)}
+.form-status.is-failed{color:#8c2f25;font-weight:600}
+
+/* Notices stay out of the layout. */
+.toasts{position:fixed;z-index:60;top:16px;right:16px;display:grid;gap:10px;width:min(420px,calc(100vw - 32px));pointer-events:none}
+.toast{pointer-events:auto;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;margin:0;padding:14px 14px 14px 16px;border-radius:10px;border:1px solid var(--line,#dce0e1);background:#fff;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 10px 28px rgba(16,23,32,.16),0 2px 6px rgba(16,23,32,.08);animation:vora-toast .28s cubic-bezier(.2,.8,.2,1) both}
+.toast-mark{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:.8rem;font-weight:800;color:#fff;background:var(--success,#276650)}
+.toast-queued .toast-mark{background:#6b5a1e}
+.toast-error{border-color:#d9a39d;background:#fdf4f2}
+.toast-error .toast-mark{background:var(--red,#b43e31)}
+.toast-close{border:0;background:transparent;font-size:1.2rem;line-height:1;color:var(--muted,#64717c);cursor:pointer;min-width:32px;min-height:32px;border-radius:6px}
+.toast-close:hover{background:rgba(16,23,32,.06)}
+@keyframes vora-toast{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@media(max-width:640px){.toasts{top:auto;bottom:12px;right:12px;left:12px;width:auto}}
+
+/* Questions before something that cannot be undone. */
+.confirm-dialog{max-width:min(460px,calc(100vw - 32px));padding:24px;border:1px solid var(--line,#dce0e1);border-radius:14px;background:#fff;color:var(--ink,#101720);box-shadow:0 24px 60px rgba(16,23,32,.3)}
+.confirm-dialog::backdrop{background:rgba(16,23,32,.5)}
+.confirm-dialog[open]{animation:vora-toast .22s cubic-bezier(.2,.8,.2,1) both}
+.confirm-dialog h4{margin:0 0 8px;font-size:1.05rem}
+.confirm-dialog p{margin:0 0 18px;line-height:1.55;font-size:.9rem}
+.confirm-dialog .inline-actions{justify-content:flex-end}
+
+/* Skeletons follow the shape of what is loading. */
+.skeleton{display:block;border-radius:6px;background:linear-gradient(90deg,#e9ecee 25%,#f4f5f6 50%,#e9ecee 75%);background-size:200% 100%;animation:vora-shimmer 1.4s linear infinite}
+@keyframes vora-shimmer{to{background-position:-200% 0}}
+.skeleton-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--line,#dce0e1)}
+.skeleton-row .skeleton{height:14px}
+
+/* Rows of the item tables: the new row settles in; nothing else moves. */
+.items-table tbody tr{animation:vora-row .22s ease-out both}
+@keyframes vora-row{from{opacity:0;background:rgba(180,62,49,.08)}to{opacity:1;background:transparent}}
+.items-table input:focus-visible{outline:2px solid var(--red,#b43e31);outline-offset:1px}
+.items-table tr:focus-within{background:rgba(16,23,32,.03)}
+
+/* Fields answer the keyboard. */
+.admin-body input:not([type=checkbox]):not([type=radio]),.admin-body select,.admin-body textarea{transition:border-color .16s ease,box-shadow .16s ease}
+.admin-body input:focus-visible,.admin-body select:focus-visible,.admin-body textarea:focus-visible{outline:none;border-color:var(--red,#b43e31);box-shadow:0 0 0 3px rgba(180,62,49,.18)}
+.admin-body input:user-invalid,.admin-body textarea:user-invalid,.admin-body select:user-invalid{border-color:var(--red,#b43e31);box-shadow:0 0 0 3px rgba(180,62,49,.12)}
+.admin-body button:focus-visible,.admin-body a:focus-visible{outline:3px solid var(--red,#b43e31);outline-offset:2px}
+
+@media(prefers-reduced-motion:reduce){
+  .spin{animation:none;border-right-color:currentColor;opacity:.7}
+  .bar-wait::after{animation:none;inset:0;width:100%;opacity:.6}
+  .skeleton{animation:none}
+  .toast,.confirm-dialog[open],.items-table tbody tr{animation:none}
+}

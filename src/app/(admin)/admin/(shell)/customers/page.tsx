@@ -1,5 +1,7 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause } from '@/server/data'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 export default async function Customers({ searchParams }: { searchParams: Promise<Notices & { q?: string }> }) {
   const sp = await searchParams
@@ -10,10 +12,10 @@ export default async function Customers({ searchParams }: { searchParams: Promis
     <AdminPage heading="Customers" sp={sp} newHref="/admin/customers/new" newLabel="New customer">
       <div className="admin-panel">
         <p className="note">A customer is where every commercial document starts: a quotation can be made for a customer directly, or after a lead is saved as one.</p>
-        <form method="get" className="inline-actions" style={{ marginBottom: 14 }}>
+        <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
           <input name="q" defaultValue={q} placeholder="Search company, owner code, email, contact person or phone" style={{ minWidth: 320 }} />
-          <button className="button">Search</button>
-        </form>
+          <AsyncButton className="button" busy="Mencari Customer…">Search</AsyncButton>
+        </StepForm>
         <table><thead><tr><th>Company / person</th><th>Contact person</th><th>Email / phone</th><th>Currency</th><th>Terms</th><th></th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>

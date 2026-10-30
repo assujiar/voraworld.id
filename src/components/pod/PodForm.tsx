@@ -174,7 +174,7 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
         <button type="button" className="button-outline" onClick={() => void locate()} disabled={where.status === 'asking'} style={{ minHeight: 44 }}>{where.status === 'captured' ? 'Read the location again' : 'Turn on / try the location again'}</button>
       </div>
 
-      <button className="button" disabled={busy} aria-busy={busy} style={{ minHeight: 48, width: '100%', fontSize: 16 }}>{busy ? 'Sending…' : 'Send proof of delivery / Kirim'}</button>
+      <button className="button" disabled={busy} aria-busy={busy} style={{ minHeight: 48, width: '100%', fontSize: 16 }}>{busy ? <><span className="spin" aria-hidden="true" /> Mengirim bukti pengiriman…</> : 'Send proof of delivery / Kirim'}</button>
       <p className="mini muted" style={{ marginTop: 10 }}>By sending, you confirm that you delivered the goods listed above to the person named as receiver. Names, the signature, photos and the time are recorded with VORA.</p>
     </form>
   )

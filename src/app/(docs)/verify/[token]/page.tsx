@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { documentType, type Lang } from '@/content/document-types'
 import { today } from '@/server/dates'
 import { one } from '@/server/data'
+import { FileCheck } from '@/components/site/FileCheck'
+import type { StoredFields } from '@/server/documents/general'
 import { findVerification } from '@/server/verification'
 
 const KINDS = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations', prepayment: 'prepayment_receipts', document: 'documents' } as const
@@ -33,6 +35,9 @@ export default async function Verify({ params }: { params: Promise<{ token: stri
   const label = general ? general.label[doc.language as Lang] : LABELS[kind as keyof typeof LABELS]
   const values = general ? ((doc.fields as { values?: Record<string, string> } | null)?.values ?? {}) : {}
   const holder = general?.publicHolder && !row.revoked && state !== 'void' && state !== 'draft' ? values : null
+  // A QR seal on somebody else's PDF: the page names the document and shows the fingerprints, so the file in hand can be compared (in the browser, see FileCheck).
+  const seal = general?.family === 'seal' ? (doc.fields as StoredFields) : null
+  const sealed = seal?.seal && status === 'AUTHENTIC' ? seal : null
   return (
     <main className="wrap" style={{ maxWidth: 750, paddingTop: '10vh' }}>
       <a href="/en"><img src="/static/assets/vora-primary.svg" alt="VORA" width={160} /></a>
@@ -44,6 +49,16 @@ export default async function Verify({ params }: { params: Promise<{ token: stri
           <strong>Issuer:</strong> VORA / PT Satu Arah International<br />
           <strong>Date:</strong> {date}</p>
         {holder ? <p><strong>Awarded to:</strong> {holder.recipient_name}<br /><strong>Title:</strong> {holder.title}{holder.valid_until ? <><br /><strong>Valid until:</strong> {holder.valid_until}</> : null}</p> : null}
+        {sealed && seal ? (
+          <>
+            <p><strong>Document sealed:</strong> {values.source_title}<br />
+              <strong>Issued by:</strong> {values.source_issuer}{values.source_reference ? <><br /><strong>Original number:</strong> {values.source_reference}</> : null}<br />
+              <strong>Endorsed by:</strong> {values.signatory_name}, {values.signatory_title}, PT Satu Arah International<br />
+              <strong>Sealed on:</strong> {new Date(sealed.seal!.sealedAt).toLocaleString('en-GB', { timeZone: 'Asia/Jakarta' })} WIB</p>
+            <p className="mini" style={{ overflowWrap: 'anywhere' }}><strong>SHA-256 of the sealed file:</strong><br />{sealed.seal!.sha256}<br /><strong>SHA-256 of the original file:</strong><br />{seal.source!.sha256}</p>
+            <FileCheck sealed={sealed.seal!.sha256} original={seal.source!.sha256} />
+          </>
+        ) : null}
         {payment ? <p><strong>{kind === 'prepayment' ? 'Status of the invoice:' : 'Payment status:'}</strong> {payment}</p> : null}
         {kind === 'prepayment' ? <p className="mini muted">A pre-payment receipt is issued before payment and is not proof that payment was made. Payment is proven only by VORA&apos;s official payment receipt.</p> : null}
         <p className="note">Check the document type, reference, issuer, date and current status. Customer and financial details remain private.</p>

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { PNG, openContext, scalar, signIn, trackProblems } from './helpers'
+import { PNG, openContext, scalar, signIn, trackProblems, confirmAsked } from './helpers'
 
 /**
  * Every named submit button of the content portal, clicked in a real browser. Unit tests cannot see this class of bug:
@@ -93,6 +93,7 @@ test('the content portal: articles, pages, FAQ, navigation, coverage, redirects,
     await form(0).locator('button:has-text("↓ Down")').click()
     await want('Charlie,Alpha,Bravo edited', '↓ Down moved Alpha')
     await form(1).locator('button:has-text("Delete")').click()
+    await confirmAsked(page)
     await want('Charlie,Bravo edited', 'Delete removed the section')
 
     await page.click('button:has-text("Publish page")')
@@ -124,6 +125,7 @@ test('the content portal: articles, pages, FAQ, navigation, coverage, redirects,
     await expect.poll(() => scalar("select answer from faqs where question='Do you ship to Medan?'")).toContain('road')
     await settle()
     await faq().locator('button:has-text("Delete")').click()
+    await confirmAsked(page)
     await expect.poll(() => scalar("select count(*) from faqs where question='Do you ship to Medan?'")).toBe('0')
 
     await page.goto('/admin/navigation')
@@ -134,6 +136,7 @@ test('the content portal: articles, pages, FAQ, navigation, coverage, redirects,
     await expect.poll(() => scalar("select count(*) from navigation_items where label='Careers'")).toBe('1')
     await settle()
     await page.locator('tr:has-text("Careers") button:has-text("Delete")').click()
+    await confirmAsked(page)
     await expect.poll(() => scalar("select count(*) from navigation_items where label='Careers'")).toBe('0')
     await settle()
     await page.fill('input[name=label]', 'Admin')

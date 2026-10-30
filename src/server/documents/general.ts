@@ -1,7 +1,15 @@
 import { many, one, rpc } from '../data'
 import { isIsoDay, today } from '../dates'
 import { ActionError, isUnique } from '../errors'
-import { documentType, isLang, type DocumentType, type FieldDef, type Lang } from '../../content/document-types'
+import { randomUUID } from 'node:crypto'
+import { documentType, isLang, PLACEHOLDER, type Article, type DocumentType, type FieldDef, type Lang } from '../../content/document-types'
+import { sha256Hex } from '../crypto'
+import { maxUploadBytes } from '../env'
+import { inspectSourcePdf } from '../finance/pdf-inspect'
+import { sealPdf } from '../pdf/seal'
+import { getObject, putObject, removeObject } from '../storage'
+import { businessDateTime } from '../dates'
+import { getVerification } from '../verification'
 
 /**
  * General documents: letters, billing letters, statements, powers of attorney, certification and assignment letters, certificates.
@@ -11,14 +19,27 @@ import { documentType, isLang, type DocumentType, type FieldDef, type Lang } fro
  * Every limit REFUSES: text that is too long is never cut short, and a required field is never filled in silently.
  */
 export interface InvoiceSnapshot { id: number; number: string; issuedAt: string; dueAt: string; currency: string; totalMinor: number; outstandingMinor: number }
+/** The PDF somebody else issued, kept as it arrived (a `seal` document). */
+export interface SourceFile { key: string; sha256: string; bytes: number; pages: number; name: string }
+/** The same PDF with the VORA seal added, made when the document is issued. */
+export interface SealedFile { key: string; sha256: string; bytes: number; pagesSealed: number; sealedAt: string }
 /** What is stored in `documents.fields`. */
-export interface StoredFields { values: Record<string, string>; invoices?: InvoiceSnapshot[] }
+export interface StoredFields { values: Record<string, string>; invoices?: InvoiceSnapshot[]; articles?: Article[]; source?: SourceFile; seal?: SealedFile }
 
-export interface DocumentInput { kind: string; language: string; customerId: number | null; documentDate: string; values: Record<string, string>; invoiceIds: number[] }
+export interface DocumentInput {
+  kind: string; language: string; customerId: number | null; documentDate: string; values: Record<string, string>; invoiceIds: number[]
+  /** The articles of an agreement, in order. */
+  articles?: Article[]
+  /** The uploaded PDF of a seal document, already stored (see `storeSourcePdf`). */
+  source?: SourceFile
+}
+
+export const MAX_ARTICLES = 40
+export const MAX_ARTICLES_CHARS = 60_000
 
 export const MAX_BILLED_INVOICES = 30
 /** Which field names the person the document is for, so the list can show it. */
-const WHO = ['recipient_name', 'declarant_name', 'grantee_name', 'subject_name', 'assignee_name']
+const WHO = ['recipient_name', 'declarant_name', 'grantee_name', 'subject_name', 'assignee_name', 'second_company', 'source_issuer']
 
 const text = (v: string | undefined) => (v ?? '').replace(/\r\n?/g, '\n').replace(/\u0000/g, '').trim()
 
@@ -65,6 +86,21 @@ async function snapshotInvoices(customerId: number | null, ids: number[]): Promi
 
 interface Prepared { type: DocumentType; lang: Lang; fields: StoredFields; subject: string; recipient: string; date: string; customerId: number | null }
 
+/** The articles of an agreement, checked: each has a title and a text, and none is cut short. */
+function checkedArticles(rows: Article[] | undefined): Article[] {
+  const list = (rows ?? []).map((a) => ({ title: text(a.title).replace(/\s*\n\s*/g, ' '), body: text(a.body) })).filter((a) => a.title || a.body)
+  if (!list.length) throw new ActionError('An agreement needs at least one article')
+  if (list.length > MAX_ARTICLES) throw new ActionError(`An agreement has at most ${MAX_ARTICLES} articles`)
+  list.forEach((a, i) => {
+    if (!a.title) throw new ActionError(`Article ${i + 1} needs a title`)
+    if (!a.body) throw new ActionError(`Article ${i + 1} (${a.title}) needs its text`)
+    if (a.title.length > 120) throw new ActionError(`The title of article ${i + 1} is too long: ${a.title.length} characters, at most 120`)
+    if (a.body.length > 3000) throw new ActionError(`Article ${i + 1} (${a.title}) is too long: ${a.body.length} characters, at most 3000`)
+  })
+  if (list.reduce((n, a) => n + a.title.length + a.body.length, 0) > MAX_ARTICLES_CHARS) throw new ActionError('The articles are too long in total: shorten them')
+  return list
+}
+
 async function prepare(input: DocumentInput, fixed?: { kind: string; language: Lang }): Promise<Prepared> {
   const type = documentType(fixed?.kind ?? input.kind)
   if (!type) throw new ActionError('Choose a document type')
@@ -89,9 +125,14 @@ async function prepare(input: DocumentInput, fixed?: { kind: string; language: L
   const values = parseValues(type, raw)
   const fields: StoredFields = { values }
   if (type.family === 'billing') fields.invoices = await snapshotInvoices(customerId, input.invoiceIds)
+  if (type.family === 'agreement') fields.articles = checkedArticles(input.articles)
+  if (type.family === 'seal') {
+    if (!input.source) throw new ActionError('Upload the PDF that is to receive the seal')
+    fields.source = input.source
+  }
   return {
     type, lang, fields, date, customerId,
-    subject: (values.subject || values.title || type.label[lang]).slice(0, 240),
+    subject: (values.subject || values.title || values.source_title || type.label[lang]).slice(0, 240),
     recipient: (WHO.map((k) => values[k]).find(Boolean) ?? customer?.name ?? '').slice(0, 240),
   }
 }
@@ -111,15 +152,52 @@ export async function createDocument(actorId: number, input: DocumentInput): Pro
 
 /** Only a draft can be edited. The type, the language and the number stay as they were. */
 export async function updateDocument(actorId: number, id: number, input: DocumentInput): Promise<void> {
-  const doc = await one('documents', (q) => q.eq('id', id), 'kind,language,status')
+  const doc = await one('documents', (q) => q.eq('id', id), 'kind,language,status,fields')
   if (!doc) throw new ActionError('Document not found', 404)
   if (doc.status !== 'draft') throw new ActionError('Only a draft can be edited: void this document and write a new one', 409)
-  const p = await prepare(input, { kind: doc.kind as string, language: doc.language as Lang })
+  const before = (doc.fields as StoredFields).source
+  const p = await prepare({ ...input, source: input.source ?? before }, { kind: doc.kind as string, language: doc.language as Lang })
   await rpc('document_update', { p_actor: actorId, p_id: id, p: { customer_id: p.customerId, subject: p.subject, recipient: p.recipient, document_date: p.date, fields: p.fields } })
+  if (input.source && before && before.key !== input.source.key) await removeObject('documents', before.key).catch(() => undefined)      // the file that was replaced
 }
 
-/** issue: draft -> issued (a billing letter takes the invoices as they stand now). void: any draft or issued document; its QR link stops verifying. */
-export async function setDocumentStatus(actorId: number, id: number, action: string): Promise<void> {
+/**
+ * Stores the PDF somebody else issued (checked first: readable, unencrypted, no active content, no signature of its own that sealing would break).
+ * It is stored BEFORE the document row exists, so the caller removes it again if the row cannot be written.
+ */
+export async function storeSourcePdf(file: File): Promise<SourceFile> {
+  if (!file.size) throw new ActionError('Choose the PDF to seal')
+  if (file.size > maxUploadBytes()) throw new ActionError(`Upload a PDF not exceeding ${Math.floor(maxUploadBytes() / 1048576)} MB`)
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const { pages, sha256 } = await inspectSourcePdf(bytes)
+  const key = `seal/${randomUUID()}-source.pdf`
+  await putObject('documents', key, bytes, 'application/pdf')
+  return { key, sha256, bytes: bytes.length, pages, name: file.name.replace(/[^\w.\- ]+/g, '_').slice(0, 120) }
+}
+
+/** The original file of a seal document, after its fingerprint has been checked against the one recorded on arrival. */
+export async function readSource(source: SourceFile): Promise<Uint8Array> {
+  const bytes = await getObject('documents', source.key, maxUploadBytes() + 4096)
+  if ((await sha256Hex(bytes)) !== source.sha256) throw new ActionError('The stored file does not match its recorded fingerprint', 409)
+  return bytes
+}
+
+/** The sealed file of an issued seal document, checked the same way. */
+export async function readSealed(seal: SealedFile): Promise<Uint8Array> {
+  const bytes = await getObject('documents', seal.key, maxUploadBytes() * 2 + 65536)
+  if ((await sha256Hex(bytes)) !== seal.sha256) throw new ActionError('The stored file does not match its recorded fingerprint', 409)
+  return bytes
+}
+
+/** An agreement may not leave the building with a template placeholder in it. */
+function assertNoPlaceholders(p: Prepared): void {
+  if (p.type.family !== 'agreement') return
+  const left = [...Object.values(p.fields.values), ...(p.fields.articles ?? []).flatMap((a) => [a.title, a.body])].some((t) => PLACEHOLDER.test(t))
+  if (left) throw new ActionError('The agreement still has text in [isi: ...] / [fill in: ...] brackets: complete it or delete it before issuing', 422)
+}
+
+/** issue: draft -> issued (a billing letter takes the invoices as they stand now; a seal is made now). void: any draft or issued document; its QR link stops verifying. */
+export async function setDocumentStatus(actorId: number, id: number, action: string, baseUrl = ''): Promise<void> {
   const doc = await one('documents', (q) => q.eq('id', id))
   if (!doc) throw new ActionError('Document not found', 404)
   if (action === 'issue' && doc.status === 'draft') {
@@ -127,9 +205,31 @@ export async function setDocumentStatus(actorId: number, id: number, action: str
     if (!type) throw new ActionError('Unknown document type', 409)
     const stored = doc.fields as StoredFields
     // Re-check what was typed against the type as it is today, and refresh the invoices a billing letter lists.
-    const p = await prepare({ kind: type.key, language: doc.language as string, customerId: doc.customerId as number | null, documentDate: doc.documentDate as string, values: stored.values, invoiceIds: (stored.invoices ?? []).map((i) => i.id) },
+    const p = await prepare({ kind: type.key, language: doc.language as string, customerId: doc.customerId as number | null, documentDate: doc.documentDate as string, values: stored.values, invoiceIds: (stored.invoices ?? []).map((i) => i.id), articles: stored.articles, source: stored.source },
       { kind: type.key, language: doc.language as Lang })
-    await rpc('document_set_status', { p_actor: actorId, p_id: id, p_action: action, p: { subject: p.subject, recipient: p.recipient, fields: p.fields }, p_expected: (doc.updatedAt as Date).toISOString() })
+    assertNoPlaceholders(p)
+    let sealedKey = ''
+    if (type.family === 'seal') {
+      if (!stored.source) throw new ActionError('This document has no PDF to seal', 409)
+      if (!baseUrl) throw new ActionError('The public address of the site is not known', 500)
+      const verification = await getVerification('document', id)
+      if (!verification || verification.revoked) throw new ActionError('The document has no active verification link', 409)
+      const sealedAt = new Date()
+      const made = await sealPdf(await readSource(stored.source), {
+        verificationUrl: `${baseUrl.replace(/\/+$/, '')}/verify/${verification.token}`, number: doc.number as string, lang: p.lang, purpose: p.fields.values.purpose, pages: p.fields.values.pages,
+        corner: p.fields.values.corner, size: p.fields.values.size, signatoryName: p.fields.values.signatory_name, signatoryTitle: p.fields.values.signatory_title,
+        company: 'PT Satu Arah International', sealedAt: `${businessDateTime(sealedAt)} WIB`, sourceSha256: stored.source.sha256,
+      })
+      sealedKey = `seal/${randomUUID()}-sealed.pdf`
+      await putObject('documents', sealedKey, made.bytes, 'application/pdf')
+      p.fields.seal = { key: sealedKey, sha256: await sha256Hex(made.bytes), bytes: made.bytes.length, pagesSealed: made.pagesSealed, sealedAt: sealedAt.toISOString() }
+    }
+    try {
+      await rpc('document_set_status', { p_actor: actorId, p_id: id, p_action: action, p: { subject: p.subject, recipient: p.recipient, fields: p.fields }, p_expected: (doc.updatedAt as Date).toISOString() })
+    } catch (e) {
+      if (sealedKey) await removeObject('documents', sealedKey).catch(() => undefined)
+      throw e
+    }
     return
   }
   await rpc('document_set_status', { p_actor: actorId, p_id: id, p_action: action })

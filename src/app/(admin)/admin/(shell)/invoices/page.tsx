@@ -1,6 +1,8 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { many, searchClause, withRelated } from '@/server/data'
 import { money } from '@/server/money'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { StepForm } from '@/components/feedback/StepForm'
 
 const STATUSES = ['draft', 'issued', 'partially_paid', 'paid', 'void']
 
@@ -14,11 +16,11 @@ export default async function Invoices({ searchParams }: { searchParams: Promise
   return (
     <AdminPage heading="Invoices" sp={sp} newHref="/admin/invoices/new" newLabel="New invoice">
       <div className="admin-panel">
-        <form method="get" className="inline-actions" style={{ marginBottom: 14 }}>
+        <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
           <input name="q" defaultValue={q} placeholder="Search number, customer, PO or job" />
           <select name="status" defaultValue={status}><option value="">All status</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
-          <button className="button">Filter</button>
-        </form>
+          <AsyncButton className="button">Filter</AsyncButton>
+        </StepForm>
         <table><thead><tr><th>Document no.</th><th>Customer</th><th>Due</th><th>Status</th><th>Total</th><th>Outstanding</th></tr></thead><tbody>
           {rows.length ? rows.map((r) => (
             <tr key={r.id as number}>

@@ -7,7 +7,7 @@ import { useTypedList } from '@/components/admin/ActionForm'
  * cells are ordinary inputs named `item_<column>` (one value per row, in order), which the server reads back with `rowsFromForm`; a refused
  * submission brings the typed rows back. The amount column is only a convenience: the server recalculates every amount in exact decimal arithmetic.
  */
-export interface Column { key: string; label: string; width?: string; type?: 'text' | 'number'; placeholder?: string; maxLength?: number; required?: boolean }
+export interface Column { key: string; label: string; width?: string; type?: 'text' | 'number'; placeholder?: string; maxLength?: number; required?: boolean; multiline?: boolean }
 export type Row = Record<string, string>
 
 /** Display only: quantity x price, the way the person would do it by hand. */
@@ -32,12 +32,14 @@ export function ItemsTable({ columns, initial, showAmount, currency = 'IDR', add
   const empty = () => Object.fromEntries(columns.map((c) => [c.key, c.key === 'unit' ? (showAmount ? 'unit' : 'pcs') : '']))
   const [rows, setRows] = useState<Array<Row & { _id: string }>>(() => seed.map((r, i) => ({ ...r, _id: `${id}-${i}` })))
   const [counter, setCounter] = useState(seed.length)
+  const [said, setSaid] = useState('')
   const edit = (i: number, key: string, value: string) => setRows((rs) => rs.map((r, k) => (k === i ? { ...r, [key]: value } : r)))
-  const remove = (i: number) => setRows((rs) => (rs.length > 1 ? rs.filter((_, k) => k !== i) : rs.map((r) => ({ ...r, ...Object.fromEntries(columns.map((c) => [c.key, ''])) }))))
+  const remove = (i: number) => { setSaid(`Baris ${i + 1} dihapus`); setRows((rs) => (rs.length > 1 ? rs.filter((_, k) => k !== i) : rs.map((r) => ({ ...r, ...Object.fromEntries(columns.map((c) => [c.key, ''])) })))) }
   const move = (i: number, d: -1 | 1) => setRows((rs) => { const j = i + d; if (j < 0 || j >= rs.length) return rs; const c = [...rs]; [c[i], c[j]] = [c[j], c[i]]; return c })
-  const add = () => { setRows((rs) => [...rs, { ...empty(), _id: `${id}-${counter}` }]); setCounter((n) => n + 1) }
+  const add = () => { setSaid(`Baris ${rows.length + 1} ditambahkan`); setRows((rs) => [...rs, { ...empty(), _id: `${id}-${counter}` }]); setCounter((n) => n + 1) }
   return (
     <div className="items-table">
+      <span className="sr-only" role="status" aria-live="polite">{said}</span>
       <div style={{ overflowX: 'auto' }}>
         <table>
           <thead><tr>{columns.map((c) => <th key={c.key} style={{ width: c.width }}>{c.label}</th>)}{showAmount ? <th style={{ width: '14%' }}>Amount</th> : null}<th style={{ width: 130 }}>Action</th></tr></thead>
@@ -46,8 +48,11 @@ export function ItemsTable({ columns, initial, showAmount, currency = 'IDR', add
               <tr key={r._id}>
                 {columns.map((c) => (
                   <td key={c.key}>
-                    <input name={`item_${c.key}`} value={r[c.key] ?? ''} onChange={(e) => edit(i, c.key, e.target.value)} aria-label={`${c.label}, row ${i + 1}`}
-                      inputMode={c.type === 'number' ? 'decimal' : undefined} placeholder={c.placeholder} maxLength={c.maxLength} style={{ width: '100%', minHeight: 40 }} />
+                    {c.multiline
+                      ? <textarea name={`item_${c.key}`} value={r[c.key] ?? ''} onChange={(e) => edit(i, c.key, e.target.value)} aria-label={`${c.label}, row ${i + 1}`}
+                          placeholder={c.placeholder} maxLength={c.maxLength} rows={4} style={{ width: '100%', minHeight: 90 }} />
+                      : <input name={`item_${c.key}`} value={r[c.key] ?? ''} onChange={(e) => edit(i, c.key, e.target.value)} aria-label={`${c.label}, row ${i + 1}`}
+                          inputMode={c.type === 'number' ? 'decimal' : undefined} placeholder={c.placeholder} maxLength={c.maxLength} style={{ width: '100%', minHeight: 40 }} />}
                   </td>
                 ))}
                 {showAmount ? <td className="mini" aria-live="polite">{preview(r.quantity ?? '', r.price ?? '', currency) || '-'}</td> : null}
@@ -78,4 +83,9 @@ export const CARGO_COLUMNS: Column[] = [
   { key: 'quantity', label: 'Quantity', width: '12%', maxLength: 40, placeholder: '24' },
   { key: 'unit', label: 'Unit', width: '12%', maxLength: 30, placeholder: 'ctn' },
   { key: 'remarks', label: 'Remarks', width: '22%', maxLength: 240, placeholder: 'e.g. fragile' },
+]
+
+export const ARTICLE_COLUMNS: Column[] = [
+  { key: 'title', label: 'Article title', width: '28%', maxLength: 120, placeholder: 'e.g. Term' },
+  { key: 'body', label: 'Text of the article', width: '60%', maxLength: 3000, multiline: true, placeholder: 'What the Parties agree in this article' },
 ]

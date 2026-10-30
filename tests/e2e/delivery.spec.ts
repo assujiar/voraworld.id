@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { BASE_URL, fillItems, openContext, phone, received, scalar, seedValidatedQuotation, sign, signIn, trackProblems } from './helpers'
+import { BASE_URL, fillItems, openContext, phone, received, scalar, seedValidatedQuotation, sign, signIn, trackProblems, confirmAsked } from './helpers'
 
 /**
  * A delivery note written in the browser, issued, and recorded on a driver's phone: the driver scans the QR address, the receiver gives their
@@ -94,6 +94,7 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
   await test.step('a wrong proof is rejected; a phone with location off cannot record the delivery until it is on', async () => {
     await admin.fill('input[name=reason]', 'Signed by the wrong person')
     await admin.click('button:has-text("Reject proof")')
+    await confirmAsked(admin)
     await expect(admin.locator('.alert').first()).toContainText('QR code can be used again')
     await expect(admin.locator('h3 .status').first()).toContainText('issued')
     const { context, page } = await phone(browser, false)

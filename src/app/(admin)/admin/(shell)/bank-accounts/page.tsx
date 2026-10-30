@@ -3,6 +3,8 @@ import { ActionForm, FCheckbox, FInput, Submit } from '@/components/admin/Action
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
 import { many } from '@/server/data'
 import type { BankAccountsRow } from '@/server/schema'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 
 export default async function BankAccounts({ searchParams }: { searchParams: Promise<Notices> }) {
   const rows = (await many('bank_accounts', (q) => q.order('currency').order('position').order('id'))) as unknown as BankAccountsRow[]
@@ -28,7 +30,7 @@ export default async function BankAccounts({ searchParams }: { searchParams: Pro
         </div>
         {rows.length ? rows.map((b) => (
           <div className="admin-panel" key={b.id}>
-            <form action={updateBankAction}>
+            <PendingForm action={updateBankAction}>
               <input type="hidden" name="record" value={b.id} /><Back to="/admin/bank-accounts" />
               <h4>{b.bankName} · {b.currency} {b.isDefault ? <span className="status">PREFERRED</span> : null} {!b.active ? <span className="status">INACTIVE</span> : null}</h4>
               <div className="admin-form-grid">
@@ -40,13 +42,13 @@ export default async function BankAccounts({ searchParams }: { searchParams: Pro
                 <div className="field wide"><label>Internal notes</label><input name="notes" defaultValue={b.notes ?? ''} /></div>
               </div>
               <div className="inline-actions">
-                <button className="button" name="action" value="save">Save details</button>
+                <AsyncButton className="button" name="action" value="save">Save details</AsyncButton>
                 {b.active ? <>
-                  <button className="button-outline" name="action" value="default">Set preferred</button>
-                  <button className="button-outline" name="action" value="disable">Deactivate</button>
-                </> : <button className="button-outline" name="action" value="enable">Reactivate</button>}
+                  <AsyncButton className="button-outline" name="action" value="default">Set preferred</AsyncButton>
+                  <AsyncButton className="button-outline" name="action" value="disable">Deactivate</AsyncButton>
+                </> : <AsyncButton className="button-outline" name="action" value="enable">Reactivate</AsyncButton>}
               </div>
-            </form>
+            </PendingForm>
           </div>
         )) : <p className="note">No bank accounts yet. Add one before issuing invoices with payment instructions.</p>}
       </div>

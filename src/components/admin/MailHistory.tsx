@@ -1,7 +1,7 @@
 import { fmt } from '@/components/admin/AdminPage'
+import { JOB_STATUS_LABEL as LABEL } from '@/server/mail/event-labels'
 import type { MailLine } from '@/server/mail/history'
 
-const LABEL: Record<string, string> = { queued: 'Queued', sending: 'Sending', sent: 'Sent', retry: 'Failed, will retry', failed: 'Failed (retries used up)' }
 
 /** What happened to the emails of a document. A failed email changes nothing about the document or its payment. */
 export function MailHistory({ lines }: { lines: MailLine[] }) {
