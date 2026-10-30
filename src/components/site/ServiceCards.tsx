@@ -17,7 +17,6 @@ export function ServiceCards({ locale, variant = 'index' }: { locale: Locale; va
       {items.map((s, i) => (
         <li key={s.slug} className={`v-tile v-tile--${i + 1}`}>
           <a href={s.href}>
-            <span className="v-tile__stage" aria-hidden="true" />
             <img className="v-tile__art" src={`/static/assets/${s.image}`} alt="" width={520} height={520} loading={i < 2 ? 'eager' : 'lazy'} />
             <span className="v-tile__body">
               <h3>{s.name}</h3>
