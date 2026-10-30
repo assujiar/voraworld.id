@@ -146,6 +146,7 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
     await expect(admin.locator('body')).toContainText('Rejected')
   })
 
-  expect(problems).toEqual([])
+  // The one refusal the test injected itself (a 502 on the first send) is not a problem of the application.
+  expect(problems.filter((p) => !/502 .*\/pod\/.*\/submit|status of 502/.test(p))).toEqual([])
   await adminContext.close()
 })
