@@ -6,7 +6,7 @@ import type { PageSnapshot } from '@/server/site'
 export function CustomPageView({ locale, page }: { locale: Locale; page: PageSnapshot }) {
   return (
     <>
-      <section className="page-intro"><div className="wrap"><span className="eyebrow">VORA / {page.title}</span><h1>{page.title}</h1><p>{page.description}</p></div></section>
+      <section className="v-page"><div className="v-wrap"><h1>{page.title}</h1>{page.description ? <p className="v-lead">{page.description}</p> : null}</div></section>
       <CustomSections locale={locale} sections={page.sections} />
       <CtaBand locale={locale} />
     </>

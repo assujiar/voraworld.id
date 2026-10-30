@@ -1,5 +1,4 @@
 import type { Viewport } from 'next'
-import Script from 'next/script'
 import { notFound } from 'next/navigation'
 import { Header } from '@/components/site/Header'
 import { Footer } from '@/components/site/Footer'
@@ -25,19 +24,17 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   return (
     <html lang={locale}>
       <head>
+        <link rel="preload" href="/static/fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="stylesheet" href="/static/css/site.css" />
-        <link rel="stylesheet" href="/static/css/experience.css?v=4" />
-        <link rel="stylesheet" href="/static/css/motion.css?v=2" />
+        <link rel="stylesheet" href="/static/css/vora.css?v=2" />
         <link rel="stylesheet" href="/static/css/feedback.css?v=1" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
-      <body>
-        <div className="vora-scroll-progress" aria-hidden="true"><span className="vora-scroll-progress__fill" /></div>
-        <a className="skip-link" href="#main">{t('Skip to content', 'Langsung ke konten')}</a>
+      <body className="v-body">
+        <a className="v-skip" href="#main">{t('Skip to content', 'Langsung ke konten')}</a>
         <Header locale={locale} nav={nav} />
         <main id="main">{children}</main>
         <Footer locale={locale} settings={settings} />
-        <Script src="/static/js/experience.js?v=2" strategy="afterInteractive" />
       </body>
     </html>
   )

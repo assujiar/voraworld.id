@@ -1,29 +1,33 @@
 import { makeT, serviceGroups, serviceModes, type Locale } from '@/content'
+import { ServiceIndex } from './ServiceIndex'
 
-export function ServiceCards({ locale }: { locale: Locale }) {
+/**
+ * The five services. `tiles` (home) puts each one on a clay card with its render, the first one dark and wide; `index` (the services page) is the
+ * plain list with a stage beside it. Both are made of ordinary links.
+ */
+export function ServiceCards({ locale, variant = 'index' }: { locale: Locale; variant?: 'index' | 'tiles' }) {
   const t = makeT(locale)
+  const items = Object.entries(serviceGroups).map(([slug, group]) => ({
+    slug, href: `/${locale}/services/${slug}`, name: group[locale].name, intro: group[locale].intro, image: group.image,
+    modes: group.modes.map((m) => serviceModes[slug][m][locale][0]),
+  }))
+  if (variant === 'index') return <ServiceIndex items={items} />
   return (
-    <div className="service-portfolio" aria-label="VORA core logistics services">
-      {Object.entries(serviceGroups).map(([slug, group], i) => (
-        <a key={slug} className={`service-tile service-tile--${i + 1}`} href={`/${locale}/services/${slug}`} aria-label={`${group[locale].name} details`}>
-          <span className="tile-index">{group.index} <span>/ 05</span></span>
-          <div className="tile-content">
-            <span className="eyebrow">{t('Service portfolio', 'Layanan VORA')}</span>
-            <h3>{group[locale].name}</h3>
-            <p>{group[locale].intro}</p>
-            {group.modes.length ? (
-              <span className="tile-modes">
-                {group.modes.map((mode, n) => (
-                  <span key={mode}>{serviceModes[slug][mode][locale][0]}{n < group.modes.length - 1 ? <span className="dot">·</span> : null}</span>
-                ))}
-              </span>
-            ) : null}
-          </div>
-          <span className="tile-stage" aria-hidden="true" />
-          <img className="tile-art" loading="lazy" src={`/static/assets/${encodeURIComponent(group.image)}`} alt="" aria-hidden="true" width={430} height={360} />
-          <span className="tile-arrow" aria-hidden="true">↗</span>
-        </a>
+    <ul className="v-tiles">
+      {items.map((s, i) => (
+        <li key={s.slug} className={`v-tile v-tile--${i + 1}`}>
+          <a href={s.href}>
+            <span className="v-tile__stage" aria-hidden="true" />
+            <img className="v-tile__art" src={`/static/assets/${s.image}`} alt="" width={520} height={520} loading={i < 2 ? 'eager' : 'lazy'} />
+            <span className="v-tile__body">
+              <h3>{s.name}</h3>
+              <p>{s.intro}</p>
+              {s.modes.length ? <span className="v-tile__modes">{s.modes.map((m) => <span key={m}>{m}</span>)}</span> : null}
+              <span className="v-tile__more">{t('See the service', 'Lihat layanan')}</span>
+            </span>
+          </a>
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }

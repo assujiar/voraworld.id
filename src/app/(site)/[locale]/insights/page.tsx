@@ -23,18 +23,22 @@ export default async function Insights({ params, searchParams }: P) {
   const [{ articles, totalPages }, custom] = await Promise.all([searchArticles(locale, q, page), getPublishedPage('insights', locale)])
   return (
     <>
-      <section className="page-intro page-intro--insights"><div className="wrap">
-        <img className="page-art" src="/static/assets/vora-visual-54.webp" width={580} height={580} alt={t('3D freight route and logistics dashboard illustration', 'Ilustrasi 3D rute pengiriman dan dasbor logistik')} />
-        <span className="eyebrow">{t('Insights', 'Wawasan')}</span><h1>{siteText[locale].insights_title}</h1>
-        <p>{t('Articles and updates, published and maintained by the VORA team.', 'Artikel dan pembaruan yang diterbitkan dan dikelola oleh tim VORA.')}</p>
-        <form method="get">
-          <input name="q" aria-label={t('Search insights', 'Cari wawasan')} placeholder={t('Search articles', 'Cari artikel')} defaultValue={q} style={{ padding: 11, border: '1px solid #cfd6d8' }} />
-          <button className="button">{t('Search', 'Cari')}</button>
-        </form>
-      </div></section>
-      <section className="site-section section-white"><div className="wrap">
+      <section className="v-page">
+        <div className="v-wrap v-page__grid">
+          <div>
+            <h1>{siteText[locale].insights_title}</h1>
+            <p className="v-lead">{t('Articles and updates, published and maintained by the VORA team.', 'Artikel dan pembaruan yang diterbitkan dan dikelola oleh tim VORA.')}</p>
+            <form method="get" className="v-search">
+              <input name="q" aria-label={t('Search articles', 'Cari artikel')} placeholder={t('Search articles', 'Cari artikel')} defaultValue={q} />
+              <button className="v-btn">{t('Search', 'Cari')}</button>
+            </form>
+          </div>
+          <img className="v-page__art" src="/static/assets/vora-visual-54.webp" width={440} height={366} alt={t('A tracking dashboard with a map and charts', 'Dasbor pelacakan dengan peta dan grafik')} />
+        </div>
+      </section>
+      <section className="v-section v-section--tight"><div className="v-wrap">
         <InsightCards locale={locale} articles={articles} />
-        {totalPages > 1 ? <div className="actions">{Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => <a key={n} className="button-outline" href={`?page=${n}&q=${encodeURIComponent(q)}`}>{n}</a>)}</div> : null}
+        {totalPages > 1 ? <nav className="v-pages" aria-label={t('Pages', 'Halaman')}>{Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => <a key={n} aria-current={n === page ? 'page' : undefined} href={`?page=${n}&q=${encodeURIComponent(q)}`}>{n}</a>)}</nav> : null}
       </div></section>
       <CustomSections locale={locale} sections={custom?.sections} />
       <CtaBand locale={locale} />

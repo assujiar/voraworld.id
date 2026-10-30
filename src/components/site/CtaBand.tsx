@@ -1,18 +1,24 @@
 import { makeT, siteText, type Locale } from '@/content'
+import { getSettings } from '@/server/site'
 
-export function CtaBand({ locale }: { locale: Locale }) {
+/** The close of a page: how to reach VORA, in plain words. */
+export async function CtaBand({ locale }: { locale: Locale }) {
   const t = makeT(locale)
+  const settings = await getSettings()
   return (
-    <section className="site-section section-paper">
-      <div className="wrap split">
+    <section className="v-section v-section--bone">
+      <div className="v-wrap v-close" style={{ padding: 0 }}>
         <div>
-          <span className="eyebrow">{t('The next movement', 'Pengiriman berikutnya')}</span>
-          <h2>{t('Where are you going next?', 'Ke mana tujuan Anda berikutnya?')}</h2>
+          <h2 className="v-h2">{t('Tell us the cargo, the route and the date.', 'Beri tahu kami barang, rute, dan tanggalnya.')}</h2>
+          <div className="v-actions">
+            <a className="v-btn" href={`/${locale}/request-quote`}>{siteText[locale].rfq}</a>
+            <a className="v-link" href={`/${locale}/contact`}>{t('Or write to us', 'Atau tulis kepada kami')}</a>
+          </div>
         </div>
-        <div>
-          <p>{t('Discuss the cargo, origin, destination and scope with our team before making a logistics commitment.', 'Diskusikan kargo, asal, tujuan, dan cakupan dengan tim kami sebelum menetapkan komitmen logistik.')}</p>
-          <a className="button" href={`/${locale}/request-quote`}>{siteText[locale].rfq} ↗</a>
-        </div>
+        <address>
+          {settings.email ? <a className="v-mail" href={`mailto:${settings.email}`}>{settings.email}</a> : null}
+          {settings.address ? <p style={{ marginTop: 14 }} className="v-muted">{settings.address}</p> : null}
+        </address>
       </div>
     </section>
   )

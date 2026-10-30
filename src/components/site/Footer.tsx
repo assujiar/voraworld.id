@@ -5,41 +5,37 @@ export function Footer({ locale, settings }: { locale: Locale; settings: Record<
   const labels = navLabels[locale]
   const text = siteText[locale]
   return (
-    <footer className="footer">
-      <div className="wrap">
-        <div className="footer-grid">
-          <div className="footer-identity">
-            <a className="brand" href={`/${locale}`}><img src="/static/assets/vora-reverse.svg" alt="VORA" width={175} /></a>
-            <p className="footer-tagline">{text.home_title}</p>
+    <footer className="v-footer">
+      <div className="v-wrap">
+        <div className="v-footer__grid">
+          <div>
+            <a href={`/${locale}`}><img src="/static/assets/vora-reverse.svg" alt="VORA" width={150} height={44} /></a>
+            <p className="v-footer__tag">{text.home_title}</p>
             <p>{settings.company_description ?? ''}</p>
           </div>
           <div>
-            <small>{t('Company', 'Perusahaan')}</small>
+            <h4>{t('Company', 'Perusahaan')}</h4>
             <a href={`/${locale}/about`}>{labels['/about']}</a>
             <a href={`/${locale}/solutions`}>{labels['/solutions']}</a>
             <a href={`/${locale}/network`}>{labels['/network']}</a>
             <a href={`/${locale}/insights`}>{labels['/insights']}</a>
             <a href={`/${locale}/faq`}>FAQ</a>
           </div>
-          <div className="footer-services">
-            <small>{t('Our services', 'Layanan kami')}</small>
-            {Object.entries(serviceGroups).map(([slug, group]) => (
-              <a key={slug} href={`/${locale}/services/${slug}`}>{group[locale].name}</a>
-            ))}
+          <div>
+            <h4>{t('Services', 'Layanan')}</h4>
+            {Object.entries(serviceGroups).map(([slug, group]) => <a key={slug} href={`/${locale}/services/${slug}`}>{group[locale].name}</a>)}
           </div>
           <div>
-            <small>{t('Get in touch', 'Hubungi kami')}</small>
+            <h4>{t('Contact', 'Kontak')}</h4>
             <a href={`/${locale}/contact`}>{labels['/contact']}</a>
             <a href={`/${locale}/request-quote`}>{text.rfq}</a>
             {settings.email ? <a href={`mailto:${settings.email}`}>{settings.email}</a> : null}
-            {settings.address ? <p>{settings.address}</p> : null}
+            {settings.address ? <p style={{ marginTop: 12 }}>{settings.address}</p> : null}
           </div>
         </div>
-        <div className="footer-bottom">
+        <div className="v-footer__base">
           <span>© {new Date().getFullYear()} VORA · {settings.legal_name || 'PT Satu Arah International'}</span>
-          <span>
-            <a href={`/${locale}/privacy`}>{t('Privacy', 'Privasi')}</a> · <a href={`/${locale}/terms`}>{t('Terms', 'Ketentuan')}</a> · Freight &amp; Logistics
-          </span>
+          <span><a href={`/${locale}/privacy`}>{t('Privacy', 'Privasi')}</a> · <a href={`/${locale}/terms`}>{t('Terms', 'Ketentuan')}</a></span>
         </div>
       </div>
     </footer>

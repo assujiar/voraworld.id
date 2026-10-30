@@ -21,6 +21,8 @@
     "build:pdf-assets": "tsx scripts/embed-pdf-assets.ts"
   },
   "dependencies": {
+    "@remotion/paths": "4.0.539",
+    "@remotion/player": "4.0.539",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
     "next": "15.5.28",
@@ -30,10 +32,12 @@
     "qrcode": "1.5.4",
     "react": "19.1.10",
     "react-dom": "19.1.10",
+    "remotion": "4.0.539",
     "sanitize-html": "2.18.1",
     "unpdf": "1.9.1"
   },
   "devDependencies": {
+    "@fontsource-variable/archivo": "5.3.0",
     "@playwright/test": "1.64.1",
     "@types/node": "22.20.5",
     "@types/nodemailer": "6.4.24",
