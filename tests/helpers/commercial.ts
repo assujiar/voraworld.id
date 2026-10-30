@@ -32,7 +32,7 @@ export async function validatedQuotation(actor: number, customerId: number): Pro
 
 export async function deliveredNote(actor: number, customerId: number, quotationId: number): Promise<number> {
   const id = await createDelivery(actor, {
-    customerId, quotationId, consigneeName: 'PT Penerima', consigneeAddress: '', consigneeContact: '', consigneePhone: '', consigneeEmail: '', origin: '', destination: '', shipmentReference: '', poNumber: '',
+    customerId, quotationId, shipperName: 'PT Pengirim', shipperAddress: 'Jl. Pabrik 9, Kawasan Industri, Cikarang, Jawa Barat 17530', shipperContact: 'Rina', shipperPhone: '+62 21 888', shipperEmail: 'gudang@pengirim.example', consigneeName: 'PT Penerima', consigneeAddress: 'Jl. Gudang 5, Bekasi', consigneeContact: '', consigneePhone: '', consigneeEmail: '', origin: '', destination: '', shipmentReference: '', poNumber: '',
     carrier: '', vehicle: '', vehiclePlate: '', driverName: '', driverPhone: '', deliveryDate: '2026-10-02', notes: '', items: [{ description: 'Cargo', quantity: '1', unit: 'pcs', remarks: '' }],
   })
   await setDeliveryStatus(actor, id, 'issue')

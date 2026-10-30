@@ -58,37 +58,77 @@ export function writer(s: Sheet, f: Flow) {
 
 const caption = (f: Flow, text: string, x = LEFT) => f.text(x, f.y, text, 7.2, RED, true)
 
-/** The consignee on the left, the shipment on the right. */
+/** The lines a party block needs at a width: its height is known before anything is drawn, so a long address moves the whole block to the next page instead of running into the footer. */
+function partyLines(s: Sheet, width: number, p: { name: string; address: string; contact: string; phone: string; email: string }): number {
+  const contact = [p.contact, p.phone].filter(Boolean).join(' / ')
+  return s.wrap(p.name || '-', width, 9.2, true).length * 11.6 + s.wrap(p.address || '', width, SIZE).length * LEADING
+    + (contact ? s.wrap(contact, width, SIZE).length * LEADING : 0) + (p.email ? s.wrap(p.email, width, SIZE).length * LEADING : 0)
+}
+
+/** One party: its name, complete address, contact person and phone, email. Returns the y below it. */
+function party(s: Sheet, f: Flow, x: number, top: number, width: number, p: { name: string; address: string; contact: string; phone: string; email: string }, recorded: boolean): number {
+  if (!recorded) {
+    const y = f.lines(x, top, 'Not recorded on this delivery note', width, SIZE, SLATE, false, LEADING)
+    return y
+  }
+  let y = f.lines(x, top, p.name, width, 9.2, INK, true, 11.6)
+  y = f.lines(x, y, p.address, width, SIZE, SLATE, false, LEADING)
+  const contact = [p.contact, p.phone].filter(Boolean).join(' / ')
+  if (contact) y = f.lines(x, y, contact, width, SIZE, INK, false, LEADING)
+  if (p.email) y = f.lines(x, y, p.email, width, SIZE, SLATE, false, LEADING)
+  return y
+}
+
+/**
+ * The two parties of the shipment side by side (SHIPPER / PENGIRIM and CONSIGNEE / PENERIMA), then the shipment details and the commercial references
+ * below them. The customer who pays is a reference, not a party; the shipper is whoever hands the cargo over, written for each shipment.
+ */
 export function shipmentBlock(s: Sheet, f: Flow, d: Omit<DeliveryNoteData, 'captureUrl' | 'items'>): void {
   const gap = 18
   const colW = (WIDTH - gap) / 2
   const x2 = LEFT + colW + gap
-  f.keep(150)
-  caption(f, 'DELIVER TO / PENERIMA')
-  f.text(x2, f.y, 'SHIPMENT / PENGIRIMAN', 7.2, RED, true)
+  const shipper = { name: d.shipperName, address: d.shipperAddress, contact: d.shipperContact, phone: d.shipperPhone, email: d.shipperEmail }
+  const consignee = { name: d.consigneeName, address: d.consigneeAddress, contact: d.consigneeContact, phone: d.consigneePhone, email: d.consigneeEmail }
+  const recorded = Boolean(d.shipperName)
+  f.keep(22 + Math.max(recorded ? partyLines(s, colW, shipper) : LEADING, partyLines(s, colW, consignee)) + 6)
+  caption(f, 'SHIPPER / PENGIRIM')
+  f.text(x2, f.y, 'CONSIGNEE / PENERIMA', 7.2, RED, true)
   f.y -= 15
   const top = f.y
-  let left = f.lines(LEFT, top, d.consigneeName, colW, 9.2, INK, true, 11.6)
-  left = f.lines(LEFT, left, d.consigneeAddress, colW, SIZE, SLATE, false, LEADING)
-  const contact = [d.consigneeContact, d.consigneePhone].filter(Boolean).join(' / ')
-  if (contact) left = f.lines(LEFT, left, contact, colW, SIZE, INK, false, LEADING)
-  if (d.consigneeEmail) left = f.lines(LEFT, left, d.consigneeEmail, colW, SIZE, SLATE, false, LEADING)
+  const left = party(s, f, LEFT, top, colW, shipper, recorded)
+  const right = party(s, f, x2, top, colW, consignee, true)
+  f.y = Math.min(left, right) - 4
+  f.rule(f.y)
+  f.y -= 16
 
-  const rows: Row[] = [
-    { label: 'Date', id: 'Tanggal', value: d.deliveryDate }, { label: 'Reference', id: 'Referensi', value: d.shipmentReference }, { label: 'PO number', id: 'No. PO', value: d.poNumber },
+  const refs: Row[] = [
+    { label: 'Date', id: 'Tanggal', value: d.deliveryDate }, { label: 'Customer', id: 'Pelanggan', value: d.customerName }, { label: 'Quotation', id: 'Penawaran', value: d.quotationNumber },
+    { label: 'Reference', id: 'Referensi', value: d.shipmentReference }, { label: 'PO number', id: 'No. PO', value: d.poNumber },
     { label: 'From', id: 'Asal', value: d.origin }, { label: 'To', id: 'Tujuan', value: d.destination }, { label: 'Carrier', id: 'Pengangkut', value: d.carrier },
     { label: 'Vehicle', id: 'Kendaraan', value: [d.vehicle, d.vehiclePlate].filter(Boolean).join(' / ') }, { label: 'Driver', id: 'Pengemudi', value: [d.driverName, d.driverPhone].filter(Boolean).join(' / ') },
-  ]
-  let right = top
-  for (const r of rows) {
-    if (!r.value) continue
-    const lines = s.wrap(r.value, colW - 84, SIZE, true)
-    f.text(x2, right, r.label, 7.2, SLATE)
-    f.text(x2 + 0, right - 7.4, r.id ?? '', 5.6, '#98A3AB')
-    lines.forEach((line, i) => f.text(x2 + 84, right - i * LEADING, line, SIZE, INK, true))
-    right -= Math.max(lines.length * LEADING, 17)
-  }
-  f.y = Math.min(left, right) - 6
+  ].filter((r) => r.value)
+  const heights = (rows: Row[]) => rows.reduce((n, r) => n + Math.max(s.wrap(r.value, colW - 84, SIZE, true).length * LEADING, 17), 0)
+  // Two columns of details, split so that both are about as tall.
+  const half = Math.ceil(refs.length / 2)
+  const columns = [refs.slice(0, half), refs.slice(half)]
+  f.keep(Math.max(heights(columns[0]), heights(columns[1])) + 30)
+  f.text(LEFT, f.y, 'SHIPMENT DETAILS / RINCIAN PENGIRIMAN', 7.2, RED, true)
+  f.y -= 15
+  const start = f.y
+  let lowest = start
+  columns.forEach((rows, c) => {
+    let y = start
+    const x = c === 0 ? LEFT : x2
+    for (const r of rows) {
+      const lines = s.wrap(r.value, colW - 84, SIZE, true)
+      f.text(x, y, r.label, 7.2, SLATE)
+      f.text(x, y - 7.4, r.id ?? '', 5.6, '#98A3AB')
+      lines.forEach((line, i) => f.text(x + 84, y - i * LEADING, line, SIZE, INK, true))
+      y -= Math.max(lines.length * LEADING, 17)
+    }
+    lowest = Math.min(lowest, y)
+  })
+  f.y = lowest - 6
   f.rule(f.y)
   f.y -= 16
 }
@@ -141,7 +181,7 @@ export async function renderDeliveryNote(d: DeliveryNoteData, issuer: Issuer): P
   }
 
   // The driver's block: the QR code is how the driver reaches the page that records the delivery. Never split from its instructions.
-  const BOX = 150
+  const BOX = 162
   f.keep(BOX + 10)
   const top = f.y + 4
   f.outline(LEFT, top - BOX, WIDTH, BOX, '#DCE0E1', 0.8)
@@ -165,8 +205,9 @@ export async function renderDeliveryNote(d: DeliveryNoteData, issuer: Issuer): P
   f.text(x, y - 2, 'Turn on your phone location: time and location are recorded.', 7.2, INK, true)
   f.text(x, y - 11, 'Aktifkan lokasi ponsel: waktu dan lokasi terekam.', 6.4, SLATE)
   const linkTop = top - 14 - qrSize - 10
-  if (s.linkHeight(d.captureUrl, qrSize + 2 * 14 + 380, 5.6) > 30) throw new PdfLayoutError('The delivery link is too long to print')
-  f.put(() => s.linkLines(LEFT + 14, linkTop, d.captureUrl, WIDTH - 28, 5.6, INK))
+  // The address printed under the QR code stays in the QR column: the instructions are on its right.
+  if (s.linkHeight(d.captureUrl, qrSize + 16, 5.6) > 42) throw new PdfLayoutError('The delivery link is too long to print')
+  f.put(() => s.linkLines(LEFT + 14, linkTop, d.captureUrl, qrSize + 16, 5.6, INK))
   f.y = top - BOX - 8
 
   f.draw(frame(s, { title: 'DELIVERY NOTE', subtitle: 'SURAT JALAN', number: d.number, status: d.status, issuer, label: 'DELIVERY NOTE' }))

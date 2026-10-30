@@ -11,6 +11,8 @@ const text = (form: FormData, key: string, max: number) => rawStr(form, key, max
 function inputOf(form: FormData): DeliveryInput {
   return {
     customerId: int(form, 'customer_id') || null, quotationId: int(form, 'quotation_id') || null,
+    shipperName: text(form, 'shipper_name', 240), shipperAddress: text(form, 'shipper_address', 1000), shipperContact: text(form, 'shipper_contact', 160),
+    shipperPhone: text(form, 'shipper_phone', 60), shipperEmail: text(form, 'shipper_email', 200),
     consigneeName: text(form, 'consignee_name', 240), consigneeAddress: text(form, 'consignee_address', 1000), consigneeContact: text(form, 'consignee_contact', 160),
     consigneePhone: text(form, 'consignee_phone', 60), consigneeEmail: text(form, 'consignee_email', 200),
     origin: text(form, 'origin', 240), destination: text(form, 'destination', 240), shipmentReference: text(form, 'shipment_reference', 120), poNumber: text(form, 'po_number', 100),

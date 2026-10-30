@@ -93,7 +93,7 @@ async function validate(id: number, opts: { reject?: boolean } = {}) {
 }
 
 const note = (customerId: number, quotationId: number, o: Partial<DeliveryInput> = {}): DeliveryInput => ({
-  customerId, quotationId, consigneeName: 'PT Penerima', consigneeAddress: 'Jl. Gudang 5', consigneeContact: 'Budi', consigneePhone: '+62 21 555', consigneeEmail: 'gudang@penerima.example', origin: 'Jakarta',
+  customerId, quotationId, shipperName: 'PT Pengirim Utama', shipperAddress: 'Jl. Pabrik 9, Kawasan Industri, Cikarang, Jawa Barat 17530', shipperContact: 'Rina', shipperPhone: '+62 21 888', shipperEmail: 'gudang@pengirim.example', consigneeName: 'PT Penerima', consigneeAddress: 'Jl. Gudang 5', consigneeContact: 'Budi', consigneePhone: '+62 21 555', consigneeEmail: 'gudang@penerima.example', origin: 'Jakarta',
   destination: 'Bekasi', shipmentReference: 'JOB-1', poNumber: 'PO-9', carrier: 'VORA Trucking', vehicle: 'Wingbox', vehiclePlate: 'B 1234 XYZ', driverName: 'Asep', driverPhone: '0812 1111 2222',
   deliveryDate: '2026-10-10', notes: '', items: [{ description: 'Cartons of parts', quantity: '24', unit: 'ctn', remarks: 'fragile' }], ...o,
 })

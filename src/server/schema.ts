@@ -113,6 +113,11 @@ export interface DeliveriesRow {
   issuedAt: Date | null
   deliveredAt: Date | null
   quotationId: number | null
+  shipperName: string | null
+  shipperAddress: string | null
+  shipperContact: string | null
+  shipperPhone: string | null
+  shipperEmail: string | null
 }
 
 export interface DeliveryItemsRow {

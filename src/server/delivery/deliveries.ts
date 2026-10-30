@@ -35,7 +35,10 @@ export const CONDITIONS = ['good', 'damaged', 'partial'] as const
 
 export interface DeliveryInput {
   /** The customer and one of their VALIDATED quotations: a delivery note is made for goods under that quotation. Both required. */
-  customerId: number | null; quotationId: number | null; consigneeName: string; consigneeAddress: string; consigneeContact: string; consigneePhone: string; consigneeEmail: string
+  customerId: number | null; quotationId: number | null
+  /** The SHIPPER (pengirim) who hands the cargo over, and the CONSIGNEE (penerima) who receives it. Neither is assumed to be the customer or VORA: they are written for each shipment. */
+  shipperName: string; shipperAddress: string; shipperContact: string; shipperPhone: string; shipperEmail: string
+  consigneeName: string; consigneeAddress: string; consigneeContact: string; consigneePhone: string; consigneeEmail: string
   origin: string; destination: string; shipmentReference: string; poNumber: string; carrier: string; vehicle: string; vehiclePlate: string
   driverName: string; driverPhone: string; deliveryDate: string; notes: string
   /** The cargo table: what physically travels (not the commercial charges of the quotation). */
@@ -77,20 +80,28 @@ export function cargoRows(rows: ItemInput[]): ItemInput[] {
 async function prepare(input: DeliveryInput, fixed?: { customerId: number; quotationId: number | null }): Promise<Record<string, unknown>> {
   const customerId = fixed?.customerId ?? input.customerId
   if (!customerId) throw new ActionError('Select the customer')
-  const c = await one('customers', (q) => q.eq('id', customerId), 'id,name,address,email')
+  const c = await one('customers', (q) => q.eq('id', customerId), 'id')
   if (!c) throw new ActionError('Select an existing customer')
-  const customer = { id: c.id as number, name: c.name as string, address: String(c.address ?? ''), email: String(c.email ?? '') }
+  const customer = { id: c.id as number }
   const quotationId = fixed ? fixed.quotationId : input.quotationId
   if (!fixed && !quotationId) throw new ActionError('Select one of the customer\'s validated quotations')
-  const name = oneLine(input.consigneeName || customer?.name || '', 240, 'Consignee name', true)
-  let email = oneLine(input.consigneeEmail || customer?.email || '', 200, 'Consignee email')
-  if (email) { try { email = emailAddress(email) } catch { throw new ActionError('Consignee email is not a valid address') } }
+  const party = (who: 'Shipper' | 'Consignee', v: { name: string; address: string; contact: string; phone: string; email: string }) => {
+    const name = oneLine(v.name, 240, `${who} name`, true)
+    const address = field(v.address, 1000, `${who} address`, true)
+    let email = oneLine(v.email, 200, `${who} email`)
+    if (email) { try { email = emailAddress(email) } catch { throw new ActionError(`${who} email is not a valid address`) } }
+    const phone = oneLine(v.phone, 60, `${who} phone`)
+    if (phone && !/^[0-9+()\-\s.]{6,60}$/.test(phone)) throw new ActionError(`${who} phone may hold only digits, spaces, + ( ) - and .`)
+    return { name, address, contact: oneLine(v.contact, 160, `${who} contact person`), phone, email }
+  }
+  const shipper = party('Shipper', { name: input.shipperName, address: input.shipperAddress, contact: input.shipperContact, phone: input.shipperPhone, email: input.shipperEmail })
+  const consignee = party('Consignee', { name: input.consigneeName, address: input.consigneeAddress, contact: input.consigneeContact, phone: input.consigneePhone, email: input.consigneeEmail })
   const date = input.deliveryDate.trim() || today()
   if (!isIsoDay(date)) throw new ActionError('The delivery date must be a valid date (YYYY-MM-DD)')
   return {
     customer_id: customer.id, quotation_id: quotationId,
-    consignee_name: name, consignee_address: field(input.consigneeAddress || customer?.address || '', 1000, 'Consignee address'), consignee_contact: oneLine(input.consigneeContact, 160, 'Contact person'),
-    consignee_phone: oneLine(input.consigneePhone, 60, 'Consignee phone'), consignee_email: email,
+    shipper_name: shipper.name, shipper_address: shipper.address, shipper_contact: shipper.contact, shipper_phone: shipper.phone, shipper_email: shipper.email,
+    consignee_name: consignee.name, consignee_address: consignee.address, consignee_contact: consignee.contact, consignee_phone: consignee.phone, consignee_email: consignee.email,
     origin: oneLine(input.origin, 240, 'Origin'), destination: oneLine(input.destination, 240, 'Destination'), shipment_reference: oneLine(input.shipmentReference, 120, 'Shipment reference'),
     po_number: oneLine(input.poNumber, 100, 'PO number'), carrier: oneLine(input.carrier, 160, 'Carrier'), vehicle: oneLine(input.vehicle, 120, 'Vehicle'),
     vehicle_plate: oneLine(input.vehiclePlate, 30, 'Vehicle plate'), driver_name: oneLine(input.driverName, 160, 'Driver'), driver_phone: oneLine(input.driverPhone, 60, 'Driver phone'),
@@ -283,6 +294,8 @@ export async function readEvidence(key: string, sha256: string): Promise<Uint8Ar
 
 export interface DeliveryView {
   id: number; number: string; status: string; customerId: number | null; quotationId: number | null
+  /** Empty on a note written before shippers were recorded: nothing is invented for it. */
+  shipperName: string; shipperAddress: string; shipperContact: string; shipperPhone: string; shipperEmail: string
   consigneeName: string; consigneeAddress: string; consigneeContact: string; consigneePhone: string; consigneeEmail: string
   origin: string; destination: string; shipmentReference: string; poNumber: string; carrier: string; vehicle: string; vehiclePlate: string; driverName: string; driverPhone: string
   deliveryDate: string; notes: string; captureToken: string; viewToken: string; createdAt: Date; issuedAt: Date | null; deliveredAt: Date | null
@@ -300,7 +313,8 @@ export async function deliveryBy(column: 'id' | 'capture_token' | 'view_token', 
   const d = await one('deliveries', (q) => q.eq(column, value))
   if (!d) return null
   const items = await many('delivery_items', (q) => q.eq('delivery_id', d.id as number).order('position').order('id'), 'description,quantity,unit,remarks')
-  return { ...(d as unknown as Omit<DeliveryView, 'items'>), items: items.map((i) => ({ description: i.description as string, quantity: i.quantity as string, unit: i.unit as string, remarks: i.remarks as string })) }
+  const raw = d as unknown as Omit<DeliveryView, 'items'>
+  return { ...raw, shipperName: raw.shipperName ?? '', shipperAddress: raw.shipperAddress ?? '', shipperContact: raw.shipperContact ?? '', shipperPhone: raw.shipperPhone ?? '', shipperEmail: raw.shipperEmail ?? '', items: items.map((i) => ({ description: i.description as string, quantity: i.quantity as string, unit: i.unit as string, remarks: i.remarks as string })) }
 }
 
 /** The proofs of a delivery, newest first: the live one (if any) and the rejected ones. */

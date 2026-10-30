@@ -170,7 +170,13 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await page.click('a:has-text("New delivery note")')
     await page.waitForURL(/\/admin\/deliveries\/new\?customer=\d+&quotation=\d+/)
     await expect(page.locator('input[name=origin]')).toHaveValue('Jakarta')                    // prefilled from the quotation
+    await expect(page.locator('input[name=consignee_name]')).toHaveValue('')                   // the customer is not assumed to be the receiver
+    await page.click('button:has-text("Gunakan data customer sebagai Penerima")')               // ...but one click copies its details when it is
     await expect(page.locator('input[name=consignee_name]')).toHaveValue('PT Browser Customer')
+    await expect(page.locator('input[name=shipper_name]')).toHaveValue('')                      // and that did not touch the shipper
+    await page.fill('input[name=shipper_name]', 'PT Pengirim Browser')
+    await page.fill('textarea[name=shipper_address]', 'Jl. Pabrik 1, Cikarang')
+    if (!(await page.inputValue('textarea[name=consignee_address]')).trim()) await page.fill('textarea[name=consignee_address]', 'Jl. Gudang 5, Bekasi')
     await fillItems(page, ['description', 'quantity', 'unit', 'remarks'], [['Cartons of spare parts', '24', 'ctn', 'fragile']], 'Add cargo item')
     await page.click('button:has-text("Save draft")')
     await page.waitForURL(/\/admin\/deliveries\/\d+(\?|$)/)

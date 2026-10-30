@@ -16,7 +16,14 @@ export default async function PodCapture({ params }: { params: Promise<{ token: 
       <div className="form-panel" style={{ marginTop: 20 }}>
         <span className="eyebrow">Driver / courier: proof of delivery / Bukti pengiriman</span>
         <h1 style={{ fontSize: '1.7rem', margin: '6px 0 12px' }}>{d.number}</h1>
-        <p><strong>{d.consigneeName}</strong>{d.destination ? <><br />{d.destination}</> : null}<br /><small className="muted">Delivery date {d.deliveryDate}{d.shipmentReference ? ` · ${d.shipmentReference}` : ''}</small></p>
+        {/* What the driver needs to be sure this is the right handover: who sends, who receives, and where. Only names and places: addresses, phone numbers, prices and billing details stay off a page that anyone holding the link can open. */}
+        <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, margin: '0 0 10px' }}>
+          <div><dt className="mini muted">Sender / Pengirim</dt><dd style={{ margin: 0 }}>{d.shipperName ? <strong>{d.shipperName}</strong> : <span className="muted">-</span>}</dd></div>
+          <div><dt className="mini muted">Recipient / Penerima</dt><dd style={{ margin: 0 }}><strong>{d.consigneeName}</strong></dd></div>
+          <div><dt className="mini muted">From / Asal</dt><dd style={{ margin: 0 }}>{d.origin || '-'}</dd></div>
+          <div><dt className="mini muted">To / Tujuan</dt><dd style={{ margin: 0 }}>{d.destination || '-'}</dd></div>
+        </dl>
+        <p className="mini muted">Delivery date {d.deliveryDate}{d.shipmentReference ? ` · ${d.shipmentReference}` : ''}</p>
         <table><thead><tr><th>#</th><th>Description</th><th>Qty</th></tr></thead><tbody>
           {d.items.map((i, k) => <tr key={k}><td>{k + 1}</td><td>{i.description}{i.remarks ? <><br /><small className="muted">{i.remarks}</small></> : null}</td><td>{i.quantity} {i.unit}</td></tr>)}
         </tbody></table>

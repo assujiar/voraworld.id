@@ -22,6 +22,24 @@ async function reduce(file: File): Promise<string> {
   return url
 }
 
+/**
+ * Sends the proof and reports what is really happening: how many bytes of the request have left the phone, and when all of them have (from then on
+ * the server is storing the evidence and recording the receipt, which this page cannot see into more finely than that).
+ */
+function sendProof(url: string, body: string, onSent: (percent: number) => void, onAllSent: () => void): Promise<{ status: number; json: { ok?: boolean; error?: string; at?: string; receiver?: string } | null }> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', url)
+    xhr.setRequestHeader('content-type', 'application/json')
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onSent(Math.min(100, Math.floor((e.loaded / e.total) * 100))) }
+    xhr.upload.onload = onAllSent
+    xhr.onerror = () => reject(new Error('Koneksi terputus, jadi belum pasti apakah bukti sampai ke server.'))
+    xhr.ontimeout = xhr.onerror
+    xhr.onload = () => { let json = null; try { json = JSON.parse(xhr.responseText) } catch { /* not JSON: the status says what happened */ } resolve({ status: xhr.status, json }) }
+    xhr.send(body)
+  })
+}
+
 /** Filled in by the driver or courier at the handover, on their own phone; the receiver gives their name and signs on this screen. */
 export function PodForm({ token, number, driverName, driverPhone }: { token: string; number: string; driverName: string; driverPhone: string }) {
   const canvas = useRef<HTMLCanvasElement>(null)
@@ -32,6 +50,8 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
   const [condition, setCondition] = useState('good')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [sentOnce, setSentOnce] = useState(false)                                          // a send reached (or tried to reach) the server and was not recorded
+  const [stage, setStage] = useState<{ step: 'checking' | 'sending' | 'saving'; percent?: number } | null>(null)
   const [done, setDone] = useState<{ at: string; receiver: string } | null>(null)
 
   useEffect(() => {
@@ -87,8 +107,9 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
     const f = new FormData(e.currentTarget)
     if (!signed) { setError('Sign in the box before sending'); return }
     if (!photos.length) { setError('Take at least one photo of the goods'); return }
-    const loc = await locate()                                                         // read again now: the location must be on at the moment of sending
-    if (!loc) { setError('Turn on the location of your phone and allow it for this page, then press Send again. The delivery cannot be recorded without it.'); return }
+    setBusy(true); setStage({ step: 'checking' })                                       // true: the location is read again now, it must be on at the moment of sending
+    const loc = await locate()
+    if (!loc) { setBusy(false); setStage(null); setError('Turn on the location of your phone and allow it for this page, then press Send again. The delivery cannot be recorded without it.'); return }
     const body = {
       courierName: f.get('courierName'), courierPhone: f.get('courierPhone'),
       receiverName: f.get('receiverName'), receiverPosition: f.get('receiverPosition'), receiverPhone: f.get('receiverPhone'), receiverEmail: f.get('receiverEmail'),
@@ -97,15 +118,19 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
       locationStatus: 'captured', latitude: String(loc.latitude), longitude: String(loc.longitude), accuracy: String(loc.accuracy), locationNote: '',
       deviceTime: new Date().toISOString(),
     }
-    setBusy(true)
+    setStage({ step: 'sending', percent: 0 })
     try {
-      const res = await fetch(`/pod/${token}/submit`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
-      const out = await res.json().catch(() => null) as { ok?: boolean; error?: string; at?: string; receiver?: string } | null
-      if (!res.ok || !out?.ok) throw new Error(out?.error || (res.status === 413 ? 'The photos are too large to send: take them again' : 'The proof of delivery could not be sent: try again'))
+      const res = await sendProof(`/pod/${token}/submit`, JSON.stringify(body), (percent) => setStage({ step: 'sending', percent }), () => setStage({ step: 'saving' }))
+      const out = res.json
+      if (res.status < 200 || res.status >= 300 || !out?.ok) {
+        const known = out?.error || (res.status === 413 ? 'Foto terlalu besar untuk dikirim. Ambil foto baru.' : 'Bukti pengiriman belum berhasil dikirim.')
+        throw new Error(res.status === 409 && /already been recorded/.test(known) ? 'Penerimaan barang ini sudah tercatat sebelumnya, jadi tidak perlu dikirim lagi. Hubungi admin VORA bila ini keliru.' : `${known} Bukti pengiriman belum tercatat.`)
+      }
       setDone({ at: out.at ?? '', receiver: out.receiver ?? '' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The proof of delivery could not be sent: try again')
-    } finally { setBusy(false) }
+      setSentOnce(true)
+      setError(`${err instanceof Error ? err.message : 'Bukti pengiriman belum berhasil dikirim.'} Isian, tanda tangan, foto, dan lokasi Anda masih ada: tekan "Kirim ulang" untuk mencoba lagi.`)
+    } finally { setBusy(false); setStage(null) }
   }
 
   if (done) {
@@ -117,6 +142,9 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
     )
   }
 
+  const stageText = stage?.step === 'checking' ? 'Memeriksa data…'
+    : stage?.step === 'sending' ? `Mengunggah tanda tangan dan foto… ${stage.percent ?? 0}%`
+    : stage?.step === 'saving' ? 'Menyimpan bukti dan mencatat penerimaan…' : ''
   const field = { style: { display: 'block', width: '100%', minHeight: 44, fontSize: 16 } } as const
   return (
     <form onSubmit={submit} style={{ marginTop: 22 }} noValidate>
@@ -174,7 +202,11 @@ export function PodForm({ token, number, driverName, driverPhone }: { token: str
         <button type="button" className="button-outline" onClick={() => void locate()} disabled={where.status === 'asking'} style={{ minHeight: 44 }}>{where.status === 'captured' ? 'Read the location again' : 'Turn on / try the location again'}</button>
       </div>
 
-      <button className="button" disabled={busy} aria-busy={busy} style={{ minHeight: 48, width: '100%', fontSize: 16 }}>{busy ? <><span className="spin" aria-hidden="true" /> Mengirim bukti pengiriman…</> : 'Send proof of delivery / Kirim'}</button>
+      <button className="button" disabled={busy} aria-busy={busy} style={{ minHeight: 48, width: '100%', fontSize: 16 }}>
+        {busy ? <><span className="spin" aria-hidden="true" /> {stageText}</> : sentOnce ? 'Kirim ulang / Send again' : 'Send proof of delivery / Kirim'}
+      </button>
+      {stage?.step === 'sending' ? <div role="progressbar" aria-label={stageText} aria-valuemin={0} aria-valuemax={100} aria-valuenow={stage.percent ?? 0} style={{ height: 4, background: '#e1e5e7', borderRadius: 2, marginTop: 6 }}><div style={{ height: 4, width: `${stage.percent ?? 0}%`, background: '#b43e31', borderRadius: 2, transition: 'width .15s linear' }} /></div> : null}
+      <p className="mini muted" role="status" aria-live="polite" style={{ minHeight: 20 }}>{busy ? 'Jangan tutup halaman ini sampai ada konfirmasi.' : ''}</p>
       <p className="mini muted" style={{ marginTop: 10 }}>By sending, you confirm that you delivered the goods listed above to the person named as receiver. Names, the signature, photos and the time are recorded with VORA.</p>
     </form>
   )

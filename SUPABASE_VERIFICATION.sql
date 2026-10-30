@@ -77,6 +77,9 @@ BEGIN
     RETURN QUERY SELECT 'bucket vora-media exists and is public', CASE WHEN n = 1 THEN 'PASS' ELSE 'FAIL' END, n || ' match';
     EXECUTE $q$SELECT count(*) FROM storage.buckets WHERE id = 'vora-documents' AND NOT public$q$ INTO n;
     RETURN QUERY SELECT 'bucket vora-documents exists and is PRIVATE', CASE WHEN n = 1 THEN 'PASS' ELSE 'FAIL' END, n || ' match';
+    -- Proof of delivery stores a PNG signature and JPEG photos in this bucket: a list of allowed types without them makes every proof fail (migration 0027).
+    EXECUTE $q$SELECT count(*) FROM storage.buckets WHERE id = 'vora-documents' AND (allowed_mime_types IS NULL OR allowed_mime_types @> ARRAY['application/pdf', 'image/png', 'image/jpeg'])$q$ INTO n;
+    RETURN QUERY SELECT 'bucket vora-documents accepts PDF, PNG and JPEG', CASE WHEN n = 1 THEN 'PASS' ELSE 'FAIL' END, CASE WHEN n = 1 THEN 'proof-of-delivery evidence can be stored' ELSE 'apply migration 0027_documents_bucket_evidence_types.sql' END;
   END IF;
 
   -- 5b. The database functions the application calls -----------------------------------
