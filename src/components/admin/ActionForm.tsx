@@ -1,6 +1,6 @@
 'use client'
 import { createContext, useActionState, useContext, useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
-import { CONNECTION_LOST, FormScope, isRedirect, typedFrom, useScope, useSubmitter } from '@/components/feedback/scope'
+import { CONNECTION_LOST, FormScope, isRedirect, typedFrom, useScope, useStagedUpload, useSubmitter } from '@/components/feedback/scope'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import type { FormState } from '@/server/action'
 
@@ -17,6 +17,8 @@ export function ActionForm({ action, children, className }: { action: Action; ch
     try { return await action(previous, form) } catch (e) { if (isRedirect(e)) throw e; return { error: CONNECTION_LOST, values: typedFrom(form) } }
   }, {} as FormState)
   const [submitter, track] = useSubmitter()
+  const staged = useStagedUpload(formAction)
+  const busy = isPending || Boolean(staged.upload)
   const [dirty, setDirty] = useState(false)
   const alertRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -24,8 +26,9 @@ export function ActionForm({ action, children, className }: { action: Action; ch
   }, [state])
   return (
     <Typed.Provider value={state}>
-      <FormScope.Provider value={{ pending: isPending, submitter }}>
-        <form action={formAction} className={className} onSubmit={track} onInput={() => setDirty(true)} onChange={() => setDirty(true)} aria-busy={isPending || undefined}>
+      <FormScope.Provider value={{ pending: busy, submitter, upload: staged.upload }}>
+        <form action={formAction} className={className} onSubmit={(e) => staged.onSubmit(e, track)} onInput={() => setDirty(true)} onChange={() => setDirty(true)} aria-busy={busy || undefined}>
+          {staged.failure ? <div className="alert" role="alert">{staged.failure}</div> : null}
           {state.error ? <div className="alert" role="alert" tabIndex={-1} ref={alertRef}>{state.error}</div> : null}
           {children}
           <SaveStatus dirty={dirty} failed={Boolean(state.error)} />

@@ -7,7 +7,7 @@ button.is-busy{position:relative;cursor:progress;gap:10px;opacity:1}
 button.is-busy[disabled]{opacity:1}
 .spin{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:vora-spin .8s linear infinite}
 @keyframes vora-spin{to{transform:rotate(360deg)}}
-/* No number is shown: a form post cannot report how much has gone up, so the bar only says "still working". */
+/* After everything has been sent, or for a visitor's form post (no measurable progress): the bar only says "still working". */
 .bar-wait{position:absolute;left:0;right:0;bottom:0;height:3px;overflow:hidden;border-radius:0 0 5px 5px;background:rgba(255,255,255,.2)}
 .bar-wait::after{content:"";position:absolute;inset:0 auto 0 -40%;width:40%;background:var(--red,#b43e31);animation:vora-wait 1.1s ease-in-out infinite}
 .button-outline.is-busy .bar-wait{background:rgba(16,23,32,.12)}
@@ -106,3 +106,22 @@ button.is-busy[disabled]{opacity:1}
 .list-skeleton{display:block;padding:2px 0}
 .list-skeleton__row{display:grid;gap:18px;padding:15px 8px;border-bottom:1px solid var(--line,#dce0e1)}
 .list-skeleton__row .skeleton{height:14px}
+
+/* A bar that is as long as the share of the file the browser has really sent. */
+.bar-sent{position:absolute;left:0;right:0;bottom:0;height:3px;overflow:hidden;border-radius:0 0 5px 5px;background:rgba(255,255,255,.2)}
+.bar-sent>span{display:block;height:100%;background:var(--red,#b43e31);transition:width .12s linear}
+.button-outline.is-busy .bar-sent{background:rgba(16,23,32,.12)}
+@media (prefers-reduced-motion:reduce){.bar-sent>span{transition:none}}
+
+/* Email template editor: text on the left, the server's preview on the right. */
+.tpl-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:12px}
+.tpl-editor textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;line-height:1.5}
+.tpl-vars{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px}
+.tpl-var{border:1px solid var(--line,#dce0e1);background:#fff;border-radius:6px;padding:3px 8px;font:inherit;font-size:.78rem;cursor:pointer}
+.tpl-var:hover,.tpl-var:focus-visible{border-color:var(--red,#b43e31);color:var(--red,#b43e31)}
+.tpl-editor__preview{border:1px solid var(--line,#dce0e1);border-radius:8px;background:#fff;padding:12px;min-width:0}
+.tpl-preview__bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.tpl-preview__subject{margin:0 0 8px;font-weight:600}
+.tpl-editor iframe{width:100%;height:340px;border:1px solid var(--line,#dce0e1);border-radius:6px;background:#fff}
+.tpl-preview__skeleton{height:340px;border-radius:6px}
+@media (max-width:900px){.tpl-editor{grid-template-columns:minmax(0,1fr)}}

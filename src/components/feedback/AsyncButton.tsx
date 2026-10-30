@@ -31,7 +31,7 @@ export function AsyncButton({ children, busy, confirm, className = 'button', onC
   const [shown, setShown] = useState(false)
   const pressed = scope.submitter
   const mine = scope.pending && (pressed ? pressed.name === rest.name && pressed.value === String(rest.value ?? '') : !rest.name)
-  const pending = mine || stepPending
+  const pending = mine || stepPending || Boolean(scope.upload)
   const text = textOf(children)
   const spec = confirm === false ? undefined : { ...confirmFor(text), ...confirm } as ConfirmSpec | undefined
   const hasSpec = confirm !== false && Boolean(confirmFor(text) || confirm)
@@ -60,14 +60,18 @@ export function AsyncButton({ children, busy, confirm, className = 'button', onC
     button?.form?.requestSubmit(button)                                      // submits exactly as the click would have, with this button's name and value
   }
 
-  const label = busy ?? (uploading ? uploadLabel(text) : busyLabel(text))
+  const up = scope.upload
+  const sentLabel = up ? `${bytes(up.sent)} dari ${bytes(up.total)}` : ''
+  const percent = up && up.total ? Math.min(100, Math.floor((up.sent / up.total) * 100)) : 0
+  const label = up ? (up.done ? 'Memeriksa dan menyimpan dokumen…' : `Mengunggah ${up.file} · ${percent}% (${sentLabel})`) : busy ?? (uploading ? uploadLabel(text) : busyLabel(text))
   const showBusy = pending && shown
   return (
     <>
       <button {...rest} ref={ref} className={`${className}${showBusy ? ' is-busy' : ''}`} disabled={disabled || scope.pending || stepPending} aria-busy={pending || undefined}
         aria-disabled={pending || undefined} onClick={click} style={{ ...rest.style, ...(showBusy && width.current ? { minWidth: width.current } : null) }}>
         {showBusy ? <><span className="spin" aria-hidden="true" /><span>{label}</span></> : children}
-        {showBusy && uploading ? <span className="bar-wait" role="progressbar" aria-label={label} /> : null}
+        {showBusy && up && !up.done ? <span className="bar-sent" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><span style={{ width: `${percent}%` }} /></span> : null}
+        {showBusy && (up?.done || (!up && uploading)) ? <span className="bar-wait" role="progressbar" aria-label={label} /> : null}
       </button>
       <span className="sr-only" role="status" aria-live="polite">{showBusy ? label : ''}</span>
       {hasSpec && spec?.title ? (
@@ -82,4 +86,11 @@ export function AsyncButton({ children, busy, confirm, className = 'button', onC
       ) : null}
     </>
   )
+}
+
+/** 1.2 MB, 340 KB: the size of what has been sent, for the upload line. */
+function bytes(n: number): string {
+  if (n >= 1048576) return `${(n / 1048576).toFixed(1)} MB`
+  if (n >= 1024) return `${Math.round(n / 1024)} KB`
+  return `${n} B`
 }

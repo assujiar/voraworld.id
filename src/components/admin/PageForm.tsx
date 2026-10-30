@@ -2,6 +2,7 @@ import { addSectionAction, restorePageAction, savePageAction, saveSectionAction 
 import { SECTION_KINDS, SECTION_LAYOUTS, SECTION_SURFACES } from '@/server/cms-constants'
 import type { PagesRow, SectionsRow } from '@/server/schema'
 import { Back, fmt } from './AdminPage'
+import { Autosave } from './Autosave'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { PendingForm } from '@/components/feedback/scope'
 
@@ -20,6 +21,7 @@ export function PageForm({ obj, sections, revisions }: { obj: PagesRow | null; s
             <div className="field"><label>SEO title</label><input name="seo_title" defaultValue={obj?.seoTitle ?? ''} /></div>
             <div className="field wide"><label>Excerpt / meta description</label><textarea name="description" defaultValue={obj?.description ?? ''} /></div>
           </div>
+          {obj && obj.status === 'draft' ? <Autosave kind="page" id={obj.id} base={obj.updatedAt.toISOString()} /> : null}
           <div className="inline-actions">
             <AsyncButton className="button" name="action" value="draft">Save draft</AsyncButton>
             {obj ? <>
