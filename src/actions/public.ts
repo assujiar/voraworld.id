@@ -16,7 +16,7 @@ async function submit(form: FormData, kind: 'contact' | 'rfq'): Promise<Done> {
   if (form.get('consent') !== 'yes') throw new ActionError('Consent required')
   await createLead({
     kind,
-    name: str(form, 'name', 140), email: str(form, 'email', 200).toLowerCase(), message: str(form, 'message', 6000), company: str(form, 'company', 200),
+    name: str(form, 'name', 140), email: str(form, 'email', 200).toLowerCase(), phone: str(form, 'phone', 40), message: str(form, 'message', 6000), company: str(form, 'company', 200),
     mode: str(form, 'mode', 80), origin: str(form, 'origin', 160), destination: str(form, 'destination', 160), cargo: str(form, 'cargo', 6000), pickup: str(form, 'pickup', 30),
   })
   afterResponse(() => dispatch(publicBaseUrl(), 10))

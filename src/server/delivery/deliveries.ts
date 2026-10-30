@@ -34,9 +34,12 @@ export const TOKEN = /^[A-Za-z0-9_-]{36,150}$/
 export const CONDITIONS = ['good', 'damaged', 'partial'] as const
 
 export interface DeliveryInput {
-  customerId: number | null; consigneeName: string; consigneeAddress: string; consigneeContact: string; consigneePhone: string; consigneeEmail: string
+  /** The customer and one of their VALIDATED quotations: a delivery note is made for goods under that quotation. Both required. */
+  customerId: number | null; quotationId: number | null; consigneeName: string; consigneeAddress: string; consigneeContact: string; consigneePhone: string; consigneeEmail: string
   origin: string; destination: string; shipmentReference: string; poNumber: string; carrier: string; vehicle: string; vehiclePlate: string
-  driverName: string; driverPhone: string; deliveryDate: string; notes: string; items: string
+  driverName: string; driverPhone: string; deliveryDate: string; notes: string
+  /** The cargo table: what physically travels (not the commercial charges of the quotation). */
+  items: ItemInput[]
 }
 
 /** A text field: trimmed, and refused (never cut short) when it is too long. */
@@ -50,48 +53,49 @@ const oneLine = (value: string, max: number, label: string, required = false) =>
 
 export interface ItemInput { description: string; quantity: string; unit: string; remarks: string }
 
-/** `description | quantity | unit | remarks`, one item per line; unit and remarks are optional. */
-export function parseItems(raw: string): ItemInput[] {
-  const rows = String(raw ?? '').replace(/\r\n?/g, '\n').split('\n').map((l) => l.trim()).filter(Boolean)
-  if (!rows.length) throw new ActionError('Add at least one item: description | quantity | unit | remarks')
-  if (rows.length > MAX_ITEMS) throw new ActionError(`A delivery note holds at most ${MAX_ITEMS} items`)
-  return rows.map((row, i) => {
-    const [description = '', quantity = '', unit = '', ...rest] = row.split('|').map((p) => p.trim())
+/** Rows of the cargo table. A row left completely empty is ignored; a row with something in it needs a description and a quantity. */
+export function cargoRows(rows: ItemInput[]): ItemInput[] {
+  const out: ItemInput[] = []
+  for (const [i, r] of rows.entries()) {
+    const description = String(r.description ?? '').replace(/\u0000/g, '').trim(), quantity = String(r.quantity ?? '').trim()
+    const unit = String(r.unit ?? '').trim(), remarks = String(r.remarks ?? '').replace(/\u0000/g, '').trim()
+    if (!description && !quantity && !unit && !remarks) continue
     const n = `Item ${i + 1}`
-    if (!description || !quantity) throw new ActionError(`${n}: write it as description | quantity | unit | remarks`)
+    if (!description) throw new ActionError(`${n}: write the description of the cargo`)
+    if (!quantity) throw new ActionError(`${n}: write the quantity`)
     if (description.length > 500) throw new ActionError(`${n}: the description is too long (at most 500 characters)`)
     if (quantity.length > 40) throw new ActionError(`${n}: the quantity is too long (at most 40 characters)`)
     if (unit.length > 30) throw new ActionError(`${n}: the unit is too long (at most 30 characters)`)
-    const remarks = rest.join(' | ').trim()
     if (remarks.length > 240) throw new ActionError(`${n}: the remarks are too long (at most 240 characters)`)
-    return { description, quantity, unit: unit || 'pcs', remarks }
-  })
+    out.push({ description, quantity, unit: unit || 'pcs', remarks })
+  }
+  if (!out.length) throw new ActionError('Add at least one item of cargo')
+  if (out.length > MAX_ITEMS) throw new ActionError(`A delivery note holds at most ${MAX_ITEMS} items`)
+  return out
 }
 
-/** The items as the text the form edits. */
-export const itemsText = (items: ItemInput[]): string => items.map((i) => [i.description, i.quantity, i.unit, i.remarks].join(' | ').replace(/( \| )+$/, '')).join('\n')
-
-async function prepare(input: DeliveryInput): Promise<Record<string, unknown>> {
-  let customer: { id: number; name: string; address: string; email: string } | undefined
-  if (input.customerId) {
-    const c = await one('customers', (q) => q.eq('id', input.customerId!), 'id,name,address,email')
-    if (!c) throw new ActionError('Select an existing customer')
-    customer = { id: c.id as number, name: c.name as string, address: String(c.address ?? ''), email: String(c.email ?? '') }
-  }
+async function prepare(input: DeliveryInput, fixed?: { customerId: number; quotationId: number | null }): Promise<Record<string, unknown>> {
+  const customerId = fixed?.customerId ?? input.customerId
+  if (!customerId) throw new ActionError('Select the customer')
+  const c = await one('customers', (q) => q.eq('id', customerId), 'id,name,address,email')
+  if (!c) throw new ActionError('Select an existing customer')
+  const customer = { id: c.id as number, name: c.name as string, address: String(c.address ?? ''), email: String(c.email ?? '') }
+  const quotationId = fixed ? fixed.quotationId : input.quotationId
+  if (!fixed && !quotationId) throw new ActionError('Select one of the customer\'s validated quotations')
   const name = oneLine(input.consigneeName || customer?.name || '', 240, 'Consignee name', true)
   let email = oneLine(input.consigneeEmail || customer?.email || '', 200, 'Consignee email')
   if (email) { try { email = emailAddress(email) } catch { throw new ActionError('Consignee email is not a valid address') } }
   const date = input.deliveryDate.trim() || today()
   if (!isIsoDay(date)) throw new ActionError('The delivery date must be a valid date (YYYY-MM-DD)')
   return {
-    customer_id: customer?.id ?? null,
+    customer_id: customer.id, quotation_id: quotationId,
     consignee_name: name, consignee_address: field(input.consigneeAddress || customer?.address || '', 1000, 'Consignee address'), consignee_contact: oneLine(input.consigneeContact, 160, 'Contact person'),
     consignee_phone: oneLine(input.consigneePhone, 60, 'Consignee phone'), consignee_email: email,
     origin: oneLine(input.origin, 240, 'Origin'), destination: oneLine(input.destination, 240, 'Destination'), shipment_reference: oneLine(input.shipmentReference, 120, 'Shipment reference'),
     po_number: oneLine(input.poNumber, 100, 'PO number'), carrier: oneLine(input.carrier, 160, 'Carrier'), vehicle: oneLine(input.vehicle, 120, 'Vehicle'),
     vehicle_plate: oneLine(input.vehiclePlate, 30, 'Vehicle plate'), driver_name: oneLine(input.driverName, 160, 'Driver'), driver_phone: oneLine(input.driverPhone, 60, 'Driver phone'),
     delivery_date: date, notes: field(input.notes, 2000, 'Notes'),
-    items: parseItems(input.items),
+    items: cargoRows(input.items),
   }
 }
 
@@ -104,7 +108,9 @@ export async function createDelivery(actorId: number, input: DeliveryInput): Pro
 
 /** Only a draft can be edited: once issued, the note is on its way with a printed QR code. */
 export async function updateDelivery(actorId: number, id: number, input: DeliveryInput): Promise<void> {
-  await rpc('delivery_update', { p_actor: actorId, p_id: id, p: await prepare(input) })
+  const d = await one('deliveries', (q) => q.eq('id', id), 'customer_id,quotation_id')
+  if (!d) throw new ActionError('Delivery note not found', 404)
+  await rpc('delivery_update', { p_actor: actorId, p_id: id, p: await prepare(input, { customerId: d.customerId as number, quotationId: d.quotationId as number | null }) })
 }
 
 /** issue: draft -> issued (its QR code starts to work). void: a draft or issued note (its QR code stops). A received one needs its POD rejected first. */
@@ -276,7 +282,7 @@ export async function readEvidence(key: string, sha256: string): Promise<Uint8Ar
 }
 
 export interface DeliveryView {
-  id: number; number: string; status: string; customerId: number | null
+  id: number; number: string; status: string; customerId: number | null; quotationId: number | null
   consigneeName: string; consigneeAddress: string; consigneeContact: string; consigneePhone: string; consigneeEmail: string
   origin: string; destination: string; shipmentReference: string; poNumber: string; carrier: string; vehicle: string; vehiclePlate: string; driverName: string; driverPhone: string
   deliveryDate: string; notes: string; captureToken: string; viewToken: string; createdAt: Date; issuedAt: Date | null; deliveredAt: Date | null

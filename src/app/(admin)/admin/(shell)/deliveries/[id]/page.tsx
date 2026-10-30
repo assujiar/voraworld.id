@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 import { deliveryStatusAction, rejectProofAction, resendReceivedAction } from '@/actions/deliveries'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
+import { many, one } from '@/server/data'
 import { deliveryBy, proofsOf } from '@/server/delivery/deliveries'
+import { INVOICE_LABEL } from '@/server/finance/labels'
 import { publicBaseUrl } from '@/server/env'
 import { routeId } from '@/server/http'
 
@@ -12,6 +14,10 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
   const d = id > 0 && id < 2_147_483_647 ? await deliveryBy('id', id) : null
   if (!d) notFound()
   const proofs = await proofsOf(id)
+  const customer = d.customerId ? await one('customers', (q) => q.eq('id', d.customerId!), 'id,name') : undefined
+  const quotation = d.quotationId ? await one('quotations', (q) => q.eq('id', d.quotationId!), 'id,number,status') : undefined
+  const billed = await many('invoice_delivery_notes', (q) => q.eq('delivery_id', id).order('id', { ascending: false }), 'invoice_id,released_at')
+  const invoices = billed.length ? await many('invoices', (q) => q.in('id', billed.map((b) => b.invoiceId as number)), 'id,number,status') : []
   const live = proofs.find((p) => p.status === 'submitted')
   const base = publicBaseUrl()
   const here = `/admin/deliveries/${id}`
@@ -23,7 +29,9 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
     <AdminPage heading="Delivery note" sp={await searchParams}>
       <div className="admin-panel">
         <h3>{d.number} <span className="status">{d.status}</span></h3>
-        <p><strong>{d.consigneeName}</strong>{d.customerId ? <> · <a href={`/admin/customers/${d.customerId}`}>customer</a></> : null}<br />
+        <p className="mini" style={{ marginBottom: 8 }}>{customer ? <>Customer <a href={`/admin/customers/${customer.id}`}>{customer.name as string}</a></> : 'No customer (an earlier note)'}{quotation ? <> · Quotation <a href={`/admin/quotations/${quotation.id}`}>{quotation.number as string}</a></> : null}
+          {invoices.length ? <> · Billed on {invoices.map((i, k) => <span key={i.id as number}>{k ? ', ' : ''}<a href={`/admin/invoices/${i.id}`}>{i.number as string}</a> ({INVOICE_LABEL[i.status as string] ?? (i.status as string)})</span>)}</> : d.status === 'delivered' ? ' · Not billed yet' : null}</p>
+        <p><strong>{d.consigneeName}</strong><br />
           {d.consigneeAddress ? <>{d.consigneeAddress}<br /></> : null}
           {[d.consigneeContact, d.consigneePhone, d.consigneeEmail].filter(Boolean).join(' · ')}<br />
           Created {fmt(d.createdAt)}{d.issuedAt ? ` · issued ${fmt(d.issuedAt)}` : ''}{d.deliveredAt ? ` · received ${fmt(d.deliveredAt)}` : ''}</p>

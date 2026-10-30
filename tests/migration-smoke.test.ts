@@ -4,11 +4,12 @@ import { addSection, restorePage, saveArticle, savePage, saveSection, restoreArt
 import { createDocument, setDocumentStatus, updateDocument } from '@/server/documents/general'
 import { saveCustomer } from '@/server/finance/customers'
 import { createBank, updateBank } from '@/server/finance/banks'
-import { createInvoice, setInvoiceStatus, type InvoiceInput } from '@/server/finance/invoices'
+import { setInvoiceStatus, type InvoiceInput } from '@/server/finance/invoices'
+import { createInvoice, createQuotation } from './helpers/commercial'
 import { cancelPayment, confirmPayment, recordPayment } from '@/server/finance/payments'
 import { ensurePrepayment, voidPrepayment } from '@/server/finance/prepayments'
 import { voidReceipt } from '@/server/finance/receipts'
-import { createQuotation, requestApproval, setQuotationStatus } from '@/server/finance/quotations'
+import { requestApproval, setQuotationStatus } from '@/server/finance/quotations'
 import { renderDocumentPdf } from '@/server/pdf/documents'
 import { saveMailConfig } from '@/server/mail/config'
 import { enqueue, dispatch, retryJob } from '@/server/mail/outbox'
@@ -32,8 +33,8 @@ const input = (customerId: number, o: Partial<InvoiceInput> = {}): InvoiceInput 
 
 describe('finance', () => {
   it('runs customer -> bank -> invoice -> payment claim -> confirmation -> receipt void on database functions', async () => {
-    const customer = await saveCustomer(actor, null, { name: 'PT Smoke', email: 'billing@smoke.example', address: 'Jl. A', taxId: '1', currency: 'IDR', termsDays: '14' })
-    await saveCustomer(actor, customer, { name: 'PT Smoke Updated', email: 'billing@smoke.example', address: 'Jl. A', taxId: '1', currency: 'IDR', termsDays: '30' })
+    const customer = await saveCustomer(actor, null, { name: 'PT Smoke', email: 'billing@smoke.example', address: 'Jl. A', taxId: '1', currency: 'IDR', termsDays: '14' }, { acknowledgeDuplicates: true })
+    await saveCustomer(actor, customer, { name: 'PT Smoke Updated', email: 'billing@smoke.example', address: 'Jl. A', taxId: '1', currency: 'IDR', termsDays: '30' }, { acknowledgeDuplicates: true })
     const bank = await createBank(actor, { bankName: 'Bank Smoke', accountNumber: '1234567890', accountHolder: 'PT Satu Arah International', currency: 'IDR', branch: '', swiftCode: '', notes: '' })
     await updateBank(actor, bank, 'save', { bankName: 'Bank Smoke 2', accountNumber: '1234567890', accountHolder: 'PT Satu Arah International', currency: 'IDR', branch: 'X', swiftCode: '', notes: '' })
     const id = await createInvoice(actor, input(customer))
@@ -44,7 +45,7 @@ describe('finance', () => {
     expect((await sql`select count(*)::int as n from invoice_items where invoice_id = ${id}`)[0].n).toBe(2)
     const [pre] = await sql`select * from prepayment_receipts where invoice_id = ${id}`
     expect(pre).toMatchObject({ status: 'draft', stampRequired: false })
-    expect((await sql`select count(*)::int as n from document_verification_tokens where document_id in (${id}, ${pre.id})`)[0].n).toBe(2)
+    expect((await sql`select count(*)::int as n from document_verification_tokens where (kind = 'invoice' and document_id = ${id}) or (kind = 'prepayment' and document_id = ${pre.id})`)[0].n).toBe(2)
 
     await setInvoiceStatus(actor, id, 'issue')
     expect((await sql`select status from prepayment_receipts where invoice_id = ${id}`)[0].status).toBe('issued')       // released with the invoice
@@ -75,7 +76,7 @@ describe('finance', () => {
   it('issues, requests approval for and voids a quotation', async () => {
     await saveMailConfig({ host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
     await sql`update email_rules set enabled = true where key = 'quotation_approval_request'`
-    const customer = await saveCustomer(actor, null, { name: 'PT Quote', email: 'q@quote.example', address: '', taxId: '', currency: 'IDR', termsDays: '14' })
+    const customer = await saveCustomer(actor, null, { name: 'PT Quote', email: 'q@quote.example', address: '', taxId: '', currency: 'IDR', termsDays: '14' }, { acknowledgeDuplicates: true })
     const id = await createQuotation(actor, { recipient: `customer:${customer}`, issuedAt: '2026-10-05', validUntil: '2999-01-01', taxPercent: '0', paymentTerms: 'Within 14 days', termsConditions: 'Standard terms apply', notes: '', items: 'Freight | 1 | 500000 | job' })
     await setQuotationStatus(actor, id, 'issue')
     await requestApproval(actor, id, BASE)
@@ -129,11 +130,11 @@ describe('website content, documents, leads and mail', () => {
   it('stores a website enquiry with its reference, throttles by address, queues mail and retries a failed message', async () => {
     await saveMailConfig({ host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
     await sql`update email_rules set enabled = true where key in ('lead_admin','lead_customer')`
-    const lead = await createLead({ kind: 'rfq', name: 'Dewi', email: 'dewi@example.invalid', message: 'Need a quote', company: 'PT C', mode: 'sea', origin: 'A', destination: 'B', cargo: 'c', pickup: '' })
+    const lead = await createLead({ kind: 'rfq', name: 'Dewi', email: 'dewi@example.invalid', phone: '+62 812 3456 7890', message: 'Need a quote', company: 'PT C', mode: 'sea', origin: 'A', destination: 'B', cargo: 'c', pickup: '' })
     expect(lead.reference).toMatch(/^RFQ-VORA-L[0-9A-F]{10}-\d{6}-\d{5}$/)
     expect((await sql`select event from email_jobs where event like 'lead\\_%' order by id`).map((r) => r.event)).toEqual(['lead_admin', 'lead_customer'])
-    for (let i = 0; i < 3; i++) await createLead({ kind: 'contact', name: 'Dewi', email: 'dewi@example.invalid', message: 'again', company: '', mode: '', origin: '', destination: '', cargo: '', pickup: '' })
-    await expect(createLead({ kind: 'contact', name: 'Dewi', email: 'dewi@example.invalid', message: 'again', company: '', mode: '', origin: '', destination: '', cargo: '', pickup: '' })).rejects.toMatchObject({ status: 429 })
+    for (let i = 0; i < 3; i++) await createLead({ kind: 'contact', name: 'Dewi', email: 'dewi@example.invalid', phone: '+62 812 3456 7890', message: 'again', company: '', mode: '', origin: '', destination: '', cargo: '', pickup: '' })
+    await expect(createLead({ kind: 'contact', name: 'Dewi', email: 'dewi@example.invalid', phone: '+62 812 3456 7890', message: 'again', company: '', mode: '', origin: '', destination: '', cargo: '', pickup: '' })).rejects.toMatchObject({ status: 429 })
 
     setSender(async () => { throw new Error('smtp down') })
     expect(await dispatch(BASE, 10)).toMatchObject({ failed: expect.any(Number) })

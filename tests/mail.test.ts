@@ -14,7 +14,7 @@ process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64')
 const BASE = 'https://testserver'
 
 async function smtp(enabled = true) {
-  await saveMailConfig(sql, { host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled })
+  await saveMailConfig({ host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled })
 }
 async function rule(key: string, enabled = true) { await sql`update email_rules set enabled = ${enabled} where key = ${key}` }
 
@@ -27,10 +27,11 @@ beforeEach(async () => {
 })
 
 describe('seed data', () => {
-  it('the seeding migrations (0014, plus 0021 for the pre-payment receipt) hold exactly the templates and rules the code defines', () => {
-    const sqlText = ['0014_seed_email_templates.sql', '0021_prepayment_receipts.sql'].map((f) => readFileSync(`migrations/${f}`, 'utf8')).join('\n')
-    const rows = [...sqlText.matchAll(/\('(\w+)', \$vora\$(.*?)\$vora\$, \$vora\$(.*?)\$vora\$\)/gs)]
-    expect(Object.fromEntries(rows.map(([, k, s, h]) => [k, { subject: s, html: h }]))).toEqual(EVENTS)
+  it('the seeding migrations (0014, then 0021, 0025 and 0026 for the later events) seed every template and every switched-off rule the code defines', () => {
+    // The wording itself is checked on a database built from all the migrations (tests/migrations.test.ts): later migrations also UPDATE some defaults.
+    const sqlText = ['0014_seed_email_templates.sql', '0021_prepayment_receipts.sql', '0025_deliveries.sql', '0026_commercial_workflow.sql'].map((f) => readFileSync(`migrations/${f}`, 'utf8')).join('\n')
+    const seeded = [...sqlText.matchAll(/^\s+\('(\w+)', \$vora\$/gm)].map((m) => m[1])
+    expect(new Set(seeded)).toEqual(new Set(EVENT_KEYS))
     expect([...sqlText.matchAll(/^\s+\('(\w+)', FALSE\)/gm)].map((m) => m[1]).sort()).toEqual([...EVENT_KEYS].sort())
   })
   it('exist in the database of a fresh install', async () => {
@@ -47,13 +48,13 @@ describe('templates', () => {
   })
   it('escapes data in the body, strips line breaks from the subject and sanitises markup', async () => {
     await sql`update email_templates set subject = 'Hello $name', html = ${'<p>Dear $name</p><script>x()</script><a href="javascript:1">l</a>'} where key = 'lead_reply'`
-    const out = await renderTemplate(sql, 'lead_reply', { name: '<b>Ana</b>\r\nBcc: evil@example.invalid' })
+    const out = await renderTemplate('lead_reply', { name: '<b>Ana</b>\r\nBcc: evil@example.invalid' })
     expect(out.subject).toBe('Hello <b>Ana</b> Bcc: evil@example.invalid')
     expect(out.subject).not.toMatch(/[\r\n]/)
     expect(out.html).toBe('<p>Dear &lt;b&gt;Ana&lt;/b&gt;<br />Bcc: evil@example.invalid</p><a>l</a>')
-    await expect(renderTemplate(sql, 'nope', {})).rejects.toThrow('Missing email template')
+    await expect(renderTemplate('nope', {})).rejects.toThrow('Missing email template')
     await sql`update email_templates set subject = '   ' where key = 'lead_reply'`
-    await expect(renderTemplate(sql, 'lead_reply', {})).rejects.toThrow('subject is empty')
+    await expect(renderTemplate('lead_reply', {})).rejects.toThrow('subject is empty')
   })
 })
 
@@ -83,48 +84,48 @@ describe('secrets and addresses', () => {
 
 describe('SMTP settings', () => {
   it('validate input, keep a blank password and never store it in plain text', async () => {
-    await saveMailConfig(sql, { host: 'SMTP.Example.Invalid', username: 'u', password: 'secret-pw', enabled: true, adminEmail: 'ops@example.invalid' })
+    await saveMailConfig({ host: 'SMTP.Example.Invalid', username: 'u', password: 'secret-pw', enabled: true, adminEmail: 'ops@example.invalid' })
     let conf = (await getMailConfig(sql))!
     expect(conf).toMatchObject({ host: 'smtp.example.invalid', port: 587, security: 'starttls', enabled: true })
     expect(conf.encryptedPassword).not.toContain('secret-pw')
     expect(decryptSecret(conf.encryptedPassword!)).toBe('secret-pw')
     const before = conf.encryptedPassword
-    await saveMailConfig(sql, { host: 'smtp.example.invalid', username: 'u', password: '', enabled: true })
+    await saveMailConfig({ host: 'smtp.example.invalid', username: 'u', password: '', enabled: true })
     conf = (await getMailConfig(sql))!
     expect(conf.encryptedPassword).toBe(before)
-    await expect(saveMailConfig(sql, { host: 'bad host!' })).rejects.toThrow('Invalid SMTP hostname')
-    await expect(saveMailConfig(sql, { host: 'a.co', port: 70000 })).rejects.toThrow('Invalid SMTP port')
-    await expect(saveMailConfig(sql, { host: 'a.co', security: 'none' })).rejects.toThrow('STARTTLS or implicit TLS')
-    await expect(saveMailConfig(sql, { host: '', enabled: true })).rejects.toThrow('must be configured before enabling')
-    await expect(saveMailConfig(sql, { host: 'a.co', fromEmail: 'nope' })).rejects.toThrow('Invalid plain email address')
+    await expect(saveMailConfig({ host: 'bad host!' })).rejects.toThrow('Invalid SMTP hostname')
+    await expect(saveMailConfig({ host: 'a.co', port: 70000 })).rejects.toThrow('Invalid SMTP port')
+    await expect(saveMailConfig({ host: 'a.co', security: 'none' })).rejects.toThrow('STARTTLS or implicit TLS')
+    await expect(saveMailConfig({ host: '', enabled: true })).rejects.toThrow('must be configured before enabling')
+    await expect(saveMailConfig({ host: 'a.co', fromEmail: 'nope' })).rejects.toThrow('Invalid plain email address')
   })
 })
 
 describe('enqueue', () => {
   const ctx = { name: 'Ana', lead_id: '7', reply_message: 'Hello' }
   it('does nothing while the rule or SMTP is off, and is idempotent per dedupe key', async () => {
-    expect(await enqueue(sql, 'lead_reply', 'a@example.invalid', ctx)).toBeNull()   // no SMTP
+    expect(await enqueue('lead_reply', 'a@example.invalid', ctx)).toBeNull()   // no SMTP
     await smtp()
-    expect(await enqueue(sql, 'lead_reply', 'a@example.invalid', ctx)).toBeNull()   // rule disabled
+    expect(await enqueue('lead_reply', 'a@example.invalid', ctx)).toBeNull()   // rule disabled
     await rule('lead_reply')
-    const a = await enqueue(sql, 'lead_reply', 'a@example.invalid', ctx, { dedupeKey: 'k1' })
-    const b = await enqueue(sql, 'lead_reply', 'a@example.invalid', ctx, { dedupeKey: 'k1' })
+    const a = await enqueue('lead_reply', 'a@example.invalid', ctx, { dedupeKey: 'k1' })
+    const b = await enqueue('lead_reply', 'a@example.invalid', ctx, { dedupeKey: 'k1' })
     expect(a!.id).toBe(b!.id)
     const [{ n }] = await sql`select count(*)::int as n from email_jobs`
     expect(n).toBe(1)
-    expect((await enqueue(sql, 'lead_reply', 'a@example.invalid', ctx, { force: true }))).not.toBeNull()
-    await expect(enqueue(sql, 'lead_reply', 'bad address', ctx, { force: true })).rejects.toThrow('Invalid plain email address')
+    expect((await enqueue('lead_reply', 'a@example.invalid', ctx, { force: true }))).not.toBeNull()
+    await expect(enqueue('lead_reply', 'bad address', ctx, { force: true })).rejects.toThrow('Invalid plain email address')
   })
   it('survives concurrent duplicate enqueues', async () => {
     await smtp(); await rule('lead_reply')
-    const jobs = await Promise.all(Array.from({ length: 8 }, () => enqueue(sql, 'lead_reply', 'a@example.invalid', ctx, { dedupeKey: 'race' })))
+    const jobs = await Promise.all(Array.from({ length: 8 }, () => enqueue('lead_reply', 'a@example.invalid', ctx, { dedupeKey: 'race' })))
     expect(new Set(jobs.map((j) => j!.id)).size).toBe(1)
   })
 })
 
 describe('dispatch', () => {
   const ctx = { name: 'Ana', lead_id: '7', reply_message: 'Hello' }
-  const seed = async (n: number) => { for (let i = 0; i < n; i++) await enqueue(sql, 'lead_reply', `c${i}@example.invalid`, ctx, { dedupeKey: `d${i}` }) }
+  const seed = async (n: number) => { for (let i = 0; i < n; i++) await enqueue('lead_reply', `c${i}@example.invalid`, ctx, { dedupeKey: `d${i}` }) }
 
   it('sends queued mail and records the result', async () => {
     await smtp(); await rule('lead_reply'); await seed(3)
@@ -186,7 +187,7 @@ describe('dispatch', () => {
     await smtp(); await rule('invoice_customer')
     const [c] = await sql`insert into customers (name) values ('X') returning id`
     const [inv] = await sql`insert into invoices (number, customer_id, status, issued_at) values ('INV-X', ${c.id}, 'draft', '2026-01-01') returning id`
-    await enqueue(sql, 'invoice_customer', 'a@example.invalid', { customer_name: 'X' }, { attachmentKind: 'invoice', attachmentId: inv.id, dedupeKey: 'att' })
+    await enqueue('invoice_customer', 'a@example.invalid', { customer_name: 'X' }, { attachmentKind: 'invoice', attachmentId: inv.id, dedupeKey: 'att' })
     const spy = vi.fn(async () => {}); setSender(spy)
     expect((await dispatch(BASE)).failed).toBe(1)
     expect(spy).not.toHaveBeenCalled()

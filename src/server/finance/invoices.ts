@@ -3,29 +3,41 @@ import { recordAudit } from '../audit'
 import { isoDay, today } from '../dates'
 import { ActionError, isUnique } from '../errors'
 import { getMailConfig } from '../mail/config'
-import { enqueue } from '../mail/outbox'
+import { enqueueWithAttachments } from '../mail/outbox'
 import { calcLines, units } from '../money'
 import { getVerification } from '../verification'
-import { moneyErrors, parseLines } from './parse'
+import { chargeLines, moneyErrors, type ChargeRow } from './parse'
 import { requiresStamp } from './pdf-inspect'
-import { sendWithInvoice } from './prepayments'
 
 export interface InvoiceInput {
-  customerId: number; issuedAt: string; dueAt: string; taxPercent: string; withholdingPercent: string; discount: string
+  /** The customer, one of their VALIDATED quotations and the delivery notes (with a proof of delivery) this invoice bills. All required. */
+  customerId: number; quotationId: number; deliveryIds: number[]
+  issuedAt: string; dueAt: string; taxPercent: string; withholdingPercent: string; discount: string
   poNumber: string; shipmentReference: string; serviceMode: string; origin: string; destination: string; transportDocumentRef: string
-  notes: string; items: string; bankAccountIds: number[]
+  notes: string
+  /** The charge table: description, quantity, unit, unit price. */
+  rows: ChargeRow[]
+  bankAccountIds: number[]
+  /** The administrator saw that the invoices of the quotation will total more than was quoted, and means it. */
+  overQuotationAck?: boolean
 }
 
 const MAX_BANKS = 8
+const MAX_DELIVERIES = 60
 
 /**
  * Parses and calculates what was typed, then hands the finished figures to ONE database function (`invoice_create`) that, in one transaction,
- * allocates the number, stores the invoice with its bank snapshots, items, QR link and pre-payment receipt, and writes the audit row.
+ * checks the customer, the validated quotation and the delivery notes (each belongs to that customer and quotation, has its proof of delivery and
+ * is not billed elsewhere), allocates the number, stores the invoice with its bank snapshots, items, QR link and pre-payment receipt, and writes
+ * the audit row. The quotation's total is never multiplied by the number of delivery notes: the amounts are the ones on the charge table.
  */
 export async function createInvoice(actorId: number, input: InvoiceInput): Promise<number> {
-  const lines = parseLines(input.items)
+  const lines = chargeLines(input.rows)
   const ids = input.bankAccountIds
   if (new Set(ids).size !== ids.length || ids.length > MAX_BANKS) throw new ActionError(`Select at most ${MAX_BANKS} distinct bank accounts`)
+  if (!input.quotationId) throw new ActionError('Select one of the customer\'s validated quotations')
+  if (!input.deliveryIds.length) throw new ActionError('Select at least one delivery note to bill')
+  if (input.deliveryIds.length > MAX_DELIVERIES) throw new ActionError(`An invoice bills at most ${MAX_DELIVERIES} delivery notes`)
   const issued = isoDay(input.issuedAt, today(), 'Issue date')
   const c = await one('customers', (q) => q.eq('id', input.customerId), 'id,currency,terms_days')
   if (!c) throw new ActionError('Select an existing customer')
@@ -43,7 +55,8 @@ export async function createInvoice(actorId: number, input: InvoiceInput): Promi
     return await rpc<number>('invoice_create', {
       p_actor: actorId,
       p: {
-        customer_id: c.id, currency, issued_at: issued, due_at: due, po_number: input.poNumber.slice(0, 100), shipment_reference: input.shipmentReference.slice(0, 120),
+        customer_id: c.id, quotation_id: input.quotationId, delivery_ids: input.deliveryIds, over_quotation_ack: Boolean(input.overQuotationAck),
+        currency, issued_at: issued, due_at: due, po_number: input.poNumber.slice(0, 100), shipment_reference: input.shipmentReference.slice(0, 120),
         service_mode: input.serviceMode.slice(0, 120), origin: input.origin.slice(0, 180), destination: input.destination.slice(0, 180),
         transport_document_ref: input.transportDocumentRef.slice(0, 150), notes: input.notes.slice(0, 2500), tax_percent: taxPercent, withholding_percent: withholdingPercent,
         discount_minor: discountMinor, subtotal_minor: calc.subtotalMinor, tax_minor: calc.taxMinor, withholding_minor: calc.withholdingMinor, total_minor: calc.totalMinor,
@@ -62,22 +75,41 @@ export async function setInvoiceStatus(actorId: number, id: number, action: stri
   await rpc('invoice_set_status', { p_actor: actorId, p_id: id, p_action: action })
 }
 
-/** Queues the invoice PDF for the customer. Pressing twice within a minute sends once; a later press sends again on purpose. */
+/**
+ * "Send invoice and pre-payment receipt": ONE email with TWO PDFs. Both documents must be ready (the invoice issued, the pre-payment receipt
+ * released with its e-meterai when one is required) and both PDFs must build now; otherwise nothing is sent, and the message says which part
+ * is missing. The invoice is never sent alone with its receipt silently left out. Sending is not payment: the balance does not move.
+ * Pressing twice within a minute queues once; a later press sends again on purpose.
+ */
 export async function sendInvoice(actorId: number, id: number, baseUrl: string): Promise<void> {
   const inv = await one('invoices', (q) => q.eq('id', id))
   if (!inv) throw new ActionError('Invoice not found', 404)
-  const customer = await one('customers', (q) => q.eq('id', inv.customerId as number), 'name,email')
   if (['draft', 'void'].includes(inv.status as string)) throw new ActionError('Issue the invoice before emailing it', 409)
+  const customer = await one('customers', (q) => q.eq('id', inv.customerId as number), 'name,email')
   if (!customer?.email) throw new ActionError('The customer has no billing email')
+  const pre = await one('prepayment_receipts', (q) => q.eq('invoice_id', id).neq('status', 'void').order('id', { ascending: false }), 'id,number,status,stamp_required,stamp_storage_key')
+  if (!pre) throw new ActionError('This invoice has no pre-payment receipt: create it first, then send both together', 409)
+  if (pre.status === 'pending_stamp' || (pre.stampRequired && !pre.stampStorageKey)) throw new ActionError('The pre-payment receipt is waiting for its e-meterai: upload the stamped PDF first. Nothing was sent', 409)
+  if (pre.status !== 'issued') throw new ActionError('The pre-payment receipt is not released yet. Nothing was sent', 409)
   const conf = await getMailConfig()
   const rule = await one('email_rules', (q) => q.eq('key', 'invoice_customer'), 'enabled')
   if (!conf?.enabled || !rule?.enabled) throw new ActionError('Enable SMTP and the invoice_customer email rule first', 409)
   const ver = await getVerification('invoice', id)
   if (!ver || ver.revoked) throw new ActionError('The invoice has no active verification link', 409)
-  const queued = await enqueue('invoice_customer', customer.email as string, {
+  const preVer = await getVerification('prepayment', pre.id as number)
+  if (!preVer || preVer.revoked) throw new ActionError('The pre-payment receipt has no active verification link', 409)
+  // Both final PDFs exist now (a stamped file is read back and its fingerprint checked): a package that cannot be built is not queued.
+  const { renderDocumentPdf } = await import('../pdf/documents')
+  try {
+    await renderDocumentPdf('invoice', id, baseUrl)
+    await renderDocumentPdf('prepayment', pre.id as number, baseUrl)
+  } catch (e) {
+    throw new ActionError(`A PDF of the package could not be prepared, so nothing was sent: ${e instanceof Error ? e.message : 'unknown error'}`, 409)
+  }
+  const queued = await enqueueWithAttachments('invoice_customer', customer.email as string, {
     customer_name: customer.name, document_number: inv.number, document_date: inv.issuedAt, verify_url: `${baseUrl}/verify/${ver.token}`,
-  }, { attachmentKind: 'invoice', attachmentId: id, dedupeKey: `invoice-customer-${id}-${Math.floor(Date.now() / 60_000)}` })
+    prepayment_number: pre.number, prepayment_verify_url: `${baseUrl}/verify/${preVer.token}`,
+  }, [{ kind: 'invoice', id }, { kind: 'prepayment', id: pre.id as number }], { dedupeKey: `invoice-package-${id}-${Math.floor(Date.now() / 60_000)}` })
   if (!queued) throw new ActionError('Email delivery is disabled', 409)
-  await sendWithInvoice(id, baseUrl)   // the released pre-payment receipt travels with the invoice
-  await recordAudit(actorId, 'send-invoice', 'invoice', id, 'Invoice PDF queued through the configured SMTP')
+  await recordAudit(actorId, 'send-invoice-package', 'invoice', id, `Invoice and pre-payment receipt ${pre.number} queued as one message with two PDFs`)
 }

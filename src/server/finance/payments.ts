@@ -63,7 +63,8 @@ export async function confirmPayment(actorId: number, paymentId: number, input: 
     }, { dedupeKey: `payment-confirmed-${paymentId}` }))
     if (!needsStamp) {
       await bestEffort('receipt_customer', () => enqueue('receipt_customer', email, {
-        customer_name: r.customer.name, document_number: r.receipt_number, verify_url: `${baseUrl}/verify/${r.token}`,
+        customer_name: r.customer.name, document_number: r.receipt_number, invoice_number: r.invoice_number, payment_amount: money(r.payment.amount_minor, r.currency),
+        payment_date: r.payment.date, verify_url: `${baseUrl}/verify/${r.token}`,
       }, { attachmentKind: 'receipt', attachmentId: r.receipt_id, dedupeKey: `receipt-send-${r.receipt_id}` }))
     }
   }

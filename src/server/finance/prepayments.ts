@@ -7,7 +7,6 @@ import { getMailConfig } from '../mail/config'
 import { enqueue } from '../mail/outbox'
 import { putObject, removeObject } from '../storage'
 import { getVerification } from '../verification'
-import { bestEffort } from './notify'
 import { inspectStampedReceipt, requiresStamp } from './pdf-inspect'
 import type { StampInput } from './receipts'
 
@@ -18,6 +17,7 @@ import type { StampInput } from './receipts'
  *
  * draft (invoice not issued) -> pending_stamp (e-meterai still to be applied by hand) or issued -> void
  * Releasing it when the invoice is issued and voiding it with the invoice happen inside `invoice_set_status`.
+ * It travels to the customer WITH the invoice, as the second attachment of ONE email (`sendInvoice`); the stand-alone button below is for sending it again on purpose.
  */
 
 /** For an invoice that has none: made before pre-payment receipts existed, or whose receipt was voided. Only while nothing has been paid. */
@@ -82,11 +82,4 @@ export async function sendPrepayment(actorId: number, id: number, baseUrl: strin
   const { queued } = await queueEmail(id, baseUrl, `prepayment-customer-${id}-${Math.floor(Date.now() / 60_000)}`)
   if (!queued) throw new ActionError('Email delivery is disabled', 409)
   await recordAudit(actorId, 'send-prepayment-receipt', 'prepayment-receipt', id, 'Pre-payment receipt PDF queued through the configured SMTP')
-}
-
-/** Called by sendInvoice: the receipt travels with the invoice when it is released and its email rule is on. Never blocks the invoice email. */
-export async function sendWithInvoice(invoiceId: number, baseUrl: string): Promise<void> {
-  const row = await one('prepayment_receipts', (q) => q.eq('invoice_id', invoiceId).eq('status', 'issued'), 'id')
-  if (!row) return
-  await bestEffort('prepayment_receipt_customer', () => queueEmail(row.id as number, baseUrl, `prepayment-invoice-${row.id}-${Math.floor(Date.now() / 60_000)}`))
 }

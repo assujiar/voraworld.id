@@ -1,7 +1,7 @@
 {
  "lead_admin": {
   "subject": "New VORA $lead_type inquiry - #$lead_id",
-  "html": "<h2>New $lead_type inquiry</h2><p>Reference: <strong>#$lead_id</strong></p><p>From: $name ($company)</p><p>Email: $email</p><p>Service: $mode</p><p>Origin: $origin &nbsp; Destination: $destination</p><p>Message: $message</p><p>Open in admin: <a href=\"$admin_url\">Lead #$lead_id</a></p>"
+  "html": "<h2>New $lead_type inquiry</h2><p>Reference: <strong>#$lead_id</strong></p><p>From: $name ($company)</p><p>Email: $email</p><p>Phone / WhatsApp: $phone</p><p>Service: $mode</p><p>Origin: $origin &nbsp; Destination: $destination</p><p>Message: $message</p><p>Open in admin: <a href=\"$admin_url\">Lead #$lead_id</a></p>"
  },
  "lead_customer": {
   "subject": "VORA inquiry received - #$lead_id",
@@ -9,11 +9,11 @@
  },
  "invoice_customer": {
   "subject": "VORA invoice $document_number",
-  "html": "<p>Dear $customer_name,</p><p>Please find attached invoice <strong>$document_number</strong> ($document_date).</p><p>Verify the document using the QR code in the PDF or the link: <a href=\"$verify_url\">Verify invoice</a>.</p><p>VORA | Freight & Logistics</p>"
+  "html": "<p>Dear $customer_name,</p><p>Please find attached invoice <strong>$document_number</strong> ($document_date) and its pre-payment receipt <strong>$prepayment_number</strong>, in this one email.</p><p>The pre-payment receipt is prepared for your internal payment process. It is not proof that payment has been made: VORA issues the official payment receipt once the funds are credited to its bank account.</p><p>Verify the invoice using the QR code in the PDF or the link: <a href=\"$verify_url\">Verify invoice</a>.</p><p>VORA | Freight & Logistics</p>"
  },
  "receipt_customer": {
-  "subject": "VORA payment receipt $document_number",
-  "html": "<p>Dear $customer_name,</p><p>Your payment receipt <strong>$document_number</strong> is attached. Verify the document through the QR code or <a href=\"$verify_url\">online verification</a>.</p><p>VORA | Freight & Logistics</p>"
+  "subject": "VORA | Payment Receipt $document_number",
+  "html": "<p>Dear $customer_name,</p><p>Thank you. We confirm that your payment of <strong>$payment_amount</strong> was received on $payment_date for invoice <strong>$invoice_number</strong>.</p><p>Your official payment receipt <strong>$document_number</strong> is attached. Verify the document through the QR code or <a href=\"$verify_url\">online verification</a>.</p><p>VORA | Freight & Logistics</p>"
  },
  "payment_confirmed": {
   "subject": "VORA payment confirmation - $invoice_number",
@@ -42,5 +42,13 @@
  "delivery_received_admin": {
   "subject": "VORA delivery $delivery_number received",
   "html": "<p>Delivery <strong>$delivery_number</strong> to $consignee_name was received by $receiver_name on $received_at.</p><p>Open in admin: <a href=\"$admin_url\">$delivery_number</a></p>"
+ },
+ "quotation_customer_approved_admin": {
+  "subject": "VORA quotation signed by the customer - $document_number",
+  "html": "<p>$customer_name has uploaded the signed quotation <strong>$document_number</strong> (signed by $signer_name, $signer_title).</p><p>Check the signature and the company stamp, then validate or reject it: <a href=\"$admin_url\">Open the quotation</a>.</p>"
+ },
+ "quotation_validated_customer": {
+  "subject": "VORA quotation validated - $document_number",
+  "html": "<p>Dear $customer_name,</p><p>We have received your signed quotation <strong>$document_number</strong> and VORA has validated it. We will arrange the delivery with you accordingly.</p><p>VORA | Freight & Logistics</p>"
  }
 }

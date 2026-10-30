@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
-import { uploadStampAction, voidReceiptAction } from '@/actions/finance'
+import { resendReceiptAction, uploadStampAction, voidReceiptAction } from '@/actions/finance'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
+import { MailHistory } from '@/components/admin/MailHistory'
 import { one, withRelated } from '@/server/data'
+import { mailHistory } from '@/server/mail/history'
 import { maxUploadBytes } from '@/server/env'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
@@ -14,6 +16,9 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
   const [r] = await withRelated(withCustomer, 'payments', 'paymentId', { amount_minor: 'amountMinor', date: 'paymentDate', method: 'method', reference: 'reference', confirmed_at: 'confirmedAt' })
   if (!r) notFound()
   const cur = r.currency as string
+  const emails = await mailHistory('receipt', id)
+  const invoice = await one('invoices', (q) => q.eq('id', r.invoiceId as number), 'quotation_id')
+  const quotation = invoice?.quotationId ? await one('quotations', (q) => q.eq('id', invoice.quotationId as number), 'id,number') : undefined
   const here = `/admin/receipts/${id}`
   const status = r.status as string
   const maxMb = Math.floor(maxUploadBytes() / 1048576)
@@ -22,7 +27,7 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
       <div className="admin-panel">
         <h2 style={{ fontSize: '2rem' }}>{r.number as string}</h2>
         <p>Status: <span className="status">{status.replace('_', ' ')}</span></p>
-        <p>Invoice <a href={`/admin/invoices/${r.invoiceId}`}>{r.invoiceNumber as string}</a> · {r.customerName as string}<br />
+        <p>Invoice <a href={`/admin/invoices/${r.invoiceId}`}>{r.invoiceNumber as string}</a> · <a href={`/admin/customers/${r.customerId}`}>{r.customerName as string}</a>{quotation ? <> · Quotation <a href={`/admin/quotations/${quotation.id}`}>{quotation.number as string}</a></> : null}<br />
           Payment of <strong>{money(r.amountMinor as number, cur)}</strong> on {r.paymentDate as string} · {r.method as string}{r.reference ? ` · ${r.reference}` : ''}<br />
           Confirmed {fmt(r.confirmedAt as Date)} UTC · Invoice balance now {money(r.outstandingMinor as number, cur)}</p>
         {status === 'pending_stamp' ? (
@@ -44,10 +49,12 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
           <p className="note">Stamped PDF uploaded and stored privately (SHA-256 {(r.stampSha256 as string)?.slice(0, 16)}…). Official e-meterai reference: {r.stampProviderReference as string}</p>
         ) : null}
         <div className="inline-actions">
+          {status === 'issued' ? <form action={resendReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Send the receipt to the customer again</button></form> : null}
           {status !== 'void' ? <a className="button" href={`/admin/receipts/${id}/pdf`} target="_blank" rel="noopener">{status === 'pending_stamp' ? 'Download PDF draft' : 'Download final PDF'} ↗</a> : null}
           {status !== 'void' ? <form action={voidReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline">Void receipt and reverse payment</button></form> : null}
         </div>
       </div>
+      <MailHistory lines={emails} />
     </AdminPage>
   )
 }

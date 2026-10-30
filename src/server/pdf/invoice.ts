@@ -120,11 +120,24 @@ async function compose(d: InvoiceData, issuer: Issuer, verificationUrl: string, 
       y -= tall ? 20 : 13
     }
     const route = [d.origin, d.destination].filter(Boolean).join(' -> ')
-    const logistics = ([['SERVICE MODE', d.serviceMode], ['ROUTE', route], ['B/L / AWB REF', d.transportDocumentRef]] as const).filter(([, v]) => v)
-    if (logistics.length) {
-      for (const [name, value] of logistics) {
-        const rows = s.wrap(`${name}: ${value}`, WIDTH - 16, 7.0)
-        if (rows.length > 2) throw new PdfLayoutError(`${name} is too long for the document`)
+    // The documents this invoice comes from, and the logistics, packed onto as few lines as fit (so the five-items-per-page layout keeps its room).
+    // Delivery notes may be many: the numbers that fit on two lines are printed, then how many more there are.
+    const dn = d.deliveryNumbers ?? []
+    let shown = dn.length
+    const joined = (n: number) => dn.slice(0, n).join(', ') + (n < dn.length ? `  +${dn.length - n} more` : '')
+    while (shown > 1 && s.wrap(`DELIVERY NOTES: ${joined(shown)}`, WIDTH - 16, 7.0).length > 2) shown--
+    const facts = ([['QUOTATION', d.quotationNumber ?? ''], ['SERVICE MODE', d.serviceMode], ['ROUTE', route], ['B/L / AWB REF', d.transportDocumentRef]] as const).filter(([, v]) => v).map(([n, v]) => `${n}: ${v}`)
+    const lines: string[] = []
+    for (const fact of facts) {
+      const last = lines[lines.length - 1]
+      if (last !== undefined && s.wrap(`${last}   ${fact}`, WIDTH - 16, 7.0).length === 1) lines[lines.length - 1] = `${last}   ${fact}`
+      else lines.push(fact)
+    }
+    if (dn.length) lines.push(`DELIVERY NOTES: ${joined(shown)}`)
+    if (lines.length) {
+      for (const text of lines) {
+        const rows = s.wrap(text, WIDTH - 16, 7.0)
+        if (rows.length > 2) throw new PdfLayoutError(`${text.split(':')[0]} is too long for the document`)
         for (const line of rows) { s.text(L + 8, y, line, 7.0, SLATE); y -= 9.2 }
       }
       y -= 3

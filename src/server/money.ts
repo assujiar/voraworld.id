@@ -47,6 +47,15 @@ export function units(value: unknown, currency = 'IDR'): number {
   return toSafeNumber(roundHalfUp(mul(d, { n: pow10(minorDecimals(currency)), s: 0 })))
 }
 
+/** Minor units -> the plain number a person types into a price box: 1235 USD -> "12.35", 1500000 IDR -> "1500000". */
+export function plainAmount(minor: number | bigint, currency = 'IDR'): string {
+  const decimals = minorDecimals(currency)
+  const v = BigInt(minor)
+  const abs = v < 0n ? -v : v
+  const base = pow10(decimals)
+  return `${v < 0n ? '-' : ''}${abs / base}${decimals ? '.' + (abs % base).toString().padStart(decimals, '0') : ''}`
+}
+
 /** Minor units -> "IDR 1,234,567" or "USD 1,234.50". */
 export function money(minor: number | bigint, currency = 'IDR'): string {
   const decimals = minorDecimals(currency)

@@ -294,7 +294,7 @@ describe('replying to a lead by email', () => {
     await sql`truncate email_jobs, mail_config`; await sql`update email_rules set enabled = false`
     const id = await lead()
     expect(q((await act(replyLeadAction, { record: String(id), message: 'Hello', _back: `/admin/leads/${id}` }, { as: admin })).redirect).get('error')).toMatch(/Enable SMTP and the lead_reply email rule/)
-    await saveMailConfig(sql, { host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
+    await saveMailConfig({ host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
     expect(q((await act(replyLeadAction, { record: String(id), message: 'Hello', _back: '/x' }, { as: admin })).redirect).get('error')).toMatch(/lead_reply/)
     expect(await sql`select id from email_jobs`).toHaveLength(0)
   })
