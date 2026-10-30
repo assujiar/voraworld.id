@@ -152,7 +152,7 @@ export const modeGuides: Record<string, Record<Locale, ModeGuide>> = {
     id: {
       title: 'Yang menentukan part load',
       points: [
-        ['Konsolidasi', 'Muatan berbagi kendaraan dengan kargo lain, sehingga jendela penjemputan dan pengantaran mengikuti rute seluruh kendaraan, bukan hanya muatan Anda.'],
+        ['Konsolidasi', 'Muatan berbagi kendaraan dengan kargo lain, sehingga jendela penjemputan dan pengantaran mengikuti rute seluruh kendaraan, tidak hanya muatan Anda.'],
         ['Titik penanganan', 'Barang ditangani lebih sering daripada di kendaraan khusus. Kemasan harus tahan terhadap pemindahan, penumpukan, dan gerakan forklift.'],
         ['Dasar perhitungan biaya', 'Part load umumnya dihitung dari berat, volume, atau posisi pallet, mana yang lebih besar. Sebutkan ketiganya saat meminta penawaran.'],
         ['Konsekuensi jendela pengantaran', 'Jendela yang lebih pendek atau pasti biasanya berarti pengaturan lain. Sampaikan apa yang bisa diterima penerima.'],

@@ -7,7 +7,7 @@ import type { Locale } from './index'
 export const rfqGuidance: Record<string, Record<Locale, string[]>> = {
   _default: {
     en: ['What the goods are (a plain description, not only a product code).', 'Number of packages and how they are packed (cartons, pallets, crates, loose).', 'Gross weight in kg and the size of each package in cm (L × W × H), or the total volume in cbm.', 'The date the cargo is ready and anything that limits access at pickup or delivery.'],
-    id: ['Jenis barang (deskripsi singkat, bukan hanya kode produk).', 'Jumlah kemasan dan cara pengemasannya (karton, pallet, peti, curah).', 'Berat kotor dalam kg dan ukuran tiap kemasan dalam cm (P × L × T), atau total volume dalam cbm.', 'Tanggal barang siap dan kendala akses di lokasi penjemputan atau pengantaran.'],
+    id: ['Jenis barang (deskripsi singkat, tidak cukup hanya kode produk).', 'Jumlah kemasan dan cara pengemasannya (karton, pallet, peti, curah).', 'Berat kotor dalam kg dan ukuran tiap kemasan dalam cm (P × L × T), atau total volume dalam cbm.', 'Tanggal barang siap dan kendala akses di lokasi penjemputan atau pengantaran.'],
   },
   'international-freight-forwarding': {
     en: ['Air or ocean, import or export, and the Incoterm agreed with the other party if there is one.', 'For ocean: FCL (container type and quantity) or LCL (cbm and kg).', 'For air: gross weight and package dimensions, because the charge follows the greater of actual and volumetric weight.', 'Whether the quotation should cover origin pickup, destination delivery and customs coordination, or only the main leg.'],
