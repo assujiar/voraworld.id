@@ -1,4 +1,4 @@
-import { englishWords, money } from '../money'
+import { amountInWords, money } from '../money'
 import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { Issuer, ReceiptData } from './types'
 
@@ -97,7 +97,8 @@ export async function renderReceipt(r: ReceiptData, issuer: Issuer, verification
   s.text(L + 14, y - 10, 'CONFIRMED AMOUNT RECEIVED', 8.5, '#E8B3AA', true)
   s.text(L + 14, y - 36, money(payment.amountMinor, cur), 17, WHITE, true)
   y -= 66
-  if (cur === 'IDR') y = detail(y, 'AMOUNT RECEIVED IN WORDS', `${englishWords(payment.amountMinor)} Indonesian Rupiah`)
+  const words = amountInWords(payment.amountMinor, cur)
+  if (words) y = detail(y, 'AMOUNT RECEIVED IN WORDS', words)
   y = detail(y, 'CURRENT INVOICE PAYMENT STATUS', `${settlement}  |  Balance due: ${money(invoice.outstandingMinor, cur)}`)
   let note = `Payment recorded as confirmed; ${payment.confirmedBy || 'reviewer not specified'}`
   if (payment.confirmedAt) note += ` on ${payment.confirmedAt.toISOString().slice(0, 16).replace('T', ' ')} UTC`

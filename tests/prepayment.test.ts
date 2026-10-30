@@ -14,6 +14,7 @@ import { confirmPayment, recordPayment } from '@/server/finance/payments'
 import { ensurePrepayment, sendPrepayment, uploadPrepaymentStamp, voidPrepayment } from '@/server/finance/prepayments'
 import { renderDocumentPdf } from '@/server/pdf/documents'
 import { Sheet } from '@/server/pdf/kit'
+import { renderPrepayment } from '@/server/pdf/prepayment'
 import { createUser } from './helpers/actions'
 import { makePdf } from './helpers/pdf'
 import { pdfLinks, pdfPages, rasterize, squash } from './helpers/pdf-text'
@@ -186,7 +187,7 @@ describe('the pre-payment receipt PDF', () => {
       const round = vi.spyOn(Sheet.prototype, 'roundRect').mockImplementation(function (this: Sheet, x, y, w, h) { solid.push([x, y, w, h]) })
       const text = vi.spyOn(Sheet.prototype, 'text').mockImplementation(function (this: Sheet, _x, y, value) { texts.push([y, String(value)]) })
       try { await renderDocumentPdf(sql, 'prepayment', (await row(invoice)).id as number, BASE) } finally { outline.mockRestore(); round.mockRestore(); text.mockRestore() }
-      return { dashed, amount: solid[0], words: texts.find(([, t]) => t.endsWith('Indonesian Rupiah')) }
+      return { dashed, amount: solid[0], words: texts.find(([, t]) => /(Rupiah|Cents|Dollars|Euros|Yen)$/.test(t)) }
     }
     // IDR above the limit: the square runs from the top of the amount box to the bottom of the amount in words.
     const a = await draw(await invoiceFor(cid, 12_000_000))
@@ -198,9 +199,21 @@ describe('the pre-payment receipt PDF', () => {
     expect(y + h).toBeCloseTo(a.amount[1] + a.amount[3], 1)                                                // level with the top of the amount box
     expect(a.amount[0] + a.amount[2]).toBeLessThan(x)                                                      // the amount box gives up that width
     expect(Math.abs(y - (a.words![0] - 3))).toBeLessThanOrEqual(2.5)                                       // and ends with the amount in words (its baseline less the descenders)
-    // A foreign currency has no amount in words: the amount box itself is as tall as the square.
+    // A foreign currency is written out too, so its block is built exactly the same way.
     const usd = await draw(await invoiceFor(await customer('USD'), '100'))
-    expect(usd.amount[3]).toBe(usd.dashed[0][3]); expect(usd.amount[1] + usd.amount[3]).toBeCloseTo(usd.dashed[0][1] + usd.dashed[0][3], 1)
+    expect(usd.words![1]).toBe('One Hundred US Dollars')
+    expect(usd.dashed[0][3]).toBe(w); expect(usd.amount[3]).toBe(a.amount[3])
+    expect(Math.abs(usd.dashed[0][1] - (usd.words![0] - 3))).toBeLessThanOrEqual(2.5)
+    // Only an amount too large to write out leaves the amount box to fill the height of the block alone.
+    const tall: Box[] = []; const boxes: Box[] = []
+    const o = vi.spyOn(Sheet.prototype, 'outline').mockImplementation(function (this: Sheet, x, y, bw, bh, _s, _t, dash) { if (dash) tall.push([x, y, bw, bh]) })
+    const r = vi.spyOn(Sheet.prototype, 'roundRect').mockImplementation(function (this: Sheet, x, y, bw, bh) { boxes.push([x, y, bw, bh]) })
+    try {
+      await renderPrepayment({ number: 'PPR-X', status: 'pending_stamp', stampRequired: true, issuedOn: '2026-10-30', currency: 'IDR', amountMinor: 2_000_000_000_000_000,
+        invoice: { number: 'INV-X', issuedAt: '2026-10-30', dueAt: '2026-11-30', poNumber: '', shipmentReference: '' }, payer: { name: 'X', address: '', email: '', taxId: '' }, banks: [] },
+      { legalName: 'PT Satu Arah International', address: '', email: 'info@voraworld.id', taxId: '' }, `${BASE}/verify/x`)
+    } finally { o.mockRestore(); r.mockRestore() }
+    expect(boxes[0][3]).toBe(tall[0][3]); expect(boxes[0][1] + boxes[0][3]).toBeCloseTo(tall[0][1] + tall[0][3], 1)
     // Up to the limit there is no placeholder, and the amount box has the full width again.
     const none = await draw(await invoiceFor(cid, 5_000_000))
     expect(none.dashed).toEqual([])
@@ -216,11 +229,12 @@ describe('the pre-payment receipt PDF', () => {
     expect(text).not.toContain('E-METERAI HERE'); expect(text).toContain('ISSUED')
   })
 
-  it('names a foreign-currency amount without inventing words for it, and shows DRAFT before the invoice is issued', async () => {
+  it('writes a foreign-currency amount out in that currency, and shows DRAFT before the invoice is issued', async () => {
     const id = await invoiceFor(await customer('USD'), '1234.56')
     const text = squash((await pdfPages(await renderDocumentPdf(sql, 'prepayment', (await row(id)).id as number, BASE))).join(' '))
     expect(text).toContain('USD 1,234.56'); expect(text).toContain('DRAFT'); expect(text).toContain('because the amount is in a foreign currency')
-    expect(text).not.toContain('AMOUNT IN WORDS')
+    expect(text).toContain('AMOUNT IN WORDS'); expect(text).toContain('One Thousand Two Hundred Thirty-Four US Dollars and Fifty-Six Cents')
+    expect(text).not.toContain('Indonesian Rupiah')
   })
 
   it('ends in the company red like every other document', async () => {

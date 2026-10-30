@@ -1,5 +1,5 @@
 import { STAMP_LIMIT_IDR } from '../finance/pdf-inspect'
-import { englishWords, money } from '../money'
+import { amountInWords, money } from '../money'
 import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { Issuer, PrepaymentData } from './types'
 
@@ -81,10 +81,10 @@ export async function renderPrepayment(d: PrepaymentData, issuer: Issuer, verifi
   y = title(y, 'AMOUNT TO BE RECEIVED')
   // The amount block is the amount box with the amount in words under it, AMOUNT_H + WORDS_H tall. The e-meterai is a square exactly that
   // tall, level with the block, at its right; the amount box gives up that width. Without an e-meterai the amount box keeps the full width.
-  const words = cur === 'IDR' ? `${englishWords(d.amountMinor)} Indonesian Rupiah` : ''
+  const words = amountInWords(d.amountMinor, cur)
   const boxW = d.stampRequired ? WIDTH - SQUARE - 14 : WIDTH
   const top = y + 8
-  // With no words under it (a foreign currency) the amount box itself fills the height of the block.
+  // With no words under it (an amount too large to write out) the amount box itself fills the height of the block.
   const amountH = words || !d.stampRequired ? AMOUNT_H : SQUARE
   const inset = (amountH - AMOUNT_H) / 2
   s.roundRect(L, top - amountH, boxW, amountH, 7, INK)

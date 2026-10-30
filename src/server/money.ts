@@ -126,3 +126,31 @@ export function englishWords(value: number | bigint): string {
   }
   return parts.join(' ')
 }
+
+const CURRENCY_WORDS: Record<string, { major: [string, string]; minor?: [string, string] }> = {
+  IDR: { major: ['Indonesian Rupiah', 'Indonesian Rupiah'] },
+  JPY: { major: ['Japanese Yen', 'Japanese Yen'] },
+  USD: { major: ['US Dollar', 'US Dollars'], minor: ['Cent', 'Cents'] },
+  EUR: { major: ['Euro', 'Euros'], minor: ['Cent', 'Cents'] },
+  SGD: { major: ['Singapore Dollar', 'Singapore Dollars'], minor: ['Cent', 'Cents'] },
+}
+
+/**
+ * An amount in minor units written out, e.g. "Twelve Million Five Hundred Thousand Indonesian Rupiah" or
+ * "One Thousand Two Hundred Thirty-Four US Dollars and Fifty-Six Cents". An empty string when it cannot be written
+ * (an amount beyond the supported range): callers leave the line out rather than print something wrong.
+ */
+export function amountInWords(minor: number | bigint, currency = 'IDR'): string {
+  const decimals = minorDecimals(currency)
+  const value = BigInt(minor)
+  const base = pow10(decimals)
+  const major = value / base
+  const fraction = value % base
+  if (value < 0n || major >= 10n ** 15n) return ''
+  const names = CURRENCY_WORDS[currency] ?? { major: [currency, currency], ...(decimals ? { minor: ['Cent', 'Cents'] as [string, string] } : {}) }
+  const label = (n: bigint, [one, many]: [string, string]) => `${englishWords(n)} ${n === 1n ? one : many}`
+  const parts: string[] = []
+  if (major > 0n || fraction === 0n) parts.push(label(major, names.major))
+  if (fraction > 0n) parts.push(label(fraction, names.minor ?? ['Cent', 'Cents']))
+  return parts.join(' and ')
+}

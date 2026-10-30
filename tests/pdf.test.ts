@@ -110,13 +110,14 @@ describe('invoice and receipt PDFs', () => {
     expectRedFooter(pdf, pages.length, 83, 'multi-page invoice')
   })
 
-  it('print foreign-currency amounts with decimals and omit the rupiah wording', async () => {
+  it('print foreign-currency amounts with decimals, written out in that currency and never as rupiah', async () => {
     const { invoice, banks } = await setup({ currency: 'USD', n: 2, price: 1250 })
     const p = await recordPayment(actor, invoice, { amount: '100.50', date: '2026-10-29', method: 'wire', reference: 'W-1', receivingBankId: banks[0] })
     const { receiptId } = await confirmPayment(actor, p, { fundsCleared: true, receivingBankId: null }, BASE)
     const draft = await pdfPages(await renderDocumentPdf(sql, 'receipt', receiptId, BASE))
     const text = squash(draft[0])
     expect(text).toContain('USD 100.50'); expect(text).toContain('PENDING E-METERAI'); expect(text).toContain('Manual official e-meterai application pending')
+    expect(text).toContain('AMOUNT RECEIVED IN WORDS'); expect(text).toContain('One Hundred US Dollars and Fifty Cents')
     expect(text).not.toContain('Indonesian Rupiah')
     expect(squash((await pdfPages(await renderDocumentPdf(sql, 'invoice', invoice, BASE))).join(' '))).toContain('USD 2,500.00')
   })

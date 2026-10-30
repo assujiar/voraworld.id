@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcLines, englishWords, money, units } from '@/server/money'
+import { amountInWords, calcLines, englishWords, money, units } from '@/server/money'
 
 describe('units / money', () => {
   it('converts to minor units with half-up rounding', () => {
@@ -68,5 +68,21 @@ describe('englishWords', () => {
     expect(englishWords(120050000)).toBe('One Hundred Twenty Million Fifty Thousand')
     expect(englishWords(2_500_000_000)).toBe('Two Billion Five Hundred Million')
     expect(() => englishWords(-1)).toThrow()
+  })
+})
+
+describe('amountInWords', () => {
+  it('writes the amount out in its own currency, with the minor unit where the currency has one', () => {
+    expect(amountInWords(12_500_000, 'IDR')).toBe('Twelve Million Five Hundred Thousand Indonesian Rupiah')
+    expect(amountInWords(123456, 'USD')).toBe('One Thousand Two Hundred Thirty-Four US Dollars and Fifty-Six Cents')
+    expect(amountInWords(10000, 'USD')).toBe('One Hundred US Dollars')
+    expect(amountInWords(101, 'EUR')).toBe('One Euro and One Cent')
+    expect(amountInWords(56, 'SGD')).toBe('Fifty-Six Cents')
+    expect(amountInWords(0, 'USD')).toBe('Zero US Dollars')
+    expect(amountInWords(250_000, 'JPY')).toBe('Two Hundred Fifty Thousand Japanese Yen')
+  })
+  it('stays silent about what it cannot write: a negative amount or one beyond the supported range', () => {
+    expect(amountInWords(-5, 'IDR')).toBe('')
+    expect(amountInWords(2_000_000_000_000_000, 'IDR')).toBe('')
   })
 })
