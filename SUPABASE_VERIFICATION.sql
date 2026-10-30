@@ -7,7 +7,7 @@
 CREATE OR REPLACE FUNCTION pg_temp.vora_verify()
 RETURNS TABLE (check_name text, status text, detail text) LANGUAGE plpgsql AS $fn$
 DECLARE
-  expected_tables text[] := ARRAY['articles','audit_logs','bank_accounts','counters','coverage','customers','document_seals',
+  expected_tables text[] := ARRAY['app_secrets','articles','audit_logs','bank_accounts','counters','coverage','customers','document_seals',
     'document_verification_tokens','documents','email_jobs','email_rules','email_templates','faqs','invoice_bank_instructions','invoice_items',
     'invoices','lead_activities','leads','login_attempts','mail_config','media','navigation_items','pages','payments','prepayment_receipts',
     'quotation_approvals','quotation_items','quotations','receipts','revisions','sections','seo_redirects','settings','users'];
@@ -53,7 +53,7 @@ BEGIN
     RETURN QUERY SELECT 'migration history', 'WARN', 'schema_migrations table absent (fine if you ran the SQL files by hand)';
   ELSE
     EXECUTE 'SELECT count(*), max(name) FROM schema_migrations' INTO n, v;
-    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 22 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (22 expected), latest ' || COALESCE(v, 'none');
+    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 23 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (23 expected), latest ' || COALESCE(v, 'none');
   END IF;
 
   -- 4. Seed data the application depends on ------------------------------------
@@ -80,9 +80,12 @@ BEGIN
   END IF;
 
   -- 6. State (informational) --------------------------------------------------------
-  SELECT count(*) INTO n FROM users WHERE role = 'admin' AND active;
-  RETURN QUERY SELECT 'active admin accounts', CASE WHEN n > 0 THEN 'PASS' ELSE 'INFO' END,
-    CASE WHEN n > 0 THEN n || ' active admin account(s)' ELSE '0: create the first one from a trusted machine with npm run users -- create EMAIL' END;
+  SELECT count(*) INTO n FROM users WHERE role = 'admin' AND active AND auth_user_id IS NOT NULL;
+  RETURN QUERY SELECT 'active admin accounts (able to sign in)', CASE WHEN n > 0 THEN 'PASS' ELSE 'INFO' END,
+    CASE WHEN n > 0 THEN n || ' active admin account(s)' ELSE '0: add the user in Authentication > Users, then run: select public.promote_admin(''their@email'');' END;
+  SELECT count(*) INTO n FROM users WHERE role = 'admin' AND active AND auth_user_id IS NULL;
+  RETURN QUERY SELECT 'every admin is linked to a Supabase Auth account', CASE WHEN n = 0 THEN 'PASS' ELSE 'WARN' END,
+    n || ' admin row(s) without an Auth account cannot sign in (re-run promote_admin for them)';
   SELECT count(*) INTO n FROM users WHERE role <> 'admin';
   RETURN QUERY SELECT 'every account holds the admin role', CASE WHEN n = 0 THEN 'PASS' ELSE 'WARN' END,
     n || ' account(s) with another role have NO access to the portal (the portal has one role: admin)';

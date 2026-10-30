@@ -12,6 +12,6 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 60_000,
     pool: 'forks',
-    env: { NODE_ENV: 'test', APP_ENV: 'test', PUBLIC_BASE_URL: 'http://testserver', SESSION_SECRET: 'local-test-secret-that-is-long-enough-to-be-valid' },
+    env: { NODE_ENV: 'test', APP_ENV: 'test', PUBLIC_BASE_URL: 'http://testserver' },
   },
 })

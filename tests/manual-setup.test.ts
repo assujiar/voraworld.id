@@ -73,7 +73,8 @@ describe('SUPABASE_VERIFICATION.sql', () => {
     for (const n of ['tables exist', 'row level security enabled on every public table', 'anon/authenticated have no table privileges', 'money columns are 64-bit', 'migration history', 'email templates seeded', 'approved public email', 'approved public address'])
       expect(checks[n]?.status, n).toBe('PASS')
     expect(checks['migration history'].detail).toContain(`${readMigrations().length} migrations recorded`)
-    expect(checks['active admin accounts'].status).toBe('INFO')          // until the first admin is created
+    expect(checks['active admin accounts (able to sign in)'].status).toBe('INFO')          // until the first admin is created
+    expect(checks['active admin accounts (able to sign in)'].detail).toContain('promote_admin')
     expect(checks['storage buckets'].status).toBe('WARN')                // plain PostgreSQL has no storage schema; Supabase does
   })
   it('notices an unprotected table, a missing seed and a 32-bit money column', async () => {
@@ -84,11 +85,12 @@ describe('SUPABASE_VERIFICATION.sql', () => {
     expect(checks['money columns are 64-bit'].status).toBe('FAIL')
     expect(checks['row level security enabled on every public table'].detail).toContain('faqs')
   })
-  it('counts admins, and flags accounts with any other role', async () => {
+  it('counts the admins who can sign in, and flags accounts with any other role or without a Supabase Auth account', async () => {
     await db!.unsafe(`alter table invoices alter column total_minor type bigint; alter table faqs enable row level security`)
-    await db!`insert into users (email, password_hash, role) values ('a@x.invalid', 'x', 'admin'), ('b@x.invalid', 'x', 'finance')`
+    await db!`insert into users (email, role, auth_user_id) values ('a@x.invalid', 'admin', gen_random_uuid()), ('b@x.invalid', 'finance', gen_random_uuid()), ('c@x.invalid', 'admin', null)`
     const checks = await run(db!)
-    expect(checks['active admin accounts']).toMatchObject({ status: 'PASS' })
+    expect(checks['active admin accounts (able to sign in)']).toMatchObject({ status: 'PASS' })
+    expect(checks['every admin is linked to a Supabase Auth account'].status).toBe('WARN')
     expect(checks['every account holds the admin role'].status).toBe('WARN')
     expect(checks['no demo/test accounts'].status).toBe('WARN')
   })

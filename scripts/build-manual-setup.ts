@@ -22,7 +22,7 @@ export function build(): string {
 -- How to run: Supabase Dashboard -> SQL Editor -> New query -> paste this whole file -> Run.
 -- Run it ONCE on an empty database. Afterwards run SUPABASE_VERIFICATION.sql.
 -- Existing databases must use \`npm run db:migrate -- --apply\` instead (it applies only what is missing).
--- No demo users, customers or documents are created. Create the first admin with \`npm run users -- create EMAIL\`.
+-- No demo users, customers or documents are created. Create the first admin in Authentication > Users, then run: select public.promote_admin('you@company.com');
 -- ============================================================================
 `]
   for (const f of files) {

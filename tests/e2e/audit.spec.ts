@@ -69,14 +69,15 @@ for (const width of ADMIN_WIDTHS) {
     await page.click('form button.button')
     await page.waitForURL(/error=/)
     await expect(page.locator('.alert[role=alert]')).toContainText('Invalid login details')
-    expect((await context.cookies()).find((c) => c.name === 'vora_session'), 'no session after a wrong password').toBeUndefined()
+    const isSession = (c: { name: string }) => /^sb-.*-auth-token/.test(c.name)
+    expect((await context.cookies()).filter(isSession), 'no session after a wrong password').toEqual([])
 
     await page.fill('input[name=email]', ADMIN_EMAIL)
     await page.fill('input[name=password]', ADMIN_PASSWORD)
     await Promise.all([page.waitForURL((u) => u.pathname === '/admin'), page.click('form button.button')])
-    const session = (await context.cookies()).find((c) => c.name === 'vora_session')
-    expect(session, 'a session cookie is set').toBeTruthy()
-    expect({ httpOnly: session!.httpOnly, sameSite: session!.sameSite }).toEqual({ httpOnly: true, sameSite: 'Lax' })
+    const sessions = (await context.cookies()).filter(isSession)
+    expect(sessions.length, 'a session cookie is set').toBeGreaterThan(0)
+    for (const session of sessions) expect({ httpOnly: session.httpOnly, sameSite: session.sameSite }, session.name).toEqual({ httpOnly: true, sameSite: 'Lax' })
 
     for (const path of ADMIN_PAGES) {
       await page.goto(path, { waitUntil: 'networkidle' })
@@ -92,7 +93,7 @@ for (const width of ADMIN_WIDTHS) {
       await page.click('.admin-sidebar summary.sidebar-toggle')
       await expect(page.locator('.logout-button')).toBeVisible()
     }
-    expect(await page.locator('.admin-sidebar details.menu-group > summary').allTextContents()).toEqual(['Sales', 'Finance', 'Website', 'System'])
+    expect(await page.locator('.admin-sidebar details.menu-group > summary').allTextContents()).toEqual(['Sales', 'Finance', 'Documents', 'Website', 'System'])
 
     await Promise.all([page.waitForURL('**/admin/login'), page.click('.logout-button')])
     await page.goto('/admin', { waitUntil: 'networkidle' })

@@ -3,7 +3,9 @@
   "version": "2.0.0",
   "private": true,
   "description": "VORA corporate website, CMS and business portal (Next.js + Supabase)",
-  "engines": { "node": ">=20.9.0" },
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,12 +16,13 @@
     "test:http": "next build && vitest run -c vitest.http.config.ts",
     "test:e2e": "next build && playwright test",
     "db:migrate": "tsx scripts/apply-migrations.ts",
-    "users": "tsx scripts/manage-users.ts",
     "build:setup-sql": "tsx scripts/build-manual-setup.ts",
     "gen:schema": "tsx scripts/gen-schema-types.ts",
     "build:pdf-assets": "tsx scripts/embed-pdf-assets.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.118.0",
     "next": "15.5.28",
     "nodemailer": "6.10.1",
     "pdf-lib": "1.17.1",

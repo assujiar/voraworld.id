@@ -1,5 +1,5 @@
 import postgres, { type Sql, type TransactionSql } from 'postgres'
-import { onVercel } from './env'
+import { databaseUrl, onVercel } from './env'
 
 export type Db = Sql | TransactionSql
 
@@ -9,8 +9,8 @@ declare global {
 }
 
 function connect(): Sql {
-  const url = process.env.DATABASE_URL
-  if (!url) throw new Error('DATABASE_URL is not set')
+  const url = databaseUrl()
+  if (!url) throw new Error('No database connection is configured (DATABASE_URL or POSTGRES_URL)')
   return postgres(url, {
     // Supabase's transaction pooler (PgBouncer, port 6543) does not support prepared statements.
     prepare: false,

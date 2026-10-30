@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
-import { isProd } from './env'
+import { isProd, supabaseSecretKey } from './env'
 import { ActionError } from './errors'
 
 export type Bucket = 'media' | 'documents'
@@ -31,7 +31,7 @@ const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])$/
 /** The Supabase project, if configured. In production the secret key only ever travels over https (loopback is allowed for local stand-ins). */
 function remote(): { url: string; secret: string } | null {
   const url = (process.env.SUPABASE_URL || '').replace(/\/+$/, '')
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  const secret = supabaseSecretKey()
   if (!url || !secret) return null
   if (isProd()) {
     let host = ''

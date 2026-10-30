@@ -12,7 +12,7 @@ import { ensurePublicCode, nextNumber } from '../numbering'
 import type { QuotationApprovalsRow } from '../schema'
 import { getObject, putObject } from '../storage'
 import { createVerification, getVerification } from '../verification'
-import { approvalToken } from './approval-token'
+import { approvalSecret, approvalToken } from './approval-token'
 import { moneyErrors, parseLines } from './parse'
 import { inspectSignedQuotation } from './pdf-inspect'
 
@@ -112,7 +112,7 @@ export async function requestApproval(actorId: number, id: number, baseUrl: stri
     await t`update quotation_approvals set status = 'revoked' where quotation_id = ${id} and status = 'pending'`
     // The link is derived from the request's own number (see approval-token.ts), so the id is taken from the sequence first.
     const [{ approvalId }] = await t`select nextval(pg_get_serial_sequence('quotation_approvals', 'id'))::int as approval_id`
-    const raw = approvalToken(approvalId as number)
+    const raw = approvalToken(await approvalSecret(t), approvalId as number)
     const endOfValidity = Date.parse((q.validUntil as string) + 'T00:00:00Z') + 86_400_000
     const expiresAt = new Date(Math.min(Date.now() + APPROVAL_LINK_DAYS * 86_400_000, endOfValidity))
     const [req] = await t`insert into quotation_approvals (id, quotation_id, token_hash, expires_at, status) values (${approvalId as number}, ${id}, ${await sha256Hex(raw)}, ${expiresAt}, 'pending') returning id`

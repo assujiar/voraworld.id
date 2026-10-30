@@ -7,11 +7,10 @@ import { login, logout } from '@/actions/auth'
 import { addFaqAction, addNavigationAction, addSectionAction, deleteNavigationAction, restoreArticleAction, restorePageAction, saveArticleAction, savePageAction, saveSectionAction, updateFaqAction, uploadMediaAction } from '@/actions/content'
 import { replyLeadAction, updateLeadAction } from '@/actions/crm'
 import { addCoverageAction, addRedirectAction, dispatchMailAction, retryMailJobAction, saveMailConfigAction, saveMailTemplateAction, saveSettingsAction, setMailRuleAction, testMailAction, toggleCoverageAction } from '@/actions/settings'
-import { cookiesAfter, act, createUser, q, sessionFor } from './helpers/actions'
+import { act, createUser, hasSessionCookie, provision, q, sessionFor } from './helpers/actions'
 import { setSender } from '@/server/mail/transport'
 import { saveMailConfig } from '@/server/mail/config'
 import { EVENTS } from '@/server/mail/events'
-import { SESSION_COOKIE } from '@/server/auth/session'
 
 process.env.MAIL_ENCRYPTION_KEY = Buffer.alloc(32, 9).toString('base64')
 process.env.VORA_LOCAL_STORAGE_DIR = mkdtempSync(join(tmpdir(), 'vora-media-'))
@@ -26,14 +25,16 @@ beforeAll(async () => { admin = await sessionFor(await createUser('admin@content
 describe('sign-in and sign-out', () => {
   it('sets the session cookie and lands on the dashboard or the page the user asked for', async () => {
     const u = await createUser('login-action@invalid.example', 'admin', 'Correct-horse-battery-9')
+    await provision(u)
     const r = await act(login, { email: u.email, password: 'Correct-horse-battery-9' }, { headers: { 'x-real-ip': '10.9.0.1' } })
     expect(r.redirect).toBe('/admin')
-    expect(cookiesAfter().get(SESSION_COOKIE)).toMatch(/^[\w-]+\.[\w-]+$/)
+    expect(hasSessionCookie()).toBe(true)
     const r2 = await act(login, { email: u.email, password: 'Correct-horse-battery-9', next: '/admin/invoices?x=1' }, { headers: { 'x-real-ip': '10.9.0.1' } })
     expect(r2.redirect).toBe('/admin/invoices?x=1')
   })
   it('never redirects to another site after sign-in', async () => {
     const u = await createUser('open-redirect@invalid.example', 'admin', 'Correct-horse-battery-9')
+    await provision(u)
     for (const next of ['https://evil.example', '//evil.example', '/\\evil', '/admin/../../evil', 'javascript:alert(1)', '/admin@evil.example']) {
       const r = await act(login, { email: u.email, password: 'Correct-horse-battery-9', next }, { headers: { 'x-real-ip': '10.9.0.2' } })
       expect(r.redirect === '/admin' || r.redirect?.startsWith('/admin') && !r.redirect.includes('//'), `${next} -> ${r.redirect}`).toBe(true)
@@ -42,6 +43,7 @@ describe('sign-in and sign-out', () => {
   })
   it('shows one generic message for wrong password and unknown account, and locks out after repeated failures', async () => {
     const u = await createUser('lockout-action@invalid.example', 'admin', 'Correct-horse-battery-9')
+    await provision(u)
     const a = await act(login, { email: u.email, password: 'wrong' }, { headers: { 'x-real-ip': '10.9.0.3' } })
     const b = await act(login, { email: 'ghost@invalid.example', password: 'wrong' }, { headers: { 'x-real-ip': '10.9.0.3' } })
     expect(q(a.redirect).get('error')).toBe('Invalid login details')
@@ -49,12 +51,16 @@ describe('sign-in and sign-out', () => {
     for (let i = 0; i < 4; i++) await act(login, { email: u.email, password: 'wrong' }, { headers: { 'x-real-ip': `10.9.1.${i}` } })
     const locked = await act(login, { email: u.email, password: 'Correct-horse-battery-9' }, { headers: { 'x-real-ip': '10.9.2.1' } })
     expect(q(locked.redirect).get('error')).toBe('Too many failed attempts. Try again later.')
-    expect(cookiesAfter().has(SESSION_COOKIE)).toBe(false)
+    expect(hasSessionCookie()).toBe(false)
   })
   it('signs out by clearing the cookie', async () => {
-    const r = await act(logout, {}, { as: admin })
+    const mine = await sessionFor(await createUser('logout-action@invalid.example', 'admin'))
+    const other = await sessionFor(await createUser('logout-action@invalid.example', 'admin'))   // a second browser of the same account
+    const r = await act(logout, {}, { as: mine })
     expect(r.redirect).toBe('/admin/login')
-    expect(cookiesAfter().has(SESSION_COOKIE)).toBe(false)
+    expect(hasSessionCookie()).toBe(false)
+    expect((await act(saveSettingsAction, {}, { as: mine })).redirect, 'the signed-out session is dead').toBe('/admin/login')
+    expect((await act(saveSettingsAction, {}, { as: other })).redirect, 'the other browser stays signed in').not.toBe('/admin/login')
   })
 })
 

@@ -3,7 +3,7 @@ import { settingMap } from '../settings'
 import { sha256Hex } from '../crypto'
 import { today } from '../dates'
 import { ActionError } from '../errors'
-import { approvalToken } from '../finance/approval-token'
+import { approvalSecret, approvalToken } from '../finance/approval-token'
 import { readStampedReceipt } from '../finance/receipts'
 import { getVerification, type DocumentKind } from '../verification'
 import { documentType } from '../../content/document-types'
@@ -83,7 +83,7 @@ async function quotationPdf(db: Db, id: number, baseUrl: string): Promise<Uint8A
     ? await db`select id, token_hash from quotation_approvals where quotation_id = ${id} and status = 'pending' and expires_at > now() order by id desc limit 1`
     : []
   if (open) {
-    const token = approvalToken(open.id as number)
+    const token = approvalToken(await approvalSecret(db), open.id as number)
     if ((await sha256Hex(token)) === open.tokenHash) data.uploadUrl = `${baseUrl.replace(/\/+$/, '')}/quotation-approval/${token}`   // a link from before addresses were derived has no printable form
   }
   const issuer = await issuerOf(db)

@@ -11,7 +11,7 @@ import { createQuotation, setQuotationStatus } from '@/server/finance/quotations
 import { uploadReceiptStamp } from '@/server/finance/receipts'
 import { englishWords } from '@/server/money'
 import { renderDocumentPdf } from '@/server/pdf/documents'
-import { approvalToken } from '@/server/finance/approval-token'
+import { approvalSecret, approvalToken } from '@/server/finance/approval-token'
 import { sha256Hex } from '@/server/crypto'
 import { PdfLayoutError } from '@/server/pdf/kit'
 import { renderQuotation } from '@/server/pdf/quotation'
@@ -273,8 +273,9 @@ describe('quotation PDFs', () => {
     expect(squash((await pdfPages(pdf)).join(' ')).replace(/\s/g, '')).toContain(verify)         // and it is readable on paper, too
 
     const [{ approvalId }] = await sql`select nextval(pg_get_serial_sequence('quotation_approvals', 'id'))::int as approval_id`
-    const upload = `${BASE}/quotation-approval/${approvalToken(approvalId)}`
-    await sql`insert into quotation_approvals (id, quotation_id, token_hash, expires_at, status) values (${approvalId}, ${id}, ${await sha256Hex(approvalToken(approvalId))}, now() + interval '7 days', 'pending')`
+    const secret = await approvalSecret(sql)
+    const upload = `${BASE}/quotation-approval/${approvalToken(secret, approvalId)}`
+    await sql`insert into quotation_approvals (id, quotation_id, token_hash, expires_at, status) values (${approvalId}, ${id}, ${await sha256Hex(approvalToken(secret, approvalId))}, now() + interval '7 days', 'pending')`
     await sql`update quotations set status = 'awaiting_approval' where id = ${id}`
     const open = await renderDocumentPdf(sql, 'quotation', id, BASE)
     links = await pdfLinks(open)

@@ -3,26 +3,17 @@ import { join, relative } from 'node:path'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ADMIN_MENU } from '@/content/admin-menu'
-import { hashPassword } from '@/server/auth/password'
-import { SESSION_COOKIE, createSessionToken } from '@/server/auth/session'
 import { Client } from './client'
+import { account as makeAccount, browserFor, clientWith, type Account } from './accounts'
+import { forgedSessions, revokeSession, signInCookies } from '../helpers/auth'
 import { seedFinance } from './fixtures'
 
 /** The real production server, real cookies, every admin URL: who gets in, and what each page contains. */
 const db = postgres(process.env.HTTP_DATABASE_URL!, { max: 2, onnotice: () => {} })
 afterAll(async () => { await db.end({ timeout: 5 }) })
 
-async function account(email: string, role: string) {
-  const passwordHash = await hashPassword('Correct-horse-battery-9')
-  const [u] = await db`insert into users (email, password_hash, role) values (${email}, ${passwordHash}, ${role}) on conflict (email) do update set password_hash = excluded.password_hash, role = excluded.role, active = true returning id`
-  return { id: u.id as number, passwordHash, role }
-}
-const withSession = async (u: { id: number; passwordHash: string; role: string }) => {
-  process.env.SESSION_SECRET = process.env.HTTP_SESSION_SECRET
-  const c = new Client()
-  c.cookies.set(SESSION_COOKIE, await createSessionToken(u))
-  return c
-}
+const account = (email: string, role: string) => makeAccount(db, email, role)
+const withSession = (u: Account) => browserFor(u)
 
 /** URL of every page and route handler under src/app/(admin)/admin, with dynamic segments filled in. */
 function adminRoutes(): Array<{ path: string; kind: 'page' | 'route' }> {
@@ -47,7 +38,10 @@ const FILES = new Set(ALL.filter((r) => r.kind === 'route').map((r) => r.path))
 /** Ids of fixture rows by collection, so `/admin/articles/{id}` can be opened for real. */
 const IDS: Record<string, number> = {}
 const url = (route: string) => route.replace(/\/([^/]+)\/\{id\}/, (_m, parent: string) => `/${parent}/${IDS[parent] ?? 1}`)
-const PUBLIC_ADMIN_PAGES = new Set(['/admin/login'])
+/** Open to visitors who are not signed in: the sign-in and password-reset request pages, and the landing of the emailed reset link. */
+/** Signed-in pages that are a single focused form, like the sign-in page: no sidebar. */
+const STANDALONE = new Set(['/admin/reset-password'])
+const PUBLIC_ADMIN_PAGES = new Set(['/admin/login', '/admin/forgot-password', '/admin/auth/callback'])
 const PROTECTED = ROUTES.filter((r) => !PUBLIC_ADMIN_PAGES.has(r))
 
 describe('route enumeration', () => {
@@ -100,11 +94,20 @@ describe('anonymous visitors', () => {
 describe('accounts without the admin role', () => {
   it.each(['editor', 'sales', 'finance', 'viewer', 'superadmin'])('%s is refused everywhere', async (role) => {
     const c = await withSession(await account(`${role}@http.example.invalid`, role))
-    for (const r of PROTECTED.map(url)) {
+    for (const route of PROTECTED) {
+      const r = url(route)
+      // A page sends the account back to the sign-in page with a message; a file (PDF, CSV) answers 403. Neither shows the portal.
       const res = await c.get(r)
-      expect(res.status, `${role} GET ${r}`).toBe(403)
+      if (FILES.has(route)) expect(res.status, `${role} GET ${r}`).toBe(403)
+      else {
+        expect(res.status, `${role} GET ${r}`).toBe(307)
+        expect(res.headers.get('location'), `${role} GET ${r}`).toMatch(/\/admin\/login\?error=.*admin%20access/)
+      }
       expect(await res.text()).not.toMatch(/<h1|admin-sidebar/i)
-      expect((await c.request(r, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'next-action': 'deadbeef' }, body: 'x=1' })).status, `${role} POST ${r}`).toBe(403)
+      // A Server Action call never reaches an action it does not know, and the guard of every real one is proven in tests/action-guards.test.ts.
+      const post = await c.request(r, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'next-action': 'deadbeef' }, body: 'x=1' })
+      expect(post.status, `${role} POST ${r}`).toBeGreaterThanOrEqual(400)
+      expect(await post.text()).not.toMatch(/admin-sidebar/i)
     }
     expect((await c.get('/en/preview/article/1')).status).toBe(307)
   })
@@ -112,7 +115,7 @@ describe('accounts without the admin role', () => {
 
 describe('the admin', () => {
   let c: Client
-  let u: { id: number; passwordHash: string; role: string }
+  let u: Account
   beforeAll(async () => {
     u = await account('boss@http.example.invalid', 'admin')
     c = await withSession(u)
@@ -122,15 +125,22 @@ describe('the admin', () => {
     Object.assign(IDS, { leads: lead.id, articles: article.id, pages: page.id }, (await seedFinance()).ids)
   })
 
+  it('opens the password-change page, which has no portal chrome, only for a signed-in administrator', async () => {
+    const html = await c.text('/admin/reset-password')
+    expect(html).toContain('Choose a new password'); expect(html).toContain('name="password"'); expect(html).toContain('name="confirm"')
+    expect((html.match(/<h1[ >]/g) ?? []).length).toBe(1)
+    expect((await new Client().get('/admin/reset-password')).status).toBe(307)
+  })
+
   it('opens every admin page that exists and gets the full portal chrome', async () => {
-    for (const r of PROTECTED.filter((x) => !FILES.has(x)).map(url)) {
+    for (const r of PROTECTED.filter((x) => !FILES.has(x) && !STANDALONE.has(x)).map(url)) {
       const res = await c.get(r)
       expect(res.status, r).toBe(200)
       expect(res.headers.get('cache-control'), r).toContain('no-store')
       expect(res.headers.get('x-robots-tag'), r).toContain('noindex')
       const html = await res.text()
       expect((html.match(/<h1[ >]/g) ?? []).length, `${r} h1`).toBe(1)
-      for (const t of ['Sales', 'Finance', 'Website', 'System']) expect(html, `${r} category ${t}`).toContain(t)
+      for (const t of ['Sales', 'Finance', 'Documents', 'Website', 'System']) expect(html, `${r} category ${t}`).toContain(t)
       expect(html, r).toContain('boss@http.example.invalid')
     }
   })
@@ -191,18 +201,20 @@ describe('the admin', () => {
     expect((await anon.get(`/en/preview/article/${id}`)).status).toBe(307)
   })
 
-  it('loses access at once when the password changes, the role changes or the account is deactivated', async () => {
-    const mk = async (email: string) => { const a = await account(email, 'admin'); return { a, c: await withSession(a) } }
-    const stale = await mk('stale@http.example.invalid')
-    expect((await stale.c.get('/admin')).status).toBe(200)
-    await db`update users set password_hash = ${await hashPassword('Another-password-for-me-77')} where id = ${stale.a.id}`
-    expect((await stale.c.get('/admin')).status).toBe(307)            // signature fine, credential changed -> sign in again
+  it('loses access at once when the session is ended, the role changes or the account is deactivated', async () => {
+    const mk = async (email: string) => { const a = await account(email, 'admin'); const session = await signInCookies(a.email, a.password); return { a, session, c: clientWith(session) } }
+    const out = await mk('stale@http.example.invalid')
+    expect((await out.c.get('/admin')).status).toBe(200)
+    await revokeSession(out.session)
+    expect((await out.c.get('/admin')).status).toBe(307)              // Supabase Auth no longer knows the session -> sign in again
     const demoted = await mk('demoted@http.example.invalid')
     await db`update users set role = 'viewer' where id = ${demoted.a.id}`
-    expect((await demoted.c.get('/admin/leads')).status).toBe(307)
+    expect((await demoted.c.get('/admin/leads')).status).toBe(307)           // still signed in to Supabase, but no longer an administrator
+    expect((await demoted.c.get('/admin/leads.csv')).status).toBe(403)
     const off = await mk('off@http.example.invalid')
     await db`update users set active = false where id = ${off.a.id}`
     expect((await off.c.get('/admin/leads')).status).toBe(307)
+    expect((await off.c.get('/admin/leads')).headers.get('location')).toContain('/admin/login')
   })
 
   it('answers 404, never a server error, for ids that are not real record numbers', async () => {
@@ -214,11 +226,14 @@ describe('the admin', () => {
       expect((await c.get(p)).status, p).toBe(404)
   })
 
-  it('rejects a tampered or expired cookie', async () => {
-    const good = (await withSession(u)).cookies.get(SESSION_COOKIE)!
-    for (const token of [good.slice(0, -3) + 'AAA', good.split('.')[0], 'garbage', '']) {
-      const t = new Client(); t.cookies.set(SESSION_COOKIE, token)
-      expect((await t.get('/admin')).status, token.slice(0, 12)).toBe(307)
+  it('rejects a forged or tampered session cookie', async () => {
+    const real = await signInCookies(u.email, u.password)
+    expect((await clientWith(real).get('/admin')).status).toBe(200)
+    for (const [kind, session] of Object.entries(forgedSessions(real))) expect((await clientWith(session).get('/admin')).status, kind).toBe(307)
+    for (const raw of ['', 'garbage', 'sb-127-auth-token=x']) {
+      const t = new Client()
+      if (raw) t.cookies.set(raw.includes('=') ? raw.split('=')[0] : 'sb-127-auth-token', raw.includes('=') ? raw.split('=')[1] : raw)
+      expect((await t.get('/admin')).status, raw).toBe(307)
     }
   })
 })

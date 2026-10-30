@@ -19,7 +19,8 @@ function variablesRead(roots: string[]): Set<string> {
   }
   return found
 }
-const documented = () => new Set([...read('.env.example').matchAll(/^([A-Z][A-Z0-9_]+)=/gm)].map((m) => m[1]))
+/** Names set in .env.example, including the optional ones shown commented out (`# NAME=`). */
+const documented = () => new Set([...read('.env.example').matchAll(/^(?:# )?([A-Z][A-Z0-9_]+)=/gm)].map((m) => m[1]))
 
 describe('.env.example', () => {
   it('documents every variable the application, the scripts and the database test setup read', () => {
@@ -30,10 +31,10 @@ describe('.env.example', () => {
     const read_ = variablesRead(['src', 'scripts', 'tests', 'next.config.ts'])
     expect([...documented()].filter((v) => !read_.has(v))).toEqual([])
   })
-  it('holds no real secret: secrets are blank or obvious placeholders, and the session secret placeholder is refused in production', () => {
+  it('holds no real secret: secrets are blank or obvious placeholders', () => {
     const lines = Object.fromEntries([...read('.env.example').matchAll(/^([A-Z][A-Z0-9_]+)=(.*)$/gm)].map((m) => [m[1], m[2]]))
-    for (const k of ['SUPABASE_SERVICE_ROLE_KEY', 'MAIL_ENCRYPTION_KEY', 'CRON_SECRET', 'SUPABASE_URL']) expect(lines[k], k).toBe('')
-    expect(lines.SESSION_SECRET).toMatch(/^replace-/)
+    for (const k of ['SUPABASE_SECRET_KEY', 'MAIL_ENCRYPTION_KEY', 'CRON_SECRET', 'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY']) expect(lines[k], k).toBe('')
+    expect('SESSION_SECRET' in lines, 'no application session secret any more').toBe(false)
     expect(lines.DATABASE_URL).toMatch(/localhost/)
     expect(read('.env.example')).not.toMatch(/eyJ[A-Za-z0-9_-]{20,}|sb_secret_[A-Za-z0-9]{10,}|postgres\.[a-z]{20}/)
   })
@@ -66,7 +67,7 @@ describe('package.json', () => {
   })
   it('needs a Node version Next.js supports and exposes the scripts the guides name', () => {
     expect(pkg.engines.node).toMatch(/>=20\.9/)
-    for (const s of ['dev', 'build', 'start', 'test', 'test:http', 'db:migrate', 'users', 'build:setup-sql', 'gen:schema', 'typecheck']) expect(pkg.scripts[s], s).toBeTruthy()
+    for (const s of ['dev', 'build', 'start', 'test', 'test:http', 'db:migrate', 'build:setup-sql', 'gen:schema', 'typecheck']) expect(pkg.scripts[s], s).toBeTruthy()
   })
   it('keeps test tooling out of the runtime dependencies, and the PDF/QR/mail libraries in', () => {
     for (const d of ['next', 'react', 'react-dom', 'postgres', 'pdf-lib', 'unpdf', 'qrcode', 'nodemailer', 'sanitize-html']) expect(pkg.dependencies, d).toHaveProperty(d)
