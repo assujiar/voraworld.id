@@ -124,7 +124,7 @@ export const y2024: ArchiveDraft[] = [
       sections: [
         { h: 'Four words, four clocks', p: [
           'Carriers describe charges for keeping a container beyond an agreed period with several terms, and they are not interchangeable. One carrier’s published terms define detention as the charge for keeping its container inside a terminal, port or depot past the agreed free time, and demurrage as the charge for the same overrun when the container is outside those facilities. The terms also describe a combined form, and free time as the window agreed between the carrier and the merchant before charges apply.',
-          'That definition is one carrier’s, written for its own business, and the same words may be arranged differently elsewhere. The lesson is not the particular definition. It is that the words describe different clocks, started and stopped by different events, and that a bill can contain more than one.',
+          'That definition is one carrier’s, written for its own business, and the same words may be arranged differently elsewhere. The lesson is not the particular definition. It is that the words describe different clocks, started and stopped by different events, and that a bill can contain two or more.',
         ] },
         { h: 'What to establish, in order', steps: [
           '**What starts each clock?** Discharge from the vessel, gate-out from a terminal, arrival at a depot: the trigger differs by charge and by location.',
@@ -239,7 +239,7 @@ export const y2024: ArchiveDraft[] = [
           ],
         } },
         { h: 'Five questions for a decision sheet', steps: [
-          '**How much cargo is there, in space and in weight?** If it fills most of a vehicle’s capacity, a dedicated vehicle may cost little more than a consolidated one. If it fills a fraction, the space you are not using is the cost.',
+          '**How much cargo is there, in space and in weight?** If it fills most of a vehicle’s capacity, a dedicated vehicle may cost only slightly above a consolidated one. If it fills a fraction, the space you are not using is the cost.',
           '**How well does the cargo tolerate extra handling?** Fragile, palletized, high-value or counted-to-the-piece cargo benefits from fewer interfaces. Robust, uniformly packed cargo handles consolidation well.',
           '**How tight is the pickup window and the delivery window?** A narrow window favours a dedicated vehicle. A flexible window gives a consolidated service room to work.',
           '**What can the sites accept?** Dock or ground level, vehicle size limits and receiving hours determine which vehicles can reach you at all.',

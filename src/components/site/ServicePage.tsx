@@ -97,7 +97,7 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
             <ol className="v-flow">{(extras.flow ?? []).map(([title, body]) => <li key={title}><h3 className="v-h3">{title}</h3><p>{body}</p></li>)}</ol>
           </div></section>
           <section className="v-section v-section--bone"><div className="v-wrap">
-            <div className="v-head"><h2 className="v-h2">{t('From the flow to a layout.', 'Dari alur ke tata letak.')}</h2><p className="v-muted">{detail.process}</p></div>
+            <div className="v-head"><h2 className="v-h2">{t('The flow decides the layout.', 'Arus barang menentukan tata letak.')}</h2><p className="v-muted">{detail.process}</p></div>
             <WarehouseSpread locale={locale} />
           </div></section>
           <section className="v-section"><div className="v-wrap v-two">{needs}<div /></div></section>

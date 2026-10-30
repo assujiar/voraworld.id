@@ -83,7 +83,7 @@ export const y2023: ArchiveDraft[] = [
         { h: 'Sembilan butir yang perlu ada', p: ['Inilah butir yang pertama kali dicari forwarder. Masing-masing memengaruhi moda angkutan, dasar biaya, atau dokumen.'], table: {
           head: ['Butir', 'Mengapa penting', 'Yang perlu ditulis'],
           rows: [
-            ['Deskripsi barang', 'Menentukan penanganan, dokumen, dan perlu tidaknya persetujuan khusus', 'Bahasa sederhana: "kursi kantor, dikirim dalam keadaan terlepas", bukan hanya kode produk'],
+            ['Deskripsi barang', 'Menentukan penanganan, dokumen, dan perlu tidaknya persetujuan khusus', 'Bahasa sederhana: "kursi kantor, dikirim dalam keadaan terlepas", tidak berhenti pada kode produk'],
             ['Kemasan', 'Menentukan cara menumpuk, mengangkat, dan memuat', 'Karton, pallet, peti, atau curah; jumlah masing-masing'],
             ['Berat kotor', 'Dasar biaya dan batas peralatan', 'Total dalam kg, dan per kemasan bila berbeda'],
             ['Dimensi', 'Volume dapat menentukan biaya untuk barang ringan', 'Panjang × lebar × tinggi dalam cm untuk setiap ukuran kemasan'],
@@ -361,7 +361,7 @@ export const y2023: ArchiveDraft[] = [
         { h: 'What packing information should travel with the cargo', p: ['Information is only useful if the person handling the cargo can see it. Put it on the package and on the documents.'], list: [
           'The number of packages and a package identifier, so every piece can be counted and matched.',
           'Gross weight and dimensions of each package, marked on the outside.',
-          'Handling marks that match the cargo: this way up, keep dry, fragile. Marks should be applied only when they are true and visible on more than one face.',
+          'Handling marks that match the cargo: this way up, keep dry, fragile. Marks should be applied only when they are true and visible on several faces.',
           'Stacking limits, where the cargo cannot take weight on top.',
           'A scannable identifier, where the supply chain uses one. The GS1 Logistic Label Guideline describes a serial shipping container code that identifies a logistic unit such as a pallet, so that it can be tracked from one handover to the next.',
         ] },

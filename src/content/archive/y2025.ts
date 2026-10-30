@@ -150,7 +150,7 @@ export const y2025: ArchiveDraft[] = [
           ],
         } },
         { h: 'A cross-check before the cut-off', steps: [
-          'Read the three documents side by side and mark every item that appears in more than one.',
+          'Read the three documents side by side and mark every item that appears in two or more.',
           'Check names, spelling and addresses character by character on each document.',
           'Check counts: packages on the packing list, instructions and draft bill of lading should agree, with pallets stated the same way.',
           'Check weights: say which figure is cargo weight, which is packed-container mass, and do not mix them.',
@@ -246,7 +246,7 @@ export const y2025: ArchiveDraft[] = [
             ['Packing or protection requirements', 'Defines covers, supports and environmental limits', 'Manufacturer'],
           ],
         } },
-        { h: 'Route and site', p: ['The item has to arrive at its position, not only at a port. The route and the site contribute constraints that can limit the method more than the item does.'], list: [
+        { h: 'Route and site', p: ['The item has to arrive at its position, not only at a port. The route and the site contribute constraints that can limit the method as much as the item does.'], list: [
           'Origin site: access, ground conditions, space for equipment, and who is responsible for the first lift.',
           'Route: height and width limits, bridges, turning radii, and any restriction on timing or on convoy.',
           'Port or terminal: the handling equipment it can offer and its lifting capacity.',
@@ -299,7 +299,7 @@ export const y2025: ArchiveDraft[] = [
             ['Persyaratan kemasan atau perlindungan', 'Menentukan penutup, penyangga, dan batas lingkungan', 'Produsen'],
           ],
         } },
-        { h: 'Rute dan lokasi', p: ['Barang harus tiba di posisinya, bukan hanya di pelabuhan. Rute dan lokasi menambah kendala yang bisa membatasi metode lebih besar daripada barangnya sendiri.'], list: [
+        { h: 'Rute dan lokasi', p: ['Barang harus tiba di posisinya, tidak berhenti di pelabuhan. Rute dan lokasi menambah kendala yang bisa membatasi metode lebih besar daripada barangnya sendiri.'], list: [
           'Lokasi asal: akses, kondisi tanah, ruang untuk peralatan, dan siapa yang bertanggung jawab atas pengangkatan pertama.',
           'Rute: batas tinggi dan lebar, jembatan, radius putar, dan pembatasan waktu atau konvoi.',
           'Pelabuhan atau terminal: peralatan penanganan yang dapat ditawarkan dan kapasitas angkatnya.',

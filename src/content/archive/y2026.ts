@@ -135,7 +135,7 @@ export const y2026: ArchiveDraft[] = [
           label: 'Fictional scenario, invented for illustration. It describes no real event and makes no forecast.',
           p: [
             'A distributor expects a container to arrive on a Monday. The receiver’s stock covers ten days of sales. On the previous Thursday the carrier advises that the vessel will be late by several days. Under the written frame the operations lead has to decide by the end of Friday between three options: wait, move part of the cargo by air, or ask the receiver to adjust a promotion.',
-            'The frame shows that the delay is within the ten days of cover, that air freight for the full volume would cost far more than the margin on the late days, and that the cost limit allows a partial air shipment of the fastest-moving items. The decision is made in an hour because the options and the limits were already agreed.',
+            'The frame shows that the delay is within the ten days of cover, that air freight for the full volume would cost well above the margin on the late days, and that the cost limit allows a partial air shipment of the fastest-moving items. The decision is made in an hour because the options and the limits were already agreed.',
           ],
         } },
         { h: 'What stays outside the plan', p: [
@@ -364,7 +364,7 @@ export const y2026: ArchiveDraft[] = [
           'A pre-payment receipt and a confirmed payment receipt serve different readers at different times. If both are called "receipt" and treated alike, a customer may believe an invoice is settled when no money has been confirmed, or a finance team may close a file on a document that never certified payment. Naming them separately, and stating on each what it does and does not show, protects both sides.',
         ] },
         { h: 'Secure verification', p: [
-          'Documents that are sent by email are copied, forwarded and sometimes altered. A verification link or QR code that opens a record held by the issuer lets a reader check the document number, its type and its current status against the source. It should not expose more than the checker needs: personal data and amounts belong behind a link that does not list other customers’ records. The GS1 Traceability Standard describes recording key events and the data about them as the basis for trusting a chain, and the same idea applies to documents.',
+          'Documents that are sent by email are copied, forwarded and sometimes altered. A verification link or QR code that opens a record held by the issuer lets a reader check the document number, its type and its current status against the source. It should expose only what the checker needs: personal data and amounts belong behind a link that does not list other customers’ records. The GS1 Traceability Standard describes recording key events and the data about them as the basis for trusting a chain, and the same idea applies to documents.',
         ] },
         { h: 'Limits of this guide', p: [
           'The article describes a pattern for reconciling records and makes no statement about the history or customers of any company. The example is hypothetical. Accounting, tax and e-stamp requirements for invoices and receipts depend on the law and on your accountant’s advice; this article is not advice on them. Standard forwarding documents, such as those FIATA publishes, have their own terms.',

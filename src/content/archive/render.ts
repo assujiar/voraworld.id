@@ -2,7 +2,8 @@ import type { Locale } from '../index'
 import { SOURCES } from './sources'
 import type { LangDraft, Section } from './types'
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const attr = (s: string) => esc(s).replace(/"/g, '&quot;')
 const inline = (s: string) => esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
 
 function section(s: Section): string {
@@ -23,7 +24,7 @@ export function renderBody(draft: LangDraft, sourceIds: string[], locale: Locale
   const pending = locale === 'en' ? 'access date to be rechecked before publication' : 'tanggal akses perlu diperiksa ulang sebelum terbit'
   const items = sourceIds.map((id) => {
     const s = SOURCES[id]
-    return `<li><a href="${esc(s.url)}">${esc(s.title)}</a> (${s.accessed ? `${accessed} ${s.accessed}` : pending})</li>`
+    return `<li><a href="${attr(s.url)}">${esc(s.title)}</a> (${s.accessed ? `${accessed} ${s.accessed}` : pending})</li>`
   })
   return draft.sections.map(section).join('') + `<h2>${heading}</h2><ul>${items.join('')}</ul>`
 }

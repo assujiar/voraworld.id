@@ -8,3 +8,4 @@ export const ALL: ArchiveDraft[] = [...y2023, ...y2024, ...y2025, ...y2026]
 export { SOURCES } from './sources'
 export { renderBody, bodyWords } from './render'
 export type { ArchiveDraft, LangDraft, Section, SourceRef } from './types'
+export { rowFor, allRows, type ArchiveRow } from './rows'

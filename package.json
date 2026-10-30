@@ -18,7 +18,8 @@
     "db:migrate": "tsx scripts/apply-migrations.ts",
     "build:setup-sql": "tsx scripts/build-manual-setup.ts",
     "gen:schema": "tsx scripts/gen-schema-types.ts",
-    "build:pdf-assets": "tsx scripts/embed-pdf-assets.ts"
+    "build:pdf-assets": "tsx scripts/embed-pdf-assets.ts",
+    "import:archive": "tsx scripts/import-archive.ts"
   },
   "dependencies": {
     "@remotion/paths": "4.0.539",
