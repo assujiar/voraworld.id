@@ -51,7 +51,6 @@ export default async function DocumentDetail({ params, searchParams }: { params:
             <p className="mini">Original: {stored.source.name} · {stored.source.pages} page{stored.source.pages > 1 ? 's' : ''} · {(stored.source.bytes / 1024).toFixed(0)} KB<br />
               <span title="SHA-256 recorded when the file arrived">SHA-256 {stored.source.sha256}</span></p>
             {stored.seal ? <p className="mini">Sealed file: {stored.seal.pagesSealed} page{stored.seal.pagesSealed > 1 ? 's' : ''} carry the seal · made {fmt(new Date(stored.seal.sealedAt))}<br /><span title="SHA-256 of the sealed file; the verification page shows the same">SHA-256 {stored.seal.sha256}</span></p> : <p className="mini muted">Not sealed yet. The preview shows where the seal will go; issuing makes the sealed file and fixes its fingerprint.</p>}
-            <p className="mini muted">This is VORA&apos;s own endorsement and a check against a changed file. It is not a certified electronic signature and does not replace the signature of whoever issued the document.</p>
             <a className="button-outline" href={`/admin/documents/${id}/source`} target="_blank" rel="noopener">Download the original ↗</a>
           </div>
         ) : null}

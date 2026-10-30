@@ -86,7 +86,7 @@ describe('QR seal on a PDF issued by somebody else', () => {
     const id = await seal(await thirdParty(), { purpose: 'approved' }, 'en')
     await setDocumentStatus(actor, id, 'issue', BASE)
     const t = squash((await pdfPages(await renderDocumentPdf('document', id, BASE))).join(' '))
-    for (const w of ['VORA DIGITAL SEAL', 'Approved by', 'Siti Rahma', 'Direktur', 'PT Satu Arah International', 'WIB', 'not a certified electronic signature']) expect(t).toContain(w)
+    for (const w of ['VORA DIGITAL SEAL', 'Approved by', 'Siti Rahma', 'Direktur', 'PT Satu Arah International', 'WIB']) expect(t).toContain(w)
     const [{ number }] = await sql`select number from documents where id = ${id}`
     expect(t).toContain(number as string)
   })

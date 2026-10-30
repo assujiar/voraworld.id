@@ -64,7 +64,7 @@ test('agreement with editable articles, and a QR seal on a PDF from another part
   const original = await partnerPdf()
   await test.step('a PDF from another party is uploaded, previewed, sealed and released', async () => {
     await page.goto('/admin/documents/new?type=seal&lang=id', { waitUntil: 'networkidle' })
-    await expect(page.locator('body')).toContainText('not a certified electronic signature')              // said before anything is done
+    await expect(page.locator('body')).toContainText('A PDF that already carries a cryptographic signature is refused')   // the one limit, said before anything is done
     await page.fill('input[name=source_title]', 'Certificate of Origin'); await page.fill('input[name=source_issuer]', 'Kamar Dagang Contoh')
     await page.fill('input[name=source_reference]', 'COO-2026-0042')
     await page.fill('input[name=signatory_name]', 'Siti Rahma'); await page.fill('input[name=signatory_title]', 'Direktur')
@@ -101,7 +101,6 @@ test('agreement with editable articles, and a QR seal on a PDF from another part
     await expect(body).toContainText('Kamar Dagang Contoh')
     await expect(body).toContainText('Siti Rahma')
     await expect(body).toContainText(sealedHash); await expect(body).toContainText(sha(original))
-    await expect(body).toContainText('not a certified electronic signature')
     const check = visitor.page.locator('#file-check')
     await check.setInputFiles({ name: 'sealed.pdf', mimeType: 'application/pdf', buffer: Buffer.from(sealedBytes) })
     await expect(visitor.page.locator('[role=status]').last()).toContainText('exactly the document that VORA sealed')

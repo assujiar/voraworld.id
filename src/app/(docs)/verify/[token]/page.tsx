@@ -57,7 +57,6 @@ export default async function Verify({ params }: { params: Promise<{ token: stri
               <strong>Sealed on:</strong> {new Date(sealed.seal!.sealedAt).toLocaleString('en-GB', { timeZone: 'Asia/Jakarta' })} WIB</p>
             <p className="mini" style={{ overflowWrap: 'anywhere' }}><strong>SHA-256 of the sealed file:</strong><br />{sealed.seal!.sha256}<br /><strong>SHA-256 of the original file:</strong><br />{seal.source!.sha256}</p>
             <FileCheck sealed={sealed.seal!.sha256} original={seal.source!.sha256} />
-            <p className="mini muted">This is VORA&apos;s own endorsement and a check that the file has not changed. It is not a certified electronic signature and does not replace the signature or approval of the party that issued the document.</p>
           </>
         ) : null}
         {payment ? <p><strong>{kind === 'prepayment' ? 'Status of the invoice:' : 'Payment status:'}</strong> {payment}</p> : null}

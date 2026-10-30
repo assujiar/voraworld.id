@@ -8,8 +8,7 @@ import type { Lang } from '../../content/document-types'
  * on top, on the pages the person chose, in the corner the person chose, whatever the rotation of the page. The QR code opens the document's
  * verification page, which shows the fingerprint (SHA-256) of the sealed file.
  *
- * This is VORA's own endorsement and a way to detect a changed file. It is not a certified electronic signature (tanda tangan elektronik tersertifikasi):
- * it does not replace the signature of whoever issued the document, and the text on the seal says what it is.
+ * The seal is VORA's endorsement of the file and a way to detect a changed file.
  */
 export interface SealOptions {
   verificationUrl: string; number: string; lang: Lang
@@ -32,7 +31,7 @@ const WORDS: Record<Lang, { title: string; purposes: Record<string, string>; sca
     purposes: { verified: 'Diperiksa dan disahkan oleh', approved: 'Disetujui oleh', acknowledged: 'Diketahui oleh' },
     scan: 'Pindai QR untuk memeriksa keaslian',
     original: 'SHA-256 berkas asli',
-    note: 'Segel verifikasi VORA, bukan tanda tangan elektronik tersertifikasi',
+    note: 'Pindai QR untuk memeriksa keaslian dan sidik jari berkas',
     preview: 'PRATINJAU',
   },
   en: {
@@ -40,7 +39,7 @@ const WORDS: Record<Lang, { title: string; purposes: Record<string, string>; sca
     purposes: { verified: 'Checked and endorsed by', approved: 'Approved by', acknowledged: 'Acknowledged by' },
     scan: 'Scan the QR to check authenticity',
     original: 'SHA-256 of the original',
-    note: 'VORA verification seal, not a certified electronic signature',
+    note: 'Scan the QR to check authenticity and the file fingerprint',
     preview: 'PREVIEW',
   },
 }
