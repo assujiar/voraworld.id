@@ -17,15 +17,18 @@ export default async function Faq({ params }: LocaleParams) {
   const [faqs, custom] = await Promise.all([many('faqs', (q) => q.eq('visible', true).order('position').order('id'), 'question,answer'), getPublishedPage('faq', locale)])
   return (
     <>
-      <section className="page-intro page-intro--faq"><div className="wrap">
-        <img className="page-art" src="/static/assets/vora-visual-60.webp" width={580} height={580} alt={t('Document review and clearance illustration', 'Ilustrasi peninjauan dokumen dan clearance')} />
-        <span className="eyebrow">{t('Questions', 'Pertanyaan')}</span><h1>{siteText[locale].faq_title}</h1>
-        <p>{t('Ask for confirmation when your shipment has regulatory or technical requirements.', 'Mintalah konfirmasi bila pengiriman Anda memiliki persyaratan regulasi atau teknis.')}</p>
-      </div></section>
-      <section className="site-section section-white"><div className="wrap compact faq">
-        {faqs.length ? faqs.map((f, i) => <details key={i}><summary>{f.question as string}</summary><p>{f.answer as string}</p></details>)
-          : <p>{t('No answers are published yet.', 'Belum ada jawaban yang dipublikasikan.')} <a href={`/${locale}/contact`}>{t('Contact us', 'Hubungi kami')}</a> {t('for specific questions.', 'untuk pertanyaan spesifik.')}</p>}
-      </div></section>
+      <section className="v-section v-section--tight">
+        <div className="v-wrap v-faq">
+          <div>
+            <h1 className="v-h2" style={{ fontSize: 'clamp(2.2rem,4.8vw,4rem)' }}>{siteText[locale].faq_title}</h1>
+            <p className="v-muted" style={{ marginTop: 18 }}>{t('Ask for confirmation when your shipment has regulatory or technical requirements.', 'Mintalah konfirmasi bila pengiriman Anda memiliki persyaratan regulasi atau teknis.')}</p>
+          </div>
+          <div className="v-faq__list">
+            {faqs.length ? faqs.map((f, i) => <details key={i}><summary>{f.question as string}</summary><p>{f.answer as string}</p></details>)
+              : <p className="v-note">{t('No answers are published yet.', 'Belum ada jawaban yang dipublikasikan.')} <a className="v-link" href={`/${locale}/contact`}>{t('Write to us', 'Tulis kepada kami')}</a> {t('with your question.', 'dengan pertanyaan Anda.')}</p>}
+          </div>
+        </div>
+      </section>
       <CustomSections locale={locale} sections={custom?.sections} />
       <CtaBand locale={locale} />
     </>

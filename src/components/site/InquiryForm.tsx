@@ -8,7 +8,7 @@ export function InquiryForm({ locale, kind, mode }: { locale: Locale; kind: 'con
   const quote = kind === 'quote'
   const page = `/${locale}/${quote ? 'request-quote' : 'contact'}`
   return (
-    <PendingForm action={quote ? submitQuote : submitContact} {...(quote ? { 'data-vora-rfq': '' } : {})}>
+    <PendingForm action={quote ? submitQuote : submitContact}>
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="_back" value={page} />
       <div className="hide"><label>Website<input name="website" autoComplete="off" tabIndex={-1} /></label></div>
@@ -46,13 +46,7 @@ export function InquiryForm({ locale, kind, mode }: { locale: Locale; kind: 'con
           </label>
         </div>
       </div>
-      {quote ? (
-        <div className="vora-rfq-summary" data-vora-rfq-summary data-filled="false">
-          <small>{t('Inquiry overview · Not a quotation', 'Ringkasan permintaan · Bukan penawaran harga')}</small>
-          <strong>{t('Choose a service and enter the shipment route.', 'Pilih layanan dan isi rute pengiriman.')}</strong>
-        </div>
-      ) : null}
-      <AsyncButton className="button" busy={t('Sending your inquiry…', 'Mengirim permintaan Anda…')}>{t('Send inquiry', 'Kirim permintaan')}</AsyncButton>
+      <AsyncButton className="v-btn" busy={t('Sending your inquiry…', 'Mengirim permintaan Anda…')}>{t('Send inquiry', 'Kirim permintaan')}</AsyncButton>
     </PendingForm>
   )
 }

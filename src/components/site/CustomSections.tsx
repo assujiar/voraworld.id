@@ -7,16 +7,15 @@ export function CustomSections({ locale, sections }: { locale: Locale; sections?
   return (
     <>
       {(sections ?? []).filter((s) => s.visible).map((s, i) => (
-        <section key={i} className={`site-section section-${['ink', 'paper', 'white'].includes(s.surface) ? s.surface : 'paper'}`}>
-          <div className={`wrap ${s.layout === 'split' ? 'split' : ''}`}>
+        <section key={i} className={`v-section ${s.surface === 'ink' ? 'v-dark' : s.surface === 'white' ? '' : 'v-section--bone'}`}>
+          <div className={`v-wrap ${s.layout === 'split' ? 'v-two' : ''}`}>
             <div>
-              <span className="eyebrow">VORA / {s.kind}</span>
-              <h2>{s.title}</h2>
-              <p>{s.body}</p>
+              <h2 className="v-h2">{s.title}</h2>
+              <p style={{ marginTop: 18 }}>{s.body}</p>
               {s.button_href && s.button_href.startsWith('/') && !s.button_href.startsWith('//')
-                ? <a className="button-outline" href={s.button_href}>{s.button_label || t('Learn more', 'Selengkapnya')} ↗</a> : null}
+                ? <a className="v-link" href={s.button_href}>{s.button_label || t('Learn more', 'Selengkapnya')}</a> : null}
             </div>
-            {s.image ? <div className="split-figure"><img src={s.image} alt={s.title} loading="lazy" /></div> : null}
+            {s.image ? <div><img src={s.image} alt={s.title} loading="lazy" style={{ borderRadius: 20 }} /></div> : null}
           </div>
         </section>
       ))}

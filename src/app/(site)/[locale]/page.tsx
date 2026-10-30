@@ -1,6 +1,7 @@
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
 import { InsightCards } from '@/components/site/InsightCards'
+import { RouteBackdrop } from '@/components/site/RouteBackdrop'
 import { ServiceCards } from '@/components/site/ServiceCards'
 import { makeT, seoDescription, seoTitles, siteText } from '@/content'
 import { localeOf, type LocaleParams } from '@/lib/page'
@@ -18,71 +19,67 @@ export default async function Home({ params }: LocaleParams) {
   const t = makeT(locale)
   const text = siteText[locale]
   const [articles, custom] = await Promise.all([latestArticles(locale, 3), getPublishedPage('home', locale)])
+  const lines = text.home_title.replace(/\.$/, '').split(locale === 'en' ? /(?<=Bringing the) |(?<=World Within) / : /(?<=Membawa Dunia) /)
+  const documents: Array<[string, string]> = [
+    [t('Quotation', 'Quotation'), t('You review the terms and send it back signed. VORA checks the signature and the stamp before any work or billing relies on it.', 'Anda meninjau ketentuannya dan mengirimkannya kembali bertanda tangan. VORA memeriksa tanda tangan dan capnya sebelum pekerjaan atau penagihan bersandar padanya.')],
+    [t('Delivery note', 'Surat jalan'), t('The driver records the handover on their phone: the receiver\'s name and signature, photos of the goods and the place.', 'Pengemudi mencatat serah terima di ponselnya: nama dan tanda tangan penerima, foto barang, dan lokasinya.')],
+    [t('Invoice and pre-payment receipt', 'Invoice dan pre-payment receipt'), t('Sent together in one email, tied to the quotation and to the delivery notes the invoice bills.', 'Dikirim bersamaan dalam satu email, terkait dengan quotation dan surat jalan yang ditagih invoice.')],
+    [t('Payment receipt', 'Kuitansi pembayaran'), t('Issued only after VORA has confirmed that the funds arrived.', 'Diterbitkan hanya setelah VORA memastikan dana sudah diterima.')],
+  ]
   return (
     <>
-      <section className="hero hero-vora">
-        <div className="wrap hero-grid">
-          <div className="hero-copy">
-            <span className="eyebrow">VORA / {text.home_eyebrow}</span>
-            <h1>{text.home_title}</h1>
-            <p>{text.home_intro}</p>
-            <div className="actions">
-              <a className="button" href={`/${locale}/request-quote`}>{text.rfq} ↗</a>
-              <a className="button-outline" href={`/${locale}/services`}>{t('Explore our services', 'Jelajahi layanan')}</a>
-            </div>
-            <div className="hero-datum"><span>01 / 05</span><span>{t('INTERNATIONAL · DOMESTIC · SPECIAL PROJECTS', 'INTERNASIONAL · DOMESTIK · PROYEK KHUSUS')}</span></div>
-            <a className="vora-scroll-cue" href="#services-overview"><span className="vora-scroll-cue__track" aria-hidden="true" />{t('Scroll to explore', 'Lihat layanan')}</a>
-          </div>
-          <div className="hero-art" aria-label={t('A three-dimensional composition illustrating international freight', 'Komposisi tiga dimensi yang menggambarkan pengiriman internasional')}>
-            <div className="clay-stage clay-stage--hero">
-              <span className="stage-relief" aria-hidden="true" /><span className="stage-relief stage-relief--inner" aria-hidden="true" />
-              <span className="stage-ring" aria-hidden="true" /><span className="stage-ring stage-ring--two" aria-hidden="true" />
-              <img src="/static/assets/vora-visual-59.webp" alt={t('Aircraft, cargo vessels and freight routes represented by a sculptural 3D object', 'Pesawat, kapal kargo, dan rute pengiriman dalam satu objek 3D')} width={720} height={670} fetchPriority="high" />
-              <span className="float-chip float-chip--top" aria-hidden="true"><span className="chip-light" /> {t('AIR / OCEAN', 'UDARA / LAUT')}</span>
-              <span className="float-chip float-chip--bottom" aria-hidden="true">{t('INTERNATIONAL', 'INTERNASIONAL')} <span className="chip-arrow">↗</span> {t('DOMESTIC', 'DOMESTIK')}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="site-section section-white portfolio-section" id="services-overview">
-        <div className="wrap">
-          <div className="section-head">
-            <div><span className="eyebrow">01 / {t('What we do', 'Layanan kami')}</span><h2>{text.home_service}</h2></div>
-            <p>{t('Five service groups cover international forwarding, customs coordination, warehousing, domestic distribution and specialised cargo.', 'Lima kelompok layanan mencakup forwarding internasional, customs, pergudangan, distribusi domestik dan kargo khusus.')}</p>
-          </div>
-          <ServiceCards locale={locale} />
-        </div>
-      </section>
-      <section className="site-section section-paper">
-        <div className="wrap split workflow-spotlight">
-          <div className="split-figure clay-relief-figure"><span className="sculpture-cutout" aria-hidden="true" /><img loading="lazy" src="/static/assets/vora-visual-53.webp" alt={t('International logistics routing and cargo network concept', 'Konsep rute logistik internasional dan jaringan kargo')} width={640} height={640} /></div>
+      <section className="v-hero">
+        <div className="v-wrap v-hero__grid">
           <div>
-            <span className="eyebrow">02 / {t('How we think', 'Cara kerja')}</span>
-            <h2>{text.home_process}</h2>
-            <p>{text.home_process_body}</p>
-            <div className="workflow-bullets">
-              <span>01 <b>{t('Define the scope', 'Tentukan kebutuhan')}</b></span>
-              <span>02 <b>{t('Evaluate options', 'Evaluasi pilihan')}</b></span>
-              <span>03 <b>{t('Coordinate execution', 'Koordinasi pelaksanaan')}</b></span>
+            <h1 className="v-h1">{lines.map((l, i) => <span className="v-line" key={i}><span style={{ ['--i' as string]: i }}>{l}{i === lines.length - 1 ? '.' : ''}</span></span>)}</h1>
+            <p className="v-lead v-fade" style={{ ['--d' as string]: '.55s' }}>{text.home_intro}</p>
+            <div className="v-actions v-fade" style={{ ['--d' as string]: '.7s' }}>
+              <a className="v-btn" href={`/${locale}/request-quote`}>{text.rfq}</a>
+              <a className="v-link" href={`/${locale}/services`}>{t('See the services', 'Lihat layanan')}</a>
             </div>
-            <a className="button-outline" href={`/${locale}/about`}>{t('Our approach', 'Pendekatan kami')} ↗</a>
+          </div>
+          <div className="v-hero__art">
+            <RouteBackdrop />
+            <img className="v-hero__render" src="/static/assets/vora-visual-59.webp" width={1050} height={1050} fetchPriority="high" alt={t('A globe with routes, an aircraft, a container ship and a truck', 'Globe dengan rute, pesawat, kapal kontainer, dan truk')} />
           </div>
         </div>
       </section>
-      <section className="site-section section-ink editorial-statement">
-        <div className="wrap">
-          <div className="statement-side"><span className="eyebrow">03 / {t('THE VORA APPROACH', 'PENDEKATAN VORA')}</span><p className="statement-aside">FREIGHT &amp; LOGISTICS<br />PT SATU ARAH INTERNATIONAL</p></div>
+
+      <section className="v-section" id="services">
+        <div className="v-wrap">
+          <div className="v-head">
+            <h2 className="v-h2">{text.home_service}</h2>
+            <p className="v-muted">{t('Five services, each with its own scope. Ask for one, or for several on the same shipment.', 'Lima layanan, masing-masing dengan cakupannya sendiri. Minta satu, atau beberapa untuk pengiriman yang sama.')}</p>
+          </div>
+          <ServiceCards locale={locale} variant="tiles" />
+        </div>
+      </section>
+
+      <section className="v-section v-section--bone">
+        <div className="v-wrap v-chain">
+          <div className="v-chain__art"><img loading="lazy" src="/static/assets/vora-visual-60.webp" width={420} height={400} alt={t('A document with a shield and a check mark', 'Dokumen dengan perisai dan tanda centang')} /></div>
           <div>
-            <p className="large-quote">{t('Every shipment has its own set of constraints. The right solution starts by understanding them.', 'Setiap pengiriman punya kebutuhan berbeda. Solusi yang tepat dimulai dengan memahami detailnya.')}</p>
-            <a className="button light-button" href={`/${locale}/contact`}>{text.cta} ↗</a>
+            <h2 className="v-h2">{t('Each step leaves a document you can check.', 'Setiap tahap meninggalkan dokumen yang bisa diperiksa.')}</h2>
+            <p className="v-muted" style={{ marginTop: 18, marginBottom: 34 }}>{t('Every document carries a QR code. Scanning it shows the document\'s number, issuer, date and current status, and nothing about your amounts or details.', 'Setiap dokumen memuat kode QR. Memindainya menampilkan nomor, penerbit, tanggal, dan status dokumen saat ini, tanpa jumlah atau data Anda.')}</p>
+            <ol className="v-steps">
+              {documents.map(([title, body]) => <li key={title}><h3 className="v-h3">{title}</h3><p>{body}</p></li>)}
+            </ol>
           </div>
         </div>
       </section>
-      <section className="site-section section-white insights-section">
-        <div className="wrap">
-          <div className="section-head">
-            <div><span className="eyebrow">04 / {t('INSIGHTS', 'WAWASAN')}</span><h2>{text.insights_title}</h2></div>
-            <a className="button-outline" href={`/${locale}/insights`}>{t('All insights', 'Semua artikel')} ↗</a>
+
+      <section className="v-dark v-statement">
+        <div className="v-wrap">
+          <p className="v-quote">{t('Every shipment has its own set of constraints. The right solution starts by understanding them.', 'Setiap pengiriman punya kebutuhan berbeda. Solusi yang tepat dimulai dengan memahami detailnya.')}</p>
+          <a className="v-btn v-btn--light" href={`/${locale}/contact`}>{text.cta}</a>
+        </div>
+      </section>
+
+      <section className="v-section">
+        <div className="v-wrap">
+          <div className="v-head">
+            <h2 className="v-h2">{text.insights_title}</h2>
+            <p><a className="v-link" href={`/${locale}/insights`}>{t('All articles', 'Semua artikel')}</a></p>
           </div>
           <InsightCards locale={locale} articles={articles} />
         </div>

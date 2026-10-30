@@ -17,18 +17,23 @@ export default async function Network({ params }: LocaleParams) {
   const [coverage, custom] = await Promise.all([many('coverage', (q) => q.eq('active', true).order('id'), 'region,mode'), getPublishedPage('network', locale)])
   return (
     <>
-      <section className="page-intro page-intro--network"><div className="wrap">
-        <img className="page-art" src="/static/assets/vora-visual-53.webp" width={580} height={580} alt={t('Three-dimensional cargo network illustration', 'Ilustrasi tiga dimensi jaringan kargo')} />
-        <span className="eyebrow">{t('Serviceability', 'Jangkauan layanan')}</span><h1>{siteText[locale].network_title}</h1><p>{siteText[locale].network_body}</p>
-      </div></section>
-      <section className="site-section section-white"><div className="wrap">
-        <h2>{t('Verified coverage', 'Cakupan terverifikasi')}</h2>
-        {coverage.length ? (
-          <div className="editorial-grid">{coverage.map((c) => (
-            <div className="card span-4" key={c.region as string}><h3>{c.region as string}</h3><p>{c.mode as string}</p><small>{t('Verified coverage record', 'Catatan cakupan terverifikasi')}</small></div>
-          ))}</div>
-        ) : <div className="note">{t('No serviceable regions have yet been approved for public display. Submit an inquiry to confirm your lane.', 'Belum ada wilayah layanan yang disetujui untuk ditampilkan. Ajukan permintaan untuk memastikan rute Anda.')}</div>}
-      </div></section>
+      <section className="v-page">
+        <div className="v-wrap v-page__grid">
+          <div>
+            <h1>{siteText[locale].network_title}</h1>
+            <p className="v-lead">{siteText[locale].network_body}</p>
+          </div>
+          <img className="v-page__art" src="/static/assets/vora-visual-61.webp" width={440} height={440} alt={t('A map with a route between two pins', 'Peta dengan rute di antara dua pin')} />
+        </div>
+      </section>
+      <section className="v-section v-section--tight">
+        <div className="v-wrap">
+          <h2 className="v-h2" style={{ marginBottom: 32 }}>{t('Confirmed coverage', 'Cakupan yang sudah dikonfirmasi')}</h2>
+          {coverage.length ? (
+            <ul className="v-regions">{coverage.map((c) => <li key={`${c.region}${c.mode}`}><strong>{c.region as string}</strong><span>{c.mode as string}</span></li>)}</ul>
+          ) : <p className="v-note">{t('No region has been approved for public display yet. Send an inquiry and we will confirm your lane.', 'Belum ada wilayah yang disetujui untuk ditampilkan. Kirim permintaan dan kami akan mengonfirmasi rute Anda.')}</p>}
+        </div>
+      </section>
       <CustomSections locale={locale} sections={custom?.sections} />
       <CtaBand locale={locale} />
     </>

@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { serviceExtras } from '@/content/service-extras'
 
 /**
  * The public copy follows the owner's writing rules: no "more than...", "not just...", "from X to Y" slogans, no marketing clichés, and the same
@@ -27,6 +28,7 @@ function sentences(): Array<{ where: string; text: string }> {
     else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) walk(v, `${path}.${k}`)
   }
   walk(JSON.parse(readFileSync('src/content/site.json', 'utf8')), 'site.json')
+  walk(serviceExtras, 'service-extras.ts')
   const files = (dir: string): string[] => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? files(p) : /\.tsx?$/.test(p) ? [p] : [] })
   for (const file of [...files('src/components/site'), ...files('src/app/(site)')]) {
     const code = readFileSync(file, 'utf8')
