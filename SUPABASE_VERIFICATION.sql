@@ -7,12 +7,12 @@
 CREATE OR REPLACE FUNCTION pg_temp.vora_verify()
 RETURNS TABLE (check_name text, status text, detail text) LANGUAGE plpgsql AS $fn$
 DECLARE
-  expected_tables text[] := ARRAY['app_secrets','articles','audit_logs','bank_accounts','counters','coverage','customers','document_seals',
+  expected_tables text[] := ARRAY['app_secrets','articles','audit_logs','bank_accounts','counters','coverage','customers','deliveries','delivery_items','delivery_proof_photos','delivery_proofs','document_seals',
     'document_verification_tokens','documents','email_jobs','email_rules','email_templates','faqs','invoice_bank_instructions','invoice_items',
     'invoices','lead_activities','leads','login_attempts','mail_config','media','navigation_items','pages','payments','prepayment_receipts',
     'quotation_approvals','quotation_items','quotations','receipts','revisions','sections','seo_redirects','settings','users'];
   expected_events text[] := ARRAY['lead_admin','lead_customer','lead_reply','invoice_customer','receipt_customer',
-    'payment_confirmed','quotation_approval_request','quotation_approved_admin','prepayment_receipt_customer'];
+    'payment_confirmed','quotation_approval_request','quotation_approved_admin','prepayment_receipt_customer','delivery_received_customer','delivery_received_admin'];
   missing text; n bigint; v text;
 BEGIN
   -- 1. Schema ---------------------------------------------------------------
@@ -53,7 +53,7 @@ BEGIN
     RETURN QUERY SELECT 'migration history', 'WARN', 'schema_migrations table absent (fine if you ran the SQL files by hand)';
   ELSE
     EXECUTE 'SELECT count(*), max(name) FROM schema_migrations' INTO n, v;
-    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 24 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (24 expected), latest ' || COALESCE(v, 'none');
+    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 25 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (25 expected), latest ' || COALESCE(v, 'none');
   END IF;
 
   -- 4. Seed data the application depends on ------------------------------------
@@ -65,9 +65,9 @@ BEGIN
     'public contact is email + address only';
 
   SELECT string_agg(e, ', ') INTO missing FROM unnest(expected_events) e WHERE NOT EXISTS (SELECT 1 FROM email_templates WHERE key = e);
-  RETURN QUERY SELECT 'email templates seeded', CASE WHEN missing IS NULL THEN 'PASS' ELSE 'FAIL' END, COALESCE('missing: ' || missing, '9 of 9 events');
+  RETURN QUERY SELECT 'email templates seeded', CASE WHEN missing IS NULL THEN 'PASS' ELSE 'FAIL' END, COALESCE('missing: ' || missing, '11 of 11 events');
   SELECT string_agg(e, ', ') INTO missing FROM unnest(expected_events) e WHERE NOT EXISTS (SELECT 1 FROM email_rules WHERE key = e);
-  RETURN QUERY SELECT 'email rules seeded', CASE WHEN missing IS NULL THEN 'PASS' ELSE 'FAIL' END, COALESCE('missing: ' || missing, '9 of 9 events (all start disabled until enabled in /admin/mail)');
+  RETURN QUERY SELECT 'email rules seeded', CASE WHEN missing IS NULL THEN 'PASS' ELSE 'FAIL' END, COALESCE('missing: ' || missing, '11 of 11 events (all start disabled until enabled in /admin/mail)');
 
   -- 5. Storage ---------------------------------------------------------------------
   IF to_regclass('storage.buckets') IS NULL THEN
@@ -81,15 +81,15 @@ BEGIN
 
   -- 5b. The database functions the application calls -----------------------------------
   SELECT count(*) INTO n FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
-    WHERE ns.nspname = 'public' AND p.proname IN ('invoice_create', 'payment_confirm', 'receipt_void', 'quotation_create', 'document_create', 'lead_create', 'article_save', 'page_save', 'vr_next_number', 'mail_claim');
-  RETURN QUERY SELECT 'database functions installed', CASE WHEN n = 10 THEN 'PASS' ELSE 'FAIL' END, n || ' of 10 key functions found (apply migration 0024)';
+    WHERE ns.nspname = 'public' AND p.proname IN ('invoice_create', 'payment_confirm', 'receipt_void', 'quotation_create', 'document_create', 'lead_create', 'article_save', 'page_save', 'vr_next_number', 'mail_claim', 'delivery_submit_proof');
+  RETURN QUERY SELECT 'database functions installed', CASE WHEN n = 11 THEN 'PASS' ELSE 'FAIL' END, n || ' of 11 key functions found (apply migrations 0024 and 0025)';
   SELECT count(*) INTO n FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
-    WHERE ns.nspname = 'public' AND (p.proname LIKE 'vr\_%' OR p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|lead|article|page|section|document)_')
+    WHERE ns.nspname = 'public' AND (p.proname LIKE 'vr\_%' OR p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|lead|article|page|section|document|delivery)_')
       AND (has_function_privilege('public', p.oid, 'execute') OR has_function_privilege('anon', p.oid, 'execute') OR has_function_privilege('authenticated', p.oid, 'execute'));
   RETURN QUERY SELECT 'functions closed to public, anon and signed-in users', CASE WHEN n = 0 THEN 'PASS' ELSE 'FAIL' END, n || ' function(s) executable by a public role';
   SELECT count(*) INTO n FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
     WHERE ns.nspname = 'public' AND (p.prosecdef OR NOT EXISTS (SELECT 1 FROM unnest(coalesce(p.proconfig, '{}')) c WHERE c LIKE 'search_path=%'))
-      AND (p.proname LIKE 'vr\_%' OR p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|lead|article|page|section|document)_');
+      AND (p.proname LIKE 'vr\_%' OR p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|lead|article|page|section|document|delivery)_');
   RETURN QUERY SELECT 'functions: invoker rights and a pinned search_path', CASE WHEN n = 0 THEN 'PASS' ELSE 'FAIL' END, n || ' function(s) are SECURITY DEFINER or lack a fixed search_path';
 
   -- 6. State (informational) --------------------------------------------------------

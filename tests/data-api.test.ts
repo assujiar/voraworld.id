@@ -27,7 +27,7 @@ describe('who can reach the database', () => {
 
   it('lets the publishable key call none of the database functions', async () => {
     const anon = asKey(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
-    const fns = (await sql`select p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and (p.proname like 'vr\_%' or p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail)_')`).map((r) => r.name as string)
+    const fns = (await sql`select p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and (p.proname like 'vr\_%' or p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|delivery)_')`).map((r) => r.name as string)
     expect(fns.length).toBeGreaterThan(25)
     for (const f of fns) {
       const r = await anon.rpc(f, {})
@@ -39,14 +39,14 @@ describe('who can reach the database', () => {
   it('lets the secret key do both, and nothing is callable by PUBLIC', async () => {
     expect(await rpc<string>('vr_today')).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     const open = await sql`select p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname = 'public' and (p.proname like 'vr\_%' or p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail)_')
+      where n.nspname = 'public' and (p.proname like 'vr\_%' or p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|delivery)_')
         and (has_function_privilege('public', p.oid, 'execute') or has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'))`
     expect(open.map((r) => r.name)).toEqual([])
   })
 
   it('pins the search_path of every function and runs none of them with their owner\'s rights', async () => {
     const rows = await sql`select p.proname as name, p.prosecdef as definer, p.proconfig as config from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname = 'public' and (p.proname like 'vr\_%' or p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail)_')`
+      where n.nspname = 'public' and (p.proname like 'vr\_%' or p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|delivery)_')`
     for (const r of rows) {
       expect(r.definer, `${r.name} is SECURITY DEFINER`).toBe(false)
       expect((r.config as string[] | null)?.some((c) => c.startsWith('search_path=')), `${r.name} has no pinned search_path`).toBe(true)

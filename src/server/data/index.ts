@@ -26,9 +26,13 @@ export const PAGE = 1000
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const from_ = (table: string): PostgrestQueryBuilder<any, any, any, any, any> => data().from(table)
 
-async function run<T>(q: PromiseLike<{ data: T | null; error: { code?: string; message: string; details?: string; hint?: string } | null }>): Promise<T | null> {
-  const { data: rows, error } = await q
-  if (error) throw failure(error)
+/** An error whose body was empty or not JSON (a gateway answer, a timeout) has no message of its own: the HTTP status stands in for it, so a log names the cause. */
+const withStatus = (error: { code?: string; message: string }, table: string | undefined, status?: number, statusText?: string) =>
+  ({ ...error, message: error.message || `The database request${table ? ` on ${table}` : ''} failed (HTTP ${status ?? '?'}${statusText ? ` ${statusText}` : ''})` })
+
+async function run<T>(q: PromiseLike<{ data: T | null; error: { code?: string; message: string; details?: string; hint?: string } | null; status?: number; statusText?: string }>): Promise<T | null> {
+  const { data: rows, error, status, statusText } = await q
+  if (error) throw failure(withStatus(error, undefined, status, statusText))
   return rows
 }
 
@@ -60,8 +64,8 @@ export async function slice(table: string, build: Build, columns: string, from: 
  * the error message is empty, and supabase-js reads an empty 404 (a missing table) as "no content" and returns 0 without an error.
  */
 export async function count(table: string, build: Build = (q) => q): Promise<number> {
-  const { count: n, error } = await (build(from_(table).select('*', { count: 'exact' })).limit(0) as unknown as PromiseLike<{ count: number | null; error: { code?: string; message: string } | null }>)
-  if (error) throw failure(error)
+  const { count: n, error, status, statusText } = await (build(from_(table).select('*', { count: 'exact' })).limit(0) as unknown as PromiseLike<{ count: number | null; error: { code?: string; message: string } | null; status?: number; statusText?: string }>)
+  if (error) throw failure(withStatus(error, table, status, statusText))
   return n ?? 0
 }
 
