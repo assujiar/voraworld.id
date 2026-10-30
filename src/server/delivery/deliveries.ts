@@ -14,10 +14,11 @@ import { getObject, putObject, removeObject } from '../storage'
 /**
  * Delivery notes (surat jalan) and their proof of delivery (POD).
  *
- * VORA writes and issues a delivery note; it travels with the goods and carries a QR code. Whoever receives the goods scans it and, on
- * their own phone, signs on the screen, photographs the goods and gives their details; the time is recorded, and the position too when
- * the receiver allows the phone to share it. That is the POD: it needs no account, only the unguessable address in the QR code, and it
- * can be given ONCE (until Finance rejects it). The consignee is emailed a second, different address with which the finished POD can be read.
+ * VORA writes and issues a delivery note; it travels with the goods and carries a QR code. The DRIVER or COURIER who delivers the goods scans
+ * it, on their own phone, at the handover: they say who they are, the receiver gives their name and signs on the screen of that phone, the driver
+ * photographs the goods; the time is recorded, and so is the phone's position: the location must be switched on, no proof is accepted without it. That is the POD: it needs no
+ * account, only the unguessable address in the QR code, and it can be given ONCE (until Finance rejects it). The consignee is emailed a second,
+ * different address with which the finished POD can be read.
  *
  * Every limit REFUSES: text that is too long is never cut short, and a required field is never filled in silently.
  */
@@ -122,6 +123,9 @@ export async function rejectProof(actorId: number, id: number, reason: string): 
 
 export interface ProofInput {
   token: string
+  /** Who delivered: the driver or courier whose phone sent this. */
+  courierName: string; courierPhone: string
+  /** Who received, and signed on the driver's phone. */
   receiverName: string; receiverPosition: string; receiverPhone: string; receiverEmail: string; receiverIdNumber: string
   condition: string; conditionNote: string
   /** `data:image/png;base64,...` drawn on the screen. */
@@ -160,7 +164,7 @@ function coordinate(value: string, min: number, max: number, label: string): num
   return n
 }
 
-export interface Received { number: string; consignee: string; receiver: string; at: Date }
+export interface Received { number: string; consignee: string; receiver: string; courier: string; at: Date }
 
 /**
  * The receiver's submission. The delivery must exist and be open for receipt (a cheap check, before any image is decoded); the evidence
@@ -175,6 +179,10 @@ export async function submitProof(input: ProofInput, baseUrl: string): Promise<R
   if (open.status === 'draft') throw new ActionError('This delivery note has not been issued yet', 409)
   if (open.status !== 'issued') throw new ActionError('This delivery note was cancelled', 409)
 
+  const courierName = oneLine(input.courierName, 160, 'The driver\'s name', true)
+  if (courierName.length < 2) throw new ActionError('Write the driver\'s full name')
+  const courierPhone = oneLine(input.courierPhone, 60, 'The driver\'s phone number', true)
+  if (!/^[0-9+()\-\s.]{6,60}$/.test(courierPhone)) throw new ActionError('The driver\'s phone number may hold only digits, spaces, + ( ) - and .')
   const name = oneLine(input.receiverName, 160, 'The receiver\'s name', true)
   const position = oneLine(input.receiverPosition, 160, 'The receiver\'s position', true)
   if (name.length < 2) throw new ActionError('Write the receiver\'s full name')
@@ -195,11 +203,11 @@ export async function submitProof(input: ProofInput, baseUrl: string): Promise<R
   const photos: Uint8Array[] = []
   for (const [i, p] of input.photos.entries()) photos.push(await decodeImage(p, 'jpeg', MAX_PHOTO_BYTES, `Photo ${i + 1}`))
 
-  // The location is optional: the receiver may decline to share it, and then nothing is asked of them.
-  const located = input.locationStatus === 'captured'
-  const latitude = located ? coordinate(input.latitude, -90, 90, 'The latitude') : null
-  const longitude = located ? coordinate(input.longitude, -180, 180, 'The longitude') : null
-  const accuracy = located && String(input.accuracy ?? '').trim() ? coordinate(input.accuracy, 0, 1_000_000, 'The accuracy') : null
+  // The location is required: it proves where the goods were handed over. A phone with location switched off cannot send the proof.
+  if (input.locationStatus !== 'captured') throw new ActionError('Turn on the location of your phone: the delivery cannot be recorded without it')
+  const latitude = coordinate(input.latitude, -90, 90, 'The latitude')
+  const longitude = coordinate(input.longitude, -180, 180, 'The longitude')
+  const accuracy = String(input.accuracy ?? '').trim() ? coordinate(input.accuracy, 0, 1_000_000, 'The accuracy') : null
   const locationNote = oneLine(input.locationNote, 240, 'The note on the location')
   const when = new Date(input.deviceTime)
   const deviceTime = Number.isNaN(when.getTime()) ? '' : when.toISOString()
@@ -219,9 +227,9 @@ export async function submitProof(input: ProofInput, baseUrl: string): Promise<R
     }
     result = await rpc('delivery_submit_proof', {
       p: {
-        token: input.token, receiver_name: name, receiver_position: position, receiver_phone: phone, receiver_email: email, receiver_id_number: idNumber,
+        token: input.token, receiver_name: name, receiver_position: position, receiver_phone: phone, receiver_email: email, receiver_id_number: idNumber, courier_name: courierName, courier_phone: courierPhone,
         condition, condition_note: conditionNote, signature_key: signatureKey, signature_sha256: await sha256Hex(signature), photos: photoRefs,
-        location_status: located ? 'captured' : 'unavailable', latitude, longitude, accuracy_m: accuracy, location_note: locationNote,
+        location_status: 'captured', latitude, longitude, accuracy_m: accuracy, location_note: locationNote,
         device_time: deviceTime, ip: input.ip.slice(0, 64), user_agent: input.userAgent.slice(0, 300),
       },
     })
@@ -239,7 +247,7 @@ export async function submitProof(input: ProofInput, baseUrl: string): Promise<R
     const conf = await getMailConfig()
     if (conf?.enabled) await enqueue('delivery_received_admin', (conf.adminEmail as string | null) || 'info@voraworld.id', { ...context, admin_url: `${baseUrl}/admin/deliveries/${result.delivery_id}` }, { dedupeKey: `delivery-received-admin-${result.proof_id}` })
   })
-  return { number: result.number, consignee: result.consignee_name, receiver: name, at }
+  return { number: result.number, consignee: result.consignee_name, receiver: name, courier: courierName, at }
 }
 
 /** Re-sends the "your goods were received" email to the consignee (for example after the email address was corrected). */
@@ -275,7 +283,7 @@ export interface DeliveryView {
   items: ItemInput[]
 }
 export interface ProofView {
-  id: number; status: string; receiverName: string; receiverPosition: string; receiverPhone: string; receiverEmail: string; receiverIdNumber: string
+  id: number; status: string; receiverName: string; receiverPosition: string; receiverPhone: string; receiverEmail: string; receiverIdNumber: string; courierName: string; courierPhone: string
   condition: string; conditionNote: string; signatureKey: string; signatureSha256: string
   latitude: number | null; longitude: number | null; accuracyM: number | null; locationStatus: string; locationNote: string
   deviceTime: string; serverTime: Date; ip: string; userAgent: string; rejectedAt: Date | null; rejectReason: string
@@ -296,7 +304,7 @@ export async function proofsOf(deliveryId: number): Promise<ProofView[]> {
   const photos = await many('delivery_proof_photos', (q) => q.in('proof_id', rows.map((r) => r.id as number)).order('position').order('id'), 'proof_id,position,storage_key,sha256')
   return rows.map((r) => ({
     id: r.id as number, status: r.status as string, receiverName: r.receiverName as string, receiverPosition: r.receiverPosition as string, receiverPhone: r.receiverPhone as string,
-    receiverEmail: r.receiverEmail as string, receiverIdNumber: r.receiverIdNumber as string, condition: r.receivedCondition as string, conditionNote: r.conditionNote as string,
+    receiverEmail: r.receiverEmail as string, receiverIdNumber: r.receiverIdNumber as string, courierName: r.courierName as string, courierPhone: r.courierPhone as string, condition: r.receivedCondition as string, conditionNote: r.conditionNote as string,
     signatureKey: r.signatureKey as string, signatureSha256: r.signatureSha256 as string, latitude: r.latitude as number | null, longitude: r.longitude as number | null,
     accuracyM: r.accuracyM as number | null, locationStatus: r.locationStatus as string, locationNote: r.locationNote as string, deviceTime: r.deviceTime as string,
     serverTime: r.serverTime as Date, ip: r.ip as string, userAgent: r.userAgent as string, rejectedAt: r.rejectedAt as Date | null, rejectReason: r.rejectReason as string,

@@ -21,12 +21,13 @@ export default async function PodView({ params }: { params: Promise<{ token: str
         <p><strong>Delivery note:</strong> {d.number}<br /><strong>Consignee:</strong> {d.consigneeName}{d.destination ? <><br /><strong>Destination:</strong> {d.destination}</> : null}</p>
         {!proof ? <p className="note">There is no proof of delivery to show for this delivery note.</p> : (
           <>
-            <p><strong>Received by:</strong> {proof.receiverName}, {proof.receiverPosition}<br />
+            <p><strong>Delivered by:</strong> {proof.courierName || '-'}<br />
+              <strong>Received by:</strong> {proof.receiverName}, {proof.receiverPosition}<br />
               <strong>Time of receipt:</strong> {businessDateTime(proof.serverTime)} WIB<br />
               <strong>Condition of the goods:</strong> {CONDITION[proof.condition] ?? proof.condition}{proof.conditionNote ? ` (${proof.conditionNote})` : ''}<br />
               <strong>Location:</strong> {proof.locationStatus === 'captured' && proof.latitude !== null && proof.longitude !== null
                 ? <a href={`https://www.google.com/maps?q=${proof.latitude},${proof.longitude}`} target="_blank" rel="noopener noreferrer">{proof.latitude.toFixed(5)}, {proof.longitude.toFixed(5)}</a>
-                : 'not shared by the receiver'}</p>
+                : 'not shared by the driver'}</p>
             <table><thead><tr><th>#</th><th>Description</th><th>Qty</th></tr></thead><tbody>
               {d.items.map((i, k) => <tr key={k}><td>{k + 1}</td><td>{i.description}</td><td>{i.quantity} {i.unit}</td></tr>)}
             </tbody></table>

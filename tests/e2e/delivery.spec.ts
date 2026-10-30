@@ -3,9 +3,9 @@ import sharp from 'sharp'
 import { BASE_URL, openContext, scalar, signIn, trackProblems } from './helpers'
 
 /**
- * A delivery note written in the browser, issued, and signed for on a phone: the receiver scans the QR address, fills the form,
- * signs on the screen, adds a photo and (if they allow it) shares their location. The admin then sees the evidence, the consignee's
- * view works, a wrong proof can be rejected and the same QR address can be used again.
+ * A delivery note written in the browser, issued, and recorded on a driver's phone: the driver scans the QR address, the receiver gives their
+ * name and signs on that screen, the driver adds a photo and the phone's location is recorded (it must be on). The admin then sees the evidence,
+ * the consignee's view works, a wrong proof can be rejected and the same QR address can be used again.
  */
 const photo = () => sharp({ create: { width: 640, height: 480, channels: 3, background: '#7a8c6e' } }).jpeg({ quality: 70 }).toBuffer()
 
@@ -20,7 +20,7 @@ async function phone(browser: Browser, allowLocation: boolean) {
 /** The form was accepted: the thank-you appears. If it does not, the refusal the form showed is the failure. */
 async function received(page: import('@playwright/test').Page) {
   try {
-    await expect(page.locator('div[role=status]')).toContainText('The receipt of')
+    await expect(page.locator('div[role=status]')).toContainText('The delivery of')
   } catch (e) {
     throw new Error(`the form was refused: ${(await page.locator('.alert[role=alert]').allInnerTexts()).join(' / ') || 'no message'}\n${e}`)
   }
@@ -28,7 +28,9 @@ async function received(page: import('@playwright/test').Page) {
 
 async function sign(page: import('@playwright/test').Page, name: string) {
   await page.waitForLoadState('networkidle')                                      // the page is interactive: strokes before that would be lost
-  await page.fill('#receiverName', name)
+  await page.fill('#courierName', 'Asep Kurniawan')                               // the driver, who holds the phone
+  await page.fill('#courierPhone', '0812 1111 2222')
+  await page.fill('#receiverName', name)                                           // the receiver, who signs on the driver's phone
   await page.fill('#receiverPosition', 'Warehouse head')
   await page.fill('#receiverPhone', '+62 812 3456 789')
   await page.locator('canvas').scrollIntoViewIfNeeded()                          // the mouse works in viewport coordinates
@@ -84,8 +86,7 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)         // no sideways scrolling on a phone
 
     await sign(page, 'Siti Aminah')
-    await page.click('button:has-text("Share my location")')
-    await expect(page.locator('body')).toContainText('Location captured')
+    await expect(page.locator('body')).toContainText('Location on')                  // asked for as soon as the page opened
     await page.click('button:has-text("Send proof of delivery")')
     await received(page)
     expect(await scalar(`select location_status || ':' || receiver_name from delivery_proofs where delivery_id = ${id}`)).toBe('captured:Siti Aminah')
@@ -100,6 +101,7 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
     await admin.goto(`/admin/deliveries/${id}`)
     await expect(admin.locator('h3 .status').first()).toContainText('delivered')
     await expect(admin.locator('body')).toContainText('Siti Aminah')
+    await expect(admin.locator('body')).toContainText('Delivered by Asep Kurniawan')
     await expect(admin.locator('body')).toContainText('-6.208800, 106.845600')
     for (const alt of ['Signature', 'Photo 1']) {
       await expect(admin.locator(`img[alt="${alt}"]`)).toBeVisible()
@@ -119,7 +121,7 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
     await anon.close()
   })
 
-  await test.step('a wrong proof is rejected, and the same QR address takes a new one, here without sharing the location', async () => {
+  await test.step('a wrong proof is rejected; a phone with location off cannot record the delivery until it is on', async () => {
     await admin.fill('input[name=reason]', 'Signed by the wrong person')
     await admin.click('button:has-text("Reject proof")')
     await expect(admin.locator('.alert').first()).toContainText('QR code can be used again')
@@ -127,16 +129,20 @@ test('a delivery note is issued, signed for on a phone, and its proof is checked
     const { context, page } = await phone(browser, false)
     trackProblems(page, 'phone2', problems, { strict4xx: true, benign: /geolocation|Geolocation|permission/i })
     await page.goto(link)
+    await expect(page.locator('body')).toContainText(/blocked for this page|could not be read/)
     await sign(page, 'Rina Wijaya')
-    await page.click('button:has-text("Share my location")')
-    await expect(page.locator('body')).toContainText(/did not allow|could not be read/)
+    await page.click('button:has-text("Send proof of delivery")')
+    await expect(page.locator('.alert[role=alert]')).toContainText('Turn on the location')           // refused on the phone itself
+    expect(await scalar(`select count(*) from delivery_proofs where delivery_id = ${id} and status = 'submitted'`)).toBe('0')
+    await context.grantPermissions(['geolocation'])                                                   // the driver switches the location on
+    await context.setGeolocation({ latitude: -6.9175, longitude: 107.6191, accuracy: 15 })
     await page.click('button:has-text("Send proof of delivery")')
     await received(page)
-    expect(await scalar(`select location_status from delivery_proofs where delivery_id = ${id} and status = 'submitted'`)).toBe('unavailable')
+    expect(await scalar(`select location_status from delivery_proofs where delivery_id = ${id} and status = 'submitted'`)).toBe('captured')
+    expect(Number(await scalar(`select longitude from delivery_proofs where delivery_id = ${id} and status = 'submitted'`))).toBeCloseTo(107.6191, 3)
     expect(await scalar(`select count(*) from delivery_proofs where delivery_id = ${id}`)).toBe('2')
     await context.close()
     await admin.goto(`/admin/deliveries/${id}`)
-    await expect(admin.locator('body')).toContainText('Location: not shared by the receiver')
     await expect(admin.locator('body')).toContainText('Rejected')
   })
 

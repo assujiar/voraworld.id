@@ -38,7 +38,7 @@ export async function podPdf(id: number, baseUrl: string): Promise<Uint8Array> {
     ...note, viewUrl: `${baseUrl.replace(/\/+$/, '')}/pod/view/${d.viewToken}`,
     proof: {
       status: proof.status, receivedAt: `${businessDateTime(proof.serverTime)} WIB`, deviceTime: proof.deviceTime ? `${businessDateTime(new Date(proof.deviceTime))} WIB` : '',
-      receiverName: proof.receiverName, receiverPosition: proof.receiverPosition, receiverPhone: proof.receiverPhone, receiverEmail: proof.receiverEmail, receiverIdNumber: proof.receiverIdNumber,
+      receiverName: proof.receiverName, receiverPosition: proof.receiverPosition, receiverPhone: proof.receiverPhone, receiverEmail: proof.receiverEmail, receiverIdNumber: proof.receiverIdNumber, courierName: proof.courierName, courierPhone: proof.courierPhone,
       condition: proof.condition, conditionNote: proof.conditionNote, latitude: proof.latitude, longitude: proof.longitude, accuracyM: proof.accuracyM,
       locationStatus: proof.locationStatus, locationNote: proof.locationNote,
       signature: signature!.bytes, signatureSha256: proof.signatureSha256, photos: photos.map((bytes, i) => ({ bytes, sha256: proof.photos[i].sha256 })),

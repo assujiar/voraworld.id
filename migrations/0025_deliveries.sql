@@ -1,7 +1,7 @@
 -- Delivery notes (surat jalan) with a proof of delivery (POD).
--- A delivery note travels with the goods and carries a QR code. The person who receives the goods scans it and, on their own phone,
--- signs on the screen, photographs the goods, gives their details, and the phone's position (only if the receiver allows it) and the
--- time are recorded: that is the POD.
+-- A delivery note travels with the goods and carries a QR code. The DRIVER or COURIER who delivers the goods scans it, on their own phone, at
+-- the handover: they say who they are, the receiver gives their name and signs on the screen, the driver photographs the goods, and the
+-- phone's position (the location must be on: a proof without it is refused) and the time are recorded: that is the POD.
 -- The QR code and the emailed "view the POD" link are two different, unguessable tokens (a printed QR must keep working, so they are
 -- stored, not derived from a secret that may be rotated). Evidence files (signature, photos) live in the private documents bucket.
 -- Delivery status: draft -> issued -> delivered (a POD was submitted) -> back to issued when Finance rejects the POD; void from draft or issued.
@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS delivery_items (
 CREATE INDEX IF NOT EXISTS ix_delivery_items_delivery ON delivery_items (delivery_id, position);
 
 -- One live (submitted) proof per delivery; a rejected one stays as history and the delivery can be received again.
--- The location is optional: it is taken only when the receiver allows the phone to share it.
+-- The location is required for a new proof (delivery_submit_proof refuses one without it); 'unavailable' stays allowed by the table so a row
+-- recorded some other way is still valid.
 CREATE TABLE IF NOT EXISTS delivery_proofs (
   id                 SERIAL PRIMARY KEY,
   delivery_id        INTEGER      NOT NULL REFERENCES deliveries (id),
@@ -61,6 +62,8 @@ CREATE TABLE IF NOT EXISTS delivery_proofs (
   receiver_phone     VARCHAR(60)  NOT NULL,
   receiver_email     VARCHAR(200) NOT NULL DEFAULT '',
   receiver_id_number VARCHAR(40)  NOT NULL DEFAULT '',
+  courier_name       VARCHAR(160) NOT NULL DEFAULT '',
+  courier_phone      VARCHAR(60)  NOT NULL DEFAULT '',
   received_condition VARCHAR(10)  NOT NULL DEFAULT 'good' CHECK (received_condition IN ('good', 'damaged', 'partial')),
   condition_note     VARCHAR(1000) NOT NULL DEFAULT '',
   signature_key      VARCHAR(500) NOT NULL,
@@ -79,6 +82,9 @@ CREATE TABLE IF NOT EXISTS delivery_proofs (
   reject_reason      VARCHAR(500) NOT NULL DEFAULT '',
   CHECK (location_status <> 'captured' OR (latitude IS NOT NULL AND longitude IS NOT NULL))
 );
+-- Who delivered (a database that already had the table without them gets them here).
+ALTER TABLE delivery_proofs ADD COLUMN IF NOT EXISTS courier_name VARCHAR(160) NOT NULL DEFAULT '';
+ALTER TABLE delivery_proofs ADD COLUMN IF NOT EXISTS courier_phone VARCHAR(60) NOT NULL DEFAULT '';
 CREATE UNIQUE INDEX IF NOT EXISTS ux_delivery_proofs_live ON delivery_proofs (delivery_id) WHERE status = 'submitted';
 CREATE INDEX IF NOT EXISTS ix_delivery_proofs_delivery ON delivery_proofs (delivery_id, id);
 
@@ -210,9 +216,9 @@ BEGIN
 END
 $fn$;
 
--- The receiver's submission, after its evidence files were stored under the keys in p. The delivery is found by the QR code's token and
+-- The driver's submission (the receiver's details and signature included), after its evidence files were stored under the keys in p. The delivery is found by the QR code's token and
 -- locked, so two phones sending at once record one proof; the second is told the receipt is already recorded (and the application removes
--- the files it had stored). p: token, receiver_name, receiver_position, receiver_phone, receiver_email, receiver_id_number, condition,
+-- the files it had stored). p: token, courier_name, courier_phone, receiver_name, receiver_position, receiver_phone, receiver_email, receiver_id_number, condition,
 -- condition_note, signature_key, signature_sha256, photos [{key, sha256}], location_status, latitude, longitude, accuracy_m, location_note,
 -- device_time, ip, user_agent.
 CREATE OR REPLACE FUNCTION delivery_submit_proof(p jsonb) RETURNS jsonb
@@ -225,9 +231,12 @@ BEGIN
   IF v_d.status = 'draft' THEN PERFORM vr_fail(409, 'This delivery note has not been issued yet'); END IF;
   IF v_d.status <> 'issued' THEN PERFORM vr_fail(409, 'This delivery note was cancelled'); END IF;
   IF jsonb_typeof(p->'photos') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'photos') = 0 THEN PERFORM vr_fail(422, 'Take at least one photo of the goods'); END IF;
-  INSERT INTO delivery_proofs (delivery_id, status, receiver_name, receiver_position, receiver_phone, receiver_email, receiver_id_number, received_condition, condition_note,
+  IF p->>'location_status' IS DISTINCT FROM 'captured' OR nullif(p->>'latitude', '') IS NULL OR nullif(p->>'longitude', '') IS NULL THEN
+    PERFORM vr_fail(422, 'Turn on the location of your phone: the delivery cannot be recorded without it');
+  END IF;
+  INSERT INTO delivery_proofs (delivery_id, status, receiver_name, receiver_position, receiver_phone, receiver_email, receiver_id_number, courier_name, courier_phone, received_condition, condition_note,
       signature_key, signature_sha256, latitude, longitude, accuracy_m, location_status, location_note, device_time, ip, user_agent)
-    VALUES (v_d.id, 'submitted', p->>'receiver_name', p->>'receiver_position', p->>'receiver_phone', p->>'receiver_email', p->>'receiver_id_number', p->>'condition', p->>'condition_note',
+    VALUES (v_d.id, 'submitted', p->>'receiver_name', p->>'receiver_position', p->>'receiver_phone', p->>'receiver_email', p->>'receiver_id_number', p->>'courier_name', p->>'courier_phone', p->>'condition', p->>'condition_note',
       p->>'signature_key', p->>'signature_sha256', nullif(p->>'latitude', '')::double precision, nullif(p->>'longitude', '')::double precision, nullif(p->>'accuracy_m', '')::double precision,
       p->>'location_status', p->>'location_note', p->>'device_time', p->>'ip', p->>'user_agent')
     RETURNING id, server_time INTO v_proof_id, v_time;

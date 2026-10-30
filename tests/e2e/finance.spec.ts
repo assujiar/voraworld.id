@@ -41,7 +41,7 @@ test('the finance workflow, from customer to stamped receipt and signed quotatio
     await page.fill('input[name=account_number] >> nth=0', '5550009999')
     await page.fill('input[name=account_holder] >> nth=0', 'PT Satu Arah International')
     await page.click('button:has-text("Add account")')
-    await expect(page.locator('.alert:has-text("Bank account saved")')).toBeVisible()
+    await expect(page.locator('body')).toContainText('Bank Browser Two')                    // the first notice is still on screen until the page reloads: wait for the second account itself
     await expect(page.locator('.status:has-text("PREFERRED")')).toHaveCount(1)
   })
 

@@ -62,6 +62,7 @@ export interface PodData extends Omit<DeliveryNoteData, 'captureUrl'> {
   proof: {
     status: string; receivedAt: string; deviceTime: string
     receiverName: string; receiverPosition: string; receiverPhone: string; receiverEmail: string; receiverIdNumber: string
+    courierName: string; courierPhone: string
     condition: string; conditionNote: string
     latitude: number | null; longitude: number | null; accuracyM: number | null; locationStatus: string; locationNote: string
     signature: Uint8Array; signatureSha256: string

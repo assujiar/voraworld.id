@@ -1,7 +1,4 @@
 import { randomBytes } from 'node:crypto'
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { sql } from './helpers/db'
 import { saveMailConfig } from '@/server/mail/config'
@@ -20,7 +17,9 @@ import { makePdf } from './helpers/pdf'
 import { pdfLinks, pdfPages, rasterize, squash } from './helpers/pdf-text'
 
 process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64')
-process.env.VORA_LOCAL_STORAGE_DIR = mkdtempSync(join(tmpdir(), 'vora-prepay-'))
+// No Storage service in the unit tests: stamped files go to a map (which the "swapped file" test below can tamper with).
+const files = vi.hoisted(() => new Map<string, Uint8Array>())
+vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-storage')).memoryStorage(await original(), files))
 const BASE = 'https://testserver'
 let actor: number
 
@@ -40,7 +39,7 @@ const rejects = async (p: Promise<unknown>, message: RegExp | string, status?: n
 }
 const sent: Array<{ to: string; subject: string; attachment?: string; content?: Uint8Array }> = []
 async function smtp(...rules: string[]) {
-  await saveMailConfig(sql, { host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
+  await saveMailConfig({ host: 'smtp.example.invalid', port: 587, security: 'starttls', fromEmail: 'info@voraworld.id', adminEmail: 'ops@example.invalid', enabled: true })
   for (const r of rules) await sql`update email_rules set enabled = true where key = ${r}`
 }
 
@@ -125,7 +124,7 @@ describe('the manual e-meterai', () => {
     await setInvoiceStatus(actor, id, 'issue')
     const p = await row(id)
     const [inv] = await sql`select number from invoices where id = ${id}`
-    const draft = await renderDocumentPdf(sql, 'prepayment', p.id as number, BASE)
+    const draft = await renderDocumentPdf('prepayment', p.id as number, BASE)
     expect(Buffer.from(draft.subarray(0, 5)).toString()).toBe('%PDF-')
 
     const stamp = (o: Partial<{ providerReference: string; reviewed: boolean; file: Uint8Array | null }> = {}) => uploadPrepaymentStamp(actor, p.id as number, { providerReference: 'PERURI-0001', reviewed: true, file: null, ...o })
@@ -138,7 +137,7 @@ describe('the manual e-meterai', () => {
     const after = await row(id)
     expect(after).toMatchObject({ status: 'issued', stampProviderReference: 'PERURI-0001' })
     expect(after.stampSha256).toMatch(/^[0-9a-f]{64}$/)
-    expect(Buffer.from(await renderDocumentPdf(sql, 'prepayment', p.id as number, BASE)).equals(Buffer.from(stamped))).toBe(true)
+    expect(Buffer.from(await renderDocumentPdf('prepayment', p.id as number, BASE)).equals(Buffer.from(stamped))).toBe(true)
     await rejects(stamp({ file: stamped }), /not waiting for a manual e-meterai/, 409)           // once only
   })
 
@@ -155,7 +154,7 @@ describe('the manual e-meterai', () => {
     const p = await row(id); const [inv] = await sql`select number from invoices where id = ${id}`
     await uploadPrepaymentStamp(actor, p.id as number, { providerReference: 'PERURI-0002', reviewed: true, file: await makePdf([p.number as string, inv.number as string]) })
     await sql`update prepayment_receipts set stamp_sha256 = ${'0'.repeat(64)} where id = ${p.id}`
-    await rejects(renderDocumentPdf(sql, 'prepayment', p.id as number, BASE), /integrity check/, 409)
+    await rejects(renderDocumentPdf('prepayment', p.id as number, BASE), /integrity check/, 409)
   })
 })
 
@@ -165,7 +164,7 @@ describe('the pre-payment receipt PDF', () => {
     const id = await invoiceFor(cid, 12_500_000, { bankAccountIds: [(await sql`select id from bank_accounts limit 1`)[0].id as number] })
     await setInvoiceStatus(actor, id, 'issue')
     const p = await row(id); const [inv] = await sql`select number from invoices where id = ${id}`
-    const pdf = await renderDocumentPdf(sql, 'prepayment', p.id as number, BASE)
+    const pdf = await renderDocumentPdf('prepayment', p.id as number, BASE)
     const pages = await pdfPages(pdf)
     expect(pages).toHaveLength(1)
     const text = squash(pages[0])
@@ -186,7 +185,7 @@ describe('the pre-payment receipt PDF', () => {
       const outline = vi.spyOn(Sheet.prototype, 'outline').mockImplementation(function (this: Sheet, x, y, w, h, _stroke, _thickness, dash) { if (dash) dashed.push([x, y, w, h]) })
       const round = vi.spyOn(Sheet.prototype, 'roundRect').mockImplementation(function (this: Sheet, x, y, w, h) { solid.push([x, y, w, h]) })
       const text = vi.spyOn(Sheet.prototype, 'text').mockImplementation(function (this: Sheet, _x, y, value) { texts.push([y, String(value)]) })
-      try { await renderDocumentPdf(sql, 'prepayment', (await row(invoice)).id as number, BASE) } finally { outline.mockRestore(); round.mockRestore(); text.mockRestore() }
+      try { await renderDocumentPdf('prepayment', (await row(invoice)).id as number, BASE) } finally { outline.mockRestore(); round.mockRestore(); text.mockRestore() }
       return { dashed, amount: solid[0], words: texts.find(([, t]) => /(Rupiah|Cents|Dollars|Euros|Yen)$/.test(t)) }
     }
     // IDR above the limit: the square runs from the top of the amount box to the bottom of the amount in words.
@@ -224,14 +223,14 @@ describe('the pre-payment receipt PDF', () => {
   it('says no e-meterai is needed at or below the limit, and shows no empty stamp box', async () => {
     const id = await invoiceFor(await customer(), 5_000_000)
     await setInvoiceStatus(actor, id, 'issue')
-    const text = squash((await pdfPages(await renderDocumentPdf(sql, 'prepayment', (await row(id)).id as number, BASE))).join(' '))
+    const text = squash((await pdfPages(await renderDocumentPdf('prepayment', (await row(id)).id as number, BASE))).join(' '))
     expect(text).toContain('No e-meterai is required: the amount does not exceed IDR 5,000,000.')
     expect(text).not.toContain('E-METERAI HERE'); expect(text).toContain('ISSUED')
   })
 
   it('writes a foreign-currency amount out in that currency, and shows DRAFT before the invoice is issued', async () => {
     const id = await invoiceFor(await customer('USD'), '1234.56')
-    const text = squash((await pdfPages(await renderDocumentPdf(sql, 'prepayment', (await row(id)).id as number, BASE))).join(' '))
+    const text = squash((await pdfPages(await renderDocumentPdf('prepayment', (await row(id)).id as number, BASE))).join(' '))
     expect(text).toContain('USD 1,234.56'); expect(text).toContain('DRAFT'); expect(text).toContain('because the amount is in a foreign currency')
     expect(text).toContain('AMOUNT IN WORDS'); expect(text).toContain('One Thousand Two Hundred Thirty-Four US Dollars and Fifty-Six Cents')
     expect(text).not.toContain('Indonesian Rupiah')
@@ -239,7 +238,7 @@ describe('the pre-payment receipt PDF', () => {
 
   it('ends in the company red like every other document', async () => {
     const id = await invoiceFor(await customer(), 12_000_000)
-    const pdf = await renderDocumentPdf(sql, 'prepayment', (await row(id)).id as number, BASE)
+    const pdf = await renderDocumentPdf('prepayment', (await row(id)).id as number, BASE)
     const img = rasterize(pdf, 1)
     if (!img) return
     const [r, g, b] = img.at(300, img.height - 2)
@@ -251,7 +250,7 @@ describe('the pre-payment receipt PDF', () => {
     const banks = []
     for (let i = 0; i < 5; i++) banks.push(await createBank(actor, { bankName: `Bank Nomor ${i + 1}`, accountNumber: `99000${i}`, accountHolder: 'PT Satu Arah International', currency: 'IDR', branch: '', swiftCode: '', notes: '' }))
     const id = await invoiceFor(cid, 12_000_000, { bankAccountIds: banks })
-    const text = squash((await pdfPages(await renderDocumentPdf(sql, 'prepayment', (await row(id)).id as number, BASE))).join(' '))
+    const text = squash((await pdfPages(await renderDocumentPdf('prepayment', (await row(id)).id as number, BASE))).join(' '))
     expect(text).toContain('Bank Nomor 1'); expect(text).toContain('Bank Nomor 3'); expect(text).toContain('2 more account(s) are listed on the invoice.')
   })
 })
@@ -305,7 +304,7 @@ describe('emailing the pre-payment receipt', () => {
     const waiting = await row(await (async () => { const i = await invoiceFor(cid, 12_000_000); await setInvoiceStatus(actor, i, 'issue'); return i })())
     const voided = await row(await (async () => { const i = await invoiceFor(cid, 1_000_000); await setInvoiceStatus(actor, i, 'issue'); await voidPrepayment(actor, (await row(i)).id as number); return i })())
     for (const p of [draft, waiting, voided]) {
-      await enqueue(sql, 'prepayment_receipt_customer', 'billing@pelanggan.example', { customer_name: 'x', document_number: p.number, invoice_number: 'x', verify_url: 'x' }, { attachmentKind: 'prepayment', attachmentId: p.id as number, force: true })
+      await enqueue('prepayment_receipt_customer', 'billing@pelanggan.example', { customer_name: 'x', document_number: p.number, invoice_number: 'x', verify_url: 'x' }, { attachmentKind: 'prepayment', attachmentId: p.id as number, force: true })
     }
     await dispatch(BASE, 10)
     expect(sent).toHaveLength(0)
