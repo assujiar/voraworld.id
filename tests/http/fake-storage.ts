@@ -32,6 +32,7 @@ export function fakeStorage(secret: string = STORAGE_KEY): Promise<Server> {
       })
       return
     }
+    if (req.method === 'DELETE') { objects.delete(`${bucket}/${key}`); return reply(200, '{"message":"Successfully deleted"}') }
     const o = objects.get(`${bucket}/${key}`)
     return o ? reply(200, o.body as unknown as string, o.type) : reply(404, '{"message":"Object not found"}')
   })

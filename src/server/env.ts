@@ -47,23 +47,6 @@ export const supabasePublishableKey = (): string =>
 /** The secret (or legacy service_role) key. Server only, never in a NEXT_PUBLIC_ variable, never sent to the browser. */
 export const supabaseSecretKey = (): string => process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-/**
- * The PostgreSQL connection of the server: `DATABASE_URL`, or `POSTGRES_URL` which the Vercel Supabase integration provides. The
- * integration's address carries extra query parameters (such as `supa=base-pooler.x`) that a PostgreSQL server rejects when they are
- * passed on as settings, so only the ones that mean something to the driver are kept.
- */
-export function databaseUrl(): string {
-  const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL || ''
-  if (!/^postgres(ql)?:\/\//.test(raw)) return raw
-  try {
-    const u = new URL(raw)
-    for (const key of [...u.searchParams.keys()]) if (!['sslmode', 'ssl', 'application_name', 'connect_timeout'].includes(key)) u.searchParams.delete(key)
-    return u.toString()
-  } catch {
-    return raw
-  }
-}
-
 /** Fails loudly, once, at server start-up when production is misconfigured. */
 export function assertConfig(): void {
   if (onVercel() && appEnv() !== 'production') {
@@ -71,9 +54,7 @@ export function assertConfig(): void {
   }
   if (!supabaseUrl()) throw new Error('NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL) is required: sign-in uses Supabase Auth')
   if (!supabasePublishableKey()) throw new Error('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or SUPABASE_PUBLISHABLE_KEY / the legacy anon key) is required: sign-in uses Supabase Auth')
-  const db = databaseUrl()
-  if (!db) throw new Error('A database connection is required: DATABASE_URL, or POSTGRES_URL (set by the Vercel Supabase integration)')
-  if (!/^postgres(ql)?:\/\//.test(db)) throw new Error('The database connection must be a PostgreSQL URL')
+  if (!supabaseSecretKey()) throw new Error('SUPABASE_SECRET_KEY (or the legacy SUPABASE_SERVICE_ROLE_KEY) is required: the server reads and writes the database through the Supabase Data API')
   if (!isProd()) return
   // The address is printed into the QR code of every document and never changes afterwards, so it must be the final https
   // domain. A loopback address is accepted only off Vercel, so a production build can be run on a developer machine.

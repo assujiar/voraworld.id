@@ -1,9 +1,9 @@
 import { addCoverageAction, toggleCoverageAction } from '@/actions/settings'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 
 export default async function Coverage({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = await sql`select id, region, mode, active from coverage order by id desc`
+  const rows = await many('coverage', (q) => q.order('id', { ascending: false }), 'id,region,mode,active')
   return (
     <AdminPage heading="Verified coverage" sp={await searchParams}>
       <div className="admin-panel">

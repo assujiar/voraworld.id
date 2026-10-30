@@ -2,13 +2,13 @@ import { notFound } from 'next/navigation'
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { DocumentForm } from '@/components/admin/DocumentForm'
 import { documentType, type Lang } from '@/content/document-types'
-import { sql } from '@/server/db'
+import { one } from '@/server/data'
 import { routeId } from '@/server/http'
 import type { StoredFields } from '@/server/documents/general'
 
 export default async function EditDocument({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
-  const [doc] = id > 0 && id < 2_147_483_647 ? await sql`select * from documents where id = ${id}` : []
+  const doc = id > 0 && id < 2_147_483_647 ? await one('documents', (q) => q.eq('id', id)) : undefined
   const type = doc ? documentType(doc.kind as string) : undefined
   if (!doc || !type) notFound()
   const stored = doc.fields as StoredFields

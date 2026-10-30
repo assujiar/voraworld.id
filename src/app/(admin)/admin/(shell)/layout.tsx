@@ -12,7 +12,9 @@ export default async function Shell({ children }: { children: React.ReactNode })
         <form action={logout} style={{ margin: 0 }}><button className="logout-button" type="submit">Log out</button></form>
         <p className="mini" style={{ color: '#9faeb7', padding: 12 }}>{user.email} · {user.role}</p>
       </AdminSidebar>
-      <main className="admin-main">{children}</main>
+      <main className="admin-main">
+        {children}
+      </main>
     </div>
   )
 }

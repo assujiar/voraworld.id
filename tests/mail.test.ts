@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { sql } from '@/server/db'
+import { sql } from './helpers/db'
 import { EVENTS, EVENT_KEYS } from '@/server/mail/events'
 import { safeSubstitute, renderTemplate } from '@/server/mail/template'
 import { decryptSecret, encryptSecret } from '@/server/mail/secret'

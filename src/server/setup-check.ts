@@ -1,5 +1,5 @@
-import { sql, type Db } from './db'
-import { appEnv, isProd, publicBaseUrl, supabaseSecretKey } from './env'
+import { count, many, one } from './data'
+import { appEnv, isProd, publicBaseUrl, supabaseSecretKey, supabaseUrl } from './env'
 import { encryptionKeyUsable } from './mail/secret'
 
 export interface SetupCheck {
@@ -17,17 +17,20 @@ export interface SetupCheck {
  * The owner configures Vercel, Supabase and email by hand. This turns what the running server can see into a checklist
  * for the dashboard. It reads presence and shape only: no secret, key, password or URL is ever put in the result.
  */
-export async function setupChecklist(db: Db = sql): Promise<SetupCheck[]> {
-  const [mail] = await db`select enabled, host from mail_config where id = 1`
-  const [{ rules }] = await db`select count(*)::int as rules from email_rules where enabled`
-  const [{ banks }] = await db`select count(*)::int as banks from bank_accounts where active`
-  const settings = Object.fromEntries((await db`select key, value from settings where key in ('privacy', 'terms', 'email', 'address')`).map((r) => [r.key as string, String(r.value ?? '')]))
-  const [{ admins }] = await db`select count(*)::int as admins from users where role = 'admin' and active and auth_user_id is not null`
+export async function setupChecklist(): Promise<SetupCheck[]> {
+  const [mail, rules, banks, settingRows, admins] = await Promise.all([
+    one('mail_config', (q) => q.eq('id', 1), 'enabled,host'),
+    count('email_rules', (q) => q.eq('enabled', true)),
+    count('bank_accounts', (q) => q.eq('active', true)),
+    many('settings', (q) => q.in('key', ['privacy', 'terms', 'email', 'address']), 'key,value'),
+    count('users', (q) => q.eq('role', 'admin').eq('active', true).not('auth_user_id', 'is', null)),
+  ])
+  const settings = Object.fromEntries(settingRows.map((r) => [r.key as string, String(r.value ?? '')]))
   const stripped = (v: string) => v.replace(/<[^>]*>/g, '').trim()
   const checks: SetupCheck[] = [
     { id: 'mode', level: 'launch', ok: isProd(), label: 'Running in production mode', hint: `This server runs in "${appEnv()}" mode. Set APP_ENV=production (required on Vercel).` },
     { id: 'https', level: 'launch', ok: publicBaseUrl().startsWith('https://'), label: 'Public address is https', hint: 'Set PUBLIC_BASE_URL to the final https domain before issuing any document: it is printed into every QR code and email.' },
-    { id: 'storage', level: 'launch', ok: Boolean(process.env.SUPABASE_URL && supabaseSecretKey()), label: 'Supabase Storage is connected', hint: 'Set SUPABASE_URL and SUPABASE_SECRET_KEY. Image uploads, stamped receipts and signed quotations need them.' },
+    { id: 'storage', level: 'launch', ok: Boolean(supabaseUrl() && supabaseSecretKey()), label: 'Supabase Storage is connected', hint: 'Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY. Image uploads, stamped receipts and signed quotations need them.' },
     { id: 'encryption', level: 'launch', ok: encryptionKeyUsable(), label: 'Email encryption key is set', hint: 'Set MAIL_ENCRYPTION_KEY to 32 random bytes in base64 (openssl rand -base64 32). The SMTP password cannot be saved without it.' },
     { id: 'cron', level: 'info', ok: (process.env.CRON_SECRET ?? '').length >= 32, label: 'Scheduled email retry is protected', hint: 'Set CRON_SECRET to 32+ random characters. Without it the daily retry of failed emails does nothing.' },
     { id: 'smtp', level: 'launch', ok: Boolean(mail?.enabled && mail.host), label: 'SMTP email is configured and on', hint: 'Enter your SMTP details and send a test email.', href: '/admin/mail' },

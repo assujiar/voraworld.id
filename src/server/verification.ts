@@ -1,24 +1,18 @@
-import { randomBytes } from 'node:crypto'
+import { one } from './data'
 import { sha256Hex } from './crypto'
-import type { Db } from './db'
 
-export type DocumentKind = 'invoice' | 'receipt' | 'quotation' | 'prepayment' | 'document'
+export type DocumentKind = 'invoice' | 'receipt' | 'quotation' | 'prepayment' | 'document' | 'delivery'
 
-/** Opaque public token for the QR code. Only its SHA-256 is needed for lookup; the token is kept to print the URL. */
-export async function createVerification(db: Db, kind: DocumentKind, documentId: number): Promise<string> {
-  const token = randomBytes(36).toString('base64url')
-  await db`insert into document_verification_tokens (token, token_hash, kind, document_id)
-           values (${token}, ${await sha256Hex(token)}, ${kind}, ${documentId})`
-  return token
-}
-
-export async function getVerification(db: Db, kind: DocumentKind, documentId: number) {
-  const [row] = await db`select id, token, kind, document_id, revoked from document_verification_tokens where kind = ${kind} and document_id = ${documentId} order by id limit 1`
+/** The QR token of a document is created inside the database function that creates the document (`vr_create_verification`). */
+export async function getVerification(kind: DocumentKind, documentId: number) {
+  const row = await one('document_verification_tokens', (q) => q.eq('kind', kind).eq('document_id', documentId).order('id'), 'id,token,kind,document_id,revoked')
   return row as { id: number; token: string; kind: string; documentId: number; revoked: boolean } | undefined
 }
 
-export async function findVerification(db: Db, token: string) {
+/** Finds a document by the token printed in its QR code. Only the SHA-256 of the token is stored for lookup. */
+export async function findVerification(token: string) {
   if (!token || token.length > 150) return undefined
-  const [row] = await db`select id, kind, document_id, revoked from document_verification_tokens where token_hash = ${await sha256Hex(token)}`
+  const hash = await sha256Hex(token)
+  const row = await one('document_verification_tokens', (q) => q.eq('token_hash', hash), 'id,kind,document_id,revoked')
   return row as { id: number; kind: string; documentId: number; revoked: boolean } | undefined
 }

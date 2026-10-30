@@ -1,7 +1,7 @@
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
 import { makeT, seoDescription, siteText } from '@/content'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 import { localeOf, type LocaleParams } from '@/lib/page'
 import { pageMetadata } from '@/lib/metadata'
 import { getPublishedPage } from '@/server/site'
@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: LocaleParams) {
 export default async function Faq({ params }: LocaleParams) {
   const locale = await localeOf(params)
   const t = makeT(locale)
-  const [faqs, custom] = await Promise.all([sql`select question, answer from faqs where visible = true order by position, id`, getPublishedPage('faq', locale)])
+  const [faqs, custom] = await Promise.all([many('faqs', (q) => q.eq('visible', true).order('position').order('id'), 'question,answer'), getPublishedPage('faq', locale)])
   return (
     <>
       <section className="page-intro page-intro--faq"><div className="wrap">

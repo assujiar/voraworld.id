@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readMigrations } from '../scripts/lib/migrations'
-import { sql } from '@/server/db'
+import { sql } from './helpers/db'
 import { EVENTS, EVENT_KEYS } from '@/server/mail/events'
 
 describe('migrations', () => {

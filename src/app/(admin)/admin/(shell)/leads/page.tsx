@@ -1,15 +1,13 @@
 import { LEAD_STATUSES } from '@/server/lead-constants'
 import { AdminPage, day, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many, searchClause } from '@/server/data'
 
 export default async function Leads({ searchParams }: { searchParams: Promise<Notices & { q?: string; status?: string }> }) {
   const sp = await searchParams
   const q = (sp.q ?? '').trim().slice(0, 120)
   const status = LEAD_STATUSES.includes(sp.status ?? '') ? sp.status! : ''
-  const like = '%' + q.replace(/[\\%_]/g, (c) => '\\' + c) + '%'
-  const rows = await sql`select id, reference, name, company, email, type, status, priority, created_at from leads
-    where (${q} = '' or name ilike ${like} or company ilike ${like} or email ilike ${like}) and (${status} = '' or status = ${status})
-    order by id desc limit 250`
+  const clause = await searchClause(q, ['name', 'company', 'email'])
+  const rows = await many('leads', (f) => (status ? (clause ? f.or(clause) : f).eq('status', status) : clause ? f.or(clause) : f).order('id', { ascending: false }), 'id,reference,name,company,email,type,status,priority,created_at', 250)
   return (
     <AdminPage heading="Leads" sp={sp}>
       <div className="admin-panel">

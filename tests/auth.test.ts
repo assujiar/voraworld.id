@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sql } from '@/server/db'
+import { sql } from './helpers/db'
 import { requireUser, userFromRequest } from '@/server/auth/guard'
 import { attemptLogin, LOGIN_MAX_PER_EMAIL, LOGIN_MAX_PER_IP, requestPasswordReset } from '@/server/auth/login'
 import { assertSameOrigin } from '@/server/auth/csrf'

@@ -4,7 +4,7 @@ import postgres from 'postgres'
 import { afterAll, describe, expect, it } from 'vitest'
 import { build } from '../scripts/build-manual-setup'
 import { readMigrations, runMigrations } from '../scripts/lib/migrations'
-import { sql } from '@/server/db'
+import { sql } from './helpers/db'
 import { admin, adminUrl, withDatabase } from './setup/admin'
 
 const SETUP = readFileSync('SUPABASE_MANUAL_SETUP.sql', 'utf8')
@@ -35,7 +35,8 @@ describe('SUPABASE_MANUAL_SETUP.sql', () => {
   })
 
   it('creates no demo data: no users, customers, invoices or leads', () => {
-    expect(SETUP).not.toMatch(/INSERT INTO (users|customers|invoices|leads|payments|receipts|quotations)\b/i)
+    const outsideFunctions = SETUP.replace(/\$fn\$[\s\S]*?\$fn\$/g, '')        // the database functions insert rows when they are called, not when the script runs
+    expect(outsideFunctions).not.toMatch(/INSERT INTO (users|customers|invoices|leads|payments|receipts|quotations)\b/i)
   })
 
   it('applied to an EMPTY database gives the same schema, security and seed data as the migrations, and the runner sees nothing left to do', async () => {

@@ -1,9 +1,9 @@
 import { addNavigationAction, deleteNavigationAction } from '@/actions/content'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 
 export default async function Navigation({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = await sql`select id, label, href, location from navigation_items order by position, id`
+  const rows = await many('navigation_items', (q) => q.order('position').order('id'), 'id,label,href,location')
   return (
     <AdminPage heading="Navigation" sp={await searchParams}>
       <div className="admin-panel">

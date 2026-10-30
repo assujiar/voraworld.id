@@ -1,9 +1,9 @@
 import { createHmac } from 'node:crypto'
-import type { Db } from '../db'
+import { one } from '../data'
 
 /** The random secret generated for this database by migration 0023 (table app_secrets, locked from the Data API). */
-export async function approvalSecret(db: Db): Promise<string> {
-  const [row] = await db`select value from app_secrets where key = 'approval_link'`
+export async function approvalSecret(): Promise<string> {
+  const row = await one('app_secrets', (q) => q.eq('key', 'approval_link'), 'value')
   if (!row) throw new Error('The approval-link secret is missing: apply migration 0023')
   return row.value as string
 }

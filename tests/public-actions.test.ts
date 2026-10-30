@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { sql } from '@/server/db'
+import { sql } from './helpers/db'
 import { submitContact, submitQuote } from '@/actions/public'
 import { saveMailConfig } from '@/server/mail/config'
 import { setSender } from '@/server/mail/transport'

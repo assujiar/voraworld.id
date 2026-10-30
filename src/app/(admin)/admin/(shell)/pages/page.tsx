@@ -1,8 +1,8 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many, type Row } from '@/server/data'
 
 export default async function Pages({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = await sql`select p.id, p.title, p.slug, p.locale, p.status, (select count(*) from sections s where s.page_id = p.id)::int as sections from pages p order by p.id desc`
+  const rows = await pageRows()
   return (
     <AdminPage heading="Pages & Sections" sp={await searchParams} newHref="/admin/pages/new" newLabel="New page">
       <div className="admin-panel">
@@ -18,4 +18,13 @@ export default async function Pages({ searchParams }: { searchParams: Promise<No
       </div>
     </AdminPage>
   )
+}
+
+/** Pages with the number of sections each has. */
+async function pageRows(): Promise<Row[]> {
+  const pages = await many('pages', (q) => q.order('id', { ascending: false }), 'id,title,slug,locale,status')
+  const sections = await many('sections', (q) => q, 'page_id')
+  const counts = new Map<number, number>()
+  for (const s of sections) counts.set(s.pageId as number, (counts.get(s.pageId as number) ?? 0) + 1)
+  return pages.map((p) => ({ ...p, sections: counts.get(p.id as number) ?? 0 }))
 }

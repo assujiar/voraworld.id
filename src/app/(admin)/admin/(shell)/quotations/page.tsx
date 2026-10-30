@@ -1,5 +1,5 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many, searchClause, withRelated, type Row } from '@/server/data'
 import { money } from '@/server/money'
 
 const STATUSES = ['draft', 'issued', 'awaiting_approval', 'approved', 'void']
@@ -8,12 +8,10 @@ export default async function Quotations({ searchParams }: { searchParams: Promi
   const sp = await searchParams
   const q = (sp.q ?? '').trim().slice(0, 120)
   const status = STATUSES.includes(sp.status ?? '') ? sp.status! : ''
-  const like = '%' + q.replace(/[\\%_]/g, (c) => '\\' + c) + '%'
-  const rows = await sql`select q.id, q.number, q.status, q.valid_until, q.total_minor, q.currency,
-      coalesce(c.name, nullif(l.company, ''), l.name) as recipient
-    from quotations q left join customers c on c.id = q.customer_id left join leads l on l.id = q.lead_id
-    where (${q} = '' or q.number ilike ${like} or c.name ilike ${like} or l.name ilike ${like} or l.company ilike ${like}) and (${status} = '' or q.status = ${status})
-    order by q.id desc limit 300`
+  const clause = await searchClause(q, ['number'], [{ table: 'customers', columns: ['name'], fk: 'customer_id' }, { table: 'leads', columns: ['name', 'company'], fk: 'lead_id' }])
+  const found = await many('quotations', (f) => (status ? (clause ? f.or(clause) : f).eq('status', status) : clause ? f.or(clause) : f).order('id', { ascending: false }), 'id,number,status,valid_until,total_minor,currency,customer_id,lead_id', 300)
+  const withCustomer = await withRelated(found, 'customers', 'customerId', { name: 'customerName' })
+  const rows: Row[] = (await withRelated(withCustomer, 'leads', 'leadId', { name: 'leadName', company: 'leadCompany' })).map((r) => ({ ...r, recipient: r.customerName || r.leadCompany || r.leadName }))
   return (
     <AdminPage heading="Quotations" sp={sp} newHref="/admin/quotations/new" newLabel="New quotation">
       <div className="admin-panel">

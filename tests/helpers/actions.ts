@@ -1,4 +1,4 @@
-import { sql } from '@/server/db'
+import { sql } from './db'
 import { ensureAuthAccount, jarOf, signInCookies } from './auth'
 
 interface Ctx { cookies: Map<string, string>; headers: Headers }

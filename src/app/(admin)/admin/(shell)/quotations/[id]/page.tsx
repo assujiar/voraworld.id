@@ -1,19 +1,18 @@
 import { notFound } from 'next/navigation'
 import { quotationStatusAction, requestApprovalAction, reviewApprovalAction } from '@/actions/finance'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many, one } from '@/server/data'
 import { money } from '@/server/money'
 import { routeId } from '@/server/http'
 
 export default async function QuotationDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
-  const [q] = id > 0 && id < 2_147_483_647 ? await sql`select * from quotations where id = ${id}` : []
+  const q = id > 0 && id < 2_147_483_647 ? await one('quotations', (f) => f.eq('id', id)) : undefined
   if (!q) notFound()
-  const [recipient] = q.customerId
-    ? await sql`select name, email from customers where id = ${q.customerId as number}`
-    : await sql`select coalesce(nullif(company, ''), name) as name, email from leads where id = ${q.leadId as number}`
-  const items = await sql`select * from quotation_items where quotation_id = ${id} order by id`
-  const approvals = await sql`select * from quotation_approvals where quotation_id = ${id} order by id desc limit 20`
+  const lead = q.customerId ? undefined : await one('leads', (f) => f.eq('id', q.leadId as number), 'company,name,email')
+  const recipient = q.customerId ? await one('customers', (f) => f.eq('id', q.customerId as number), 'name,email') : lead && { name: (lead.company as string) || lead.name, email: lead.email }
+  const items = await many('quotation_items', (f) => f.eq('quotation_id', id).order('id'))
+  const approvals = await many('quotation_approvals', (f) => f.eq('quotation_id', id).order('id', { ascending: false }), '*', 20)
   const cur = q.currency as string
   const here = `/admin/quotations/${id}`
   return (

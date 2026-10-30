@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { sql } from '../db'
+import { one } from '../data'
 import { HttpError } from '../http'
 import { supabaseForRequest, supabaseFromCookieHeader } from '../supabase/clients'
 import { isAdminRole } from './roles'
@@ -16,7 +16,7 @@ type AuthClient = Awaited<ReturnType<typeof supabaseForRequest>>
 async function memberFrom(client: AuthClient): Promise<SessionUser | null> {
   const { data, error } = await client.auth.getUser()
   if (error || !data.user) return null
-  const [u] = await sql`select id, email, role, active from users where auth_user_id = ${data.user.id}`
+  const u = await one('users', (q) => q.eq('auth_user_id', data.user.id), 'id,email,role,active')
   if (!u || !u.active) return null
   return { id: u.id as number, email: u.email as string, role: u.role as string }
 }

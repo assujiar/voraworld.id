@@ -1,5 +1,5 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { count, many } from '@/server/data'
 import { money } from '@/server/money'
 import { setupChecklist } from '@/server/setup-check'
 
@@ -7,13 +7,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const sp = await searchParams
   const checks = await setupChecklist()
   const todo = checks.filter((k) => !k.ok)
-  const [[c], leads, invoices] = await Promise.all([
-    sql`select (select count(*) from leads)::int as leads, (select count(*) from leads where status = 'new')::int as new_leads,
-               (select count(*) from articles where status = 'published')::int as published,
-               (select count(*) from invoices where status in ('issued', 'partially_paid'))::int as outstanding`,
-    sql`select id, name, type, status from leads order by id desc limit 8`,
-    sql`select id, number, status, outstanding_minor, currency from invoices order by id desc limit 8`,
+  const [leadCount, newLeads, published, outstanding, leads, invoices] = await Promise.all([
+    count('leads'), count('leads', (f) => f.eq('status', 'new')), count('articles', (f) => f.eq('status', 'published')), count('invoices', (f) => f.in('status', ['issued', 'partially_paid'])),
+    many('leads', (f) => f.order('id', { ascending: false }), 'id,name,type,status', 8),
+    many('invoices', (f) => f.order('id', { ascending: false }), 'id,number,status,outstanding_minor,currency', 8),
   ])
+  const c = { leads: leadCount, newLeads, published, outstanding }
   return (
     <AdminPage heading="Overview" sp={sp}>
       <details className="admin-panel" open={todo.some((k) => k.level === 'launch')}>

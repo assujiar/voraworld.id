@@ -14,30 +14,25 @@ Bilingual (English first, Indonesian) corporate website for **VORA / PT Satu Ara
 
 You do these steps in your own accounts; nothing in this repository creates a project, runs a migration or deploys. Do them in order; each guide is written to be followed literally.
 
-| Step | Document |
+| What | Document |
 | --- | --- |
-| 1. Create the database and storage | `SUPABASE_SETUP_GUIDE.md` (`SUPABASE_MANUAL_SETUP.sql`, then `SUPABASE_VERIFICATION.sql`) |
-| 2. Deploy the app | `VERCEL_SETUP_GUIDE.md` (variables listed in `.env.example`) |
-| 3. Create the first admin and configure the company | `ADMIN_SETUP_GUIDE.md` |
-| 4. Know what was tested and what was not | `QA_REPORT.md`, `RELEASE_READINESS.md` |
+| Deploy: Supabase SQL, Auth, Vercel settings and variables, domain, checks | `DEPLOYMENT.md` |
+| What was tested and what was not | `QA_REPORT.md`, `RELEASE_READINESS.md` |
 
 The dashboard of the running app shows a **setup checklist** (database, storage, SMTP, bank accounts, company details...) so you can see what is still missing. It reports presence only, never a secret.
 
 ## Run it locally
 
-Requires Node.js 20.9 or newer (developed and tested on 22) and a PostgreSQL 16 database.
+Requires Node.js 20.9 or newer (developed and tested on 22) and a Supabase project (a free one is enough; the local Supabase stack works too).
 
 ```bash
 npm ci
-export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/vora    # the scripts read the environment, not .env.local
-createdb vora
-npm run db:migrate -- --apply            # builds the schema from migrations/ and seeds the defaults
-npm run users -- create you@example.com  # asks for a password (14+ characters)
-cp .env.example .env.local               # `next dev` reads this file: set DATABASE_URL in it as well
+cp .env.example .env.local     # fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY
+# SQL Editor: run SUPABASE_MANUAL_SETUP.sql, create a user, then: select public.promote_admin('you@example.com');   (see DEPLOYMENT.md)
 npm run dev
 ```
 
-Public site `http://localhost:3000/en` (`/id` for Indonesian); admin `http://localhost:3000/admin/login`. With `APP_ENV=development` and no Supabase variables, uploads go to `./.local-storage` (ignored by Git).
+Public site `http://localhost:3000/en` (`/id` for Indonesian); admin `http://localhost:3000/admin/login`. 
 
 ## Tests
 
@@ -61,7 +56,6 @@ The tests use only synthetic data (`*.invalid`, `*.example`), a faked SMTP socke
 | `npm run dev` / `build` / `start` | Standard Next.js commands. |
 | `npm test` / `test:http` / `test:e2e` / `typecheck` | The test suites described above. |
 | `npm run db:migrate [-- --apply] [-- --baseline NNNN]` | Applies `migrations/*.sql` in order, each in its own transaction. Without `--apply` it only lists what is pending. |
-| `npm run users -- create\|reset-password\|deactivate\|activate\|list` | Administers admin accounts from a trusted machine (there is deliberately no web page for it). |
 | `npm run build:setup-sql [-- --check]` | Regenerates `SUPABASE_MANUAL_SETUP.sql` from `migrations/` (`--check` fails if it is stale; a test does the same). |
 | `npm run build:pdf-assets` | Regenerates `src/server/pdf/brand-assets.ts` (the logo images embedded in PDFs) from `public/static/assets`. |
 | `npm run gen:schema` | Regenerates `src/server/schema.ts` (typed table rows) from a freshly migrated database; a test fails if it drifts from `migrations/`. |

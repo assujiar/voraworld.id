@@ -1,14 +1,14 @@
 import { dispatchMailAction, retryMailJobAction, saveMailConfigAction, saveMailTemplateAction, setMailRuleAction, testMailAction } from '@/actions/settings'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 import { getMailConfig } from '@/server/mail/config'
 
 export default async function Mail({ searchParams }: { searchParams: Promise<Notices> }) {
   const [conf, templates, rules, jobs] = await Promise.all([
-    getMailConfig(sql),
-    sql`select key, subject, html from email_templates order by key`,
-    sql`select key, enabled from email_rules order by key`,
-    sql`select id, event, recipient, status, attempts, error from email_jobs order by id desc limit 35`,
+    getMailConfig(),
+    many('email_templates', (f) => f.order('key'), 'key,subject,html'),
+    many('email_rules', (f) => f.order('key'), 'key,enabled'),
+    many('email_jobs', (f) => f.order('id', { ascending: false }), 'id,event,recipient,status,attempts,error', 35),
   ])
   const B = <Back to="/admin/mail" />
   return (

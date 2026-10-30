@@ -1,9 +1,9 @@
 import { addRedirectAction } from '@/actions/settings'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
-import { sql } from '@/server/db'
+import { many } from '@/server/data'
 
 export default async function Seo({ searchParams }: { searchParams: Promise<Notices> }) {
-  const rows = await sql`select old_path, new_path, status from seo_redirects order by id`
+  const rows = await many('seo_redirects', (q) => q.order('id'), 'old_path,new_path,status')
   return (
     <AdminPage heading="SEO & redirects" sp={await searchParams}>
       <div className="admin-panel">

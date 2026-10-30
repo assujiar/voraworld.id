@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { saveMailConfig } from '@/server/mail/config'
-import { sql } from '@/server/db'
+import { sql } from './helpers/db'
 import { setupChecklist } from '@/server/setup-check'
 
 const KEYS = ['APP_ENV', 'PUBLIC_BASE_URL', 'SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'MAIL_ENCRYPTION_KEY', 'CRON_SECRET']

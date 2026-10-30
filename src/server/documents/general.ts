@@ -1,9 +1,6 @@
-import { tx, type Db } from '../db'
-import { recordAudit } from '../audit'
+import { many, one, rpc } from '../data'
 import { isIsoDay, today } from '../dates'
 import { ActionError, isUnique } from '../errors'
-import { ensureCompanyCode, ensurePublicCode, nextNumber } from '../numbering'
-import { createVerification } from '../verification'
 import { documentType, isLang, type DocumentType, type FieldDef, type Lang } from '../../content/document-types'
 
 /**
@@ -49,12 +46,12 @@ function parseValues(type: DocumentType, raw: Record<string, string>): Record<st
 }
 
 /** The open invoices of one customer, in one currency, as they stand now. A billing letter lists exactly these. */
-async function snapshotInvoices(t: Db, customerId: number | null, ids: number[]): Promise<InvoiceSnapshot[]> {
+async function snapshotInvoices(customerId: number | null, ids: number[]): Promise<InvoiceSnapshot[]> {
   if (!customerId) throw new ActionError('A billing letter is written to a customer: select one')
   const unique = [...new Set(ids)]
   if (!unique.length) throw new ActionError('Select at least one open invoice to bill')
   if (unique.length > MAX_BILLED_INVOICES) throw new ActionError(`Select at most ${MAX_BILLED_INVOICES} invoices`)
-  const rows = await t`select id, number, issued_at, due_at, currency, total_minor, outstanding_minor, status, customer_id from invoices where id in ${t(unique)} order by issued_at, id`
+  const rows = await many('invoices', (q) => q.in('id', unique).order('issued_at').order('id'), 'id,number,issued_at,due_at,currency,total_minor,outstanding_minor,status,customer_id')
   if (rows.length !== unique.length) throw new ActionError('One of the selected invoices does not exist')
   const snapshots: InvoiceSnapshot[] = []
   for (const r of rows) {
@@ -68,7 +65,7 @@ async function snapshotInvoices(t: Db, customerId: number | null, ids: number[])
 
 interface Prepared { type: DocumentType; lang: Lang; fields: StoredFields; subject: string; recipient: string; date: string; customerId: number | null }
 
-async function prepare(t: Db, input: DocumentInput, fixed?: { kind: string; language: Lang }): Promise<Prepared> {
+async function prepare(input: DocumentInput, fixed?: { kind: string; language: Lang }): Promise<Prepared> {
   const type = documentType(fixed?.kind ?? input.kind)
   if (!type) throw new ActionError('Choose a document type')
   const lang: Lang = fixed?.language ?? (isLang(input.language) ? input.language : 'id')
@@ -78,7 +75,7 @@ async function prepare(t: Db, input: DocumentInput, fixed?: { kind: string; lang
   let customerId: number | null = null
   let customer: { name: string; address: string } | undefined
   if (input.customerId) {
-    const [c] = await t`select id, name, address from customers where id = ${input.customerId}`
+    const c = await one('customers', (q) => q.eq('id', input.customerId!), 'id,name,address')
     if (!c) throw new ActionError('Select an existing customer')
     customerId = c.id as number; customer = { name: c.name as string, address: String(c.address ?? '') }
   }
@@ -91,7 +88,7 @@ async function prepare(t: Db, input: DocumentInput, fixed?: { kind: string; lang
   }
   const values = parseValues(type, raw)
   const fields: StoredFields = { values }
-  if (type.family === 'billing') fields.invoices = await snapshotInvoices(t, customerId, input.invoiceIds)
+  if (type.family === 'billing') fields.invoices = await snapshotInvoices(customerId, input.invoiceIds)
   return {
     type, lang, fields, date, customerId,
     subject: (values.subject || values.title || type.label[lang]).slice(0, 240),
@@ -99,22 +96,12 @@ async function prepare(t: Db, input: DocumentInput, fixed?: { kind: string; lang
   }
 }
 
-/** Who the number belongs to: the customer the document is for, or the company itself. */
-async function ownerCode(t: Db, customerId: number | null): Promise<string> {
-  return customerId ? ensurePublicCode(t, 'customers', customerId) : ensureCompanyCode(t)
-}
-
 export async function createDocument(actorId: number, input: DocumentInput): Promise<number> {
+  const p = await prepare(input)
   try {
-    return await tx(async (t) => {
-      const p = await prepare(t, input)
-      const number = await nextNumber(t, p.type.prefix, await ownerCode(t, p.customerId), p.date)
-      const [row] = await t`insert into documents (number, kind, language, status, customer_id, subject, recipient, document_date, fields, created_by)
-        values (${number}, ${p.type.key}, ${p.lang}, 'draft', ${p.customerId}, ${p.subject}, ${p.recipient}, ${p.date}, ${t.json(p.fields as never)}, ${actorId}) returning id`
-      const id = row.id as number
-      await createVerification(t, 'document', id)
-      await recordAudit(t, actorId, 'create', 'document', id, number)
-      return id
+    return await rpc<number>('document_create', {
+      p_actor: actorId,
+      p: { prefix: p.type.prefix, kind: p.type.key, language: p.lang, customer_id: p.customerId, subject: p.subject, recipient: p.recipient, document_date: p.date, fields: p.fields },
     })
   } catch (e) {
     if (isUnique(e)) throw new ActionError('Document numbering collision, please retry', 409)
@@ -124,37 +111,26 @@ export async function createDocument(actorId: number, input: DocumentInput): Pro
 
 /** Only a draft can be edited. The type, the language and the number stay as they were. */
 export async function updateDocument(actorId: number, id: number, input: DocumentInput): Promise<void> {
-  await tx(async (t) => {
-    const [doc] = await t`select * from documents where id = ${id} for update`
-    if (!doc) throw new ActionError('Document not found', 404)
-    if (doc.status !== 'draft') throw new ActionError('Only a draft can be edited: void this document and write a new one', 409)
-    const p = await prepare(t, input, { kind: doc.kind as string, language: doc.language as Lang })
-    await t`update documents set customer_id = ${p.customerId}, subject = ${p.subject}, recipient = ${p.recipient}, document_date = ${p.date},
-            fields = ${t.json(p.fields as never)}, updated_at = now() where id = ${id}`
-    await recordAudit(t, actorId, 'update', 'document', id, doc.number as string)
-  })
+  const doc = await one('documents', (q) => q.eq('id', id), 'kind,language,status')
+  if (!doc) throw new ActionError('Document not found', 404)
+  if (doc.status !== 'draft') throw new ActionError('Only a draft can be edited: void this document and write a new one', 409)
+  const p = await prepare(input, { kind: doc.kind as string, language: doc.language as Lang })
+  await rpc('document_update', { p_actor: actorId, p_id: id, p: { customer_id: p.customerId, subject: p.subject, recipient: p.recipient, document_date: p.date, fields: p.fields } })
 }
 
 /** issue: draft -> issued (a billing letter takes the invoices as they stand now). void: any draft or issued document; its QR link stops verifying. */
 export async function setDocumentStatus(actorId: number, id: number, action: string): Promise<void> {
-  await tx(async (t) => {
-    const [doc] = await t`select * from documents where id = ${id} for update`
-    if (!doc) throw new ActionError('Document not found', 404)
-    if (action === 'issue' && doc.status === 'draft') {
-      const type = documentType(doc.kind as string)
-      if (!type) throw new ActionError('Unknown document type', 409)
-      const stored = doc.fields as StoredFields
-      // Re-check what was typed against the type as it is today, and refresh the invoices a billing letter lists.
-      const p = await prepare(t, { kind: type.key, language: doc.language as string, customerId: doc.customerId as number | null, documentDate: doc.documentDate as string, values: stored.values, invoiceIds: (stored.invoices ?? []).map((i) => i.id) },
-        { kind: type.key, language: doc.language as Lang })
-      await t`update documents set status = 'issued', issued_at = now(), issued_by = ${actorId}, subject = ${p.subject}, recipient = ${p.recipient},
-              fields = ${t.json(p.fields as never)}, updated_at = now() where id = ${id}`
-    } else if (action === 'void' && doc.status !== 'void') {
-      await t`update documents set status = 'void', updated_at = now() where id = ${id}`
-      await t`update document_verification_tokens set revoked = true where kind = 'document' and document_id = ${id}`
-    } else {
-      throw new ActionError('Invalid state change', 409)
-    }
-    await recordAudit(t, actorId, action, 'document', id, doc.number as string)
-  })
+  const doc = await one('documents', (q) => q.eq('id', id))
+  if (!doc) throw new ActionError('Document not found', 404)
+  if (action === 'issue' && doc.status === 'draft') {
+    const type = documentType(doc.kind as string)
+    if (!type) throw new ActionError('Unknown document type', 409)
+    const stored = doc.fields as StoredFields
+    // Re-check what was typed against the type as it is today, and refresh the invoices a billing letter lists.
+    const p = await prepare({ kind: type.key, language: doc.language as string, customerId: doc.customerId as number | null, documentDate: doc.documentDate as string, values: stored.values, invoiceIds: (stored.invoices ?? []).map((i) => i.id) },
+      { kind: type.key, language: doc.language as Lang })
+    await rpc('document_set_status', { p_actor: actorId, p_id: id, p_action: action, p: { subject: p.subject, recipient: p.recipient, fields: p.fields }, p_expected: (doc.updatedAt as Date).toISOString() })
+    return
+  }
+  await rpc('document_set_status', { p_actor: actorId, p_id: id, p_action: action })
 }

@@ -53,7 +53,7 @@ BEGIN
     RETURN QUERY SELECT 'migration history', 'WARN', 'schema_migrations table absent (fine if you ran the SQL files by hand)';
   ELSE
     EXECUTE 'SELECT count(*), max(name) FROM schema_migrations' INTO n, v;
-    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 23 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (23 expected), latest ' || COALESCE(v, 'none');
+    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 24 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (24 expected), latest ' || COALESCE(v, 'none');
   END IF;
 
   -- 4. Seed data the application depends on ------------------------------------
@@ -78,6 +78,19 @@ BEGIN
     EXECUTE $q$SELECT count(*) FROM storage.buckets WHERE id = 'vora-documents' AND NOT public$q$ INTO n;
     RETURN QUERY SELECT 'bucket vora-documents exists and is PRIVATE', CASE WHEN n = 1 THEN 'PASS' ELSE 'FAIL' END, n || ' match';
   END IF;
+
+  -- 5b. The database functions the application calls -----------------------------------
+  SELECT count(*) INTO n FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
+    WHERE ns.nspname = 'public' AND p.proname IN ('invoice_create', 'payment_confirm', 'receipt_void', 'quotation_create', 'document_create', 'lead_create', 'article_save', 'page_save', 'vr_next_number', 'mail_claim');
+  RETURN QUERY SELECT 'database functions installed', CASE WHEN n = 10 THEN 'PASS' ELSE 'FAIL' END, n || ' of 10 key functions found (apply migration 0024)';
+  SELECT count(*) INTO n FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
+    WHERE ns.nspname = 'public' AND (p.proname LIKE 'vr\_%' OR p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|lead|article|page|section|document)_')
+      AND (has_function_privilege('public', p.oid, 'execute') OR has_function_privilege('anon', p.oid, 'execute') OR has_function_privilege('authenticated', p.oid, 'execute'));
+  RETURN QUERY SELECT 'functions closed to public, anon and signed-in users', CASE WHEN n = 0 THEN 'PASS' ELSE 'FAIL' END, n || ' function(s) executable by a public role';
+  SELECT count(*) INTO n FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
+    WHERE ns.nspname = 'public' AND (p.prosecdef OR NOT EXISTS (SELECT 1 FROM unnest(coalesce(p.proconfig, '{}')) c WHERE c LIKE 'search_path=%'))
+      AND (p.proname LIKE 'vr\_%' OR p.proname ~ '^(customer|bank|invoice|prepayment|payment|receipt|quotation|approval|mail|lead|article|page|section|document)_');
+  RETURN QUERY SELECT 'functions: invoker rights and a pinned search_path', CASE WHEN n = 0 THEN 'PASS' ELSE 'FAIL' END, n || ' function(s) are SECURITY DEFINER or lack a fixed search_path';
 
   -- 6. State (informational) --------------------------------------------------------
   SELECT count(*) INTO n FROM users WHERE role = 'admin' AND active AND auth_user_id IS NOT NULL;
