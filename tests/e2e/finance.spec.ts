@@ -13,7 +13,7 @@ test('the finance workflow, from customer to stamped receipt and signed quotatio
   trackProblems(page, 'admin', problems, { strict4xx: true })
   const notice = () => page.locator('.alert').first()
   const status = () => page.locator('h3 .status').first()
-  let customerId = '', invoiceId = '', receiptId = '', quotationId = ''
+  let customerId = '', invoiceId = '', receiptId = '', quotationId = '', prepaymentId = ''
 
   await signIn(page)
 
@@ -89,6 +89,35 @@ test('the finance workflow, from customer to stamped receipt and signed quotatio
     await expect(page.locator('input[name=amount]')).toHaveValue('999999999999')               // what was typed is still there
   })
 
+  await test.step('the pre-payment receipt made with the invoice waits for its e-meterai, then is checked, stored and released', async () => {
+    await page.goto(`/admin/invoices/${invoiceId}`)
+    const panel = page.locator('.admin-panel:has(> h4:has-text("Pre-payment receipt"))')
+    await expect(panel).toContainText(/PPR-VORA-C[0-9A-F]{10}-\d{6}-\d{5}/)
+    await expect(panel).toContainText('pending stamp'); await expect(panel).toContainText('needs a manual e-meterai')
+    await panel.locator('a[href^="/admin/prepayment-receipts/"]:not([href$="/pdf"])').click()
+    await page.waitForURL(/\/admin\/prepayment-receipts\/\d+$/)
+    prepaymentId = page.url().match(/prepayment-receipts\/(\d+)/)![1]
+    const draft = await page.request.get(`/admin/prepayment-receipts/${prepaymentId}/pdf`)
+    expect(draft.status()).toBe(200)
+    const bytes = await draft.body()
+    expect(bytes.subarray(0, 5).toString()).toBe('%PDF-')
+    await page.fill('input[name=stamp_provider_reference]', 'PERURI-BROWSER-PRE-01')
+    await page.setInputFiles('input[name=stamped_pdf]', { name: 'x.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 not really a pdf'.padEnd(400)) })
+    await page.check('input[name=approved]')
+    await page.click('button:has-text("Save final stamped pre-payment receipt")')
+    await expect(page.locator('.alert[role=alert]')).toContainText(/Only PDF documents|Invalid or damaged|must retain/)
+    await page.setInputFiles('input[name=stamped_pdf]', { name: 'stamped.pdf', mimeType: 'application/pdf', buffer: bytes })
+    await page.check('input[name=approved]')
+    await page.fill('input[name=stamp_provider_reference]', 'PERURI-BROWSER-PRE-01')
+    await page.click('button:has-text("Save final stamped pre-payment receipt")')
+    await expect(page.locator('.alert:has-text("Stamped pre-payment receipt stored")')).toBeVisible()
+    expect(await scalar(`select status from prepayment_receipts where id=${prepaymentId}`)).toBe('issued')
+    await expect(page.locator('body')).toContainText('Email pre-payment receipt to customer')
+    const released = await page.request.get(`/admin/prepayment-receipts/${prepaymentId}/pdf`)
+    expect(Buffer.from(await released.body()).equals(Buffer.from(bytes))).toBe(true)
+    await page.goto(`/admin/invoices/${invoiceId}`)
+  })
+
   await test.step('cleared funds above IDR 5,000,000 lead to a receipt that waits for its e-meterai', async () => {
     const confirm = page.locator('form:has(input[name=funds_cleared])')
     await confirm.locator('button').click()                                                   // the checkbox is `required`: the browser blocks it
@@ -138,7 +167,8 @@ test('the finance workflow, from customer to stamped receipt and signed quotatio
     await expect(status()).toContainText('paid')
     expect(await scalar(`select outstanding_minor from invoices where id=${invoiceId}`)).toBe('0')
     await page.goto('/admin/receipts')
-    await expect(page.locator('tbody tr')).toHaveCount(2)
+    await expect(page.locator('table').first().locator('tbody tr')).toHaveCount(2)               // the payment receipts; the pre-payment receipts are in the table below
+    await expect(page.locator('table').nth(1).locator('tbody tr')).toHaveCount(1)
   })
 
   await test.step('quotation: approval needs SMTP, then a private link, a signed upload and a manual review', async () => {
@@ -222,7 +252,7 @@ test('the finance workflow, from customer to stamped receipt and signed quotatio
   await test.step('the QR pages answer anonymously and fit a phone', async () => {
     const visitor = await openContext(browser, 390, 800)
     trackProblems(visitor.page, 'verify', problems, { strict4xx: true })
-    for (const [kind, id] of [['invoice', invoiceId], ['receipt', receiptId], ['quotation', quotationId]]) {
+    for (const [kind, id] of [['invoice', invoiceId], ['receipt', receiptId], ['quotation', quotationId], ['prepayment', prepaymentId]]) {
       const token = await scalar(`select token from document_verification_tokens where kind='${kind}' and document_id=${id}`)
       await visitor.page.goto(`/verify/${token}`)
       await expect(visitor.page.locator('body')).toContainText('AUTHENTIC')
@@ -236,7 +266,7 @@ test('the finance workflow, from customer to stamped receipt and signed quotatio
     trackProblems(phone.page, 'mobile', problems, { strict4xx: true })
     await signIn(phone.page)
     for (const p of ['/admin/customers', `/admin/customers/${customerId}`, '/admin/bank-accounts', '/admin/quotations', `/admin/quotations/${quotationId}`, '/admin/quotations/new',
-      '/admin/invoices', `/admin/invoices/${invoiceId}`, '/admin/invoices/new', '/admin/receipts', `/admin/receipts/${receiptId}`]) {
+      '/admin/invoices', `/admin/invoices/${invoiceId}`, '/admin/invoices/new', '/admin/receipts', `/admin/receipts/${receiptId}`, `/admin/prepayment-receipts/${prepaymentId}`]) {
       await phone.page.goto(p, { waitUntil: 'networkidle' })
       expect(await overflow(phone.page), p).toBeLessThanOrEqual(1)
     }

@@ -6,8 +6,8 @@ import { sha256Hex } from '@/server/crypto'
  * database the running server reads. Idempotent: the second test file reuses what the first one created.
  */
 export interface Seed {
-  ids: { customers: number; quotations: number; invoices: number; receipts: number; 'bank-accounts': number; 'quotation-approvals': number; draftInvoice: number; voidInvoice: number; stampReceipt: number }
-  tokens: { invoice: string; draftInvoice: string; voidInvoice: string; receipt: string; stampReceipt: string; quotation: string; approval: string }
+  ids: { customers: number; quotations: number; invoices: number; receipts: number; 'bank-accounts': number; 'quotation-approvals': number; draftInvoice: number; voidInvoice: number; stampReceipt: number; prepayments: number; draftPrepayment: number; voidPrepayment: number; stampPrepayment: number }
+  tokens: { invoice: string; draftInvoice: string; voidInvoice: string; receipt: string; stampReceipt: string; quotation: string; approval: string; prepayment: string; draftPrepayment: string; voidPrepayment: string; stampPrepayment: string }
 }
 
 export async function seedFinance(): Promise<Seed> {
@@ -23,7 +23,7 @@ export async function seedFinance(): Promise<Seed> {
   const { makePdf } = await import('../helpers/pdf')
 
   const [existing] = await sql`select id from customers where name = 'HTTP Fixture Customer'`
-  const token = async (kind: 'invoice' | 'receipt' | 'quotation', id: number) => (await sql`select token from document_verification_tokens where kind = ${kind} and document_id = ${id}`)[0].token as string
+  const token = async (kind: 'invoice' | 'receipt' | 'quotation' | 'prepayment', id: number) => (await sql`select token from document_verification_tokens where kind = ${kind} and document_id = ${id}`)[0].token as string
   const BASE = process.env.HTTP_BASE_URL!
   if (!existing) {
     const [admin] = await sql`select id from users where role = 'admin' order by id limit 1`
@@ -62,15 +62,21 @@ export async function seedFinance(): Promise<Seed> {
   const voidInvoice = await one(sql`select id from invoices where status = 'void' order by id limit 1`)
   const receipts = await one(sql`select id from receipts where status = 'issued' order by id limit 1`)
   const stampReceipt = await one(sql`select id from receipts where status = 'pending_stamp' order by id limit 1`)
+  // Every invoice came with a pre-payment receipt: the partly paid one (released), the draft, the void one and the USD invoice (waits for its e-meterai).
+  const prepayments = await one(sql`select id from prepayment_receipts where status = 'issued' order by id limit 1`)
+  const draftPrepayment = await one(sql`select id from prepayment_receipts where status = 'draft' order by id limit 1`)
+  const voidPrepayment = await one(sql`select id from prepayment_receipts where status = 'void' order by id limit 1`)
+  const stampPrepayment = await one(sql`select id from prepayment_receipts where status = 'pending_stamp' order by id limit 1`)
   const quotations = await one(sql`select id from quotations order by id limit 1`)
   const [approval] = await sql`select id from quotation_approvals order by id limit 1`
   const [bankRow] = await sql`select id from bank_accounts order by id limit 1`
   const [approvalToken] = await sql`select value from settings where key = 'fixture_approval_token'`
   return {
-    ids: { customers, quotations, invoices, receipts, 'bank-accounts': bankRow.id as number, 'quotation-approvals': approval.id as number, draftInvoice, voidInvoice, stampReceipt },
+    ids: { customers, quotations, invoices, receipts, 'bank-accounts': bankRow.id as number, 'quotation-approvals': approval.id as number, draftInvoice, voidInvoice, stampReceipt, prepayments, draftPrepayment, voidPrepayment, stampPrepayment },
     tokens: {
       invoice: await token('invoice', invoices), draftInvoice: await token('invoice', draftInvoice), voidInvoice: await token('invoice', voidInvoice), receipt: await token('receipt', receipts),
       stampReceipt: await token('receipt', stampReceipt), quotation: await token('quotation', quotations), approval: approvalToken.value as string,
+      prepayment: await token('prepayment', prepayments), draftPrepayment: await token('prepayment', draftPrepayment), voidPrepayment: await token('prepayment', voidPrepayment), stampPrepayment: await token('prepayment', stampPrepayment),
     },
   }
 }

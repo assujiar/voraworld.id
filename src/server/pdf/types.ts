@@ -28,3 +28,11 @@ export interface ReceiptData {
   invoice: { number: string; currency: string; totalMinor: number; outstandingMinor: number }
   payer: Party
 }
+
+/** The pre-payment receipt: issued with the invoice, BEFORE the money arrives. `issuedOn` is the invoice's issue date. */
+export interface PrepaymentData {
+  number: string; status: string; stampRequired: boolean; issuedOn: string
+  currency: string; amountMinor: number
+  invoice: { number: string; issuedAt: string; dueAt: string; poNumber: string; shipmentReference: string }
+  payer: Party; banks: BankLine[]
+}

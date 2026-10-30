@@ -207,10 +207,10 @@ describe('the admin', () => {
 
   it('answers 404, never a server error, for ids that are not real record numbers', async () => {
     const bad = ['99999999999999999999', '2147483648', '-1', '0', '1e3', 'abc', '%00', '1.5']
-    for (const section of ['leads', 'articles', 'pages', 'customers', 'quotations', 'invoices', 'receipts']) {
+    for (const section of ['leads', 'articles', 'pages', 'customers', 'quotations', 'invoices', 'receipts', 'prepayment-receipts']) {
       for (const id of bad) expect((await c.get(`/admin/${section}/${id}`)).status, `/admin/${section}/${id}`).toBe(404)
     }
-    for (const p of ['/admin/invoices/99999999999/pdf', '/admin/quotations/-5/pdf', '/admin/receipts/abc/pdf', '/admin/quotation-approvals/99999999999/file', '/en/preview/article/99999999999', '/id/preview/page/abc'])
+    for (const p of ['/admin/invoices/99999999999/pdf', '/admin/quotations/-5/pdf', '/admin/receipts/abc/pdf', '/admin/prepayment-receipts/abc/pdf', '/admin/prepayment-receipts/99999999999/pdf', '/admin/quotation-approvals/99999999999/file', '/en/preview/article/99999999999', '/id/preview/page/abc'])
       expect((await c.get(p)).status, p).toBe(404)
   })
 

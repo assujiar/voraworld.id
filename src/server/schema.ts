@@ -286,6 +286,22 @@ export interface PaymentsRow {
   confirmedBy: number | null
 }
 
+export interface PrepaymentReceiptsRow {
+  id: number
+  number: string
+  invoiceId: number
+  status: string
+  currency: string
+  amountMinor: number
+  stampRequired: boolean
+  stampStorageKey: string | null
+  stampSha256: string | null
+  stampProviderReference: string | null
+  stampUploadedAt: Date | null
+  stampUploadedBy: number | null
+  createdAt: Date
+}
+
 export interface QuotationApprovalsRow {
   id: number
   quotationId: number

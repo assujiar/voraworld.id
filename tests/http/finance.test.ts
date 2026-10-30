@@ -48,6 +48,18 @@ describe('QR verification page', () => {
     expect(receipt).toContain('AUTHENTIC'); expect(receipt).toContain('Receipt')
     expect((await page(seed.tokens.quotation)).html).toContain('Price Agreement Letter')
   })
+  it('shows a pre-payment receipt as such: its state, the state of its invoice, and that it is no proof of payment', async () => {
+    const released = (await page(seed.tokens.prepayment)).html
+    expect(released).toContain('Pre-Payment Receipt'); expect(released).toContain('AUTHENTIC'); expect(released).toContain('Status of the invoice:'); expect(released).toContain('PARTIALLY PAID')
+    expect(released).toContain('not proof that payment was made')
+    const [p] = await db`select number from prepayment_receipts where id = ${seed.ids.prepayments}`
+    expect(released).toContain(p.number as string)
+    for (const secret of ['HTTP Fixture Customer', 'billing@fixture.example', '1,000,000', '9900001111']) expect(released, secret).not.toContain(secret)
+    expect((await page(seed.tokens.draftPrepayment)).html).toContain('DRAFT')
+    const voided = (await page(seed.tokens.voidPrepayment)).html
+    expect(voided).toContain('VOID'); expect(voided).not.toContain('AWAITING PAYMENT')
+    expect((await page(seed.tokens.stampPrepayment)).html).toContain('PENDING E-METERAI')
+  })
   it('follows a revoked link to VOID and answers 404 for anything unknown', async () => {
     await db`update document_verification_tokens set revoked = true where token = ${seed.tokens.receipt}`
     expect((await page(seed.tokens.receipt)).html).toContain('VOID')
@@ -57,20 +69,21 @@ describe('QR verification page', () => {
 })
 
 describe('PDF downloads', () => {
-  const kinds: Array<[string, () => number]> = [['invoices', () => seed.ids.invoices], ['quotations', () => seed.ids.quotations], ['receipts', () => seed.ids.receipts], ['receipts', () => seed.ids.stampReceipt]]
+  const kinds: Array<[string, () => number]> = [['invoices', () => seed.ids.invoices], ['quotations', () => seed.ids.quotations], ['receipts', () => seed.ids.receipts], ['receipts', () => seed.ids.stampReceipt],
+    ['prepayment-receipts', () => seed.ids.prepayments], ['prepayment-receipts', () => seed.ids.stampPrepayment], ['prepayment-receipts', () => seed.ids.draftPrepayment]]
   it.each(kinds)('%s render as real, private PDFs for an admin', async (kind, id) => {
     const res = await admin.get(`/admin/${kind}/${id()}/pdf`)
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('application/pdf')
     expect(res.headers.get('cache-control')).toContain('no-store')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    expect(res.headers.get('content-disposition')).toMatch(/^inline; filename="(INV|QUO|RCP)-VORA-C[0-9A-F]{10}-\d{6}-\d{5}\.pdf"$/)
+    expect(res.headers.get('content-disposition')).toMatch(/^inline; filename="(INV|QUO|RCP|PPR)-VORA-C[0-9A-F]{10}-\d{6}-\d{5}\.pdf"$/)
     const bytes = new Uint8Array(await res.arrayBuffer())
     expect(Buffer.from(bytes.subarray(0, 5)).toString()).toBe('%PDF-')
-    if (hasPoppler) expect(pdfText(bytes)).toMatch(/INVOICE|PRICE AGREEMENT LETTER|RECEIPT/)
+    if (hasPoppler) expect(pdfText(bytes)).toMatch(/INVOICE|PRICE AGREEMENT LETTER|RECEIPT|PRE-PAYMENT RECEIPT/)
   })
   it('refuse what does not exist or cannot be issued yet', async () => {
-    for (const kind of ['invoices', 'quotations', 'receipts']) expect((await admin.get(`/admin/${kind}/99999/pdf`)).status, kind).toBe(404)
+    for (const kind of ['invoices', 'quotations', 'receipts', 'prepayment-receipts']) expect((await admin.get(`/admin/${kind}/99999/pdf`)).status, kind).toBe(404)
     await db`update payments set status = 'pending_confirmation' where id = (select payment_id from receipts where id = ${seed.ids.receipts})`
     expect((await admin.get(`/admin/receipts/${seed.ids.receipts}/pdf`)).status).toBe(409)
     await db`update payments set status = 'recorded' where id = (select payment_id from receipts where id = ${seed.ids.receipts})`

@@ -7,9 +7,10 @@ import { approvalToken } from '../finance/approval-token'
 import { readStampedReceipt } from '../finance/receipts'
 import { getVerification, type DocumentKind } from '../verification'
 import { renderInvoice } from './invoice'
+import { renderPrepayment } from './prepayment'
 import { renderQuotation } from './quotation'
 import { renderReceipt } from './receipt'
-import type { BankLine, InvoiceData, Issuer, LineData, Party, QuotationData, ReceiptData } from './types'
+import type { BankLine, InvoiceData, Issuer, LineData, Party, PrepaymentData, QuotationData, ReceiptData } from './types'
 
 const party = (r: Record<string, unknown> | undefined, name?: string): Party => ({
   name: name ?? String(r?.name ?? ''), address: String(r?.address ?? ''), email: String(r?.email ?? ''), taxId: String(r?.taxId ?? ''),
@@ -30,13 +31,14 @@ async function verifyUrl(db: Db, kind: DocumentKind, id: number, baseUrl: string
 }
 
 /**
- * The PDF of an invoice, quotation or receipt, built from the database. A receipt that needed an e-meterai and has been
+ * The PDF of an invoice, quotation, receipt or pre-payment receipt, built from the database. A (pre-payment) receipt that needed an e-meterai and has been
  * released is NOT regenerated: the stamped file from private storage is returned (after its SHA-256 check), because
  * a re-rendered copy would not carry the stamp.
  */
 export async function renderDocumentPdf(db: Db, kind: DocumentKind, id: number, baseUrl: string): Promise<Uint8Array> {
   if (kind === 'invoice') return invoicePdf(db, id, baseUrl)
   if (kind === 'quotation') return quotationPdf(db, id, baseUrl)
+  if (kind === 'prepayment') return prepaymentPdf(db, id, baseUrl)
   return receiptPdf(db, id, baseUrl)
 }
 
@@ -101,4 +103,21 @@ async function receiptPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Arr
     payer: party(customer),
   }
   return renderReceipt(data, await issuerOf(db), await verifyUrl(db, 'receipt', id, baseUrl))
+}
+
+async function prepaymentPdf(db: Db, id: number, baseUrl: string): Promise<Uint8Array> {
+  const [p] = await db`select * from prepayment_receipts where id = ${id}`
+  if (!p) throw new ActionError('Pre-payment receipt not found', 404)
+  if (p.stampRequired && p.status === 'issued') return readStampedReceipt(p as never)
+  const [inv] = await db`select * from invoices where id = ${p.invoiceId as number}`
+  const [customer] = await db`select * from customers where id = ${inv.customerId as number}`
+  const banks = await db`select * from invoice_bank_instructions where invoice_id = ${inv.id as number} order by position, id`
+  const data: PrepaymentData = {
+    number: p.number as string, status: p.status as string, stampRequired: Boolean(p.stampRequired), issuedOn: String(inv.issuedAt ?? ''),
+    currency: p.currency as string, amountMinor: p.amountMinor as number,
+    invoice: { number: inv.number as string, issuedAt: String(inv.issuedAt ?? ''), dueAt: String(inv.dueAt ?? ''), poNumber: String(inv.poNumber ?? ''), shipmentReference: String(inv.shipmentReference ?? '') },
+    payer: party(customer),
+    banks: banks.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: b.position as number })),
+  }
+  return renderPrepayment(data, await issuerOf(db), await verifyUrl(db, 'prepayment', id, baseUrl))
 }

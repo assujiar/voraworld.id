@@ -9,6 +9,7 @@ import { ensurePublicCode, nextNumber } from '../numbering'
 import { createVerification, getVerification } from '../verification'
 import { bankSnapshot } from './banks'
 import { moneyErrors, parseLines } from './parse'
+import { createPrepayment, releasePrepayment, sendWithInvoice, voidPrepaymentsOf } from './prepayments'
 
 export interface InvoiceInput {
   customerId: number; issuedAt: string; dueAt: string; taxPercent: string; withholdingPercent: string; discount: string
@@ -68,6 +69,8 @@ export async function createInvoice(actorId: number, input: InvoiceInput): Promi
                 values (${invoiceId}, ${item.description}, ${item.unit}, ${item.quantity}, ${item.priceMinor}, ${item.amountMinor})`
       }
       await createVerification(t, 'invoice', invoiceId)
+      // Every invoice comes with its pre-payment receipt (a draft until the invoice is issued).
+      await createPrepayment(t, { id: invoiceId, customerId: c.id as number, currency, totalMinor: calc.totalMinor, issuedAt: issued })
       await recordAudit(t, actorId, 'create', 'invoice', invoiceId, number)
       return invoiceId
     })
@@ -96,9 +99,11 @@ export async function setInvoiceStatus(actorId: number, id: number, action: stri
     if (!inv) throw new ActionError('Invoice not found', 404)
     if (action === 'issue' && inv.status === 'draft') {
       await t`update invoices set status = 'issued' where id = ${id}`
+      await releasePrepayment(t, id)
     } else if (action === 'void' && !['void', 'paid', 'partially_paid'].includes(inv.status as string)) {
       await t`update invoices set status = 'void' where id = ${id}`
       await t`update document_verification_tokens set revoked = true where kind = 'invoice' and document_id = ${id}`
+      await voidPrepaymentsOf(t, id)
       const cancelled = await t`update payments set status = 'cancelled' where invoice_id = ${id} and status = 'pending_confirmation' returning id`
       if (cancelled.length) await recordAudit(t, actorId, 'cancel-unconfirmed-payment', 'invoice', id, `${cancelled.length} open payment claim(s) cancelled with the void`)
     } else {
@@ -124,6 +129,7 @@ export async function sendInvoice(actorId: number, id: number, baseUrl: string):
       customer_name: inv.customerName, document_number: inv.number, document_date: inv.issuedAt, verify_url: `${baseUrl}/verify/${ver.token}`,
     }, { attachmentKind: 'invoice', attachmentId: id, dedupeKey: `invoice-customer-${id}-${Math.floor(Date.now() / 60_000)}` })
     if (!queued) throw new ActionError('Email delivery is disabled', 409)
+    await sendWithInvoice(t, id, baseUrl)   // the released pre-payment receipt travels with the invoice
     await recordAudit(t, actorId, 'send-invoice', 'invoice', id, 'Invoice PDF queued through the configured SMTP')
   })
 }
