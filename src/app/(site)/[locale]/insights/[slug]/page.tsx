@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { ArticleView } from '@/components/site/ArticleView'
 import { isLocale } from '@/content'
 import { pageMetadata } from '@/lib/metadata'
-import { publishedArticle } from '@/server/articles'
+import { pairedArticle, publishedArticle, relatedArticles } from '@/server/articles'
 
 type P = { params: Promise<{ locale: string; slug: string }> }
 
@@ -11,7 +11,13 @@ export async function generateMetadata({ params }: P) {
   if (!isLocale(locale)) return {}
   const a = await publishedArticle(locale, slug)
   if (!a) return {}
-  return pageMetadata({ locale, path: `/insights/${slug}`, title: a.seoTitle || `${a.title} | VORA`, description: a.seoDescription || a.excerpt, type: 'article' })
+  const pair = await pairedArticle(locale, a.tags)
+  // Language alternates are declared only when the other language really has this article, at its own (possibly different) slug.
+  const alternates = pair ? { [locale]: `/${locale}/insights/${slug}`, [pair.locale]: `/${pair.locale}/insights/${pair.slug}` } : undefined
+  return pageMetadata({
+    locale, path: `/insights/${slug}`, title: a.seoTitle || `${a.title} | VORA`, description: a.seoDescription || a.excerpt, type: 'article',
+    alternates, languages: pair ? ['en', 'id'] : [locale],
+  })
 }
 
 export default async function Article({ params }: P) {
@@ -19,5 +25,6 @@ export default async function Article({ params }: P) {
   if (!isLocale(locale)) notFound()
   const a = await publishedArticle(locale, slug)
   if (!a) notFound()
-  return <ArticleView locale={locale} article={a} />
+  const [pair, related] = await Promise.all([pairedArticle(locale, a.tags), relatedArticles(locale, slug, a.category, a.tags)])
+  return <ArticleView locale={locale} article={a} pair={pair} related={related} />
 }

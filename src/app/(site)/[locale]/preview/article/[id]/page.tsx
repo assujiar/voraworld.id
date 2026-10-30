@@ -15,5 +15,5 @@ export default async function PreviewArticle({ params }: { params: Promise<{ loc
   const locale = await localeOf(params)
   const a = await one('articles', (q) => q.eq('id', routeId(id)))
   if (!a) notFound()
-  return <ArticleView locale={locale} article={a as unknown as ArticlesRow} />
+  return <ArticleView locale={locale} article={a as unknown as ArticlesRow} preview />
 }

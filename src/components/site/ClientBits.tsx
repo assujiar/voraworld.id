@@ -13,7 +13,7 @@ export function LangSwitch({ locale, named = false, modes = [] }: { locale: 'en'
   const pathname = usePathname() || `/${locale}`
   const other = locale === 'en' ? 'id' : 'en'
   const rest = pathname.replace(/^\/(en|id)(?=\/|$)/, '')
-  const [href, setHref] = useState(`/${other}${rest}`)
+  const [href, setHref] = useState(/^\/insights\/[^/]+/.test(rest) ? `/${other}/insights` : `/${other}${rest}`)
   useEffect(() => {
     let next = `/${other}${rest}`
     if (/^\/request-quote\/?$/.test(rest)) {
@@ -22,7 +22,9 @@ export function LangSwitch({ locale, named = false, modes = [] }: { locale: 'en'
     }
     if (/^\/insights\/[^/]+/.test(rest)) {
       const alt = document.head.querySelector<HTMLLinkElement>(`link[rel="alternate"][hreflang="${other}"]`)?.href
-      try { if (alt) { const u = new URL(alt); if (u.pathname.startsWith(`/${other}/insights/`)) next = u.pathname } } catch { /* keep the default */ }
+      // An article that exists in one language only declares no alternate: the switch then lands on the other language's article list, not a 404.
+      next = `/${other}/insights`
+      try { if (alt) { const u = new URL(alt); if (u.pathname.startsWith(`/${other}/insights/`)) next = u.pathname } } catch { /* keep the list */ }
     }
     setHref(next)
   }, [pathname, rest, other, modes])
