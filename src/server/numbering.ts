@@ -39,6 +39,7 @@ const KINDS: Record<string, { table: string; column: string }> = {
   INV: { table: 'invoices', column: 'number' },
   RCP: { table: 'receipts', column: 'number' },
   PPR: { table: 'prepayment_receipts', column: 'number' },
+  DLV: { table: 'deliveries', column: 'number' },
   QUO: { table: 'quotations', column: 'number' },
   RFQ: { table: 'leads', column: 'reference' },
   INQ: { table: 'leads', column: 'reference' },

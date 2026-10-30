@@ -34,5 +34,13 @@
  "prepayment_receipt_customer": {
   "subject": "VORA pre-payment receipt $document_number",
   "html": "<p>Dear $customer_name,</p><p>Please find attached the pre-payment receipt <strong>$document_number</strong> for invoice <strong>$invoice_number</strong>, prepared for your internal payment process.</p><p>It is not proof that payment has been made: VORA issues the official payment receipt once the funds are credited to its bank account. Verify the document through the QR code or <a href=\"$verify_url\">online verification</a>.</p><p>VORA | Freight & Logistics</p>"
+ },
+ "delivery_received_customer": {
+  "subject": "VORA delivery $delivery_number received",
+  "html": "<p>Dear $consignee_name,</p><p>Your shipment <strong>$delivery_number</strong> has been delivered and received by <strong>$receiver_name</strong> on $received_at.</p><p>The proof of delivery, with the signature, photos, location and time of receipt, is available here: <a href=\"$pod_url\">View the proof of delivery</a>.</p><p>VORA | Freight & Logistics</p>"
+ },
+ "delivery_received_admin": {
+  "subject": "VORA delivery $delivery_number received",
+  "html": "<p>Delivery <strong>$delivery_number</strong> to $consignee_name was received by $receiver_name on $received_at.</p><p>Open in admin: <a href=\"$admin_url\">$delivery_number</a></p>"
  }
 }

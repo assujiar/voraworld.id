@@ -27,8 +27,8 @@ beforeEach(async () => {
 })
 
 describe('seed data', () => {
-  it('the seeding migrations (0014, plus 0021 for the pre-payment receipt) hold exactly the templates and rules the code defines', () => {
-    const sqlText = ['0014_seed_email_templates.sql', '0021_prepayment_receipts.sql'].map((f) => readFileSync(`migrations/${f}`, 'utf8')).join('\n')
+  it('the seeding migrations (0014, plus 0021 and 0023 for the pre-payment receipt and the deliveries) hold exactly the templates and rules the code defines', () => {
+    const sqlText = ['0014_seed_email_templates.sql', '0021_prepayment_receipts.sql', '0023_deliveries.sql'].map((f) => readFileSync(`migrations/${f}`, 'utf8')).join('\n')
     const rows = [...sqlText.matchAll(/\('(\w+)', \$vora\$(.*?)\$vora\$, \$vora\$(.*?)\$vora\$\)/gs)]
     expect(Object.fromEntries(rows.map(([, k, s, h]) => [k, { subject: s, html: h }]))).toEqual(EVENTS)
     expect([...sqlText.matchAll(/^\s+\('(\w+)', FALSE\)/gm)].map((m) => m[1]).sort()).toEqual([...EVENT_KEYS].sort())
