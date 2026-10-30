@@ -57,6 +57,7 @@ export async function createQuotationAction(_prev: FormState, form: FormData): P
   return adminRunForm(form, async ({ user }) => {
     const id = await createQuotation(user.id, {
       recipient: str(form, 'recipient', 30), issuedAt: str(form, 'issued_at', 10), validUntil: str(form, 'valid_until', 10), taxPercent: str(form, 'tax_percent', 20),
+      paymentTerms: rawStr(form, 'payment_terms', 20_000), termsConditions: rawStr(form, 'terms_conditions', 20_000),
       notes: rawStr(form, 'notes', 2500), items: rawStr(form, 'items', 30_000),
     })
     return { to: `/admin/quotations/${id}`, notice: 'Quotation draft created' }

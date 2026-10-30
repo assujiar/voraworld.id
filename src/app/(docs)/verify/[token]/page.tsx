@@ -4,6 +4,8 @@ import { sql } from '@/server/db'
 import { findVerification } from '@/server/verification'
 
 const KINDS = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations' } as const
+/** A quotation is issued as a Price Agreement Letter, and the page says so. */
+const LABELS = { invoice: 'Invoice', receipt: 'Receipt', quotation: 'Price Agreement Letter' } as const
 
 /**
  * What a QR code on a VORA document opens. It states the document type, reference, issuer, date and current
@@ -27,7 +29,7 @@ export default async function Verify({ params }: { params: Promise<{ token: stri
       <div className="form-panel" style={{ marginTop: 35 }}>
         <span className="eyebrow">Document authentication</span>
         <h1 style={{ fontSize: '3rem' }}>{status}</h1>
-        <p><strong>Document:</strong> {kind[0].toUpperCase() + kind.slice(1)}<br />
+        <p><strong>Document:</strong> {LABELS[kind as keyof typeof LABELS]}<br />
           <strong>Reference:</strong> {doc.number as string}<br />
           <strong>Issuer:</strong> VORA / PT Satu Arah International<br />
           <strong>Date:</strong> {date}</p>

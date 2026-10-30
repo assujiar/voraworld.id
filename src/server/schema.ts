@@ -328,6 +328,8 @@ export interface QuotationsRow {
   taxMinor: number
   totalMinor: number
   createdAt: Date
+  paymentTerms: string
+  termsConditions: string
 }
 
 export interface ReceiptsRow {

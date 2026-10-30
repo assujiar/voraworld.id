@@ -45,7 +45,7 @@ export async function seedFinance(): Promise<Seed> {
     const usdPay = await recordPayment(actor, usdInvoice, { amount: '50', date: '', method: 'wire', reference: 'U-1', receivingBankId: usdBank })
     await confirmPayment(actor, usdPay, { fundsCleared: true, receivingBankId: null }, BASE)   // a foreign-currency receipt: waits for its e-meterai
 
-    const quotation = await createQuotation(actor, { recipient: `customer:${customer}`, issuedAt: '2026-10-05', validUntil: '2999-01-01', taxPercent: '0', notes: '', items: 'Fixture quote | 1 | 500000 | job' })
+    const quotation = await createQuotation(actor, { recipient: `customer:${customer}`, issuedAt: '2026-10-05', validUntil: '2999-01-01', taxPercent: '0', paymentTerms: 'Payment within 14 days of the invoice date', termsConditions: 'Rates are valid for the period stated. Services follow the booking conditions of VORA.', notes: '', items: 'Fixture quote | 1 | 500000 | job' })
     await setQuotationStatus(actor, quotation, 'issue')
     await sql`update quotations set status = 'awaiting_approval' where id = ${quotation}`
     const approvalToken = randomBytes(42).toString('base64url')

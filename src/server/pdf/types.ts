@@ -1,5 +1,6 @@
 /** What the PDF layouts need, already loaded and plain: the renderers never touch the database. */
-export interface Issuer { legalName: string; address: string; email: string }
+/** The company that issues the document. `taxId` is its NPWP (empty when none is set). */
+export interface Issuer { legalName: string; address: string; email: string; taxId: string }
 export interface Party { name: string; address: string; email: string; taxId: string }
 export interface LineData { description: string; unit: string; quantity: string; priceMinor: number; amountMinor: number }
 export interface BankLine { bankName: string; accountNumber: string; accountHolder: string; currency: string; swiftCode: string; position: number }
@@ -12,9 +13,13 @@ export interface InvoiceData {
 }
 
 export interface QuotationData {
-  number: string; status: string; currency: string; issuedAt: string; validUntil: string; notes: string
+  number: string; status: string; currency: string; issuedAt: string; validUntil: string
+  /** What the customer pays and when; the terms the customer's signature accepts; anything else. Empty on quotations that predate them. */
+  paymentTerms: string; termsConditions: string; notes: string
   taxPercent: string; subtotalMinor: number; taxMinor: number; totalMinor: number
   items: LineData[]; recipient: Party
+  /** The customer's private upload link while an approval request is open: printed as a clickable address. */
+  uploadUrl?: string
 }
 
 export interface ReceiptData {

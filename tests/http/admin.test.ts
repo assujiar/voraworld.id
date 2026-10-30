@@ -135,6 +135,25 @@ describe('the admin', () => {
     }
   })
 
+  it('offers the company NPWP (seeded with the registered number) and the default quotation terms in the site settings', async () => {
+    const html = await c.text('/admin/settings')
+    expect(html).toContain('NPWP (tax ID), printed on documents'); expect(html).toContain('1000 0000 1178 2812')
+    expect(html).toContain('Quotations: default terms of payment'); expect(html).toContain('Quotations: default terms and conditions')
+  })
+
+  it('starts a new quotation from the default terms in the site settings, and requires both', async () => {
+    await db`insert into settings (key, value) values ('quotation_payment_terms', 'DEFAULT-PAYMENT-TERMS'), ('quotation_terms', E'1. DEFAULT clause one\n2. DEFAULT clause two') on conflict (key) do update set value = excluded.value`
+    try {
+      const html = await c.text('/admin/quotations/new')
+      expect(html).toContain('DEFAULT-PAYMENT-TERMS'); expect(html).toContain('1. DEFAULT clause one'); expect(html).toContain('2. DEFAULT clause two')
+      expect(html).toMatch(/name="payment_terms"[^>]*required/); expect(html).toMatch(/name="terms_conditions"[^>]*required/)
+    } finally {
+      await db`delete from settings where key in ('quotation_payment_terms', 'quotation_terms')`
+    }
+    const blank = await c.text('/admin/quotations/new')
+    expect(blank).not.toContain('DEFAULT-PAYMENT-TERMS')
+  })
+
   it('shows every menu entry in the sidebar of every page and none of them is a dead link', async () => {
     const html = await c.text('/admin')
     for (const cat of ADMIN_MENU) for (const l of cat.links) expect(html, l.href).toContain(`href="${l.href}"`)

@@ -82,7 +82,7 @@ describe('customers', () => {
 })
 
 async function quoteFor(customerId: number, o: Partial<Parameters<typeof createQuotation>[1]> = {}) {
-  return createQuotation(actor, { recipient: `customer:${customerId}`, issuedAt: '2026-10-05', validUntil: '2026-11-05', taxPercent: '11', notes: 'Valid 30 days', items: 'Air freight | 100 | 25.50 | kg', ...o })
+  return createQuotation(actor, { recipient: `customer:${customerId}`, issuedAt: '2026-10-05', validUntil: '2026-11-05', taxPercent: '11', paymentTerms: 'Payment within 14 days of the invoice date', termsConditions: 'Rates are valid for the period stated. Services follow the booking conditions of VORA.', notes: 'Valid 30 days', items: 'Air freight | 100 | 25.50 | kg', ...o })
 }
 
 describe('bank accounts', () => {
@@ -133,7 +133,7 @@ describe('quotations', () => {
   })
   it('can be addressed to a lead (always IDR) and reject bad input', async () => {
     const [lead] = await sql`insert into leads (type, name, email, message, company) values ('RFQ', 'Budi', 'budi@example.invalid', 'quote please', 'CV Budi') returning id`
-    const id = await createQuotation(actor, { recipient: `lead:${lead.id}`, issuedAt: '', validUntil: '', taxPercent: '', notes: '', items: 'Handling | 1 | 1000 | lot' })
+    const id = await createQuotation(actor, { recipient: `lead:${lead.id}`, issuedAt: '', validUntil: '', taxPercent: '', paymentTerms: 'Payment within 14 days of the invoice date', termsConditions: 'Rates are valid for the period stated. Services follow the booking conditions of VORA.', notes: '', items: 'Handling | 1 | 1000 | lot' })
     const [q] = await sql`select * from quotations where id = ${id}`
     expect(q).toMatchObject({ currency: 'IDR', leadId: lead.id, customerId: null, issuedAt: today(), validUntil: today() })
     const c = await customer()
@@ -141,6 +141,8 @@ describe('quotations', () => {
       [{ recipient: 'nobody' }, 'Select a customer or lead'], [{ recipient: 'customer:99999' }, 'Recipient unavailable'], [{ items: '' }, '1–100'], [{ items: 'only | two' }, 'description | quantity'],
       [{ items: ' | 1 | 5 | x' }, 'needs a description'], [{ items: 'A | 0 | 5 | x' }, 'Invalid quantity or price'], [{ items: 'A | 1 | -5 | x' }, 'Invalid quantity or price'], [{ items: 'A | 1 | abc | x' }, 'Invalid monetary value'],
       [{ taxPercent: '101' }, 'Tax percentage out of range'], [{ issuedAt: '2026-02-30' }, 'valid date'], [{ validUntil: '2026-10-01' }, 'must not precede'],
+      [{ paymentTerms: '' }, 'Enter the terms of payment'], [{ paymentTerms: '  \n ' }, 'Enter the terms of payment'], [{ termsConditions: '' }, 'Enter the terms and conditions'],
+      [{ paymentTerms: 'x'.repeat(1001) }, 'terms of payment are too long (1001 of 1000'], [{ termsConditions: 'y'.repeat(6001) }, 'terms and conditions are too long (6001 of 6000'],
     ] as Array<[Partial<Parameters<typeof createQuotation>[1]>, string]>) await rejects(quoteFor(c, o), msg)
     await rejects(quoteFor(c, { items: Array.from({ length: 101 }, (_, i) => `Item ${i} | 1 | 1 | x`).join('\n') }), '1–100')
   })

@@ -1,5 +1,5 @@
 import { englishWords, money } from '../money'
-import { H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
+import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { Issuer, ReceiptData } from './types'
 
 /**
@@ -9,6 +9,8 @@ import type { Issuer, ReceiptData } from './types'
 const L = 44
 const R = W - 44
 const WIDTH = R - L
+/** The header band is taller than it was (it now carries the address and NPWP under the logo): everything below moves down with it. */
+const SHIFT = BAND_H - 102
 
 export async function renderReceipt(r: ReceiptData, issuer: Issuer, verificationUrl: string): Promise<Uint8Array> {
   const { invoice, payment, payer } = r
@@ -38,13 +40,12 @@ export async function renderReceipt(r: ReceiptData, issuer: Issuer, verification
   }
 
   s.background({ x: W / 2 - 151, y: H / 2 - 98, w: 302, h: 172 })
-  s.band(102, 4, { x: L, y: H - 67, w: 145, h: 32 })
-  s.text(L, H - 84, 'Bringing the World Within Reach.', 7.0, '#DCE0E1')
-  s.right(R, H - 43, 'OFFICIAL PAYMENT RECEIPT', 15, WHITE, true)
-  s.right(R, H - 64, r.number, 7, '#E9ECEE')
-  s.right(R, H - 84, state, 7.5, '#E8B3AA', true)
+  s.header({ x: L, logoWidth: 144, info: { address: issuer.address, taxId: issuer.taxId } })
+  s.right(R, H - 47, 'OFFICIAL PAYMENT RECEIPT', 15, WHITE, true)
+  s.right(R, H - 68, r.number, 7, '#E9ECEE')
+  s.right(R, H - 88, state, 7.5, '#E8B3AA', true)
 
-  let y = H - 130
+  let y = H - 130 - SHIFT
   const x2 = L + 268
   const col = WIDTH / 2 - 16
   s.text(L, y, 'RECEIVED FROM / PAYER', 8.0, RED, true)
@@ -56,8 +57,9 @@ export async function renderReceipt(r: ReceiptData, issuer: Issuer, verification
   let p2 = lines(x2, cy, issuer.legalName, col, 8.5, 11, INK, true, 2)
   p2 = lines(x2, p2, issuer.address, col, 7.2, 9.4, SLATE, false, 5)
   p2 = lines(x2, p2, issuer.email, col, 7.2, 9.5, SLATE, false, 2)
+  if (issuer.taxId) p2 = lines(x2, p2, `NPWP: ${issuer.taxId}`, col, 7.2, 9.5, SLATE, false, 1)
   y = Math.min(p1, p2) - 8
-  if (y < H - 264) throw new PdfLayoutError('Payer/issuer address information is too long')
+  if (y < H - 264 - SHIFT) throw new PdfLayoutError('Payer/issuer address information is too long')
 
   y = title(y, 'RECEIPT & TREASURY PAYMENT REFERENCE')
   const refs: Array<[string, string]> = [

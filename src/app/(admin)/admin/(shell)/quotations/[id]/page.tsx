@@ -29,7 +29,9 @@ export default async function QuotationDetail({ params, searchParams }: { params
           <div className="metric"><span>Tax ({q.taxPercent as string}%)</span><strong style={{ fontSize: '1.4rem' }}>{money(q.taxMinor as number, cur)}</strong></div>
           <div className="metric"><span>Total</span><strong style={{ fontSize: '1.4rem' }}>{money(q.totalMinor as number, cur)}</strong></div>
         </div>
-        {q.notes ? <p style={{ whiteSpace: 'pre-wrap' }}>{q.notes as string}</p> : null}
+        {q.paymentTerms ? <><h4>Terms of payment</h4><p style={{ whiteSpace: 'pre-wrap' }}>{q.paymentTerms as string}</p></> : null}
+        {q.termsConditions ? <><h4>Terms and conditions</h4><p style={{ whiteSpace: 'pre-wrap' }}>{q.termsConditions as string}</p></> : null}
+        {q.notes ? <><h4>Notes</h4><p style={{ whiteSpace: 'pre-wrap' }}>{q.notes as string}</p></> : null}
         <div className="inline-actions">
           {q.status === 'draft' ? <form action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button" name="action" value="issue">Issue quotation</button></form> : null}
           {q.status !== 'void' ? <form action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><button className="button-outline" name="action" value="void">Void</button></form> : null}

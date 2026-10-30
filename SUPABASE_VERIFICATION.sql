@@ -53,7 +53,7 @@ BEGIN
     RETURN QUERY SELECT 'migration history', 'WARN', 'schema_migrations table absent (fine if you ran the SQL files by hand)';
   ELSE
     EXECUTE 'SELECT count(*), max(name) FROM schema_migrations' INTO n, v;
-    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 18 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (18 expected), latest ' || COALESCE(v, 'none');
+    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 20 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (20 expected), latest ' || COALESCE(v, 'none');
   END IF;
 
   -- 4. Seed data the application depends on ------------------------------------

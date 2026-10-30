@@ -147,7 +147,12 @@ test('the finance workflow, from customer to stamped receipt and signed quotatio
     await page.fill('textarea[name=items]', 'Air freight | 100 | 25000 | kg')
     await page.fill('input[name=valid_until]', '2999-01-01')
     await page.click('button:has-text("Save quotation draft")')
+    await expect(page.locator('textarea[name=payment_terms]:invalid')).toHaveCount(1)          // both terms are required: the browser stops an empty form
+    await page.fill('textarea[name=payment_terms]', '50% on approval, the balance within 14 days of the invoice date.')
+    await page.fill('textarea[name=terms_conditions]', '1. Rates exclude duties and taxes.\n2. Services follow the VORA booking conditions.')
+    await page.click('button:has-text("Save quotation draft")')
     await page.waitForURL(/\/admin\/quotations\/\d+/)
+    await expect(page.locator('body')).toContainText('50% on approval, the balance within 14 days')
     quotationId = page.url().match(/quotations\/(\d+)/)![1]
     await page.click('button:has-text("Issue quotation")')
     await expect(page.locator('.alert:has-text("Quotation state updated")')).toBeVisible()
@@ -178,7 +183,10 @@ test('the finance workflow, from customer to stamped receipt and signed quotatio
     const cp = customer.page
     trackProblems(cp, 'customer', problems, { strict4xx: true })
     await cp.goto(link!.replace(/^https?:\/\/[^/]+/, BASE_URL).replace(/&amp;/g, '&'))
-    await expect(cp.locator('body')).toContainText('Review and approve quotation')
+    await expect(cp.locator('body')).toContainText('Review and approve the Price Agreement Letter')
+    await expect(cp.locator('body')).toContainText('What your signature accepts')              // the terms are shown before anything is signed
+    await expect(cp.locator('body')).toContainText('50% on approval, the balance within 14 days')
+    await expect(cp.locator('body')).toContainText('2. Services follow the VORA booking conditions.')
     expect(await overflow(cp)).toBeLessThanOrEqual(1)                                          // fits a phone
     const quotePdf = await cp.request.get(cp.url() + '/pdf')
     expect(quotePdf.status()).toBe(200)

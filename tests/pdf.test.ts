@@ -11,10 +11,13 @@ import { createQuotation, setQuotationStatus } from '@/server/finance/quotations
 import { uploadReceiptStamp } from '@/server/finance/receipts'
 import { englishWords } from '@/server/money'
 import { renderDocumentPdf } from '@/server/pdf/documents'
+import { approvalToken } from '@/server/finance/approval-token'
+import { sha256Hex } from '@/server/crypto'
 import { PdfLayoutError } from '@/server/pdf/kit'
+import { renderQuotation } from '@/server/pdf/quotation'
 import { createUser } from './helpers/actions'
 import { makePdf } from './helpers/pdf'
-import { pdfPages, poppler, rasterize, squash } from './helpers/pdf-text'
+import { pdfLinks, pdfPages, poppler, rasterize, squash } from './helpers/pdf-text'
 
 process.env.VORA_LOCAL_STORAGE_DIR = mkdtempSync(join(tmpdir(), 'vora-pdf-'))
 const BASE = 'https://staging.example.invalid'
@@ -146,46 +149,226 @@ describe('invoice and receipt PDFs', () => {
 })
 
 describe('quotation PDFs', () => {
-  const quote = async (n: number, o: { text?: string; notes?: string; price?: string } = {}) => {
+  const CLAUSES = [
+    'Rates are quoted in the currency shown and exclude duties, taxes and charges levied by authorities unless listed.',
+    'Services follow the booking conditions of VORA and the carriers it appoints.',
+    'Cargo must be declared accurately; VORA may re-quote if the declared facts change.',
+  ]
+  const quote = async (n: number, o: { text?: string; notes?: string; price?: string; paymentTerms?: string; terms?: string } = {}) => {
     const customer = await saveCustomer(actor, null, { name: 'SAMPLE CLIENT INDUSTRIAL LOGISTICS PT', email: 'finance@example.invalid', address: 'Jl. Contoh Sentra Industri Blok A, Jakarta, Indonesia', taxId: '', currency: 'IDR', termsDays: '14' })
     const id = await createQuotation(actor, {
-      recipient: `customer:${customer}`, issuedAt: '2026-10-29', validUntil: '2026-11-10', taxPercent: '11', notes: o.notes ?? 'Customer approval requires authorized signature and company stamp.',
+      recipient: `customer:${customer}`, issuedAt: '2026-10-29', validUntil: '2026-11-10', taxPercent: '11',
+      paymentTerms: o.paymentTerms ?? '50% down payment on approval of this quotation; the balance within 14 days of the invoice date.',
+      termsConditions: o.terms ?? CLAUSES.map((c, i) => `${i + 1}. ${c}`).join('\n'),
+      notes: o.notes ?? 'Customer approval requires authorized signature and company stamp.',
       items: Array.from({ length: n }, (_, i) => `${o.text ?? `${String(i + 1).padStart(2, '0')} International freight and customs handling / cargo services to destination`} ${i + 1} | 1 | ${o.price ?? 725_000 + (i + 1) * 50_000} | shipment`).join('\n'),
     })
     await setQuotationStatus(actor, id, 'issue')
     return id
   }
-  it('fit ten items on ONE page with the signature and stamp block', async () => {
-    const id = await quote(10)
+  const approvalAreaWhole = (page: string) => {
+    const t = squash(page)
+    for (const s of ['CUSTOMER APPROVAL', 'By signing and stamping below, the Customer agrees to the prices in this Price Agreement Letter', 'AUTHORIZED SIGNATURE', 'COMPANY STAMP', 'STAMP HERE', 'NAME:', 'POSITION:', 'DATE:', 'secure approval link']) expect(t, s).toContain(s)
+  }
+
+  it('print the terms of payment, the terms and conditions and a clear, boxed customer approval area', async () => {
+    const id = await quote(4)
     const pdf = await renderDocumentPdf(sql, 'quotation', id, BASE)
-    save('VORA_Quotation_10_Items_One_Page.pdf', pdf)
+    save('VORA_Quotation_Terms_And_Approval.pdf', pdf)
     const pages = await pdfPages(pdf)
     expect(pages).toHaveLength(1)
     const text = squash(pages[0])
-    for (let i = 1; i <= 10; i++) expect(text).toContain(`International freight and customs handling / cargo services to destination ${i}`)
-    for (const s of ['QUOTATION', 'APPROVED BY CUSTOMER', 'COMPANY STAMP', 'AUTHORIZED SIGNATURE', '1 OF 1', 'TAX (11%)', 'TOTAL IDR 11,100,000', 'Customer approval requires authorized signature']) expect(text, s).toContain(s)
     const [{ number }] = await sql`select number from quotations where id = ${id}`
-    expect(text).toContain(number as string)
-    expect(poppler(pdf)).toContain('QUOTATION')
+    for (const s of ['TERMS OF PAYMENT', '50% down payment on approval of this quotation; the balance within 14 days of the invoice date.', 'TERMS & CONDITIONS', ...CLAUSES.map((c, i) => `${i + 1}. ${c}`),
+      'NOTES', 'Customer approval requires authorized signature', 'PRICE AGREEMENT LETTER / PAGE 1 OF 1', `Ref. ${number}`]) expect(text, s).toContain(s)
+    approvalAreaWhole(pages[0])
+    // The signature sits under the terms it accepts, and says exactly what is being accepted.
+    expect(text).toMatch(new RegExp(`the Customer agrees to the prices in this Price Agreement Letter ${number} \\(total IDR [\\d,]+, valid until 2026-11-10\\), including the Terms of Payment and the Terms & Conditions stated in this document\\.`))
+    expect(text.indexOf('TERMS & CONDITIONS')).toBeLessThan(text.indexOf('CUSTOMER APPROVAL'))
+    expect(text.indexOf('TERMS OF PAYMENT')).toBeLessThan(text.indexOf('TERMS & CONDITIONS'))
+    expect(poppler(pdf)).toContain('CUSTOMER APPROVAL')
     expectRedFooter(pdf, 1, 86, 'quotation')
   })
-  it('flow onto further pages above ten items, keeping every item', async () => {
-    const id = await quote(12)
-    const pages = await pdfPages(await renderDocumentPdf(sql, 'quotation', id, BASE))
-    expect(pages.length).toBeGreaterThanOrEqual(3)
+  it('take a second page for ten items with their terms, and the approval area is never split', async () => {
+    const id = await quote(10)
+    const pdf = await renderDocumentPdf(sql, 'quotation', id, BASE)
+    save('VORA_Quotation_10_Items.pdf', pdf)
+    const pages = await pdfPages(pdf)
+    expect(pages.length).toBeGreaterThanOrEqual(1); expect(pages.length).toBeLessThanOrEqual(2)
     const text = squash(pages.join(' '))
-    for (let i = 1; i <= 12; i++) expect(text).toContain(`destination ${i}`)
-    expect(text).toContain('APPROVED BY CUSTOMER'); expect(text).toContain('VALID UNTIL')
+    for (let i = 1; i <= 10; i++) expect(text).toContain(`International freight and customs handling / cargo services to destination ${i}`)
+    for (const s of ['PRICE AGREEMENT LETTER', 'TAX (11%)', 'TOTAL IDR 11,100,000', 'TERMS OF PAYMENT', 'TERMS & CONDITIONS', `PRICE AGREEMENT LETTER / PAGE ${pages.length} OF ${pages.length}`]) expect(text, s).toContain(s)
+    expect(text.match(/CUSTOMER APPROVAL/g)).toHaveLength(1)
+    approvalAreaWhole(pages[pages.length - 1])                                       // all of it on the last page
+    const [{ number }] = await sql`select number from quotations where id = ${id}`
+    expect(text).toContain(number as string)
+    expect(poppler(pdf)).toContain('PRICE AGREEMENT LETTER')
+    expectRedFooter(pdf, pages.length, 86, 'ten-item quotation')
   })
-  it('fail with a clear message instead of clipping or faking a single page', async () => {
-    const id = await quote(10, { text: 'Extremely long details '.repeat(28), notes: 'Very long terms '.repeat(110) })
-    await expect(renderDocumentPdf(sql, 'quotation', id, BASE)).rejects.toBeInstanceOf(PdfLayoutError)
-    await expect(renderDocumentPdf(sql, 'quotation', id, BASE)).rejects.toThrow(/too long for a readable single A4 page/)
+  it('move the conditions and the signature together onto a second page when they do not fit the first', async () => {
+    const clauses = Array.from({ length: 34 }, (_, i) => `${i + 1}. Clause number ${i + 1} sets out a condition that the customer accepts together with the quoted services.`)
+    const id = await quote(6, { terms: clauses.join('\n') })
+    const pages = await pdfPages(await renderDocumentPdf(sql, 'quotation', id, BASE))
+    expect(pages).toHaveLength(2)
+    expect(squash(pages[0])).toContain('TERMS OF PAYMENT'); expect(squash(pages[0])).not.toContain('TERMS & CONDITIONS')
+    expect(squash(pages[0])).toContain('TOTAL IDR')                                  // the payment terms stay with the totals they explain
+    const second = squash(pages[1])
+    expect(second).toContain('TERMS & CONDITIONS'); expect(second).not.toContain('(CONTINUED)')
+    for (const c of clauses) expect(second).toContain(c)
+    approvalAreaWhole(pages[1])                                                       // the signature is never alone: it follows the terms it accepts
+    expect(second.indexOf('TERMS & CONDITIONS')).toBeLessThan(second.indexOf('CUSTOMER APPROVAL'))
+  })
+  it('continue terms that are longer than a page onto the next page, keeping every clause and the approval area whole', async () => {
+    const clauses = Array.from({ length: 54 }, (_, i) => `${i + 1}. Clause ${i + 1} sets out a condition that the customer accepts together with the quoted services and charges.`)
+    const id = await quote(6, { terms: clauses.join('\n'), notes: 'Note line. '.repeat(218) })
+    const pdf = await renderDocumentPdf(sql, 'quotation', id, BASE)
+    save('VORA_Quotation_Long_Terms.pdf', pdf)
+    const pages = await pdfPages(pdf)
+    expect(pages.length).toBeGreaterThanOrEqual(2)
+    const text = squash(pages.join(' '))
+    for (const c of clauses) expect(text).toContain(c)
+    expect(text).toContain('TERMS & CONDITIONS (CONTINUED)')
+    expect(text.match(/CUSTOMER APPROVAL/g)).toHaveLength(1)
+    approvalAreaWhole(pages[pages.length - 1])
+  })
+  it('continue a long services table on the next page with its heading repeated, and total only once', async () => {
+    const id = await quote(40)
+    const pdf = await renderDocumentPdf(sql, 'quotation', id, BASE)
+    save('VORA_Quotation_40_Items.pdf', pdf)
+    const pages = await pdfPages(pdf)
+    expect(pages.length).toBeGreaterThanOrEqual(2)
+    const text = squash(pages.join(' '))
+    for (let i = 1; i <= 40; i++) expect(text).toContain(`destination ${i} `)
+    expect(text).toContain('SERVICES AND AGREED PRICES (CONTINUED)')
+    expect(text.match(/(?<![A-Z])TOTAL IDR/g)).toHaveLength(1)
+    expect(text).toContain(`PRICE AGREEMENT LETTER / PAGE 1 OF ${pages.length}`); expect(text).toContain(`PRICE AGREEMENT LETTER / PAGE ${pages.length} OF ${pages.length}`)
+  })
+  it('never clip very long descriptions, terms or notes: they flow onto more pages', async () => {
+    const id = await quote(10, { text: 'Extremely long details '.repeat(10), notes: 'Very long notes '.repeat(110), terms: 'Very long terms '.repeat(110) })
+    const pages = await pdfPages(await renderDocumentPdf(sql, 'quotation', id, BASE))
+    expect(pages.length).toBeGreaterThanOrEqual(2)
+    const text = squash(pages.join(' '))
+    expect(text.match(/Very long notes/g)).toHaveLength(110)
+    expect(text.match(/Very long terms/g)).toHaveLength(110)
+    approvalAreaWhole(pages[pages.length - 1])
+  })
+  it('leave out the sections an older quotation does not have, without changing what the signature accepts', async () => {
+    const id = await quote(2)
+    await sql`update quotations set payment_terms = '', terms_conditions = '' where id = ${id}`
+    const text = squash((await pdfPages(await renderDocumentPdf(sql, 'quotation', id, BASE))).join(' '))
+    expect(text).not.toContain('TERMS OF PAYMENT'); expect(text).not.toContain('TERMS & CONDITIONS')
+    expect(text).toMatch(/the Customer agrees to the prices in this Price Agreement Letter QUO-[A-Z0-9-]+ \(total IDR [\d,]+, valid until 2026-11-10\)\./)
+    expect(text).toContain('CUSTOMER APPROVAL')
+  })
+  it('print the verification address on every page as a clickable link, and the upload address only while an approval request is open', async () => {
+    const id = await quote(40)                                                        // several pages
+    const [{ token }] = await sql`select token from document_verification_tokens where kind = 'quotation' and document_id = ${id}`
+    const verify = `${BASE}/verify/${token}`
+    const pdf = await renderDocumentPdf(sql, 'quotation', id, BASE)
+    let links = await pdfLinks(pdf)
+    expect(links.length).toBeGreaterThanOrEqual(2)
+    for (const [i, page] of links.entries()) expect(page, `page ${i + 1}`).toContain(verify)
+    expect(links.flat().some((u) => u.includes('/quotation-approval/'))).toBe(false)
+    expect(squash((await pdfPages(pdf)).join(' ')).replace(/\s/g, '')).toContain(verify)         // and it is readable on paper, too
+
+    const [{ approvalId }] = await sql`select nextval(pg_get_serial_sequence('quotation_approvals', 'id'))::int as approval_id`
+    const upload = `${BASE}/quotation-approval/${approvalToken(approvalId)}`
+    await sql`insert into quotation_approvals (id, quotation_id, token_hash, expires_at, status) values (${approvalId}, ${id}, ${await sha256Hex(approvalToken(approvalId))}, now() + interval '7 days', 'pending')`
+    await sql`update quotations set status = 'awaiting_approval' where id = ${id}`
+    const open = await renderDocumentPdf(sql, 'quotation', id, BASE)
+    links = await pdfLinks(open)
+    expect(links.flat().filter((u) => u === upload)).toHaveLength(1)                  // once, in the approval area
+    expect(links[links.length - 1]).toContain(upload)
+    const text = squash((await pdfPages(open)).join(' '))
+    expect(text).toContain('Upload the signed and stamped PDF through this secure link'); expect(text.replace(/\s/g, '')).toContain(upload)
+
+    await sql`update quotation_approvals set expires_at = now() - interval '1 minute' where id = ${approvalId}`            // expired: no address to print
+    expect((await pdfLinks(await renderDocumentPdf(sql, 'quotation', id, BASE))).flat().some((u) => u.includes('/quotation-approval/'))).toBe(false)
+    await sql`update quotation_approvals set expires_at = now() + interval '7 days', token_hash = ${'0'.repeat(64)} where id = ${approvalId}`  // a request that predates derived addresses
+    expect((await pdfLinks(await renderDocumentPdf(sql, 'quotation', id, BASE))).flat().some((u) => u.includes('/quotation-approval/'))).toBe(false)
+  })
+  it('refuse an amount too wide for its column instead of overprinting its neighbour', async () => {
+    const data = {
+      number: 'QUO-VORA-C00000000A0-202610-00001', status: 'issued', currency: 'IDR', issuedAt: '2026-10-29', validUntil: '2026-11-10', paymentTerms: 'Net 14', termsConditions: 'Standard', notes: '',
+      taxPercent: '0', subtotalMinor: 9e15, taxMinor: 0, totalMinor: 9e15, recipient: { name: 'X', address: '', email: '', taxId: '' },
+      items: [{ description: 'One item', unit: 'job', quantity: '1', priceMinor: 9e15, amountMinor: 9e15 }],
+    }
+    await expect(renderQuotation(data, { legalName: 'PT Satu Arah International', address: 'Jakarta', email: 'info@voraworld.id', taxId: '1000 0000 1178 2812' }, 'https://x.example/verify/t')).rejects.toBeInstanceOf(PdfLayoutError)
   })
   it('can be addressed to a lead, printing the company name', async () => {
     const [lead] = await sql`insert into leads (type, name, email, message, company) values ('RFQ', 'Budi', 'budi@example.invalid', 'quote', 'CV Budi Logistik') returning id`
-    const id = await createQuotation(actor, { recipient: `lead:${lead.id}`, issuedAt: '2026-10-29', validUntil: '2026-11-10', taxPercent: '0', notes: '', items: items(2) })
+    const id = await createQuotation(actor, { recipient: `lead:${lead.id}`, issuedAt: '2026-10-29', validUntil: '2026-11-10', taxPercent: '0', paymentTerms: 'Upon delivery', termsConditions: 'Standard conditions apply.', notes: '', items: items(2) })
     expect(squash((await pdfPages(await renderDocumentPdf(sql, 'quotation', id, BASE))).join(' '))).toContain('CV Budi Logistik')
+  })
+})
+
+describe('letterhead under the logo', () => {
+  const simpleQuotation = async () => {
+    const customer = await saveCustomer(actor, null, { name: 'LETTERHEAD CLIENT', email: 'client@example.invalid', address: 'Jakarta', taxId: '', currency: 'IDR', termsDays: '14' })
+    const id = await createQuotation(actor, { recipient: `customer:${customer}`, issuedAt: '2026-10-29', validUntil: '2026-11-10', taxPercent: '0', paymentTerms: 'Net 14', termsConditions: 'Standard conditions.', notes: '', items: items(1) })
+    await setQuotationStatus(actor, id, 'issue')
+    return id
+  }
+  const receiptFor = async (invoice: number, bank: number) => {
+    const p = await recordPayment(actor, invoice, { amount: '1000000', date: '2026-10-29', method: 'bank transfer', reference: 'LH-1', receivingBankId: bank })
+    return (await confirmPayment(actor, p, { fundsCleared: true, receivingBankId: null }, BASE)).receiptId
+  }
+
+  it('prints the tagline, the address and the NPWP under the logo, and the NPWP in the issuer block, on every document', async () => {
+    const { invoice, banks } = await setup({ n: 1 })
+    const documents = [['invoice', invoice], ['receipt', await receiptFor(invoice, banks[0])], ['quotation', await simpleQuotation()]] as const
+    for (const [kind, id] of documents) {
+      const text = squash((await pdfPages(await renderDocumentPdf(sql, kind, id, BASE))).join(' '))
+      expect(text, kind).toContain('Bringing the World Within Reach.')
+      expect(text, kind).toContain('Gedung Nucira, Jl. Letjen M.T. Haryono')
+      expect(text, kind).toContain('NPWP 1000 0000 1178 2812')                          // under the logo
+      expect(text, kind).toContain('NPWP: 1000 0000 1178 2812')                         // in the issuer block
+    }
+  })
+  it('takes the NPWP from the site settings, and prints none when it is empty', async () => {
+    const { invoice } = await setup({ n: 1 })
+    try {
+      await sql`insert into settings (key, value) values ('tax_id', '01.234.567.8-901.000') on conflict (key) do update set value = excluded.value`
+      const changed = squash((await pdfPages(await renderDocumentPdf(sql, 'invoice', invoice, BASE))).join(' '))
+      expect(changed).toContain('NPWP 01.234.567.8-901.000'); expect(changed).toContain('NPWP: 01.234.567.8-901.000'); expect(changed).not.toContain('1000 0000 1178 2812')
+      await sql`update settings set value = '  ' where key = 'tax_id'`
+      const none = squash((await pdfPages(await renderDocumentPdf(sql, 'invoice', invoice, BASE))).join(' '))
+      expect(none).not.toContain('NPWP')
+      expect(none).toContain('Gedung Nucira')                                            // the address does not depend on it
+    } finally {
+      await sql`delete from settings where key = 'tax_id'`
+    }
+  })
+  it('keeps a very long address inside the width of the logo, shortened with "..." in the header only', async () => {
+    const { invoice } = await setup({ n: 1 })
+    const long = 'Gedung Nucira Sayap Timur Lt.2, Jl. MT. Haryono Kav.27 RT. 008 RW. 009, Tebet Timur, Tebet, Kota Adm. Jakarta Selatan, DKI Jakarta'
+    try {
+      await sql`insert into settings (key, value) values ('address', ${long}) on conflict (key) do update set value = excluded.value`
+      const text = squash((await pdfPages(await renderDocumentPdf(sql, 'invoice', invoice, BASE))).join(' '))
+      expect(text).toContain('...')                                                      // the header shortens it ...
+      expect(text).toContain('Kota Adm. Jakarta Selatan, DKI Jakarta')                   // ... the issuer block prints all of it
+    } finally {
+      await sql`delete from settings where key = 'address'`
+    }
+  })
+  it('lines the tagline, the address and the NPWP up with the logo: same left edge, tagline as wide as the logo, nothing wider', async () => {
+    const { invoice } = await setup({ n: 1 })
+    const img = rasterize(await renderDocumentPdf(sql, 'invoice', invoice, BASE), 1, 288)             // 4 pixels to the point
+    if (!img) return                                                                                   // Poppler is not installed
+    const k = img.scale
+    const light = ([r, g, b]: number[]) => r > 110 && g > 110 && b > 110                              // the logo's white and the light text, not the red A or the ink band
+    const extent = (top: number, bottom: number) => {                                                  // in points, the left column only
+      let min = Infinity, max = -Infinity
+      for (let y = Math.floor(top * k); y <= Math.ceil(bottom * k); y++) for (let x = 0; x < 300 * k; x++) if (light(img.at(x, y))) { min = Math.min(min, x / k); max = Math.max(max, x / k) }
+      return { min, max }
+    }
+    const logo = extent(18, 49), tagline = extent(52, 62), details = extent(69, 104)
+    expect(logo.max - logo.min, 'the logo is 144 pt wide').toBeGreaterThan(140)
+    expect(Math.abs(tagline.min - logo.min), 'tagline starts where the logo starts').toBeLessThanOrEqual(1.2)
+    expect(Math.abs(tagline.max - logo.max), 'tagline ends where the logo ends').toBeLessThanOrEqual(1.2)
+    expect(details.min, 'address and NPWP start at the logo edge').toBeGreaterThanOrEqual(logo.min - 0.8)
+    expect(details.min).toBeLessThanOrEqual(logo.min + 1.5)
+    expect(details.max, 'and never run wider than the logo').toBeLessThanOrEqual(logo.max + 0.8)
   })
 })
 
