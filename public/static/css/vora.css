@@ -354,44 +354,15 @@
 #form-error:focus{outline:2px solid var(--red);outline-offset:2px}
 
 /* ======================= The Working Atlas: refinements of the system ======================= */
-/* Type: role-based ranges (desktop / phone). Archivo keeps its width axis for display sizes only; body and data stay at normal width. */
-.v-body{font-size:clamp(1rem,.96rem + .2vw,1.125rem);line-height:1.68}
-.v-h1{font-size:clamp(2.5rem,6.6vw,6.2rem);font-weight:760;font-stretch:108%;line-height:1;letter-spacing:-.035em}
-.v-page h1,.v-svc-hero h1,.v-article h1,.v-h2--page{font-size:clamp(2.1rem,4.6vw,4.4rem);font-weight:730;font-stretch:106%;line-height:1.06;letter-spacing:-.03em;text-wrap:balance;max-width:14em}
-.v-h2{font-size:clamp(1.75rem,3.1vw,3rem);font-weight:710;font-stretch:106%;line-height:1.1;letter-spacing:-.028em}
+/* Type: the original sizes and weights of the public site are kept; only additions below. */
 .v-h2--section{font-size:clamp(1.45rem,2.2vw,2.05rem);margin-bottom:18px}
-.v-h3{font-size:clamp(1.18rem,1.6vw,1.5rem);font-weight:650;line-height:1.2;letter-spacing:-.01em}
-.v-lead{font-size:clamp(1.1rem,1.25vw + .55rem,1.35rem);line-height:1.52;max-width:46ch}
 .v-body p{max-width:66ch}
 .v-body table,.v-body .tabular{font-variant-numeric:tabular-nums}
 .v-note{padding:14px 18px;border-left:3px solid var(--red);background:var(--bone);border-radius:0 8px 8px 0;font-size:.95rem;max-width:68ch}
-:lang(id) .v-h1,:lang(id) .v-page h1,:lang(id) .v-svc-hero h1{font-stretch:102%}   /* Indonesian runs longer: less width on the axis, so it wraps by itself */
 
-/* Section rhythm */
-.v-section{padding:clamp(56px,8vw,112px) 0}
-.v-section--tight{padding:clamp(36px,5vw,72px) 0}
 
 /* Footer: a short description, not the company profile */
 .v-footer__about{font-size:.95rem;max-width:36ch;color:rgba(255,255,255,.72)}
-
-/* Service pages: the five heroes are different compositions of the same parts */
-.v-svc-hero__intro{max-width:50ch}
-.v-svc-hero--document .v-svc-hero__art img{max-width:340px}
-.v-svc-hero--flow .v-svc-hero__grid{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}
-.v-svc-hero--flow .v-svc-hero__art{order:-1}
-.v-svc-hero--ledger .v-svc-hero__art{margin-right:calc(-1 * var(--pad))}
-.v-svc-hero--ledger .v-svc-hero__art img{max-width:none;width:118%;margin-left:-6%}
-.v-svc-hero--study{background:var(--ink-2);color:#fff}
-.v-svc-hero--study .v-crumbs,.v-svc-hero--study .v-muted{color:rgba(255,255,255,.7)}
-.v-svc-hero--study .v-crumbs a:hover{color:#fff}
-.v-svc-hero--study .v-svc-hero__grid{grid-template-columns:1fr}
-.v-svc-hero--study .v-svc-hero__art img{max-width:none;width:min(100%,1040px)}
-.v-svc-hero--mode h1{font-size:clamp(2rem,4.2vw,3.8rem)}
-.v-svc-hero--mode .v-svc-hero__art img{max-width:440px}
-@media(max-width:860px){
-  .v-svc-hero--flow .v-svc-hero__grid,.v-svc-hero--ledger .v-svc-hero__grid{grid-template-columns:1fr}
-  .v-svc-hero--ledger .v-svc-hero__art{margin-right:0}.v-svc-hero--ledger .v-svc-hero__art img{width:100%;margin-left:0}
-}
 
 /* Decision ledger (forwarding): rows are decisions, columns are movements */
 .v-ledger-table{width:100%;border-collapse:collapse;border-top:2px solid var(--ink);table-layout:fixed}
