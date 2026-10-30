@@ -9,18 +9,30 @@ interface Props {
   items: Array<{ href: string; label: string }>
   groups: NavGroup[]
   rfq: string
+  modes?: string[]
   words: { allServices: string; home: string; open: string; mobile: string; main: string }
 }
 
 /** The navigation: current page marked, the services panel, and the phone menu. Escape and a click elsewhere close what is open. */
-export function HeaderNav({ locale, items, groups, rfq, words }: Props) {
+export function HeaderNav({ locale, items, groups, rfq, words, modes = [] }: Props) {
   const path = usePathname() || `/${locale}`
   const here = (href: string) => { const full = `/${locale}${href}`; return path === full || path.startsWith(full + '/') }
   useEffect(() => {
-    const close = (e?: Event) => document.querySelectorAll<HTMLDetailsElement>('.v-nav__services[open],.v-burger[open]').forEach((d) => { if (!e || !('target' in e) || !d.contains(e.target as Node)) d.removeAttribute('open') })
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
-    document.addEventListener('keydown', onKey); document.addEventListener('click', close)
-    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('click', close) }
+    const openOnes = () => [...document.querySelectorAll<HTMLDetailsElement>('.v-nav__services[open],.v-burger[open]')]
+    const close = (e?: Event) => openOnes().forEach((d) => { if (!e || !('target' in e) || !d.contains(e.target as Node)) d.removeAttribute('open') })
+    // Escape closes what is open and gives the focus back to the button that opened it, so a keyboard user does not lose their place.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const open = openOnes()
+      open.forEach((d) => { d.removeAttribute('open'); if (d.contains(document.activeElement)) d.querySelector('summary')?.focus() })
+    }
+    // Tabbing out of the services panel closes it (it would otherwise stay over the page).
+    const onFocusOut = (e: FocusEvent) => {
+      const d = (e.target as HTMLElement | null)?.closest?.('.v-nav__services[open]') as HTMLDetailsElement | null
+      if (d && !d.contains(e.relatedTarget as Node | null) && e.relatedTarget) d.removeAttribute('open')
+    }
+    document.addEventListener('keydown', onKey); document.addEventListener('click', close); document.addEventListener('focusout', onFocusOut)
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('click', close); document.removeEventListener('focusout', onFocusOut) }
   }, [])
   useEffect(() => { document.querySelectorAll('.v-burger[open],.v-nav__services[open]').forEach((d) => d.removeAttribute('open')) }, [path])
   return (
@@ -55,7 +67,7 @@ export function HeaderNav({ locale, items, groups, rfq, words }: Props) {
             </details>
           ) : <a key={item.href} href={`/${locale}${item.href}`}>{item.label}</a>)}
           <a href={`/${locale}/request-quote`} style={{ color: 'var(--red)' }}>{rfq}</a>
-          <LangSwitch locale={locale} named />
+          <LangSwitch locale={locale} named modes={modes} />
         </nav>
       </details>
     </>

@@ -88,7 +88,7 @@ export default async function QuotationDetail({ params, searchParams }: { params
                     <input type="hidden" name="record" value={a.id as number} /><Back to={here} />
                     <label><input type="checkbox" name="signature_and_stamp_verified" value="yes" /> Signature and stamp reviewed manually</label>
                     <textarea name="review_note" placeholder="Notes (required when rejecting: say what must be corrected)" />
-                    <div className="inline-actions"><AsyncButton className="button" name="action" value="approve">Validate Quotation</AsyncButton><AsyncButton className="button-outline" name="action" value="reject">Reject: needs correction</AsyncButton></div>
+                    <div className="inline-actions"><AsyncButton className="button" name="action" value="approve" action="quotation.validate">Validate Quotation</AsyncButton><AsyncButton className="button-outline" name="action" value="reject">Reject: needs correction</AsyncButton></div>
                   </PendingForm>
                 ) : (a.reviewNote as string) || '—'}</td>
               </tr>

@@ -1,6 +1,7 @@
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
 import { makeT, seoDescription, siteText, solutions } from '@/content'
+import { solutionGuides } from '@/content/solution-guides'
 import { localeOf, type LocaleParams } from '@/lib/page'
 import { pageMetadata } from '@/lib/metadata'
 import { getPublishedPage } from '@/server/site'
@@ -26,12 +27,23 @@ export default async function Solutions({ params }: LocaleParams) {
         </div>
       </section>
       <section className="v-section v-section--tight">
-        <div className="v-wrap">
-          <ul className="v-ledger">
-            {solutions[locale].map(([title, detail]) => (
-              <li key={title}><h3>{title}</h3><div><p>{detail}</p><a className="v-link" href={`/${locale}/request-quote`}>{t('Send an inquiry', 'Kirim permintaan')}</a></div></li>
-            ))}
-          </ul>
+        <div className="v-wrap v-bands">
+          {solutions[locale].map(([title, detail], i) => {
+            const g = solutionGuides[locale][i]
+            return (
+              <article key={title} className="v-band" aria-labelledby={`sol-${i}`}>
+                <header><h2 className="v-h2--section" id={`sol-${i}`}>{title}</h2><p>{detail}</p></header>
+                {g ? (
+                  <div className="v-band__cols">
+                    <section><h3>{t('What the work looks like', 'Seperti apa pekerjaannya')}</h3><ul>{g.traits.map((x) => <li key={x}>{x}</li>)}</ul></section>
+                    <section><h3>{t('What limits the plan', 'Yang membatasi rencana')}</h3><ul>{g.limits.map((x) => <li key={x}>{x}</li>)}</ul></section>
+                    <section><h3>{t('Useful to send', 'Yang berguna dikirim')}</h3><ul>{g.inputs.map((x) => <li key={x}>{x}</li>)}</ul></section>
+                  </div>
+                ) : null}
+                <a className="v-link" href={`/${locale}/request-quote`}>{t('Send an inquiry', 'Kirim permintaan')}</a>
+              </article>
+            )
+          })}
         </div>
       </section>
       <CustomSections locale={locale} sections={custom?.sections} />

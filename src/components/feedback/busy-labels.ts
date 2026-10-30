@@ -14,6 +14,23 @@ export function textOf(children: unknown): string {
   return ''
 }
 
+/**
+ * The explicit map: an action that has a stable key says what it is doing under that key, whatever its button happens to read. Keys are
+ * `<thing>.<verb>`. Buttons without a key fall back to the text rules below, so nothing has to be migrated at once.
+ * `busy` is shown while the server works; `upload` while a file is going up before the server works.
+ */
+export const ACTIONS = {
+  'customer.save': { busy: 'Menyimpan Customer…' },
+  'quotation.validate': { busy: 'Memvalidasi Quotation…' },
+  'invoice.create': { busy: 'Menyiapkan Invoice…' },
+  'invoice.send': { busy: 'Memeriksa dokumen dan menyiapkan email…' },
+  'pod.submit': { busy: 'Menyimpan Bukti Pengiriman…', upload: 'Mengunggah Bukti Pengiriman…' },
+  'article.publish': { busy: 'Menerbitkan Artikel…' },
+  'article.unpublish': { busy: 'Menarik Artikel dari publikasi…' },
+  'article.draft': { busy: 'Menyimpan draft Artikel…' },
+} as const satisfies Record<string, { busy: string; upload?: string }>
+export type ActionKey = keyof typeof ACTIONS
+
 const RULES: Array<[RegExp, string]> = [
   [/^Simpan sebagai Customer & Buat Quotation/i, 'Membuat Customer dan Quotation…'],
   [/^Simpan sebagai Customer/i, 'Membuat Customer…'],
@@ -77,14 +94,17 @@ const RULES: Array<[RegExp, string]> = [
 ]
 
 /** The label for a running action. Falls back to a plain statement that names no result. */
-export function busyLabel(text: string): string {
+export function busyLabel(text: string, action?: ActionKey): string {
+  if (action && ACTIONS[action]) return ACTIONS[action].busy
   const t = norm(text)
   for (const [re, label] of RULES) if (re.test(t)) return label
   return 'Memproses permintaan…'
 }
 
 /** While a file is going up the button names the file work, not the form. */
-export function uploadLabel(text: string): string {
+export function uploadLabel(text: string, action?: ActionKey): string {
+  const entry = action ? ACTIONS[action] : undefined
+  if (entry && 'upload' in entry) return entry.upload
   const t = norm(text)
   if (/stamped|e-?meterai/i.test(t)) return 'Mengunggah dan memeriksa dokumen…'
   if (/Submit for VORA review/i.test(t)) return 'Mengunggah dokumen bertanda tangan…'
