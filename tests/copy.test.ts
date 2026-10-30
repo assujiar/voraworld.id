@@ -6,6 +6,7 @@ import { FOOTER_DESCRIPTION } from '@/content/footer'
 import { rfqGuidance } from '@/content/rfq-guidance'
 import * as guides from '@/content/service-guides'
 import { serviceExtras } from '@/content/service-extras'
+import { solutionGuides } from '@/content/solution-guides'
 import { workingNotes } from '@/content/working-notes'
 
 /**
@@ -34,7 +35,7 @@ function sentences(): Array<{ where: string; text: string }> {
   }
   walk(JSON.parse(readFileSync('src/content/site.json', 'utf8')), 'site.json')
   walk(serviceExtras, 'service-extras.ts')
-  walk(faqEntries, 'faq.ts'); walk(workingNotes, 'working-notes.ts'); walk(rfqGuidance, 'rfq-guidance.ts'); walk(FOOTER_DESCRIPTION, 'footer.ts')
+  walk(faqEntries, 'faq.ts'); walk(workingNotes, 'working-notes.ts'); walk(rfqGuidance, 'rfq-guidance.ts'); walk(FOOTER_DESCRIPTION, 'footer.ts'); walk(solutionGuides, 'solution-guides.ts')
   for (const [name, value] of Object.entries(guides)) walk(value, `service-guides.ts:${name}`)
   const files = (dir: string): string[] => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? files(p) : /\.tsx?$/.test(p) ? [p] : [] })
   for (const file of [...files('src/components/site'), ...files('src/app/(site)')]) {

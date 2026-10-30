@@ -541,3 +541,15 @@
 .v-laneflow p{margin:0;color:var(--steel);font-size:.98rem}
 @media(max-width:900px){.v-lane{grid-template-columns:1fr}.v-laneflow{grid-template-columns:1fr}.v-laneflow li+li{border-left:0;border-top:1px solid var(--hair);padding-left:0;margin-top:16px}}
 .v-faq__list .v-note{margin-top:22px}
+
+/* Solutions: one band per kind of business, three plain columns each */
+.v-bands{display:grid;gap:0}
+.v-band{display:grid;gap:18px;padding:clamp(26px,4vw,48px) 0;border-top:2px solid var(--ink)}
+.v-band:first-child{border-top-width:1px}
+.v-band header{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:8px clamp(20px,4vw,56px);align-items:baseline}
+.v-band header p{margin:0;color:var(--steel);max-width:58ch}
+.v-band__cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(18px,3vw,40px)}
+.v-band__cols h3{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--steel);margin:0 0 8px;font-weight:650}
+.v-band__cols ul{list-style:none;margin:0;padding:0}
+.v-band__cols li{padding:9px 0;border-bottom:1px solid var(--hair);font-size:.98rem;line-height:1.5}
+@media(max-width:900px){.v-band header,.v-band__cols{grid-template-columns:1fr}}

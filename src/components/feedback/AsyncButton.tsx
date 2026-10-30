@@ -1,7 +1,7 @@
 'use client'
 import { createContext, useContext, useEffect, useRef, useState, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { useScope } from './scope'
-import { busyLabel, confirmFor, textOf, uploadLabel, type ConfirmSpec } from './busy-labels'
+import { busyLabel, confirmFor, textOf, uploadLabel, type ActionKey, type ConfirmSpec } from './busy-labels'
 
 /** A form that navigates with a transition (see StepForm) tells its buttons that the next screen is loading. */
 export const StepPending = createContext<boolean>(false)
@@ -9,6 +9,8 @@ export const StepPending = createContext<boolean>(false)
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   /** What to say while the server works. Defaults to the table in busy-labels.ts, chosen from the button's own text. */
   busy?: string
+  /** A stable key from the action map in busy-labels.ts; wins over the text rules. */
+  action?: ActionKey
   /** `false` turns off the question some actions ask first (void, delete, confirm funds). */
   confirm?: false | Partial<ConfirmSpec>
   children?: ReactNode
@@ -21,7 +23,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
  * - When a file is chosen in the form the label names the upload and a bar without a number is shown: a form post cannot report real progress, so none is invented.
  * - Destructive and financial actions ask first in a dialog with its own title and button, then submit the very same form.
  */
-export function AsyncButton({ children, busy, confirm, className = 'button', onClick, disabled, ...rest }: Props) {
+export function AsyncButton({ children, busy, action, confirm, className = 'button', onClick, disabled, ...rest }: Props) {
   const scope = useScope()
   const stepPending = useContext(StepPending)
   const ref = useRef<HTMLButtonElement>(null)
@@ -63,7 +65,7 @@ export function AsyncButton({ children, busy, confirm, className = 'button', onC
   const up = scope.upload
   const sentLabel = up ? `${bytes(up.sent)} dari ${bytes(up.total)}` : ''
   const percent = up && up.total ? Math.min(100, Math.floor((up.sent / up.total) * 100)) : 0
-  const label = up ? (up.done ? 'Memeriksa dan menyimpan dokumen…' : `Mengunggah ${up.file} · ${percent}% (${sentLabel})`) : busy ?? (uploading ? uploadLabel(text) : busyLabel(text))
+  const label = up ? (up.done ? 'Memeriksa dan menyimpan dokumen…' : `Mengunggah ${up.file} · ${percent}% (${sentLabel})`) : busy ?? (uploading ? uploadLabel(text, action) : busyLabel(text, action))
   const showBusy = pending && shown
   return (
     <>

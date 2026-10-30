@@ -27,10 +27,10 @@ export function ArticleForm({ obj, revisions }: { obj: ArticlesRow | null; revis
         <ArticleBodyEditor initialHtml={obj?.body ?? ''} />
         {obj && obj.status === 'draft' ? <Autosave kind="article" id={obj.id} base={obj.updatedAt.toISOString()} /> : null}
         <div className="inline-actions">
-          <AsyncButton className="button" name="action" value="draft" type="submit">Save draft</AsyncButton>
+          <AsyncButton className="button" name="action" value="draft" type="submit" action="article.draft">Save draft</AsyncButton>
           {obj ? <>
-            <AsyncButton className="button" name="action" value="publish" type="submit">Publish</AsyncButton>
-            <AsyncButton className="button-outline" name="action" value="unpublish" type="submit">Unpublish</AsyncButton>
+            <AsyncButton className="button" name="action" value="publish" type="submit" action="article.publish">Publish</AsyncButton>
+            <AsyncButton className="button-outline" name="action" value="unpublish" type="submit" action="article.unpublish">Unpublish</AsyncButton>
             <a className="button-outline" href={`/${obj.locale}/preview/article/${obj.id}`} target="_blank" rel="noopener">Preview draft ↗</a>
           </> : null}
         </div>
