@@ -83,3 +83,11 @@ Server-rendered titles and descriptions per page and per locale, canonical URLs 
 ## Trade-offs
 
 A single codebase in one language for the website, the portal and the backend, rendered on the server so content is in the HTML, with plain SQL and numbered migrations instead of an ORM so the database stays the source of truth. Pages are rendered on every request, which keeps editing instantly visible but means latency follows the database region; put Vercel and Supabase in the same region (`VERCEL_SETUP_GUIDE.md` §3). Long-form copy for the five core service pages is source-controlled (`src/content/`); everything else is editable in the admin.
+
+## Uploads from the portal
+
+A file chosen in a portal form does not travel inside the Server Action request. `useStagedUpload` (`src/components/feedback/scope.tsx`) sends it to `POST /admin/api/upload` with XMLHttpRequest, so the browser can count the bytes that have really left, and submits the form with `<field>__staged` (a token naming the account that made it) in place of the file. `adminRun` and `adminRunForm` call `takeStaged` (`src/server/staging.ts`) before the action runs, which reads the staged object from the private documents bucket (`staging/<token>`), deletes it and puts an ordinary `File` back in the form, so the actions did not change. Unused staged files are swept after an hour. Forms outside `/admin` do not stage.
+
+## Drafts and previews
+
+`/admin/api/autosave/{article|page}` saves a draft only when its `updated_at` is still the one the editor loaded (compared to the millisecond) and never when it is published. `/admin/api/mail/preview` renders an email template with sample values through `cleanEmailHtml`, the same sanitiser as the real send. `/admin/api/pickers/*` are read-only JSON lists for the delivery note and invoice screens.

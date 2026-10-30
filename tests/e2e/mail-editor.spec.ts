@@ -6,7 +6,8 @@ test('the email template editor previews, lists its variables and saves', async 
   test.setTimeout(120_000)
   const problems: string[] = []
   const { context, page } = await openContext(browser)
-  trackProblems(page, 'admin', problems, { strict4xx: true })
+  // Playwright's own queries into the sandboxed preview frame are what the browser reports as blocked scripts; the page sends none (checked on the API answer below).
+  trackProblems(page, 'admin', problems, { strict4xx: true, benign: /Blocked script execution in 'about:srcdoc'/ })
   await signIn(page)
   await page.goto('/admin/mail', { waitUntil: 'networkidle' })
 
@@ -29,6 +30,13 @@ test('the email template editor previews, lists its variables and saves', async 
     await expect(panel.locator('p.mini[role=status]')).toContainText('belum disimpan')
   })
 
+  await test.step('the preview answer itself holds no script', async () => {
+    const res = await page.request.post('/admin/api/mail/preview', { data: { subject: 'S', html: '<p onclick="x()">a</p><script>alert(1)</script><iframe src="https://evil.example"></iframe><a href="javascript:alert(1)">b</a>' } })
+    const body = await res.json()
+    expect(body.html).not.toMatch(/<script|<iframe|onclick|javascript:/i)
+    expect(body.html).toContain('a')
+  })
+
   await test.step('clicking a variable puts it at the cursor', async () => {
     const area = panel.locator('textarea')
     await area.fill('AB')
@@ -45,7 +53,7 @@ test('the email template editor previews, lists its variables and saves', async 
     expect(saved).toContain('Body text')
     expect(saved).not.toContain('<script')
     await page.locator('details:has(summary[data-key=invoice_customer]) summary').click()            // the page was reloaded by the save: the panel is closed again
-    await page.locator('button:has-text("Send example to the administrator")').first().click()
+    await page.locator('details:has(summary[data-key=invoice_customer]) button:has-text("Send example to the administrator")').click()
     await expect(page.locator('.alert, .toast, [role=status]').filter({ hasText: /SMTP/ }).first()).toBeVisible()
   })
   expect(problems.filter((p) => !/Failed to load resource/.test(p))).toEqual([])
