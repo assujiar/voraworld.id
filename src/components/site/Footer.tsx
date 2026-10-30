@@ -1,4 +1,5 @@
 import { makeT, navLabels, serviceGroups, siteText, type Locale } from '@/content'
+import { FOOTER_DESCRIPTION } from '@/content/footer'
 
 export function Footer({ locale, settings }: { locale: Locale; settings: Record<string, string> }) {
   const t = makeT(locale)
@@ -11,7 +12,7 @@ export function Footer({ locale, settings }: { locale: Locale; settings: Record<
           <div>
             <a href={`/${locale}`}><img src="/static/assets/vora-reverse.svg" alt="VORA" width={150} height={44} /></a>
             <p className="v-footer__tag">{text.home_title}</p>
-            <p>{settings.company_description ?? ''}</p>
+            <p className="v-footer__about">{settings[`footer_description_${locale}`]?.trim() || FOOTER_DESCRIPTION[locale]}</p>
           </div>
           <div>
             <h4>{t('Company', 'Perusahaan')}</h4>

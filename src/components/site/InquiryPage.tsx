@@ -21,8 +21,8 @@ export async function InquiryPage({ locale, kind, sp }: { locale: Locale; kind: 
           </div>
           <div className="v-formcard">
             {sp.sent ? <div className="alert" role="status">{t('Inquiry submitted successfully. Our team will review it.', 'Permintaan berhasil dikirim dan akan ditinjau tim kami.')}</div> : null}
-            {sp.error ? <div className="alert" role="alert">{sp.error}</div> : null}
-            <InquiryForm locale={locale} kind={kind} mode={sp.mode} />
+            {sp.error ? <div className="alert" role="alert" id="form-error" tabIndex={-1}>{sp.error}</div> : null}
+            <InquiryForm locale={locale} kind={kind} mode={sp.mode} error={sp.error} />
           </div>
         </div>
       </section>

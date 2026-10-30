@@ -41,7 +41,7 @@
 
 /* Header */
 .v-header{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:1px solid var(--hair)}
-.v-header__in{display:flex;align-items:center;gap:28px;min-height:76px}
+.v-header__in{position:relative;display:flex;align-items:center;gap:28px;min-height:76px}
 .v-brand img{display:block;height:36px;width:auto}
 .v-nav{display:flex;align-items:center;gap:6px;margin-left:auto}
 .v-nav>a,.v-nav>details>summary{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:8px;font-size:.96rem;font-weight:560;font-stretch:102%;cursor:pointer;list-style:none;transition:background-color .15s}
@@ -50,8 +50,8 @@
 .v-nav>details>summary::after{content:"";width:7px;height:7px;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg);transition:transform .18s var(--ease)}
 .v-nav>details[open]>summary::after{transform:translateY(1px) rotate(225deg)}
 .v-nav [aria-current=page]{box-shadow:inset 0 -2px 0 var(--red);border-radius:0}
-.v-nav__services{position:relative}
-.v-mega{position:absolute;right:-120px;top:calc(100% + 12px);width:min(880px,92vw);background:var(--white);border:1px solid var(--hair);border-radius:18px;padding:26px 28px 22px;box-shadow:0 30px 60px -24px rgba(16,23,32,.4);display:grid;grid-template-columns:repeat(5,1fr);gap:22px}
+.v-nav__services{position:static}                      /* the panel is anchored to the header container, not to its own button */
+.v-mega{position:absolute;right:0;left:auto;top:calc(100% + 8px);width:min(900px,100%);max-height:calc(100vh - 110px);overflow:auto;overscroll-behavior:contain;background:var(--white);border:1px solid var(--hair);border-radius:18px;padding:26px 28px 22px;box-shadow:0 30px 60px -24px rgba(16,23,32,.4);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px}
 .v-mega h4{font-size:.98rem;font-weight:680;font-stretch:104%;line-height:1.25;margin-bottom:10px}
 .v-mega a{display:block;padding:5px 0;font-size:.9rem;color:var(--steel)}
 .v-mega a:hover{color:var(--ink)}
@@ -335,3 +335,20 @@
 .v-formcard input[type=checkbox]{width:auto;min-height:0;margin-right:8px;accent-color:var(--red)}
 .v-formcard label:has(>input[type=checkbox]){font-weight:400;display:block}
 @media(max-width:560px){.v-formcard .form-grid{grid-template-columns:1fr}}
+
+/* Forms: a visible edge for every control (not only a shadow), grouped fields, hints and consent */
+.v-fieldset{border:0;margin:0 0 26px;padding:0;min-width:0}
+.v-fieldset>legend{padding:0;margin-bottom:14px;font-weight:680;font-stretch:104%;font-size:1.02rem;letter-spacing:-.01em}
+.v-formcard .field label{display:block;margin-bottom:6px;font-size:.93rem;font-weight:580;color:var(--ink)}
+.v-formcard input:not([type=checkbox]):not([type=radio]),.v-formcard select,.v-formcard textarea{width:100%;min-height:48px;padding:11px 14px;font:inherit;color:var(--ink);background:var(--white);border:1.5px solid rgba(16,23,32,.38);border-radius:10px;box-shadow:inset 0 1px 2px rgba(16,23,32,.06)}
+.v-formcard textarea{min-height:0}
+.v-formcard input:hover,.v-formcard select:hover,.v-formcard textarea:hover{border-color:rgba(16,23,32,.6)}
+.v-formcard input:focus-visible,.v-formcard select:focus-visible,.v-formcard textarea:focus-visible{outline:none;border-color:var(--red);box-shadow:0 0 0 4px rgba(180,62,49,.18)}
+.v-formcard :user-invalid{border-color:var(--red)}
+.v-hint{margin:6px 0 0;font-size:.86rem;line-height:1.5;color:var(--steel)}
+.v-hint--list{padding:12px 14px;border-left:3px solid var(--red);background:var(--bone);border-radius:0 8px 8px 0;margin:0}
+.v-hint--list ul{margin:8px 0 0;padding-left:18px}.v-hint--list li{margin:3px 0}
+.v-consent{display:flex;gap:12px;align-items:flex-start}
+.v-consent input{flex:none;width:22px;height:22px;margin-top:2px}
+.v-consent label{margin:0;font-weight:400;font-size:.92rem}
+#form-error:focus{outline:2px solid var(--red);outline-offset:2px}
