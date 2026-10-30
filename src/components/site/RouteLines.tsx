@@ -2,7 +2,7 @@ import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from 'remotion'
 import { evolvePath, getLength, getPointAtLength } from '@remotion/paths'
 
 /**
- * The hero's route drawing, a Remotion composition (1000 x 1000, 30 fps, 10 s, looping). Four routes leave one hub, draw themselves one after another,
+ * The hero's route drawing, a Remotion composition (1000 x 1000, 30 fps, 10 s; the Player plays the first part once and holds, see RouteLinesPlayer). Four routes leave one hub, draw themselves one after another,
  * and a carrier keeps travelling along each; the whole fades before the loop restarts. It is abstract on purpose: no place is named and no route is
  * claimed, it only says "freight moves along lines". Everything is driven by the frame number, so the same code renders in the Player and in a still.
  */
