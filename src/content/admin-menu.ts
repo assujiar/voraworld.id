@@ -9,7 +9,7 @@ export const ADMIN_MENU: Array<{ title: string; links: Array<{ label: string; hr
   { title: 'Finance', links: [
     { label: 'Invoices & Payments', href: '/admin/invoices' }, { label: 'Receipts', href: '/admin/receipts' }, { label: 'Bank Accounts', href: '/admin/bank-accounts' },
   ] },
-  { title: 'Documents', links: [{ label: 'Letters, Agreements & Seals', href: '/admin/documents' }, { label: 'Signers', href: '/admin/signers' }] },
+  { title: 'Documents', links: [{ label: 'Letters, Agreements & Seals', href: '/admin/documents' }, { label: 'Verification & Signing', href: '/admin/signing' }, { label: 'Signers', href: '/admin/signers' }] },
   { title: 'Website & Content', links: [
     { label: 'Pages & Sections', href: '/admin/pages' }, { label: 'Articles', href: '/admin/articles' }, { label: 'FAQs', href: '/admin/faq' },
     { label: 'Media Library', href: '/admin/media' }, { label: 'Navigation', href: '/admin/navigation' }, { label: 'Coverage', href: '/admin/coverage' },
