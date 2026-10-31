@@ -44,11 +44,11 @@ export async function renderQuotation(q: QuotationData, issuer: Issuer, verifica
     s.right(RIGHT, H - 86, (q.status || 'draft').toUpperCase().replace(/_/g, ' '), 7, '#E8B3AA', true)
     s.footer(FOOTER_TOP, LEFT, RIGHT, BAND_EDGE_FOOT)
     const mark = s.verificationMark({ url: verificationUrl, lang: 'en', right: RIGHT, bottom: 7.5 })
-    s.text(LEFT, 71, 'VORA / DOCUMENT VERIFICATION', 7.7, SLATE, true)
+    s.text(LEFT, 71, 'VORA | DOCUMENT VERIFICATION', 7.7, SLATE, true)
     s.text(LEFT, 60, 'Scan the QR code, or click this link, to check the document online:', 6.4, SLATE)
     s.linkLines(LEFT, 50, verificationUrl, mark.left - 12 - LEFT, 5.9, INK)
     s.text(LEFT, 36, issuer.email, 7.2, INK)
-    s.text(LEFT, 24, `${TITLE}  /  PAGE ${pageNo} OF ${total}`, 7.1, SLATE)
+    s.text(LEFT, 24, `${TITLE}  |  PAGE ${pageNo} OF ${total}`, 7.1, SLATE)
   })
   return s.save()
 }

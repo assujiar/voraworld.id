@@ -100,7 +100,7 @@ export function deriveView(raw: RawVerification): VerifyModel {
   else banner = 'record_found'
 
   return {
-    kind: raw.kind, label: raw.label, labelId: raw.labelId, reference: raw.number, issuer: 'VORA / PT Satu Arah International', issuedOn: raw.issuedOn, banner, policy,
+    kind: raw.kind, label: raw.label, labelId: raw.labelId, reference: raw.number, issuer: 'VORA | PT Satu Arah International', issuedOn: raw.issuedOn, banner, policy,
     live: revoked ? [] : raw.live, holder: revoked || raw.status === 'draft' ? null : raw.holder, source: revoked ? null : raw.source,
     issuance, signing, signings: raw.signings, artifacts, parties: raw.parties, executed, chain: raw.chain,
     assurance: latest ? 'archived' : policy.archive === 'live' && !legacyDoc ? 'live' : 'legacy',
@@ -131,11 +131,11 @@ export async function loadVerification(token: string): Promise<VerifyModel | nul
     const inv = kind === 'prepayment' ? await one('invoices', (q) => q.eq('id', doc.invoiceId as number), 'status') : doc
     invoiceState = inv?.status as string
     const prepaymentVoid = kind === 'prepayment' && invoiceState === 'void'
-    if (!prepaymentVoid) live.push({ label: kind === 'prepayment' ? { en: 'Status of the invoice', id: 'Status faktur' } : { en: 'Payment status', id: 'Status pembayaran' }, value: invoiceState === 'paid' ? 'OFFICIALLY PAID / LUNAS' : invoiceState === 'partially_paid' ? 'PARTIALLY PAID / DIBAYAR SEBAGIAN' : 'AWAITING PAYMENT / MENUNGGU PEMBAYARAN' })
+    if (!prepaymentVoid) live.push({ label: kind === 'prepayment' ? { en: 'Status of the invoice', id: 'Status faktur' } : { en: 'Payment status', id: 'Status pembayaran' }, value: invoiceState === 'paid' ? 'OFFICIALLY PAID | LUNAS' : invoiceState === 'partially_paid' ? 'PARTIALLY PAID | DIBAYAR SEBAGIAN' : 'AWAITING PAYMENT | MENUNGGU PEMBAYARAN' })
   }
-  if (kind === 'delivery') live.push({ label: { en: 'Delivery note state', id: 'Status surat jalan' }, value: doc.status === 'delivered' ? 'PROOF OF DELIVERY RECORDED / BUKTI PENGIRIMAN TERCATAT' : 'ISSUED, NOT YET RECEIVED / DITERBITKAN, BELUM DITERIMA' })
-  if (kind === 'pod') live.push({ label: { en: 'Proof of delivery', id: 'Bukti pengiriman' }, value: doc.status === 'submitted' ? 'RECORDED / TERCATAT' : 'REJECTED BY VORA FINANCE / DITOLAK' })
-  if (kind === 'quotation') live.push({ label: { en: 'Customer approval', id: 'Persetujuan pelanggan' }, value: ({ approved: 'UPLOADED BY CUSTOMER, AWAITING VORA VALIDATION / DIUNGGAH PELANGGAN, MENUNGGU VALIDASI VORA', validated: 'VALIDATED BY VORA / DIVALIDASI VORA', awaiting_approval: 'AWAITING THE CUSTOMER / MENUNGGU PELANGGAN' } as Record<string, string>)[doc.status as string] ?? 'NOT REQUESTED / BELUM DIMINTA' })
+  if (kind === 'delivery') live.push({ label: { en: 'Delivery note state', id: 'Status surat jalan' }, value: doc.status === 'delivered' ? 'PROOF OF DELIVERY RECORDED | BUKTI PENGIRIMAN TERCATAT' : 'ISSUED, NOT YET RECEIVED | DITERBITKAN, BELUM DITERIMA' })
+  if (kind === 'pod') live.push({ label: { en: 'Proof of delivery', id: 'Bukti pengiriman' }, value: doc.status === 'submitted' ? 'RECORDED | TERCATAT' : 'REJECTED BY VORA FINANCE | DITOLAK' })
+  if (kind === 'quotation') live.push({ label: { en: 'Customer approval', id: 'Persetujuan pelanggan' }, value: ({ approved: 'UPLOADED BY CUSTOMER, AWAITING VORA VALIDATION | DIUNGGAH PELANGGAN, MENUNGGU VALIDASI VORA', validated: 'VALIDATED BY VORA | DIVALIDASI VORA', awaiting_approval: 'AWAITING THE CUSTOMER | MENUNGGU PELANGGAN' } as Record<string, string>)[doc.status as string] ?? 'NOT REQUESTED | BELUM DIMINTA' })
 
   const general = kind === 'document' ? documentType(doc.kind as string) : undefined
   const stored = kind === 'document' ? (doc.fields as StoredFields | null) : null

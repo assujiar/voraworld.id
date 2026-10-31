@@ -62,14 +62,14 @@ async function compose(d: InvoiceData, issuer: Issuer, verificationUrl: string, 
     s.footer(83, L, R)
     const mark = s.verificationMark({ url: verificationUrl, lang: 'en', right: R, bottom: 7.5 })
     const column = mark.left - 12 - L
-    s.text(L, 72, 'VORA / DIGITAL DOCUMENT VERIFICATION', 7.6, INK, true)
+    s.text(L, 72, 'VORA | DIGITAL DOCUMENT VERIFICATION', 7.6, INK, true)
     s.text(L, 63, 'Scan the QR, or click this link, to check document status with VORA:', 6.2, SLATE)
     s.linkLines(L, 54, verificationUrl, column, 5.9, INK)
     // An invoice is a payment request. Proof of payment is only the receipt issued after cleared funds.
     s.text(L, 43, 'PAYMENT REQUEST - NOT PROOF OF PAYMENT', 6.9, RED, true)
     s.text(L, 34, 'Proof of payment is the official VORA receipt, issued only', 6.2, SLATE)
     s.text(L, 26, 'after Finance confirms cleared funds.', 6.2, SLATE)
-    s.text(L, 14, `${issuer.email}  /  PAGE ${String(pageNo).padStart(2, '0')} OF ${String(total).padStart(2, '0')}`, 6.8, SLATE)
+    s.text(L, 14, `${issuer.email}  |  PAGE ${String(pageNo).padStart(2, '0')} OF ${String(total).padStart(2, '0')}`, 6.8, SLATE)
   }
 
   const partiesAndMetadata = (): number => {

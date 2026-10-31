@@ -102,7 +102,8 @@ function checkedArticles(rows: Article[] | undefined): Article[] {
   return list
 }
 
-async function prepare(input: DocumentInput, fixed?: { kind: string; language: Lang }): Promise<Prepared> {
+/** `confirm`: the placement of a third-party PDF's mark was reviewed and confirmed by the person (required whenever a draft is made or saved; an older draft is still issued). */
+async function prepare(input: DocumentInput, fixed?: { kind: string; language: Lang }, confirm = false): Promise<Prepared> {
   const type = documentType(fixed?.kind ?? input.kind)
   if (!type) throw new ActionError('Choose a document type')
   const lang: Lang = fixed?.language ?? (isLang(input.language) ? input.language : 'id')
@@ -130,6 +131,8 @@ async function prepare(input: DocumentInput, fixed?: { kind: string; language: L
   if (type.family === 'seal') {
     if (!input.source) throw new ActionError('Upload the PDF that is to receive the seal')
     fields.source = input.source
+    // The person must have looked at where the mark goes on the pages and confirmed it: nothing is placed on somebody else's document by default.
+    if (confirm && values.placement_confirmed !== 'yes') throw new ActionError('Confirm where the VORA mark goes on the page before saving')
     // Where the seal goes: a dropped position is a pair of fractions of the page; a chosen page must exist in this PDF.
     if (values.corner === 'custom' && (fraction(values.pos_x) === null || fraction(values.pos_y) === null)) throw new ActionError('Drag the seal onto the page, or choose a corner')
     if (values.pages === 'one') {
@@ -145,7 +148,7 @@ async function prepare(input: DocumentInput, fixed?: { kind: string; language: L
 }
 
 export async function createDocument(actorId: number, input: DocumentInput): Promise<number> {
-  const p = await prepare(input)
+  const p = await prepare(input, undefined, true)
   try {
     return await rpc<number>('document_create', {
       p_actor: actorId,
@@ -163,7 +166,7 @@ export async function updateDocument(actorId: number, id: number, input: Documen
   if (!doc) throw new ActionError('Document not found', 404)
   if (doc.status !== 'draft') throw new ActionError('Only a draft can be edited: void this document and write a new one', 409)
   const before = (doc.fields as StoredFields).source
-  const p = await prepare({ ...input, source: input.source ?? before }, { kind: doc.kind as string, language: doc.language as Lang })
+  const p = await prepare({ ...input, source: input.source ?? before }, { kind: doc.kind as string, language: doc.language as Lang }, true)
   await rpc('document_update', { p_actor: actorId, p_id: id, p: { customer_id: p.customerId, subject: p.subject, recipient: p.recipient, document_date: p.date, fields: p.fields } })
   if (input.source && before && before.key !== input.source.key) await removeObject('documents', before.key).catch(() => undefined)      // the file that was replaced
 }

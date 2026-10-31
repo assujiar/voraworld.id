@@ -10,7 +10,7 @@ describe('verification links in email', () => {
     const out = withVerificationLinks('<p>Dear customer</p>', [{ label: 'INV-1', url: URL1 }], ORIGIN)
     expect(out).toContain(`<a href="${URL1}">${URL1}</a>`)
     expect(out).toContain('INV-1')
-    expect(out).toContain('Periksa keaslian dokumen / Verify this document')
+    expect(out).toContain('Periksa keaslian dokumen | Verify this document')
   })
 
   it('adds nothing when the template already has the link, and never twice', () => {

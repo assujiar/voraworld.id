@@ -34,11 +34,11 @@ export function FileCheck({ recorded }: { recorded: Recorded[] }) {
   }
   return (
     <div className="vf-check">
-      <label htmlFor="file-check"><strong>Check a PDF you hold <span className="vf-id">/ Periksa PDF yang Anda pegang</span></strong></label>
+      <label htmlFor="file-check"><strong>Check a PDF you hold <span className="vf-id">| Periksa PDF yang Anda pegang</span></strong></label>
       <p className="vf-small">Choose the PDF. Its fingerprint is worked out on this device; the file is not uploaded. <span className="vf-id">Pilih PDF. Sidik jarinya dihitung di perangkat ini; berkas tidak diunggah.</span></p>
       <input id="file-check" type="file" accept="application/pdf,.pdf" onChange={(e) => void check(e.target.files?.[0])} />
       <div role="status" aria-live="polite" className="vf-result" data-tone={result?.tone ?? ''}>
-        {busy ? 'Checking the file... / Memeriksa berkas...' : result ? <><strong>{result.tone === 'ok' ? '✓ ' : result.tone === 'bad' ? '✕ ' : '! '}{result.en}</strong><br /><span className="vf-id">{result.id}</span></> : null}
+        {busy ? 'Checking the file... | Memeriksa berkas...' : result ? <><strong>{result.tone === 'ok' ? '✓ ' : result.tone === 'bad' ? '✕ ' : '! '}{result.en}</strong><br /><span className="vf-id">{result.id}</span></> : null}
       </div>
       <p className="vf-small">A match shows the file is unchanged. It does not by itself prove who signed it or who issued an original. <span className="vf-id">Kecocokan menunjukkan berkas tidak berubah; ini tidak dengan sendirinya membuktikan siapa penandatangan atau penerbit dokumen asli.</span></p>
     </div>

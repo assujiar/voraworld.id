@@ -28,7 +28,7 @@ export function withVerificationLinks(html: string, links: VerifyLink[], origin:
   })
   if (!missing.length) return html
   const rows = missing.map((l) => `<div style="margin:4px 0">${l.label ? `<strong>${escapeHtml(l.label)}</strong><br>` : ''}<a href="${escapeHtml(l.url)}">${escapeHtml(l.url)}</a></div>`).join('')
-  return `${html}<div style="margin-top:20px;padding-top:12px;border-top:1px solid #DCE0E1;font-size:13px;line-height:1.5"><strong>Periksa keaslian dokumen / Verify this document</strong>${rows}<span style="color:#64717C">Klik tautan di atas untuk memeriksa dokumen dan status terkininya di voraworld.id. / Click the link above to check the document and its current status on voraworld.id.</span></div>`
+  return `${html}<div style="margin-top:20px;padding-top:12px;border-top:1px solid #DCE0E1;font-size:13px;line-height:1.5"><strong>Periksa keaslian dokumen | Verify this document</strong>${rows}<span style="color:#64717C">Klik tautan di atas untuk memeriksa dokumen dan status terkininya di voraworld.id. / Click the link above to check the document and its current status on voraworld.id.</span></div>`
 }
 
 const TABLES: Record<DocumentKind, string> = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations', prepayment: 'prepayment_receipts', document: 'documents', delivery: 'deliveries', pod: 'delivery_proofs' }

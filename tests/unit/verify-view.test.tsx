@@ -96,10 +96,12 @@ describe('what the page says', () => {
     expect(html(deriveView(raw({ status: 'draft', artifacts: [], chain: null })))).toContain('BELUM DITANDATANGANI')
     expect(html(deriveView(raw({ chain: { ok: false, events: 1 } })))).toContain('VERIFIKASI BELUM LENGKAP')
   })
-  it('states what an attestation is and is not, and that a QR code and a stamp are not a signature', () => {
+  it('states what an attestation is, and carries no "not a signature" disclaimers', () => {
     const h = html()
     expect(h).toContain('not a PSrE-certified electronic seal')
-    expect(h).toContain('A QR code or a corporate stamp is not a signature.')
+    expect(h).not.toMatch(/not a (personal )?signature|bukan tanda tangan/i)
+    for (const kind of ['letter', 'certificate', 'nda', 'statement', 'authorization']) expect(html(deriveView(raw({ documentKind: kind }))), kind).not.toMatch(/not a (personal |certified )?(electronic )?signature|bukan tanda tangan/i)
+    for (const kind of ['quotation', 'pod', 'delivery', 'prepayment'] as const) expect(html(deriveView(raw({ kind, documentKind: undefined }))), kind).not.toMatch(/not a (personal |certified )?(electronic )?signature|not the customer's signature|bukan tanda tangan/i)
   })
   it('names the signer, the position, the purpose and the non-certified method, from the records', () => {
     const h = html(deriveView(raw({ signings: [{ ref: 'VORA-SIG-1', purpose: 'approved', signerName: 'Siti Rahma', signerPosition: 'Direktur', signedAt: '2026-11-02T03:00:00.000Z', version: 2, method: 'webauthn' }] })))

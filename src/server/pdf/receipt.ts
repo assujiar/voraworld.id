@@ -110,11 +110,11 @@ export async function renderReceipt(r: ReceiptData, issuer: Issuer, verification
   s.footer(99, L, R)
   const mark = s.verificationMark({ url: verificationUrl, lang: 'en', right: R, bottom: 10 })
   const column = mark.left - 12 - L
-  s.text(L, 86, 'VORA / DOCUMENT AUTHENTICITY VERIFICATION', 7.8, INK, true)
+  s.text(L, 86, 'VORA | DOCUMENT AUTHENTICITY VERIFICATION', 7.8, INK, true)
   s.text(L, 75, 'Scan the QR, or click this link, to check this receipt and its current status:', 6.4, SLATE)
   s.linkLines(L, 66, verificationUrl, column, 5.9, INK)
   s.text(L, 49, 'Issued after VORA Finance confirmed cleared funds.', 6.9, SLATE)
   s.text(L, 36, issuer.email, 7.2, INK)
-  s.text(L, 22, 'RECEIPT / PAGE 01 OF 01', 7.0, SLATE)
+  s.text(L, 22, 'RECEIPT | PAGE 01 OF 01', 7.0, SLATE)
   return s.save()
 }

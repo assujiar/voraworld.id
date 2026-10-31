@@ -182,7 +182,7 @@ describe('quotation PDFs', () => {
     const text = squash(pages[0])
     const [{ number }] = await sql`select number from quotations where id = ${id}`
     for (const s of ['TERMS OF PAYMENT', '50% down payment on approval of this quotation; the balance within 14 days of the invoice date.', 'TERMS & CONDITIONS', ...CLAUSES.map((c, i) => `${i + 1}. ${c}`),
-      'NOTES', 'Customer approval requires authorized signature', 'PRICE AGREEMENT LETTER / PAGE 1 OF 1', `Ref. ${number}`]) expect(text, s).toContain(s)
+      'NOTES', 'Customer approval requires authorized signature', 'PRICE AGREEMENT LETTER | PAGE 1 OF 1', `Ref. ${number}`]) expect(text, s).toContain(s)
     approvalAreaWhole(pages[0])
     // The signature sits under the terms it accepts, and says exactly what is being accepted.
     expect(text).toMatch(new RegExp(`the Customer agrees to the prices in this Price Agreement Letter ${number} \\(total IDR [\\d,]+, valid until 2026-11-10\\), including the Terms of Payment and the Terms & Conditions stated in this document\\.`))
@@ -199,7 +199,7 @@ describe('quotation PDFs', () => {
     expect(pages.length).toBeGreaterThanOrEqual(1); expect(pages.length).toBeLessThanOrEqual(2)
     const text = squash(pages.join(' '))
     for (let i = 1; i <= 10; i++) expect(text).toContain(`International freight and customs handling / cargo services to destination ${i}`)
-    for (const s of ['PRICE AGREEMENT LETTER', 'TAX (11%)', 'TOTAL IDR 11,100,000', 'TERMS OF PAYMENT', 'TERMS & CONDITIONS', `PRICE AGREEMENT LETTER / PAGE ${pages.length} OF ${pages.length}`]) expect(text, s).toContain(s)
+    for (const s of ['PRICE AGREEMENT LETTER', 'TAX (11%)', 'TOTAL IDR 11,100,000', 'TERMS OF PAYMENT', 'TERMS & CONDITIONS', `PRICE AGREEMENT LETTER | PAGE ${pages.length} OF ${pages.length}`]) expect(text, s).toContain(s)
     expect(text.match(/CUSTOMER APPROVAL/g)).toHaveLength(1)
     approvalAreaWhole(pages[pages.length - 1])                                       // all of it on the last page
     const [{ number }] = await sql`select number from quotations where id = ${id}`
@@ -243,7 +243,7 @@ describe('quotation PDFs', () => {
     for (let i = 1; i <= 40; i++) expect(text).toContain(`destination ${i} `)
     expect(text).toContain('SERVICES AND AGREED PRICES (CONTINUED)')
     expect(text.match(/(?<![A-Z])TOTAL IDR/g)).toHaveLength(1)
-    expect(text).toContain(`PRICE AGREEMENT LETTER / PAGE 1 OF ${pages.length}`); expect(text).toContain(`PRICE AGREEMENT LETTER / PAGE ${pages.length} OF ${pages.length}`)
+    expect(text).toContain(`PRICE AGREEMENT LETTER | PAGE 1 OF ${pages.length}`); expect(text).toContain(`PRICE AGREEMENT LETTER | PAGE ${pages.length} OF ${pages.length}`)
   })
   it('never clip very long descriptions, terms or notes: they flow onto more pages', async () => {
     const id = await quote(10, { text: 'Extremely long details '.repeat(10), notes: 'Very long notes '.repeat(110), terms: 'Very long terms '.repeat(110) })

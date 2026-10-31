@@ -70,11 +70,11 @@ export async function renderCertificate(d: GeneralDocData, issuer: Issuer, verif
   // Footer: how to verify it.
   s.footer(86, left, right)
   const mark = s.verificationMark({ url: verificationUrl, lang, right, bottom: 7.5 })
-  s.text(left, 71, lang === 'id' ? 'VORA / VERIFIKASI SERTIFIKAT' : 'VORA / CERTIFICATE VERIFICATION', 7.7, SLATE, true)
+  s.text(left, 71, lang === 'id' ? 'VORA | VERIFIKASI SERTIFIKAT' : 'VORA | CERTIFICATE VERIFICATION', 7.7, SLATE, true)
   s.text(left, 60, WORDS.verifyOnline[lang], 6.4, SLATE)
   s.linkLines(left, 50, verificationUrl, mark.left - 12 - left, 5.9, INK)
   s.text(left, 36, issuer.email, 7.2, INK)
-  s.text(left, 24, `${label}  /  ${d.number}`, 7.1, SLATE)
+  s.text(left, 24, `${label}  |  ${d.number}`, 7.1, SLATE)
   return s.save()
 }
 

@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
       originalFileSha256: model.source?.originalSha256 ?? null,
       signings: model.signings.map((s) => ({ reference: s.ref, signer: s.signerName, position: s.signerPosition, purpose: s.purpose, signedAt: s.signedAt, version: s.version, method: 'electronic signature, non-certified, passkey-authenticated' })),
       parties: model.parties.map((p) => ({ role: p.role, name: p.name, required: p.required, fulfilled: p.fulfilled, method: p.method })),
-      notice: 'A screenshot is not independent verification evidence. Check the document on the official verification page. This summary is a record of what VORA holds; it is not a certified electronic seal or a certified signature.',
+      notice: 'A screenshot is not independent verification evidence. Check the document on the official verification page. This summary is a record of what VORA holds.',
     }
     return new Response(JSON.stringify(body, null, 2), { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-disposition': `inline; filename="verification-${model.reference.replace(/[^A-Za-z0-9._-]/g, '_')}.json"` } })
   } catch (e) {

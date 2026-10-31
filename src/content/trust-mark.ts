@@ -43,7 +43,7 @@ export interface MarkOptions {
   scale?: number
   /**
    * `personal: false` is VORA's own endorsement of a file (the corporate mark, issued by the application): it names the company, carries the document number instead of a
-   * signing event, and says plainly that it is not a personal electronic signature. `personal` (the default) is a signing by an authorised individual.
+   * signing event, and has no signing line. `personal` (the default) is a signing by an authorised individual.
    */
   signing?: { purposeLabel: string; name: string; position: string; eventRef: string; signedAt?: string; personal?: boolean }
   /** A preview shows where the mark will go; it is marked as one and carries no signing time. */

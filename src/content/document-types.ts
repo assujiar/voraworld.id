@@ -60,7 +60,7 @@ const T = (id: string, en: string): Bi => ({ id, en })
 const place: FieldDef = { name: 'place', label: T('Tempat', 'Place'), input: 'text', required: true, max: 80, initial: T('Jakarta', 'Jakarta'), hint: T('Dicetak di depan tanggal dokumen.', 'Printed before the document date.') }
 const signatory: FieldDef[] = [
   { name: 'signatory_name', label: T('Nama penandatangan', 'Signatory name'), input: 'text', required: true, max: 160, section: T('Penandatangan', 'Signatory') },
-  { name: 'signatory_title', label: T('Jabatan penandatangan', 'Signatory position'), input: 'text', required: true, max: 160 },
+  { name: 'signatory_title', label: T('Jabatan yang dituju', 'Intended position'), input: 'text', required: true, max: 160 },
 ]
 const recipient: FieldDef[] = [
   { name: 'recipient_name', label: T('Kepada Yth.', 'To'), input: 'text', required: true, max: 240, section: T('Penerima surat', 'Recipient') },
@@ -301,17 +301,18 @@ export const DOCUMENT_TYPES: DocumentType[] = [
   }),
   {
     key: 'seal', prefix: 'SEL', family: 'seal', label: T('Segel QR pada Dokumen Pihak Lain', 'QR seal on a third-party document'),
-    summary: T('Unggah PDF yang diterbitkan pihak lain secara digital; VORA membubuhkan kode QR pengesahan beserta nama penandatangan. Pemindai QR melihat keaslian dan sidik jari (SHA-256) berkas.', 'Upload a PDF issued digitally by another party; VORA adds a QR code of endorsement with the signatory\'s name. Scanning the QR shows its authenticity and the file\'s fingerprint (SHA-256).'),
+    summary: T('Unggah PDF yang diterbitkan pihak lain secara digital; VORA mendaftarkan berkas dan membubuhkan penanda verifikasi (kode QR, tautan dan identitas korporat). Berkas asli disimpan utuh; tanda tangan pribadi dibubuhkan terpisah oleh penandatangan berwenang. Halaman verifikasi menunjukkan sidik jari (SHA-256) berkas.', 'Upload a PDF issued digitally by another party; VORA registers it and adds its verification mark (QR code, link and corporate identity). The original is kept unchanged; a person\'s signature is added separately by an authorised signer. The verification page shows the file\'s fingerprint (SHA-256).'),
     fields: [
       { name: 'source_title', label: T('Judul / jenis dokumen', 'Document title / type'), input: 'text', required: true, max: 160, section: T('Dokumen yang disahkan', 'Document to be sealed'), hint: T('Tampil di halaman verifikasi publik.', 'Shown on the public verification page.') },
       { name: 'source_issuer', label: T('Diterbitkan oleh (pihak lain)', 'Issued by (the other party)'), input: 'text', required: true, max: 160, hint: T('Tampil di halaman verifikasi publik.', 'Shown on the public verification page.') },
       { name: 'source_reference', label: T('Nomor dokumen asal', 'Number of the original document'), input: 'text', max: 100, hint: T('Tampil di halaman verifikasi publik.', 'Shown on the public verification page.') },
-      { name: 'signatory_name', label: T('Nama penandatangan VORA', 'VORA signatory name'), input: 'text', required: true, max: 160, section: T('Pengesahan', 'Endorsement') },
-      { name: 'signatory_title', label: T('Jabatan penandatangan', 'Signatory position'), input: 'text', required: true, max: 160 },
+      { name: 'signatory_name', label: T('Penandatangan VORA yang dituju', 'Intended VORA signatory'), input: 'text', required: true, max: 160, section: T('Pengesahan', 'Endorsement'), hint: T('Hanya catatan. Nama ini tidak dicetak dan bukan bukti identitas: penandatangan tampil di dokumen hanya setelah ia menandatangani sendiri di VORA.', 'A note only. This name is not printed and is not proof of identity: a signer appears on the document only after they sign it themselves in VORA.') },
+      { name: 'signatory_title', label: T('Jabatan yang dituju', 'Intended position'), input: 'text', required: true, max: 160 },
       sealSelect('purpose', T('Makna pengesahan', 'Meaning of the endorsement'), [['verified', 'Diperiksa dan disahkan', 'Checked and endorsed'], ['approved', 'Disetujui', 'Approved'], ['acknowledged', 'Diketahui', 'Acknowledged']], 'verified'),
       { ...sealSelect('pages', T('Halaman yang diberi segel', 'Pages that carry the seal'), [['last', 'Halaman terakhir', 'Last page'], ['first', 'Halaman pertama', 'First page'], ['all', 'Semua halaman', 'Every page'], ['one', 'Satu halaman pilihan', 'One page I choose']], 'last'), hidden: true },
       { name: 'page_number', label: T('Nomor halaman', 'Page number'), input: 'text', max: 3, hidden: true },
       { ...sealSelect('corner', T('Posisi segel', 'Position of the seal'), [['bottom-right', 'Kanan bawah', 'Bottom right'], ['bottom-left', 'Kiri bawah', 'Bottom left'], ['top-right', 'Kanan atas', 'Top right'], ['top-left', 'Kiri atas', 'Top left'], ['custom', 'Digeser sendiri', 'Dragged by hand']], 'bottom-right'), hidden: true },
+      { name: 'placement_confirmed', label: T('Penempatan dikonfirmasi', 'Placement confirmed'), input: 'text', max: 3, hidden: true },
       { name: 'pos_x', label: T('Posisi mendatar', 'Horizontal position'), input: 'text', max: 8, hidden: true },
       { name: 'pos_y', label: T('Posisi tegak', 'Vertical position'), input: 'text', max: 8, hidden: true },
       { ...sealSelect('size', T('Ukuran segel', 'Size of the seal'), [['medium', 'Sedang', 'Medium'], ['small', 'Kecil', 'Small']], 'medium'), hidden: true },
@@ -350,7 +351,7 @@ export const BILLING_HEADINGS: Record<string, Bi> = {
 export const WORDS = {
   number: T('Nomor', 'No.'), attachments: T('Lampiran', 'Attachments'), subject: T('Perihal', 'Subject'), to: T('Kepada Yth.', 'To'), attention: T('U.p.', 'Attn.'),
   regards: T('Hormat kami,', 'Sincerely,'), issuedByVora: T('Diterbitkan oleh VORA', 'Issued by VORA'),
-  verifyHow: T('Penerbitan dan status dokumen ini diperiksa melalui tautan dan kode QR verifikasi di bawah. Kode QR bukan tanda tangan pribadi.', 'The issuance and status of this document are checked through the verification link and QR code below. The QR code is not a personal signature.'),
+  verifyHow: T('Penerbitan dan status dokumen ini dapat diperiksa melalui tautan dan kode QR verifikasi di bawah.', 'The issuance and status of this document can be checked through the verification link and QR code below.'),
   verifyTitle: T('VERIFIKASI DOKUMEN', 'DOCUMENT VERIFICATION'), signHere: T('Tanda tangan / cap', 'Signature / stamp'), copyTo: T('Tembusan', 'Copy to'), validUntil: T('Berlaku sampai', 'Valid until'),
   invoiceNo: T('No. Invoice', 'Invoice no.'), issued: T('Tanggal', 'Date'), due: T('Jatuh tempo', 'Due'), overdue: T('Terlambat', 'Overdue'), outstanding: T('Sisa tagihan', 'Outstanding'),
   days: T('hari', 'days'), notDue: T('belum jatuh tempo', 'not yet due'), total: T('TOTAL TAGIHAN', 'TOTAL DUE'), payBy: T('Mohon dibayar paling lambat', 'Please pay no later than'),

@@ -360,7 +360,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     for (const [kind, id] of [['invoice', invoiceId], ['receipt', receiptId], ['quotation', quotationId], ['prepayment', prepaymentId]]) {
       const token = await scalar(`select token from document_verification_tokens where kind='${kind}' and document_id=${id}`)
       await visitor.page.goto(`/verify/${token}`)
-      await expect(visitor.page.locator('body')).toContainText('AUTHENTIC')
+      await expect(visitor.page.locator('body')).toContainText('ISSUANCE RECORD FOUND')
       expect(await overflow(visitor.page), `${kind} verification page`).toBeLessThanOrEqual(1)
     }
     await visitor.context.close()

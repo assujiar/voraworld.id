@@ -77,7 +77,7 @@ describe('every document carries the verification mark, a clickable link and the
     const pdf = await renderGeneral(letter, issuer, URL_)
     await expectVerifiable('letter', pdf)
     const t = squash((await pdfPages(pdf)).join(' '))
-    expect(t).toContain('VERIFIKASI DOKUMEN'); expect(t).toContain('Kode QR bukan tanda tangan pribadi'); expect(t).toContain('Siti Rahma')
+    expect(t).toContain('VERIFIKASI DOKUMEN'); expect(t).toContain('dapat diperiksa melalui tautan dan kode QR verifikasi'); expect(t).not.toMatch(/bukan tanda tangan/i); expect(t).toContain('Siti Rahma')
   })
   it('letters of every general type render with the mark', async () => {
     const values: Record<string, string> = { place: 'Jakarta', subject: 'Uji', recipient_name: 'PT Mitra', body: 'Isi surat.', closing: 'Hormat kami,', signatory_name: 'Siti Rahma', signatory_title: 'Direktur', declarant_name: 'Budi', declarant_id_number: '1', declarant_position: 'Staf', declarant_address: 'Jl. X', location: 'Jakarta', period: '1 tahun',

@@ -7,7 +7,7 @@ export default function VerifyNotFound() {
         <section className="vf-banner vf-bad" aria-labelledby="vf-nf">
           <span className="vf-mark" aria-hidden="true">✕</span>
           <div>
-            <h1 id="vf-nf">NO VERIFICATION RECORD FOUND <span className="vf-id">/ CATATAN VERIFIKASI TIDAK DITEMUKAN</span></h1>
+            <h1 id="vf-nf">NO VERIFICATION RECORD FOUND <span className="vf-id">| CATATAN VERIFIKASI TIDAK DITEMUKAN</span></h1>
             <p>This address does not match any document issued by VORA. It may have been mistyped, copied incompletely or altered. Do not rely on a document that points here.<br /><span className="vf-id">Alamat ini tidak cocok dengan dokumen mana pun yang diterbitkan VORA. Mungkin salah ketik, tersalin tidak lengkap, atau diubah. Jangan mengandalkan dokumen yang mengarah ke sini.</span></p>
             <p className="vf-small">Official verification pages are only at voraworld.id/verify/… <span className="vf-id">Halaman verifikasi resmi hanya di voraworld.id/verify/…</span></p>
           </div>

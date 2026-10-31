@@ -48,11 +48,11 @@ export async function renderGeneral(d: GeneralDocData, issuer: Issuer, verificat
     s.footer(FOOTER_TOP, LEFT, RIGHT)
     const mark = s.verificationMark({ url: verificationUrl, lang, right: RIGHT, bottom: 7.5 })
     const column = mark.left - 12 - LEFT
-    s.text(LEFT, 71, lang === 'id' ? 'VORA / VERIFIKASI DOKUMEN' : 'VORA / DOCUMENT VERIFICATION', 7.7, SLATE, true)
+    s.text(LEFT, 71, lang === 'id' ? 'VORA | VERIFIKASI DOKUMEN' : 'VORA | DOCUMENT VERIFICATION', 7.7, SLATE, true)
     s.text(LEFT, 60, WORDS.verifyOnline[lang], 6.4, SLATE)
     s.linkLines(LEFT, 50, verificationUrl, column, 5.9, INK)
     s.text(LEFT, 36, issuer.email, 7.2, INK)
-    s.text(LEFT, 24, `${title}  /  ${pageWord[0]} ${pageNo} ${pageWord[1]} ${total}`, 7.1, SLATE)
+    s.text(LEFT, 24, `${title}  |  ${pageWord[0]} ${pageNo} ${pageWord[1]} ${total}`, 7.1, SLATE)
   })
   return s.save()
 }

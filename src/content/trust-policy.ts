@@ -74,7 +74,7 @@ const FIXED: Record<Exclude<TrustKind, 'document'>, TrustPolicy> = {
   quotation: {
     ...BASE, archive: 'live', kind: 'quotation', family: 'quotation', signing: 'conditional', nonCertified: 'allowed', endMark: null, multiParty: false, liveStatus: 'approval',
     confirms: { id: 'VORA menerbitkan Surat Perjanjian Harga (penawaran) ini. Persetujuan pelanggan dan validasi akhir VORA adalah tahap terpisah.', en: 'VORA issued this Price Agreement Letter (quotation). The customer\'s acceptance and VORA\'s final validation are separate steps.' },
-    doesNotConfirm: { id: 'Penerbitan oleh VORA bukan persetujuan pelanggan dan bukan tanda tangan pelanggan.', en: 'Issuance by VORA is not the customer\'s acceptance and not the customer\'s signature.' },
+    doesNotConfirm: { id: 'Persetujuan pelanggan dan validasi akhir VORA adalah tahap terpisah dan ditampilkan sebagaimana tercatat.', en: 'The customer\'s acceptance and VORA\'s final validation are separate steps and are shown as recorded.' },
   },
   delivery: {
     ...BASE, kind: 'delivery', family: 'delivery', signing: 'none', nonCertified: 'not_applicable', endMark: null, multiParty: false, liveStatus: 'delivery',
@@ -84,17 +84,17 @@ const FIXED: Record<Exclude<TrustKind, 'document'>, TrustPolicy> = {
   pod: {
     ...BASE, kind: 'pod', family: 'pod', signing: 'none', nonCertified: 'not_applicable', endMark: null, multiParty: false, liveStatus: 'pod',
     confirms: { id: 'VORA menerbitkan dokumen bukti pengiriman ini dari bukti yang dicatat saat serah terima.', en: 'VORA issued this proof-of-delivery document from the evidence recorded at handover.' },
-    doesNotConfirm: { id: 'Tanda tangan di layar dan foto adalah bukti serah terima yang dicatat, bukan tanda tangan elektronik tersertifikasi.', en: 'The on-screen signature and photographs are recorded handover evidence, not a certified electronic signature.' },
+    doesNotConfirm: { id: 'Tanda tangan di layar dan foto adalah bukti serah terima yang dicatat saat pengiriman.', en: 'The on-screen signature and photographs are handover evidence recorded at delivery.' },
   },
 }
 
 const GENERAL: Record<Family, { signing: Signing; nonCertified: NonCertified; endMark: 'standard' | null; multiParty: boolean; confirms: Bi; doesNotConfirm: Bi; liveStatus: TrustPolicy['liveStatus'] }> = {
   letter: { signing: 'conditional', nonCertified: 'allowed', endMark: 'standard', multiParty: false,
-    confirms: { id: 'VORA menerbitkan surat ini.', en: 'VORA issued this letter.' }, doesNotConfirm: { id: 'Penerbitan bukan tanda tangan pribadi. Tanda tangan pribadi, bila ada, ditampilkan terpisah sebagai bukti penandatanganan.', en: 'Issuance is not a personal signature. A personal signature, where there is one, is shown separately as signing evidence.' }, liveStatus: null },
+    confirms: { id: 'VORA menerbitkan surat ini.', en: 'VORA issued this letter.' }, doesNotConfirm: { id: 'Tanda tangan pribadi, bila ada, ditampilkan terpisah sebagai bukti penandatanganan.', en: 'A personal signature, where there is one, is shown separately as signing evidence.' }, liveStatus: null },
   billing: { signing: 'conditional', nonCertified: 'allowed', endMark: 'standard', multiParty: false,
     confirms: { id: 'VORA menerbitkan surat tagihan ini atas faktur yang tercantum.', en: 'VORA issued this billing letter for the invoices it lists.' }, doesNotConfirm: { id: 'Status pembayaran faktur yang tercantum dibaca dari catatan keuangan, bukan dari surat.', en: 'The payment status of the listed invoices comes from finance records, not from the letter.' }, liveStatus: null },
   parties: { signing: 'conditional', nonCertified: 'allowed', endMark: 'standard', multiParty: false,
-    confirms: { id: 'VORA menerbitkan dokumen ini.', en: 'VORA issued this document.' }, doesNotConfirm: { id: 'Verifikasi tidak membuktikan identitas atau tanda tangan pihak yang membuat pernyataan atau pemberi kuasa.', en: 'Verification does not establish the identity or signature of the declarant or grantor.' }, liveStatus: null },
+    confirms: { id: 'VORA menerbitkan dokumen ini.', en: 'VORA issued this document.' }, doesNotConfirm: { id: 'Identitas pihak yang membuat pernyataan atau pemberi kuasa dicatat melalui bukti penandatanganan di bawah, bila ada.', en: 'The identity of the declarant or grantor is recorded through the signing evidence below, where there is any.' }, liveStatus: null },
   certificate: { signing: 'conditional', nonCertified: 'allowed', endMark: 'standard', multiParty: false,
     confirms: { id: 'VORA menerbitkan sertifikat ini kepada pemegang yang tercantum.', en: 'VORA issued this certificate to the holder named.' }, doesNotConfirm: { id: 'Masa berlaku dan pencabutan dibaca langsung dari catatan VORA.', en: 'Validity and revocation are read live from VORA\'s records.' }, liveStatus: 'validity' },
   agreement: { signing: 'party_based', nonCertified: 'legal_review_required', endMark: 'standard', multiParty: true,

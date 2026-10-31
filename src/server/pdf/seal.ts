@@ -11,7 +11,7 @@ import { embedMarkFonts, PageView, paintMark } from './trust-mark'
  * (content/seal-layout.ts), and a link as well as a QR code to the document's verification page, which shows the SHA-256 of the file.
  *
  * Two kinds of mark, never mixed:
- *   corporate  (no `signer`)  VORA registered the file and vouches that it did: "VORA mark, not a personal electronic signature".
+ *   corporate  (no `signer`)  VORA registered the file and vouches that it did (it names the company and the document number, not a person).
  *   personal   (`signer`)     an authorised individual signed it in VORA (the signing ceremony; see trust/signing.ts), and the mark names them and the signing event.
  */
 export interface SealOptions {

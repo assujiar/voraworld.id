@@ -34,14 +34,14 @@ export function frame(s: Sheet, o: FrameOptions) {
     s.footer(FOOTER_TOP, LEFT, RIGHT)
     const mark = s.verificationMark({ url: o.verifyUrl, lang: 'en', right: RIGHT, bottom: 7.5 })
     const column = mark.left - 12 - LEFT
-    s.text(LEFT, 73, 'VORA / DELIVERY', 7.7, SLATE, true)
+    s.text(LEFT, 73, 'VORA | DELIVERY', 7.7, SLATE, true)
     s.text(LEFT, 63, `${o.verifyLabel} (the QR code or this link; it is not the driver's code):`, 6.2, SLATE)
     s.linkLines(LEFT, 54, o.verifyUrl, column, 5.9, INK)
     if (o.evidenceUrl) {
       s.text(LEFT, 43, 'Evidence page of the delivery (receiver and VORA only):', 6.2, SLATE)
       s.linkLines(LEFT, 34, o.evidenceUrl, column, 5.4, INK)
     }
-    s.text(LEFT, 22, `${o.issuer.email}  /  ${o.label}  /  PAGE ${pageNo} OF ${total}`, 6.9, SLATE)
+    s.text(LEFT, 22, `${o.issuer.email}  |  ${o.label}  |  PAGE ${pageNo} OF ${total}`, 6.9, SLATE)
   }
 }
 

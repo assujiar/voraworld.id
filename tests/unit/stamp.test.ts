@@ -198,6 +198,28 @@ describe('the QR code', () => {
   })
 })
 
+describe('the QR colour', () => {
+  it('is Midnight Navy (#101720) on white: the brand ink, with all the contrast a scanner needs', async () => {
+    const doc = await PDFDocument.create()
+    const page = doc.addPage([300, 200])
+    const layout = drawMark(page, await embedMarkFonts(doc), opts({ variant: 'standard' }), 20, 180)
+    const r = rasterize(await doc.save(), 1, 288)
+    if (!r) return
+    const qr = layout.items.find((i) => i.t === 'qr')!
+    if (qr.t !== 'qr') throw new Error('x')
+    const counts = new Map<string, number>()
+    for (let y = Math.round((20 + qr.y) * r.scale); y < (20 + qr.y + qr.size) * r.scale; y++) for (let x = Math.round((20 + qr.x) * r.scale); x < (20 + qr.x + qr.size) * r.scale; x++) {
+      const [R, G, B] = r.at(x, y); counts.set(`${R},${G},${B}`, (counts.get(`${R},${G},${B}`) ?? 0) + 1)
+    }
+    const dark = [...counts.entries()].filter(([k]) => k.split(',').every((v) => Number(v) < 80)).sort((a, b) => b[1] - a[1])[0]
+    expect(dark[0]).toBe('16,23,32')                                                       // #101720
+    expect(counts.get('255,255,255') ?? 0).toBeGreaterThan(dark[1] * 0.5)
+    // Contrast ratio of #101720 on white (WCAG): far above the 7:1 a scanner needs.
+    const lum = (c: number[]) => { const f = (v: number) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]) }
+    expect(1.05 / (lum([16, 23, 32]) + 0.05)).toBeGreaterThan(15)
+  })
+})
+
 describe('the clickable link', () => {
   const annotations = async (bytes: Uint8Array) => {
     const out = await PDFDocument.load(bytes)

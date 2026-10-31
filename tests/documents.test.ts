@@ -221,7 +221,7 @@ describe('the document PDFs', () => {
     const t = squash((await pdfPages(pdf)).join(' '))
     expect(t).toContain(d.number as string)
     expect(t).not.toContain('Ditandatangani secara elektronik')            // a QR code is a way to check the document, not a signature
-    expect(t).toContain('Kode QR bukan tanda tangan pribadi')
+    expect(t).not.toMatch(/bukan tanda tangan/i)
     expect(t).toContain('PT SATU ARAH INTERNATIONAL')                       // the corporate mark is drawn beside the QR code
     expect(t).not.toMatch(/DRAFT|VOID/)
     const [token] = (await sql`select token from document_verification_tokens where kind = 'document' and document_id = ${id}`).map((r) => r.token as string)

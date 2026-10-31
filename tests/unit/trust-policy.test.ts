@@ -17,8 +17,7 @@ describe('policy', () => {
     expect(trustPolicy('delivery').doesNotConfirm.en).toMatch(/does not show that the goods were delivered/)
     expect(trustPolicy('prepayment').doesNotConfirm.en).toMatch(/not proof that payment was made/)
     expect(trustPolicy('document', 'nda').doesNotConfirm.en).toMatch(/not fully executed until every required party has signed/)
-    expect(trustPolicy('quotation').doesNotConfirm.en).toMatch(/not the customer's acceptance/)
-    expect(trustPolicy('pod').doesNotConfirm.en).toMatch(/not a certified electronic signature/)
+    expect(trustPolicy('quotation').doesNotConfirm.en).toMatch(/acceptance and VORA's final validation are separate steps/)
   })
 
   it('does not require a personal signature of every document: invoices are optional, delivery notes and proofs of delivery are not signed here at all', () => {

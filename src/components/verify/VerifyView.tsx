@@ -7,7 +7,7 @@ import { PURPOSE_LABELS } from '@/content/trust-policy'
 /** The official domain, a constant: nothing a visitor or a request supplies is ever shown as the domain of VORA's verification. */
 export const OFFICIAL_DOMAIN = 'voraworld.id'
 
-const Bi = ({ en, id }: { en: React.ReactNode; id: React.ReactNode }) => <>{en} <span className="vf-id" lang="id">/ {id}</span></>
+const Bi = ({ en, id }: { en: React.ReactNode; id: React.ReactNode }) => <>{en} <span className="vf-id" lang="id">| {id}</span></>
 
 const BANNERS: Record<Banner, { en: string; id: string; tone: 'info' | 'bad' | 'wait' | 'warn'; mark: string; note: { en: string; id: string } }> = {
   record_found: { en: 'ISSUANCE RECORD FOUND', id: 'CATATAN PENERBITAN DITEMUKAN', tone: 'info', mark: '●', note: { en: 'This is a record check. Read the separate findings below: a found record does not by itself show that a file in your hands is unmodified, or that anybody signed it.', id: 'Ini pemeriksaan catatan. Baca temuan terpisah di bawah: catatan yang ditemukan tidak dengan sendirinya menunjukkan bahwa berkas di tangan Anda tidak diubah, atau bahwa seseorang telah menandatanganinya.' } },
@@ -49,7 +49,7 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
         <header className="vf-head">
           <a href="/en" aria-label="VORA"><img src="/static/assets/vora-primary.svg" alt="VORA" width={150} /></a>
           <div className="vf-head-text">
-            <span className="vf-eyebrow">DOCUMENT VERIFICATION <span className="vf-id">/ VERIFIKASI DOKUMEN</span></span>
+            <span className="vf-eyebrow">DOCUMENT VERIFICATION <span className="vf-id">| VERIFIKASI DOKUMEN</span></span>
             <span className="vf-entity">PT SATU ARAH INTERNATIONAL · {OFFICIAL_DOMAIN}</span>
           </div>
         </header>
@@ -57,10 +57,10 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
         <section className={`vf-banner vf-${b.tone}`} aria-labelledby="vf-status">
           <span className="vf-mark" aria-hidden="true">{b.mark}</span>
           <div>
-            <h1 id="vf-status">{b.en} <span className="vf-id">/ {b.id}</span></h1>
+            <h1 id="vf-status">{b.en} <span className="vf-id">| {b.id}</span></h1>
             <p>{b.note.en}<br /><span className="vf-id">{b.note.id}</span></p>
             {model.revokedReason && !live ? <p className="vf-small">Reason: {model.revokedReason}</p> : null}
-            {model.supersededBy ? <p><a className="vf-link" href={`/verify/${model.supersededBy.token}`}>See the document that replaces this one <span className="vf-id">/ Lihat dokumen penggantinya</span></a></p> : null}
+            {model.supersededBy ? <p><a className="vf-link" href={`/verify/${model.supersededBy.token}`}>See the document that replaces this one <span className="vf-id">| Lihat dokumen penggantinya</span></a></p> : null}
           </div>
         </section>
 
@@ -92,7 +92,7 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
             <p className={`vf-fact vf-${issuance.tone}`}><span aria-hidden="true">{issuance.tone === 'ok' ? '✓' : issuance.tone === 'bad' ? '✕' : '–'}</span> <Bi en={issuance.en} id={issuance.id} /></p>
             <p className="vf-small">{issuance.detail.en}<br /><span className="vf-id">{issuance.detail.id}</span></p>
             {model.artifacts.map((a) => a.keyId ? <p key={a.version} className="vf-small vf-mono">v{a.version} · {a.role} · key {a.keyId} · {when(a.issuedAt)}</p> : null)}
-            {model.chain ? <p className="vf-small"><span aria-hidden="true">{model.chain.ok ? '✓' : '✕'}</span> {model.chain.ok ? `Evidence history intact (${model.chain.events} events)` : 'Evidence history failed its check'} <span className="vf-id">/ {model.chain.ok ? `Riwayat bukti utuh (${model.chain.events} peristiwa)` : 'Riwayat bukti gagal diperiksa'}</span></p> : null}
+            {model.chain ? <p className="vf-small"><span aria-hidden="true">{model.chain.ok ? '✓' : '✕'}</span> {model.chain.ok ? `Evidence history intact (${model.chain.events} events)` : 'Evidence history failed its check'} <span className="vf-id">| {model.chain.ok ? `Riwayat bukti utuh (${model.chain.events} peristiwa)` : 'Riwayat bukti gagal diperiksa'}</span></p> : null}
           </section>
 
           <section className="vf-surface" aria-labelledby="vf-h-signing">
@@ -111,18 +111,17 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
             ))}
             {model.parties.length ? (
               <div className="vf-parties">
-                <p className="vf-small"><strong>Parties <span className="vf-id">/ Para pihak</span></strong>: {model.executed ? 'every required party has signed' : 'not every required party has signed'}</p>
+                <p className="vf-small"><strong>Parties <span className="vf-id">| Para pihak</span></strong>: {model.executed ? 'every required party has signed' : 'not every required party has signed'}</p>
                 <ul>{model.parties.map((p) => <li key={p.role}><span aria-hidden="true">{p.method ? '✓' : '○'}</span> {p.name}{p.required ? '' : ' (optional)'} - {p.method ? METHOD_LABEL[p.method]?.en ?? p.method : 'not yet signed'}</li>)}</ul>
               </div>
             ) : null}
-            <p className="vf-small">A QR code or a corporate stamp is not a signature. <span className="vf-id">Kode QR atau stempel korporat bukan tanda tangan.</span></p>
           </section>
 
           {live && model.live.length ? (
             <section className="vf-surface" aria-labelledby="vf-h-status">
               <Watermark layer="front" id="f5" />
               <h2 id="vf-h-status">4 · <Bi en="Current status" id="Status terkini" /></h2>
-              {model.live.map((l) => <p key={l.label.en}><span className="vf-small">{l.label.en} <span className="vf-id">/ {l.label.id}</span></span><br /><strong>{l.value}</strong></p>)}
+              {model.live.map((l) => <p key={l.label.en}><span className="vf-small">{l.label.en} <span className="vf-id">| {l.label.id}</span></span><br /><strong>{l.value}</strong></p>)}
               <p className="vf-small">Read live from VORA's records now. It is never printed into the issued file. <span className="vf-id">Dibaca langsung dari catatan VORA saat ini; tidak pernah dicetak ke dalam berkas yang diterbitkan.</span></p>
             </section>
           ) : null}
@@ -132,8 +131,8 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
             <h2 id="vf-h-file">{live && model.live.length ? 5 : 4} · <Bi en="File integrity" id="Keutuhan berkas" /></h2>
             {model.artifacts.length ? (
               <div className="vf-hashes">
-                {model.artifacts.map((a) => <p key={a.version} className="vf-small"><strong>SHA-256 · version {a.version} ({a.role === 'signed' ? 'signed / ditandatangani' : 'issued / diterbitkan'})</strong><br /><span className="vf-mono vf-hash">{a.sha256}</span></p>)}
-                {model.source ? <p className="vf-small"><strong>SHA-256 · original third-party file / berkas asli pihak lain</strong><br /><span className="vf-mono vf-hash">{model.source.originalSha256}</span></p> : null}
+                {model.artifacts.map((a) => <p key={a.version} className="vf-small"><strong>SHA-256 · version {a.version} ({a.role === 'signed' ? 'signed | ditandatangani' : 'issued | diterbitkan'})</strong><br /><span className="vf-mono vf-hash">{a.sha256}</span></p>)}
+                {model.source ? <p className="vf-small"><strong>SHA-256 · original third-party file | berkas asli pihak lain</strong><br /><span className="vf-mono vf-hash">{model.source.originalSha256}</span></p> : null}
                 {model.source ? <p className="vf-small"><strong>{model.source.title}</strong> · issued by {model.source.issuer}{model.source.reference ? ` · original no. ${model.source.reference}` : ''}. VORA does not establish the authenticity of the external issuer. <span className="vf-id">VORA tidak membuktikan keaslian penerbit eksternal.</span></p> : null}
               </div>
             ) : <p className="vf-small">No file is recorded for this document, so a file cannot be checked against it. <span className="vf-id">Tidak ada berkas yang tercatat untuk dokumen ini, sehingga berkas tidak dapat dicocokkan.</span></p>}
@@ -145,7 +144,7 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
           <p><strong>{OFFICIAL_DOMAIN}</strong> · Viewed on {OFFICIAL_DOMAIN} · {when(viewedAt.toISOString())} · Ref {token.slice(0, 8).toUpperCase()}</p>
           <p className="vf-notice">Document authenticity and current status should be checked through VORA&apos;s official verification page. A screenshot alone is not independent verification evidence.<br /><span className="vf-id">Keaslian dokumen dan status terkininya harus diperiksa melalui halaman verifikasi resmi VORA. Tangkapan layar bukan bukti verifikasi yang berdiri sendiri.</span></p>
           <p className="vf-small">The repeated VORA mark in the background is a visual deterrent only; it does not prove authenticity. Customer and financial details are not shown here. <span className="vf-id">Tanda VORA berulang di latar hanyalah penangkal visual, bukan bukti keaslian. Data pelanggan dan keuangan tidak ditampilkan di sini.</span></p>
-          <p className="vf-small"><a className="vf-link" href={`/verify/${token}/evidence`}>Evidence summary (JSON) <span className="vf-id">/ Ringkasan bukti</span></a></p>
+          <p className="vf-small"><a className="vf-link" href={`/verify/${token}/evidence`}>Evidence summary (JSON) <span className="vf-id">| Ringkasan bukti</span></a></p>
         </footer>
       </div>
     </main>
