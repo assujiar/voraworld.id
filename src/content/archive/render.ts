@@ -4,7 +4,10 @@ import type { LangDraft, Section } from './types'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const attr = (s: string) => esc(s).replace(/"/g, '&quot;')
-const inline = (s: string) => esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+/** `**bold**` and `[text](/site-path or https://…)`; the sanitiser still decides which links survive. */
+const inline = (s: string) => esc(s)
+  .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  .replace(/\[([^\]]+)\]\((\/[^)\s]*|https:\/\/[^)\s]+)\)/g, (_m, t: string, u: string) => `<a href="${attr(u)}">${t}</a>`)
 
 function section(s: Section): string {
   const out = [`<h2>${inline(s.h)}</h2>`]
