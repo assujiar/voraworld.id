@@ -73,6 +73,7 @@ export async function createInvoice(actorId: number, input: InvoiceInput): Promi
 /** issue: draft -> issued. void: only while nothing has been confirmed; open payment claims are cancelled with it. */
 export async function setInvoiceStatus(actorId: number, id: number, action: string): Promise<void> {
   await rpc('invoice_set_status', { p_actor: actorId, p_id: id, p_action: action })
+  if (action === 'void') { const { recordVoided } = await import('../trust/revocation'); await recordVoided(actorId, 'invoice', id); const pre = await one('prepayment_receipts', (q) => q.eq('invoice_id', id), 'id'); if (pre) await recordVoided(actorId, 'prepayment', pre.id as number, 'The invoice was voided') }
 }
 
 /**

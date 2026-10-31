@@ -242,4 +242,5 @@ export async function setDocumentStatus(actorId: number, id: number, action: str
     return
   }
   await rpc('document_set_status', { p_actor: actorId, p_id: id, p_action: action })
+  if (action === 'void') await (await import('../trust/revocation')).recordVoided(actorId, 'document', id)
 }

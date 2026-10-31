@@ -82,4 +82,5 @@ export async function readStampedReceipt(receipt: { status: string; stampStorage
 /** Voids a receipt AND reverses its payment: the invoice balance and status are recalculated and the QR link is revoked. */
 export async function voidReceipt(actorId: number, receiptId: number): Promise<void> {
   await rpc('receipt_void', { p_actor: actorId, p_id: receiptId })
+  await (await import('../trust/revocation')).recordVoided(actorId, 'receipt', receiptId)
 }

@@ -10,6 +10,7 @@ import type { StoredFields } from '@/server/documents/general'
 import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { PendingForm } from '@/components/feedback/scope'
 import { DOCUMENT_LABEL, label } from '@/server/finance/labels'
+import { DocumentTrustPanel } from '@/components/admin/DocumentTrustPanel'
 
 export default async function DocumentDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Notices> }) {
   const id = routeId((await params).id)
@@ -69,6 +70,7 @@ export default async function DocumentDetail({ params, searchParams }: { params:
         </div>
         {status === 'draft' ? <p className="note mini">A draft is marked DRAFT on every page and its QR code shows DRAFT. Issuing freezes the document; to change an issued document, void it and write a new one.</p> : null}
       </div>
+      {status !== 'draft' ? <DocumentTrustPanel id={id} documentKind={doc.kind as string} status={status} number={doc.number as string} /> : null}
     </AdminPage>
   )
 }

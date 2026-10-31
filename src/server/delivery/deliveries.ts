@@ -127,6 +127,7 @@ export async function updateDelivery(actorId: number, id: number, input: Deliver
 /** issue: draft -> issued (its QR code starts to work). void: a draft or issued note (its QR code stops). A received one needs its POD rejected first. */
 export async function setDeliveryStatus(actorId: number, id: number, action: string): Promise<void> {
   await rpc('delivery_set_status', { p_actor: actorId, p_id: id, p_action: action })
+  if (action === 'void') await (await import('../trust/revocation')).recordVoided(actorId, 'delivery', id)
 }
 
 /** The recorded POD was wrong (wrong person, wrong goods): it stays as history and the same QR code can be used again. */

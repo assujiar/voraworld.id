@@ -89,6 +89,7 @@ export async function createQuotation(actorId: number, input: QuotationInput): P
 /** issue: draft -> issued. void: any live state -> void, revoking the QR link and any open approval link (a validated one only while nothing was made from it). */
 export async function setQuotationStatus(actorId: number, id: number, action: string): Promise<void> {
   await rpc('quotation_set_status', { p_actor: actorId, p_id: id, p_action: action })
+  if (action === 'void') await (await import('../trust/revocation')).recordVoided(actorId, 'quotation', id)
 }
 
 const APPROVAL_LINK_DAYS = 14

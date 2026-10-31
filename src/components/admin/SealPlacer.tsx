@@ -32,7 +32,18 @@ async function pdfjs() {
   return lib
 }
 
-export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id' }: { recordId?: number; initial: Record<string, string>; verifyUrl: string; lang?: Lang }) {
+/** The placement a person confirmed, as it is stored and signed: the same fractions the PDF uses. */
+export interface ConfirmedPlacement { pages: Mode; page_number: number | null; corner: string; size: 'small' | 'medium'; pos_x: string | null; pos_y: string | null }
+
+export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUrl, signer, reference, fixedPurpose, onPlacement }: {
+  recordId?: number; initial: Record<string, string>; verifyUrl: string; lang?: Lang
+  /** Where to fetch the PDF to show (the signing ceremony shows the exact file being signed). */
+  sourceUrl?: string
+  /** A personal signing: the preview shows the signer's name and position and the signing reference, not VORA's corporate mark. */
+  signer?: { name: string; position: string }; reference?: string; fixedPurpose?: string
+  /** Called with the placement when it is confirmed, and with null when it is changed again. */
+  onPlacement?: (p: ConfirmedPlacement | null) => void
+}) {
   const typed = (name: string, fallback: string) => useTypedValue(name, initial[name] ?? fallback)   // eslint-disable-line react-hooks/rules-of-hooks
   const [mode, setMode] = useState<Mode>(typed('pages', 'last') as Mode)
   const [pageNumber, setPageNumber] = useState(Number.parseInt(typed('page_number', '1'), 10) || 1)
@@ -40,13 +51,13 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id' }: { reco
   const [size, setSize] = useState(typed('size', 'medium'))
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: Number(typed('pos_x', '0.6')) || 0.6, y: Number(typed('pos_y', '0.85')) || 0.85 })
   const [confirmed, setConfirmed] = useState(initial.placement_confirmed === 'yes')
-  const [purpose, setPurpose] = useState(initial.purpose || 'verified')
+  const [purpose, setPurpose] = useState(fixedPurpose || initial.purpose || 'verified')
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null)
   const [pages, setPages] = useState(0)
   const [view, setView] = useState(1)
   const [zoom, setZoom] = useState(1)
   const [bigSteps, setBigSteps] = useState(false)
-  const [state, setState] = useState<'empty' | 'loading' | 'ready' | 'failed'>(recordId ? 'loading' : 'empty')
+  const [state, setState] = useState<'empty' | 'loading' | 'ready' | 'failed'>(recordId || sourceUrl ? 'loading' : 'empty')
   const [box, setBox] = useState<PageBox>({ pw: 595.28, ph: 841.89, cssW: MAX_WIDTH })
   const [avail, setAvail] = useState(0)
   const [finger, setFinger] = useState<{ x: number; y: number } | null>(null)
@@ -58,7 +69,7 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id' }: { reco
   const tap = useRef<{ x: number; y: number; t: number; id: number } | null>(null)
   const loadId = useRef(0)
 
-  const markInput = useMemo(() => ({ lang, url: verifyUrl, purpose, size, reference: '-', preview: true }), [lang, verifyUrl, purpose, size])
+  const markInput = useMemo(() => ({ lang, url: verifyUrl, purpose, size, reference: reference ?? '-', preview: true, signer }), [lang, verifyUrl, purpose, size, reference, signer])
   const dims = useMemo(() => sealDims(markInput), [markInput])
   const layout = useMemo(() => layoutMark(sealMarkOptions(markInput)), [markInput])
 
@@ -82,10 +93,11 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id' }: { reco
     const onChange = async () => { const f = input?.files?.[0]; if (f) await load(await f.arrayBuffer()); else if (!recordId) { setDoc(null); setState('empty') } }
     const onPurpose = () => select && setPurpose(select.value)
     input?.addEventListener('change', onChange); select?.addEventListener('change', onPurpose)
-    if (select) setPurpose(select.value)
-    if (recordId && !input?.files?.length) fetch(`/admin/documents/${recordId}/source`).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('source')))).then(load).catch(() => setState('failed'))
+    if (select && !fixedPurpose) setPurpose(select.value)
+    if (sourceUrl) fetch(sourceUrl).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('source')))).then(load).catch(() => setState('failed'))
+    else if (recordId && !input?.files?.length) fetch(`/admin/documents/${recordId}/source`).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('source')))).then(load).catch(() => setState('failed'))
     return () => { input?.removeEventListener('change', onChange); select?.removeEventListener('change', onPurpose) }
-  }, [recordId, load])
+  }, [recordId, load, sourceUrl, fixedPurpose])
 
   // The page is drawn as wide as the column allows, and again when the window changes (a phone turned sideways, a resized window).
   useEffect(() => {
@@ -184,13 +196,17 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id' }: { reco
   const snap = (c: string) => { setCorner(c); setConfirmed(false); setMoved('') }
 
   const finalPos = corner === 'custom' ? pos : { x: rect.left / (box.pw * scale), y: rect.top / (box.ph * scale) }
+  useEffect(() => {
+    onPlacement?.(confirmed ? { pages: mode, page_number: mode === 'one' ? Math.min(Math.max(pageNumber, 1), pages || pageNumber) : null, corner, size: size === 'small' ? 'small' : 'medium', pos_x: corner === 'custom' ? finalPos.x.toFixed(4) : null, pos_y: corner === 'custom' ? finalPos.y.toFixed(4) : null } : null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmed, mode, pageNumber, corner, size, finalPos.x, finalPos.y])
   const loupeSize = { w: Math.min(280, typeof window === 'undefined' ? 280 : window.innerWidth - 16), h: 0 }
   loupeSize.h = loupeSize.w * (dims.h / dims.w)
   const loupe = finger && typeof document !== 'undefined' ? loupePosition(finger, { width: window.innerWidth, height: window.innerHeight }, loupeSize) : null
 
   return (
     <div className="seal-placer wide" ref={root} style={{ gridColumn: '1 / -1' }}>
-      <h4 style={{ margin: '14px 0 6px' }}>Where the VORA mark goes</h4>
+      <h4 style={{ margin: '14px 0 6px' }}>{signer ? 'Where your signing mark goes' : 'Where the VORA mark goes'}</h4>
       <input type="hidden" name="pages" value={mode} /><input type="hidden" name="page_number" value={mode === 'one' ? String(Math.min(Math.max(pageNumber, 1), pages || pageNumber)) : ''} />
       <input type="hidden" name="corner" value={corner} /><input type="hidden" name="size" value={size} />
       <input type="hidden" name="pos_x" value={finalPos.x.toFixed(4)} /><input type="hidden" name="pos_y" value={finalPos.y.toFixed(4)} />
