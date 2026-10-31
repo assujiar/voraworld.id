@@ -1,7 +1,7 @@
 import { BILLING_HEADINGS, documentType, longDate, WORDS, type DocumentType, type Lang, type SignerDef } from '../../content/document-types'
 import { daysBetween } from '../dates'
 import { money } from '../money'
-import { SIGNATURE_HEIGHT } from '../../content/verification-blocks'
+import { SIGNATURE_HEIGHT, signatureHeight } from '../../content/verification-blocks'
 import { Flow } from './flow'
 import { BAND_H, H, INK, RED, SLATE, TAGLINE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { GeneralDocData, Issuer } from './types'
@@ -148,13 +148,19 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
    * document, not a signature (see the verification block at the end).
    */
   const signature = (name: string, position: string) => {
-    f.keep(LEADING * 4 + SIGNATURE_HEIGHT + 14)
+    const ROOM = signatureHeight(1)                                   // a personal or company signature on a letter is Signature Type 1
+    f.keep(LEADING * 4 + ROOM + 14)
     f.text(LEFT, f.y, t('regards'), BODY, INK); f.y -= LEADING
     f.text(LEFT, f.y, issuer.legalName, BODY, INK, true); f.y -= 8
     const top = f.y
     // Room for the signing mark exactly the size of the mark, between the company and the printed name: the signing ceremony starts it here.
-    f.put(() => { s.markSignSlot(LEFT, top); s.rule(top - SIGNATURE_HEIGHT - 3, LEFT, LEFT + 170, '#AEB6BA', 0.5) })
-    f.y -= SIGNATURE_HEIGHT + 14
+    f.put(() => {
+      s.markSignSlot(LEFT, top)
+      // Issued with the company's own signature: the Signature Type 1 mark of the company sits in the room. Otherwise the room is left for a personal signature.
+      if (d.companySignature && d.issuedAt) s.signatureBlock({ type: 1, lang, url: verificationUrl, number: d.number, registeredAt: d.issuedAt, name: issuer.legalName, position: lang === 'id' ? 'Penerbit dokumen' : 'Document issuer', left: LEFT, top })
+      else s.rule(top - ROOM - 3, LEFT, LEFT + 170, '#AEB6BA', 0.5)
+    })
+    f.y -= ROOM + 14
     if (name) { f.text(LEFT, f.y, name, BODY, INK, true); f.y -= LEADING }
     if (position) { f.text(LEFT, f.y, position, BODY, SLATE); f.y -= LEADING }
   }

@@ -7,7 +7,7 @@ import { many, rpc } from '@/server/data'
 import { artifactsOf } from '@/server/trust/artifacts'
 
 /** What the trust system holds about a general document, and how to ask for a signature on it. Read-only except for the forms, each of which is an administrator action with its own checks. */
-export async function DocumentTrustPanel({ id, documentKind, status, number }: { id: number; documentKind: string; status: string; number: string }) {
+export async function DocumentTrustPanel({ id, documentKind, status, number, signMode = false }: { id: number; documentKind: string; status: string; number: string; /** A third-party document that a signer uploaded to sign (not one that VORA only sealed). */ signMode?: boolean }) {
   const me = await currentUser()
   const policy = trustPolicy('document', documentKind)
   const eligible = signingEligibility(policy)
@@ -52,7 +52,7 @@ export async function DocumentTrustPanel({ id, documentKind, status, number }: {
             </li>))}</ul>
         </div>
       ) : policy.multiParty ? <form action={trackPartiesAction}><input type="hidden" name="document_id" value={id} /><button className="button-outline">Track the parties of this agreement</button></form> : null}
-      {status === 'issued' && eligible.ok && artifacts.length && mine ? (
+      {status === 'issued' && eligible.ok && artifacts.length && mine && (policy.family !== 'seal' || signMode) ? (
         <form action={signNowAction} style={{ marginTop: 10 }}>
           <input type="hidden" name="kind" value="document" /><input type="hidden" name="document_id" value={id} />
           <strong className="mini">Sign {number} yourself</strong><br />

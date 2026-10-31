@@ -3,6 +3,8 @@ import { ActionError, adminRun } from '@/server/action'
 import { int, str } from '@/server/http'
 import { cancelRequest, createProfile, grantAuthority, requestSigning, revokeAuthority, revokePasskey, signNow } from '@/server/trust/signing'
 import { isTrustKind } from '@/content/trust-policy'
+import { publicBaseUrl } from '@/server/env'
+import { uploadAndSign } from '@/server/trust/upload-sign'
 
 /**
  * Who may sign, and the requests to sign. These are administrator actions; the SIGNING itself is not an action of an administrator: it is done by the signer, in their own
@@ -54,6 +56,16 @@ export async function signNowAction(form: FormData) {
     const kind = str(form, 'kind', 20)
     if (!isTrustKind(kind)) throw new ActionError('Unknown document kind')
     const id = await signNow(user, { kind, documentId: int(form, 'document_id'), purpose: str(form, 'purpose', 20) || 'signed', partyRole: str(form, 'party_role', 30) || 'vora', legalReviewNote: str(form, 'legal_review_note', 500) })
+    return { to: `/admin/signing/${id}` }
+  })
+}
+
+/** A signer uploads a document that somebody else issued and signs it, with nobody asking them to: they are taken straight to the signing page. */
+export async function uploadAndSignAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    const file = form.get('source_pdf')
+    if (!(file instanceof File) || !file.size) throw new ActionError('Choose the PDF to sign')
+    const id = await uploadAndSign(user, { file, title: str(form, 'source_title', 160), issuer: str(form, 'source_issuer', 160), reference: str(form, 'source_reference', 100), language: str(form, 'language', 2), baseUrl: publicBaseUrl() })
     return { to: `/admin/signing/${id}` }
   })
 }

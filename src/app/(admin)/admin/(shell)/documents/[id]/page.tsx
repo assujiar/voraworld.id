@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation'
 import { documentStatusAction } from '@/actions/documents'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { documentType, LANGUAGE_NAMES, longDate, type Lang } from '@/content/document-types'
-import { one, withRelated } from '@/server/data'
+import { many, one, withRelated } from '@/server/data'
+import { signingEligibility, trustPolicy } from '@/content/trust-policy'
 import { publicBaseUrl } from '@/server/env'
 import { routeId } from '@/server/http'
 import { money } from '@/server/money'
@@ -23,6 +24,16 @@ export default async function DocumentDetail({ params, searchParams }: { params:
   const status = doc.status as string
   const ver = await one('document_verification_tokens', (q) => q.eq('kind', 'document').eq('document_id', id).order('id'), 'token,revoked')
   const here = `/admin/documents/${id}`
+  // How a draft can be issued: with the company's signature, or for a personal signature when this kind of document may be signed by a person.
+  const policy = trustPolicy('document', type.key), eligible = signingEligibility(policy)
+  const choose = status === 'draft' && type.family !== 'seal'
+  const personal = choose && eligible.ok
+  let signers: Array<{ id: number; name: string }> = []
+  if (personal) {
+    const [profiles, authorities] = await Promise.all([many('signer_profiles', (q) => q.eq('status', 'active').order('display_name'), 'id,display_name,position'), many('signer_authorities', (q) => q.is('revoked_at', null))])
+    const holds = (profileId: number) => authorities.some((a) => a.profileId === profileId && (!a.validUntil || (a.validUntil as Date).getTime() > Date.now()) && ((a.scope as string[]).includes('*') || (a.scope as string[]).includes(policy.family)))
+    signers = profiles.filter((p) => holds(p.id as number)).map((p) => ({ id: p.id as number, name: `${p.displayName as string}, ${p.position as string}` }))
+  }
   const shown = type.fields.filter((f) => stored.values[f.name])
   return (
     <AdminPage heading="Document" sp={await searchParams}>
@@ -64,13 +75,28 @@ export default async function DocumentDetail({ params, searchParams }: { params:
         {ver && !ver.revoked && status !== 'void' ? <p className="mini muted">Verification address (printed on the PDF as a QR code and a link): <a href={`/verify/${ver.token}`} target="_blank" rel="noopener">{publicBaseUrl()}/verify/{ver.token as string}</a></p> : null}
         <div className="inline-actions">
           {status === 'draft' ? <a className="button-outline" href={`/admin/documents/${id}/edit`}>Edit draft</a> : null}
-          {status === 'draft' ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue" busy={type.family === 'seal' ? 'Membubuhkan segel QR pada PDF…' : undefined}>Issue document</AsyncButton></PendingForm> : null}
+          {status === 'draft' && !choose ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue" busy={type.family === 'seal' ? 'Membubuhkan segel QR pada PDF…' : undefined}>Issue document</AsyncButton></PendingForm> : null}
           <a className="button-outline" href={`/admin/documents/${id}/pdf`} target="_blank" rel="noopener">{type.family === 'seal' ? (status === 'issued' ? 'Download the sealed PDF' : status === 'draft' ? 'Preview the seal (PDF)' : 'Sealed file withdrawn') : status === 'issued' ? 'Download PDF' : 'Download PDF (marked ' + status + ')'} ↗</a>
           {status !== 'void' ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
         </div>
+        {choose ? (
+          <PendingForm action={documentStatusAction} className="admin-panel">
+            <input type="hidden" name="record" value={id} /><Back to={here} />
+            <h4>Issue this document</h4>
+            <label style={{ display: 'block', fontWeight: 400 }}><input type="radio" name="signature" value="company" defaultChecked style={{ width: 'auto', minHeight: 0 }} /> Issue now with the company&apos;s signature. {type.family === 'letter' || type.family === 'billing' ? 'The company signature (QR code, number, date, issuer) is placed where the signature goes.' : 'It carries the verification footer and, where the kind of document has one, the company\'s closing block.'}</label>
+            {personal ? (
+              <label style={{ display: 'block', fontWeight: 400, marginTop: 6 }}><input type="radio" name="signature" value="personal" disabled={!signers.length} style={{ width: 'auto', minHeight: 0 }} /> Issue and ask for a personal signature{signers.length ? ': ' : '. Nobody holds authority to sign this kind of document yet (Signers).'}
+                {signers.length ? <select name="signer_profile_id" aria-label="Who signs"><option value="">Who signs...</option>{signers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select> : null}
+                <span className="mini muted" style={{ display: 'block' }}>It waits in that person&apos;s Verification &amp; Signing; they place their mark and sign with their passkey. If you choose yourself, you go straight to signing.</span>
+              </label>
+            ) : null}
+            {personal && eligible.ok && eligible.needsLegalReview ? <textarea name="legal_review_note" rows={2} placeholder="For a personal signature on this kind of document: who reviewed it and what was decided" minLength={10} style={{ width: '100%', maxWidth: 520 }} /> : null}
+            <AsyncButton className="button" name="action" value="issue">Issue document</AsyncButton>
+          </PendingForm>
+        ) : null}
         {status === 'draft' ? <p className="note mini">A draft is marked DRAFT on every page and its QR code shows DRAFT. Issuing freezes the document; to change an issued document, void it and write a new one.</p> : null}
       </div>
-      {status !== 'draft' ? <DocumentTrustPanel id={id} documentKind={doc.kind as string} status={status} number={doc.number as string} /> : null}
+      {status !== 'draft' ? <DocumentTrustPanel id={id} documentKind={doc.kind as string} status={status} number={doc.number as string} signMode={stored.values.mode === 'sign'} /> : null}
     </AdminPage>
   )
 }

@@ -99,6 +99,16 @@ describe('every document carries the verification mark, a clickable link and the
     expect(t).toContain('Nomor dokumen'); expect(t).toContain('Siti Rahma')
     expect(await readSignSlot(new Uint8Array(await (await PDFDocument.create()).save()))).toBeNull()      // a file without one has none
   })
+  it('letter issued with the company signature: Signature Type 1 of the company in the room for the signature; otherwise the room stays empty', async () => {
+    const plain = await renderGeneral({ ...letter, issuedAt: '31 Okt 2026 11:42 WIB' }, issuer, URL_)
+    const company = await renderGeneral({ ...letter, issuedAt: '31 Okt 2026 11:42 WIB', companySignature: true }, issuer, URL_)
+    expect(squash((await pdfPages(plain)).join(' '))).not.toContain('Penerbit dokumen')
+    const t = squash((await pdfPages(company)).join(' '))
+    expect(t).toContain('Penerbit dokumen'); expect(t).toContain('PT Satu Arah International'); expect(t).toContain('31 Okt 2026 11:42 WIB')
+    expect((await pdfLinks(company))[0].filter((u) => u === URL_).length).toBe(3)                // the footer's address and QR code, and the company signature
+    const slot = await readSignSlot(company)
+    expect(slot).not.toBeNull()                                                                  // the file still says where the room is
+  })
   it('letters of every general type render with the mark', async () => {
     const values: Record<string, string> = { place: 'Jakarta', subject: 'Uji', recipient_name: 'PT Mitra', body: 'Isi surat.', closing: 'Hormat kami,', signatory_name: 'Siti Rahma', signatory_title: 'Direktur', declarant_name: 'Budi', declarant_id_number: '1', declarant_position: 'Staf', declarant_address: 'Jl. X', location: 'Jakarta', period: '1 tahun',
       grantor_name: 'A', grantor_address: 'X', grantee_name: 'B', grantee_address: 'Y', certifier_name: 'C', certifier_position: 'Dir', subject_name: 'D', issuer_name: 'E', issuer_position: 'Dir', assignee_name: 'F', date_from: '2026-10-30', purpose: 'uji' }
