@@ -1,5 +1,5 @@
 import { evolvePath, getLength, getPointAtLength } from '@remotion/paths'
-import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion'
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from 'remotion'
 import { ICON_ART, WORDMARK_ART, type Art } from '@/content/stamp-art'
 import { lockup } from '@/content/trust-mark'
 import { qrMatrix, qrPath } from '@/content/trust-qr'
@@ -19,8 +19,16 @@ const ringsOf = (pulses: Pulse[], frame: number, life = 50) =>
 
 /* ------------------------------------------------------------------------------------------------ 1 · hero: the logo arrives, then answers the pointer */
 export const HERO = { w: 1600, h: 900, frames: 36000, settled: 120 }
-export const AboutHero: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; still?: boolean }> = ({ px = 0, py = 0, pulses = [], still = false }) => {
+/** Where the logo sits in a hero box of W x H units: 62% of the width on a wide box, 84% on a tall one (a phone), a little below the middle so that the copy above stays clear. */
+export const heroLogo = (W: number, H: number) => {
+  const w = H / W > 1.05 ? W * 0.84 : W * 0.62, h = (w * 384) / 1780
+  const cy = H > W ? H * 0.74 : Math.max(H * 0.7, 560 + h / 2)
+  return { x: (W - w) / 2, y: cy - h / 2, w, h, cy }
+}
+export const TAGLINE = 'BRINGING THE WORLD WITHIN REACH.'
+export const AboutHero: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; revealAt?: number | null; still?: boolean }> = ({ px = 0, py = 0, pulses = [], revealAt = null, still = false }) => {
   const frame = useCurrentFrame()
+  const { width: W, height: H } = useVideoConfig()
   const mx = still ? 0 : px, my = still ? 0 : py
   const wipe = ramp(frame, 6, 48), lift = ramp(frame, 6, 30)
   const wedge = interpolate(frame, [40, 60], [0, 1], clamp)
@@ -29,19 +37,27 @@ export const AboutHero: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; s
   const breathe = 1 + settled * 0.04 * Math.sin(((frame - 84) / 30) * (W2PI / 1.9)) + flash * 0.16
   const glint = frame < 130 ? -1 : ((frame - 130) % 240) / 240
   const rings = still ? [] : ringsOf(pulses, frame)
+  const { w: lw, h: lh, cy } = heroLogo(W, H)
+  // The line under the logo arrives when the visitor presses the logo (a visitor who asked for less motion has it from the start).
+  const reveal = still ? 1 : revealAt == null ? 0 : ramp(frame - revealAt, 0, 34)
+  const tall = H / W > 1.05, fs = tall ? lw * 0.04 : lw * 0.026
   return (
     <AbsoluteFill>
-      <svg viewBox={`0 0 ${HERO.w} ${HERO.h}`} width="100%" height="100%" style={{ display: 'block' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display: 'block' }}>
         <defs>
           <radialGradient id="hero-follow"><stop offset="0" stopColor={RED} stopOpacity=".34" /><stop offset=".55" stopColor={RED} stopOpacity=".08" /><stop offset="1" stopColor={RED} stopOpacity="0" /></radialGradient>
         </defs>
-        <circle cx={800 + mx * 560} cy={450 + my * 300} r={420} fill="url(#hero-follow)" opacity={ramp(frame, 40, 90)} />
+        <circle cx={W / 2 + mx * W * 0.35} cy={cy + my * H * 0.2} r={W * 0.26} fill="url(#hero-follow)" opacity={ramp(frame, 40, 90)} />
         <g style={{ translate: `${-mx * 9}px ${-my * 6}px` }}>
-          <svg x={290} y={338} width={1020} height={(1020 * 384) / 1780} viewBox="132 164 1780 384" style={{ overflow: 'visible' }}>
+          <svg x={(W - lw) / 2} y={cy - lh / 2} width={lw} height={lh} viewBox="132 164 1780 384" style={{ overflow: 'visible' }}>
             <g style={{ translate: `${mx * 16}px ${my * 10}px` }}>
               <LogoParts id="hero" wipe={wipe} lift={lift} wedge={wedge} tone="dark" breathe={breathe} glint={glint} />
             </g>
           </svg>
+        </g>
+        <g opacity={reveal} style={{ translate: `0px ${(1 - reveal) * 18}px` }}>
+          <rect x={W / 2 - lw * 0.07 * reveal} y={cy + lh / 2 + fs * 1.5} width={lw * 0.14 * reveal} height={4} fill={RED} />
+          <text x={W / 2} y={cy + lh / 2 + fs * 3.4} textAnchor="middle" fontSize={fs} fontWeight={500} fill="#C9D0D4" fontFamily="inherit" textLength={lw * 0.96} lengthAdjust="spacing">{TAGLINE}</text>
         </g>
         {rings.map((r, i) => (
           <circle key={i} cx={r.x} cy={r.y} r={24 + r.age * 10} fill="none" stroke={RED} strokeWidth={interpolate(r.age, [0, r.life], [5, 0.6])} opacity={0.75 * (1 - r.age / r.life)} />
@@ -91,7 +107,7 @@ export const AboutRoutes: React.FC = () => {
 /* ------------------------------------------------------------------------------------------------ 3 · constellation: five services, one chosen */
 export const CONSTELLATION = {
   w: 1200, h: 900, frames: 36000,
-  nodes: [{ x: 600, y: 120 }, { x: 1040, y: 330 }, { x: 880, y: 770 }, { x: 320, y: 770 }, { x: 160, y: 330 }],
+  nodes: [{ x: 600, y: 130 }, { x: 960, y: 340 }, { x: 830, y: 720 }, { x: 370, y: 720 }, { x: 240, y: 340 }],
 }
 const CHub = { x: 600, y: 450 }
 const curve = (n: { x: number; y: number }) => {
@@ -133,7 +149,7 @@ export const AboutConstellation: React.FC<{ active?: number; prev?: number; chan
             </g>
           )
         })}
-        <svg x={CHub.x - 105} y={CHub.y - 60} width={210} height={(210 * 590) / 1048} viewBox={MARK.vb.join(' ')} style={{ overflow: 'visible' }}>
+        <svg x={CHub.x - 140} y={CHub.y - 80} width={280} height={(280 * 590) / 1048} viewBox={MARK.vb.join(' ')} style={{ overflow: 'visible' }}>
           <MarkBuild id="cn" left={ramp(frame, 0, 26)} right={ramp(frame, 8, 34)} wedge={interpolate(frame, [26, 44], [0, 1], clamp)} tone="dark" breathe={1 + settled * 0.04 * Math.sin((frame / 30) * (W2PI / 1.9))} />
         </svg>
       </svg>
@@ -176,9 +192,10 @@ export const AboutBuild: React.FC<{ step?: number; prev?: number; changedAt?: nu
 }
 
 /* ------------------------------------------------------------------------------------------------ 5 · verify: a document is scanned and its record answers */
-export const VERIFY = { w: 1200, h: 800, frames: 36000, first: 96 }
+export const VERIFY = { w: 1000, h: 860, frames: 36000, first: 96 }
 const QR = qrMatrix('https://voraworld.id')
-const QR_D = qrPath(QR, 0, 0, 150).d
+const QR_D = qrPath(QR, 0, 0, 170).d
+/** The document, its stamp and QR code, and the scan. `scanAt` is the frame at which a scan was asked for; the answer ("record found") is text on the page, not part of the picture. */
 export const AboutVerify: React.FC<{ scanAt?: number | null; still?: boolean }> = ({ scanAt = null, still = false }) => {
   const frame = useCurrentFrame()
   const at = scanAt ?? VERIFY.first
@@ -186,30 +203,29 @@ export const AboutVerify: React.FC<{ scanAt?: number | null; still?: boolean }> 
   const sheetIn = ramp(frame, 0, 30)
   const stampIn = ramp(frame, 30, 52)
   const beam = interpolate(s, [0, 50], [0, 1], { ...clamp, easing: ease })
-  const hit = interpolate(s, [48, 60, 90], [0, 1, 0.55], clamp)
-  const card = interpolate(s, [58, 88, 250, 280], [0, 1, 1, 0], { ...clamp })
-  const check = interpolate(s, [84, 112], [0, 1], { ...clamp, easing: ease })
-  const lock = lockup(150, 0.58, 0, 0)
-  const sheet = { x: 90, y: 70, w: 520, h: 660 }
-  const float = still ? 0 : Math.sin(frame / 38) * 4
+  const hit = interpolate(s, [48, 60, 110, 140], [0, 1, 1, 0.35], clamp)
+  const found = interpolate(s, [56, 84], [0, 1], clamp)
+  const lock = lockup(190, 0.58, 0, 0)
+  const sheet = { x: 130, y: 50, w: 740, h: 760 }
+  const float = still ? 0 : Math.sin(frame / 38) * 5
   return (
     <AbsoluteFill>
       <svg viewBox={`0 0 ${VERIFY.w} ${VERIFY.h}`} width="100%" height="100%" style={{ display: 'block', overflow: 'visible' }}>
         <defs>
-          <filter id="vf-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="18" stdDeviation="22" floodColor="#101720" floodOpacity=".16" /></filter>
+          <filter id="vf-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="20" stdDeviation="24" floodColor="#101720" floodOpacity=".18" /></filter>
           <linearGradient id="vf-beam" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={RED} stopOpacity="0" /><stop offset="1" stopColor={RED} stopOpacity=".38" /></linearGradient>
-          <clipPath id="vf-sheet"><rect x={sheet.x} y={sheet.y} width={sheet.w} height={sheet.h} rx={18} /></clipPath>
+          <clipPath id="vf-sheet"><rect x={sheet.x} y={sheet.y} width={sheet.w} height={sheet.h} rx={22} /></clipPath>
         </defs>
         <g style={{ translate: `0px ${float + (1 - sheetIn) * 30}px`, opacity: sheetIn }}>
-          <rect x={sheet.x} y={sheet.y} width={sheet.w} height={sheet.h} rx={18} fill="#fff" filter="url(#vf-shadow)" />
+          <rect x={sheet.x} y={sheet.y} width={sheet.w} height={sheet.h} rx={22} fill="#fff" filter="url(#vf-shadow)" />
           <g clipPath="url(#vf-sheet)">
-            <rect x={sheet.x} y={sheet.y} width={sheet.w} height={96} fill={INK} />
-            <rect x={sheet.x} y={sheet.y + 96} width={sheet.w} height={5} fill={RED} />
-            <svg x={sheet.x + 34} y={sheet.y + 26} width={200} height={(200 * 384) / 1780} viewBox="132 164 1780 384"><LogoParts id="vf" wipe={1} lift={1} wedge={1} tone="dark" /></svg>
-            {[0, 1, 2, 3, 4, 5, 6].map((i) => <rect key={i} x={sheet.x + 40} y={sheet.y + 150 + i * 38} width={i % 3 === 2 ? 250 : 440} height={11} rx={5.5} fill="#E6E9EB" />)}
-            <rect x={sheet.x + 40} y={sheet.y + 430} width={200} height={12} rx={6} fill="#CBD2D6" />
+            <rect x={sheet.x} y={sheet.y} width={sheet.w} height={120} fill={INK} />
+            <rect x={sheet.x} y={sheet.y + 120} width={sheet.w} height={6} fill={RED} />
+            <svg x={sheet.x + 44} y={sheet.y + 34} width={260} height={(260 * 384) / 1780} viewBox="132 164 1780 384"><LogoParts id="vf" wipe={1} lift={1} wedge={1} tone="dark" /></svg>
+            {[0, 1, 2, 3, 4, 5].map((i) => <rect key={i} x={sheet.x + 56} y={sheet.y + 180 + i * 46} width={i % 3 === 2 ? 340 : 600} height={14} rx={7} fill="#E6E9EB" />)}
+            <rect x={sheet.x + 56} y={sheet.y + 470} width={260} height={15} rx={7.5} fill="#CBD2D6" />
             <g style={{ transformBox: 'fill-box', transformOrigin: '50% 50%', scale: 1.4 - 0.4 * stampIn, opacity: stampIn }}>
-              <g transform={`translate(${sheet.x + 40} ${sheet.y + 480})`}>
+              <g transform={`translate(${sheet.x + 56} ${sheet.y + 540})`}>
                 {lock.items.map((it, k) => {
                   if (it.t === 'icon') return <Art key={k} art={ICON_ART} x={it.x} y={it.y} w={it.w} h={it.h} />
                   if (it.t === 'wordmark') return <Art key={k} art={WORDMARK_ART} x={it.x} y={it.y} w={it.w} h={it.h} />
@@ -219,29 +235,17 @@ export const AboutVerify: React.FC<{ scanAt?: number | null; still?: boolean }> 
                 })}
               </g>
             </g>
-            <g transform={`translate(${sheet.x + sheet.w - 190} ${sheet.y + sheet.h - 190})`}>
-              <rect width={150} height={150} fill="#fff" />
+            <g transform={`translate(${sheet.x + sheet.w - 230} ${sheet.y + sheet.h - 230})`}>
+              <rect width={170} height={170} fill="#fff" />
               <path d={QR_D} fill={INK} />
-              <g fill="none" stroke={RED} strokeWidth={5} strokeLinecap="round" opacity={hit} style={{ transformBox: 'fill-box', transformOrigin: '50% 50%', scale: 1.14 - 0.14 * hit }}>
-                <path d="M -8 18 L -8 -8 L 18 -8" /><path d="M 132 -8 L 158 -8 L 158 18" /><path d="M -8 132 L -8 158 L 18 158" /><path d="M 158 132 L 158 158 L 132 158" />
+              <g fill="none" stroke={RED} strokeWidth={6} strokeLinecap="round" opacity={hit} style={{ transformBox: 'fill-box', transformOrigin: '50% 50%', scale: 1.16 - 0.16 * hit }}>
+                <path d="M -10 22 L -10 -10 L 22 -10" /><path d="M 148 -10 L 180 -10 L 180 22" /><path d="M -10 148 L -10 180 L 22 180" /><path d="M 180 148 L 180 180 L 148 180" />
               </g>
+              {found > 0 ? <g opacity={found} style={{ transformBox: 'fill-box', transformOrigin: '50% 50%', scale: 0.6 + 0.4 * found }}><circle cx={170} cy={0} r={34} fill="#276650" stroke="#fff" strokeWidth={6} /><path d="M 154 0 L 166 12 L 188 -14" fill="none" stroke="#fff" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" /></g> : null}
             </g>
-            <rect x={sheet.x} y={sheet.y + 96 + beam * (sheet.h - 96) - 70} width={sheet.w} height={70} fill="url(#vf-beam)" opacity={beam > 0 && beam < 1 ? 1 : 0} />
-            <rect x={sheet.x} y={sheet.y + 96 + beam * (sheet.h - 96) - 2} width={sheet.w} height={4} fill={RED} opacity={beam > 0 && beam < 1 ? 1 : 0} />
+            <rect x={sheet.x} y={sheet.y + 126 + beam * (sheet.h - 126) - 80} width={sheet.w} height={80} fill="url(#vf-beam)" opacity={beam > 0 && beam < 1 ? 1 : 0} />
+            <rect x={sheet.x} y={sheet.y + 126 + beam * (sheet.h - 126) - 2} width={sheet.w} height={5} fill={RED} opacity={beam > 0 && beam < 1 ? 1 : 0} />
           </g>
-        </g>
-        <g style={{ translate: `${(1 - card) * 40}px 0px`, opacity: card }}>
-          <rect x={680} y={250} width={440} height={300} rx={18} fill="#fff" filter="url(#vf-shadow)" stroke="#E1E5E7" />
-          <circle cx={734} cy={308} r={26} fill="#E3F1EA" />
-          <path d="M 721 308 L 731 318 L 749 297" fill="none" stroke="#276650" strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={48} strokeDashoffset={48 * (1 - check)} />
-          <text x={780} y={300} fontSize={20} fontWeight={700} fill={INK} fontFamily="inherit" letterSpacing={1.2}>ISSUANCE RECORD FOUND</text>
-          <text x={780} y={326} fontSize={16} fill={SLATE} fontFamily="inherit">Catatan penerbitan ditemukan</text>
-          {[['Issuer | Penerbit', 'PT Satu Arah International'], ['Status', 'Issued | Diterbitkan'], ['Check | Periksa', 'Public verification page']].map(([k, v], i) => (
-            <g key={k} opacity={interpolate(s, [70 + i * 8, 90 + i * 8], [0, 1], clamp)}>
-              <text x={716} y={394 + i * 52} fontSize={13} fontWeight={700} letterSpacing={1.4} fill={SLATE} fontFamily="inherit">{k.toUpperCase()}</text>
-              <text x={716} y={418 + i * 52} fontSize={19} fontWeight={600} fill={INK} fontFamily="inherit">{v}</text>
-            </g>
-          ))}
         </g>
       </svg>
     </AbsoluteFill>
@@ -253,14 +257,17 @@ const Art: React.FC<{ art: Art; x: number; y: number; w: number; h: number }> = 
 }
 
 /* ------------------------------------------------------------------------------------------------ 6 · field: a grid of marks that answers a touch */
-export const FIELD = { w: 1600, h: 700, frames: 36000, cols: 16, rows: 7, cell: 100 }
+export const FIELD = { w: 1600, h: 700, frames: 36000, cell: 100 }
 export const AboutField: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; still?: boolean }> = ({ px = -9999, py = -9999, pulses = [], still = false }) => {
   const frame = useCurrentFrame()
+  const { width: W, height: H } = useVideoConfig()
   const reveal = ramp(frame, 0, 50)
+  const cols = Math.ceil(W / FIELD.cell), rows = Math.ceil(H / FIELD.cell)
+  const x0 = (W - cols * FIELD.cell) / 2, y0 = (H - rows * FIELD.cell) / 2
   const cells: React.ReactNode[] = []
-  for (let r = 0; r < FIELD.rows; r++) {
-    for (let c = 0; c < FIELD.cols; c++) {
-      const cx = c * FIELD.cell + FIELD.cell / 2, cy = r * FIELD.cell + FIELD.cell / 2
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cx = x0 + c * FIELD.cell + FIELD.cell / 2, cy = y0 + r * FIELD.cell + FIELD.cell / 2
       const d = still ? 9999 : Math.hypot(cx - px, cy - py)
       let influence = Math.max(0, 1 - d / 280)
       if (!still) for (const p of pulses) { const a = frame - p.f; if (a >= 0 && a < 60) influence += 0.9 * Math.max(0, 1 - Math.abs(Math.hypot(cx - p.x, cy - p.y) - a * 30) / 90) * (1 - a / 60) }
@@ -278,11 +285,10 @@ export const AboutField: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; 
   }
   return (
     <AbsoluteFill>
-      <svg viewBox={`0 0 ${FIELD.w} ${FIELD.h}`} width="100%" height="100%" preserveAspectRatio="xMidYMid slice" style={{ display: 'block' }}>{cells}</svg>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display: 'block' }}>{cells}</svg>
     </AbsoluteFill>
   )
 }
-
 
 /* ------------------------------------------------------------------------------------------------ 7 · gaps: four routes with a break in them, closed one by one */
 export const GAPS = { w: 1200, h: 720, frames: 36000, rows: [110, 270, 430, 590], gap: [540, 660] as const, x0: 100, x1: 1100 }

@@ -21,7 +21,7 @@ export function Constellation({ services, more }: { services: Service[]; more: s
           const n = CONSTELLATION.nodes[i]
           return (
             <button
-              key={sv.key} type="button" className="ab-node" aria-pressed={state.active === i} aria-label={sv.name}
+              key={sv.key} type="button" className="ab-node" data-side={i === 0 ? 'top' : 'below'} aria-pressed={state.active === i} aria-label={sv.name}
               style={{ left: `${(n.x / CONSTELLATION.w) * 100}%`, top: `${(n.y / CONSTELLATION.h) * 100}%` }}
               onPointerEnter={(e) => { if (e.pointerType === 'mouse') select(i) }} onFocus={() => select(i)} onClick={() => select(i)}
             ><span className="ab-node__name">{sv.name}</span></button>

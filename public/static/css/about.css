@@ -20,22 +20,26 @@
 .ab-stage>div{position:absolute;inset:0}
 .ab-fallback{position:absolute;inset:0;margin:auto;max-width:42%;height:auto;opacity:.9}
 
-/* 1 · hero */
-.ab-hero{padding:clamp(56px,9vw,112px) 0 0;background:#101720;color:#fff;overflow:hidden}
-.ab-hero__title{max-width:16ch;margin:0 0 22px;font-size:clamp(2.5rem,6vw,5rem);font-weight:600;letter-spacing:-.05em;line-height:1.02;text-wrap:balance}
-.ab-hero .ab-lead{color:#C9D0D4}
-.ab-hero__logo{position:relative;max-width:1240px;margin:clamp(8px,3vw,36px) auto 0;padding-bottom:clamp(20px,4vw,48px)}
-.ab-hero__touch{cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;border-radius:12px}
-.ab-hero__touch .ab-stage{max-height:62svh;margin-inline:auto}
+/* 1 · hero: the composition fills the section, the copy sits on it */
+.ab-hero{position:relative;display:flex;flex-direction:column;justify-content:flex-start;min-height:max(calc(100svh - 76px),640px);background:radial-gradient(120% 90% at 50% 100%,#17212C 0%,#101720 62%);color:#fff;overflow:hidden;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
+.ab-hero__stage{position:absolute;inset:0;pointer-events:none}
+.ab-hero__content{position:relative;z-index:1;padding:clamp(40px,7vh,88px) 0 0;pointer-events:none}
+.ab-hero__content a{pointer-events:auto}
+.ab-hero__title{max-width:15ch;margin:0 0 20px;font-size:clamp(2.4rem,5.6vw,4.8rem);font-weight:600;letter-spacing:-.05em;line-height:1.02;text-wrap:balance}
+.ab-hero .ab-lead{max-width:56ch;color:#C9D0D4}
+.ab-hero .ab-hint--hero{position:absolute;z-index:1;left:0;right:0;bottom:clamp(14px,3vh,28px);max-width:none;margin:0;padding:0 var(--page-x,24px);text-align:center;pointer-events:none}
+.ab-fallback--logo{max-width:60%}
+.ab-hero__reveal{position:absolute;z-index:1;padding:0;border:0;border-radius:18px;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ab-hero__reveal:focus-visible{outline:3px solid #EE9A8E;outline-offset:6px}
 
 /* 2 · the statement, held while routes are drawn */
 .ab-story{position:relative;background:#F7F7F4}
-.ab-story__sticky{position:sticky;top:0;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);align-items:center;gap:clamp(16px,4vw,56px);width:min(calc(100% - 2 * var(--page-x, 24px)), 1180px);margin-inline:auto}
+.ab-story__sticky{position:sticky;top:0;height:100svh;padding-top:76px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);align-items:center;gap:clamp(16px,4vw,56px);width:min(calc(100% - 2 * var(--page-x, 24px)), 1180px);margin-inline:auto}
 .ab-story__stage{order:2;max-height:78svh}
 .ab-story__copy{order:1}
 .ab-story__text{margin:0;font-size:clamp(1.6rem,3.4vw,3rem);font-weight:600;letter-spacing:-.035em;line-height:1.14;text-wrap:balance}
 .ab-story__text span{transition:opacity .12s linear}
-@media (max-width:820px){.ab-story__sticky{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:center;gap:10px;padding-block:20px}.ab-story__stage{order:1;max-height:34svh;margin-inline:auto}.ab-story__copy{order:2}.ab-story__text{font-size:clamp(1.35rem,5.6vw,2rem)}}
+@media (max-width:820px){.ab-story__sticky{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:center;gap:10px;padding-block:84px 20px}.ab-story__stage{order:1;max-height:34svh;margin-inline:auto}.ab-story__copy{order:2}.ab-story__text{font-size:clamp(1.35rem,5.6vw,2rem)}}
 
 /* 3 · the founder */
 .ab-founder{background:#fff}
@@ -64,12 +68,13 @@
 .ab-const{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:clamp(16px,3vw,48px);align-items:center;margin-top:30px}
 .ab-const__map{position:relative}
 .ab-node{position:absolute;display:grid;place-items:center;width:76px;height:76px;padding:0;border:0;border-radius:50%;background:transparent;color:#fff;transform:translate(-50%,-50%);cursor:pointer}
-.ab-node__name{position:absolute;top:100%;left:50%;width:max-content;max-width:104px;margin-top:4px;transform:translateX(-50%);font-size:.78rem;font-weight:600;line-height:1.2;text-align:center;color:#DDE3E7}
+.ab-node__name{position:absolute;top:100%;left:50%;width:max-content;max-width:132px;margin-top:6px;transform:translateX(-50%);font-size:.86rem;font-weight:600;line-height:1.2;text-align:center;color:#DDE3E7;text-shadow:0 1px 10px #101720}
+.ab-node[data-side=top] .ab-node__name{top:auto;bottom:100%;margin:0 0 6px}
 .ab-node[aria-pressed=true] .ab-node__name{color:#fff}
 .ab-const__detail{min-height:15rem;padding:clamp(18px,2.4vw,30px);border:1px solid rgba(255,255,255,.18);border-radius:16px;background:rgba(255,255,255,.04)}
 .ab-const__detail h3{margin:0 0 8px;font-size:1.5rem;letter-spacing:-.02em}.ab-const__strap{font-weight:600;color:#EE9A8E}
 .ab-const__detail p{line-height:1.55}
-@media (max-width:860px){.ab-const{grid-template-columns:1fr}.ab-node{width:56px;height:56px}.ab-node__name{font-size:.68rem;max-width:78px}}
+@media (max-width:860px){.ab-const{grid-template-columns:1fr;gap:28px;margin-top:64px}.ab-node{width:56px;height:56px}.ab-node__name{font-size:.72rem;max-width:84px}.ab-const__map{padding-bottom:6px}}
 
 /* 5 · three steps build the mark */
 .ab-how{background:#F7F7F4}
@@ -90,15 +95,32 @@
 .ab-who{margin:30px 0 8px;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#64717C}
 .ab-facts{display:grid;gap:10px;margin:0}.ab-facts div{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:12px;padding-top:10px;border-top:1px solid #E1E5E7}
 .ab-facts dt{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64717C}.ab-facts dd{margin:0;overflow-wrap:anywhere}
-.ab-verify{margin:0}.ab-verify figcaption{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:14px;font-size:.85rem;color:#64717C}
+.ab-verify{margin:0;display:grid;gap:14px}.ab-verify figcaption{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:14px;font-size:.85rem;color:#64717C}
 @media (max-width:860px){.ab-trust__grid{grid-template-columns:1fr}.ab-verify{order:-1}}
 
 /* 7 · the field of marks, and the line to remember */
 .ab-field{position:relative;min-height:clamp(440px,74svh,680px);display:grid;place-items:center;overflow:hidden;background:#101720;color:#fff;touch-action:pan-y}
-.ab-field__stage{pointer-events:none}
+.ab-field__stage{position:absolute;inset:0;pointer-events:none}
 .ab-field__copy{position:relative;z-index:1;width:min(calc(100% - 2 * var(--page-x, 24px)), 760px);padding:clamp(40px,8vw,96px) 0;text-align:center;pointer-events:none}
 .ab-field__copy a{pointer-events:auto}
-.ab-field__copy p{color:#C9D0D4}.ab-field__copy .ab-actions{justify-content:center}.ab-field__copy .ab-hint{color:#9AA7B2}
+.ab-field .ab-field__copy p{max-width:56ch;margin-inline:auto;color:#C9D0D4}.ab-field__copy .ab-actions{justify-content:center}.ab-field__copy .ab-hint{color:#9AA7B2}
 .ab-field__tagline{margin:0 0 14px;font-size:clamp(2.2rem,6vw,4.6rem);font-weight:600;letter-spacing:-.05em;line-height:1.04;text-wrap:balance;color:#fff;text-shadow:0 2px 40px #101720,0 0 12px #101720}
 
-@media (prefers-reduced-motion:reduce){.ab-btn,.ab-problem,.ab-step{transition:none}.ab-story__text span{transition:none}}
+@media (prefers-reduced-motion:reduce){.ab-hint:not(.ab-hint--static){display:none}.ab-btn,.ab-problem,.ab-step{transition:none}.ab-story__text span{transition:none}}
+
+/* the record that answers the scan: real text */
+.ab-record{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;padding:16px 18px;border:1px solid #DCE0E1;border-radius:14px;background:#fff;opacity:.35;transform:translateY(6px);transition:opacity .45s,transform .45s,border-color .45s,box-shadow .45s}
+.ab-record[data-found=true]{opacity:1;transform:none;border-color:#BFD9CB;box-shadow:0 12px 30px rgba(16,23,32,.1)}
+.ab-record__tick{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#E6EAEC;color:#fff;font-weight:700;transition:background .45s}
+.ab-record[data-found=true] .ab-record__tick{background:#276650}
+.ab-record strong{display:block;min-height:1.4em;margin-bottom:6px;font-size:1rem}
+.ab-record dl{display:grid;gap:4px;margin:0}.ab-record dl div{display:grid;grid-template-columns:7.5rem minmax(0,1fr);gap:10px;font-size:.88rem}
+.ab-record dt{color:#64717C}.ab-record dd{margin:0;font-weight:600}
+
+/* blocks that settle into place when scrolled to */
+.ab-reveal.is-armed{opacity:0;translate:0 26px}
+.ab-reveal.is-in{opacity:1;translate:0 0;transition:opacity .8s cubic-bezier(.2,.8,.2,1),translate .8s cubic-bezier(.2,.8,.2,1)}
+
+/* a calm join between a light section and a dark one */
+.ab-founder+.ab-capabilities,.ab-how+.ab-trust{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+@media (prefers-reduced-motion:reduce){.ab-reveal.is-armed,.ab-reveal.is-in{opacity:1;translate:none;transition:none}.ab-record{transition:none}}
