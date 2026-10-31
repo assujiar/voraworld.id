@@ -7,7 +7,12 @@ export interface Attachment { filename: string; content: Uint8Array }
 /** One attachment, or an array when a message carries several (the invoice and its pre-payment receipt). */
 export type Sender = (conf: MailConfigRow, to: string, subject: string, html: string, attachment?: Attachment | Attachment[]) => Promise<void>
 
-const stripTags = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+/** The plain-text alternative. A link keeps its address, because a reader of the text part can not click what has been stripped away. */
+export const stripTags = (html: string) => html
+  .replace(/<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href: string, label: string) => { const text = label.replace(/<[^>]+>/g, '').trim(); return text && text !== href ? `${text} (${href})` : href })
+  .replace(/<\/(p|div|li|h\d)>|<br\s*\/?>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  .replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
 
 const smtpSender: Sender = async (conf, to, subject, html, attachment) => {
   if (!conf.enabled) throw new Error('SMTP disabled')

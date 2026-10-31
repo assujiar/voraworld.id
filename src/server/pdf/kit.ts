@@ -2,6 +2,8 @@ import { degrees, PDFDocument, PDFFont, PDFImage, PDFPage, PDFString, StandardFo
 import QRCode from 'qrcode'
 import { ActionError } from '../errors'
 import { PDF_ASSETS } from './brand-assets'
+import { drawMark, embedMarkFonts, type MarkFonts } from './trust-mark'
+import { layoutMark, type Lang } from '../../content/trust-mark'
 
 /** A4 in PDF points. */
 export const W = 595.28
@@ -32,7 +34,7 @@ const color = (c: string): RGB => rgb(parseInt(c.slice(1, 3), 16) / 255, parseIn
 export class Sheet {
   private constructor(
     readonly doc: PDFDocument, private regular: PDFFont, private bold: PDFFont, private chars: Set<number>,
-    private logo: PDFImage, private watermarkImage: PDFImage, public page: PDFPage,
+    private logo: PDFImage, private watermarkImage: PDFImage, public page: PDFPage, private markFonts: MarkFonts,
     /** The page size: A4 portrait, or A4 landscape for a certificate. */
     readonly w: number = W, readonly h: number = H,
   ) {}
@@ -45,7 +47,7 @@ export class Sheet {
     const logo = await doc.embedPng(Buffer.from(PDF_ASSETS.logoReverse, 'base64'))
     const watermark = await doc.embedPng(Buffer.from(PDF_ASSETS.watermark, 'base64'))
     const [w, h] = meta.landscape ? [H, W] : [W, H]
-    return new Sheet(doc, regular, bold, new Set(regular.getCharacterSet()), logo, watermark, doc.addPage([w, h]), w, h)
+    return new Sheet(doc, regular, bold, new Set(regular.getCharacterSet()), logo, watermark, doc.addPage([w, h]), await embedMarkFonts(doc), w, h)
   }
 
   newPage(): PDFPage { this.page = this.doc.addPage([this.w, this.h]); return this.page }
@@ -101,6 +103,26 @@ export class Sheet {
       if (line) rows.push(line)
     }
     return rows
+  }
+
+  /**
+   * The VORA verification mark (QR code and corporate lockup) on the current page, its right edge at `right` and its bottom at `bottom`; the whole mark is also a
+   * link to `url`. Returns where it starts, so the text beside it can stop short of it, and how tall it is.
+   */
+  verificationMark(o: { url: string; lang: Lang; right: number; bottom: number; variant?: 'compact' | 'standard' }): { left: number; width: number; height: number } {
+    const variant = o.variant ?? 'compact'
+    const { width, height } = layoutMark({ variant, lang: o.lang, url: o.url })
+    const left = o.right - width
+    drawMark(this.page, this.markFonts, { variant, lang: o.lang, url: o.url }, left, o.bottom + height)
+    return { left, width, height }
+  }
+
+  /** The mark centred on `cx`, its top at `top` (the end of a document, where there is room for the standard variant). */
+  verificationMarkAt(o: { url: string; lang: Lang; cx: number; top: number; variant?: 'compact' | 'standard'; arrangement?: 'horizontal' | 'stacked' }): { width: number; height: number } {
+    const opts = { variant: o.variant ?? 'standard', arrangement: o.arrangement, lang: o.lang, url: o.url }
+    const { width, height } = layoutMark(opts)
+    drawMark(this.page, this.markFonts, opts, o.cx - width / 2, o.top)
+    return { width, height }
   }
 
   /** A QR code image that carries the verification link. It is a lookup token, never a signature. */

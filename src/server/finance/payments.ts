@@ -60,7 +60,7 @@ export async function confirmPayment(actorId: number, paymentId: number, input: 
       customer_name: r.customer.name, invoice_number: r.invoice_number, payment_amount: money(r.payment.amount_minor, r.currency), payment_date: r.payment.date,
       payment_reference: r.payment.reference || 'Not provided', invoice_status: r.invoice_status === 'paid' ? 'OFFICIALLY PAID' : 'PARTIALLY PAID',
       outstanding_amount: money(r.outstanding_minor, r.currency),
-    }, { dedupeKey: `payment-confirmed-${paymentId}` }))
+    }, { dedupeKey: `payment-confirmed-${paymentId}`, verify: [{ kind: 'receipt', id: r.receipt_id }] }))
     if (!needsStamp) {
       await bestEffort('receipt_customer', () => enqueue('receipt_customer', email, {
         customer_name: r.customer.name, document_number: r.receipt_number, invoice_number: r.invoice_number, payment_amount: money(r.payment.amount_minor, r.currency),

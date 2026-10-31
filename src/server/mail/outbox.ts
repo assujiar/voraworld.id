@@ -3,8 +3,22 @@ import { emailAddress } from './address'
 import { getMailConfig } from './config'
 import { renderTemplate } from './template'
 import { send, type Attachment } from './transport'
+import { publicBaseUrl } from '../env'
+import type { DocumentKind } from '../verification'
+import { resolveVerifyLinks, withVerificationLinks, type VerifyLink } from './verification-links'
 
-export interface EnqueueOptions { attachmentKind?: 'invoice' | 'receipt' | 'quotation' | 'prepayment' | 'delivery' | 'pod'; attachmentId?: number; force?: boolean; dedupeKey?: string }
+export interface EnqueueOptions {
+  attachmentKind?: 'invoice' | 'receipt' | 'quotation' | 'prepayment' | 'delivery' | 'pod'; attachmentId?: number; force?: boolean; dedupeKey?: string
+  /** Documents this message is about, when it carries no attachment: their verification links are added to the message if the template lacks them. */
+  verify?: Array<{ kind: DocumentKind; id: number }>
+}
+
+/** The verification links a message must carry: those the caller names, those in its context, and those of its attachments. */
+async function linksFor(context: Record<string, unknown>, docs: Array<{ kind: DocumentKind; id: number }>): Promise<VerifyLink[]> {
+  const out: VerifyLink[] = []
+  for (const key of ['verify_url', 'prepayment_verify_url']) if (typeof context[key] === 'string' && context[key]) out.push({ label: key === 'verify_url' ? String(context.document_number ?? '') : String(context.prepayment_number ?? ''), url: context[key] as string })
+  return [...out, ...(await resolveVerifyLinks(docs, publicBaseUrl()))]
+}
 export const MAX_ATTEMPTS = 5
 const LEASE_MINUTES = 10
 
@@ -15,7 +29,9 @@ export async function enqueue(event: string, recipient: string, context: Record<
   const conf = await getMailConfig()
   if (!conf?.enabled) return null
   const to = emailAddress(recipient)
-  const { subject, html } = await renderTemplate(event, context)
+  const rendered = await renderTemplate(event, context)
+  const { subject } = rendered
+  const html = withVerificationLinks(rendered.html, await linksFor(context, [...(opts.verify ?? []), ...(opts.attachmentKind && opts.attachmentId ? [{ kind: opts.attachmentKind as DocumentKind, id: opts.attachmentId }] : [])]), publicBaseUrl())
   if (opts.dedupeKey) {
     const prior = await one('email_jobs', (q) => q.eq('dedupe_key', opts.dedupeKey!), 'id,status')
     if (prior) return prior as { id: number; status: string }
@@ -40,7 +56,9 @@ export async function enqueueWithAttachments(event: string, recipient: string, c
   const conf = await getMailConfig()
   if (!conf?.enabled) return null
   const to = emailAddress(recipient)
-  const { subject, html } = await renderTemplate(event, context)
+  const rendered = await renderTemplate(event, context)
+  const { subject } = rendered
+  const html = withVerificationLinks(rendered.html, await linksFor(context, attachments.map((a) => ({ kind: a.kind, id: a.id }))), publicBaseUrl())
   return rpc<{ id: number; status: string; created: boolean }>('mail_enqueue', { p: { event, recipient: to, subject, html, dedupe_key: opts.dedupeKey, attachments: attachments.map((a) => ({ kind: a.kind, id: a.id })) } })
 }
 
@@ -83,7 +101,11 @@ export async function dispatch(baseUrl: string, limit = 10): Promise<DispatchRes
   for (const job of [...jobs].sort((a, b) => (a.id as number) - (b.id as number))) {
     try {
       const attachment = await attachmentsFor(job as never, baseUrl)
-      await send(conf, job.recipient as string, job.subject as string, job.html as string, attachment)
+      // A message that carries a document always carries its verification link, even if its template (or a job queued before this was added) has none.
+      const list = await many('email_job_attachments', (q) => q.eq('job_id', job.id as number).order('position').order('id'), 'kind,document_id')
+      const docs = list.length ? list.map((a) => ({ kind: a.kind as DocumentKind, id: a.documentId as number })) : job.attachmentKind ? [{ kind: job.attachmentKind as DocumentKind, id: job.attachmentId as number }] : []
+      const html = withVerificationLinks(job.html as string, await resolveVerifyLinks(docs, publicBaseUrl()), publicBaseUrl())
+      await send(conf, job.recipient as string, job.subject as string, html, attachment)
       await update('email_jobs', { status: 'sent', attempts: (job.attempts as number) + 1, error: '', sent_at: new Date() }, (q) => q.eq('id', job.id as number))
       result.sent++
     } catch (e) {

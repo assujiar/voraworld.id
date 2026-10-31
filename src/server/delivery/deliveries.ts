@@ -258,7 +258,7 @@ export async function submitProof(input: ProofInput, baseUrl: string): Promise<R
   const at = new Date(result.server_time)
   const context = { delivery_number: result.number, consignee_name: result.consignee_name, receiver_name: name, received_at: `${businessDateTime(at)} WIB` }
   if (result.consignee_email) {
-    await bestEffort('delivery_received_customer', () => enqueue('delivery_received_customer', result.consignee_email, { ...context, pod_url: `${baseUrl}/pod/view/${result.view_token}` }, { dedupeKey: `delivery-received-customer-${result.proof_id}` }))
+    await bestEffort('delivery_received_customer', () => enqueue('delivery_received_customer', result.consignee_email, { ...context, pod_url: `${baseUrl}/pod/view/${result.view_token}` }, { dedupeKey: `delivery-received-customer-${result.proof_id}`, verify: [{ kind: 'pod', id: result.delivery_id }] }))
   }
   await bestEffort('delivery_received_admin', async () => {
     const conf = await getMailConfig()
@@ -278,7 +278,7 @@ export async function resendReceivedEmail(actorId: number, id: number, baseUrl: 
   if (!conf?.enabled || !rule?.enabled) throw new ActionError('Enable SMTP and the delivery_received_customer email rule first', 409)
   const queued = await enqueue('delivery_received_customer', d.consigneeEmail as string, {
     delivery_number: d.number, consignee_name: d.consigneeName, receiver_name: proof.receiverName, received_at: `${businessDateTime(proof.serverTime as Date)} WIB`, pod_url: `${baseUrl}/pod/view/${d.viewToken}`,
-  }, { dedupeKey: `delivery-resend-${proof.id}-${Math.floor(Date.now() / 60_000)}` })
+  }, { dedupeKey: `delivery-resend-${proof.id}-${Math.floor(Date.now() / 60_000)}`, verify: [{ kind: 'pod', id }] })
   if (!queued) throw new ActionError('Email delivery is disabled', 409)
   await recordAudit(actorId, 'resend-received-email', 'delivery', id, d.number as string)
 }

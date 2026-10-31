@@ -201,7 +201,7 @@ export async function reviewApproval(actorId: number, id: number, outcome: strin
       const q = await one('quotations', (f) => f.eq('id', r.quotation_id), 'pic_email')
       const c = await one('customers', (f) => f.eq('id', r.customer_id as number), 'name,email,pic_email')
       const to = ((q?.picEmail as string) || (c?.picEmail as string) || (c?.email as string)) ?? ''
-      if (to) await enqueue('quotation_validated_customer', to, { customer_name: c?.name ?? '', document_number: r.number }, { dedupeKey: `quotation-validated-${id}` })
+      if (to) await enqueue('quotation_validated_customer', to, { customer_name: c?.name ?? '', document_number: r.number }, { dedupeKey: `quotation-validated-${id}`, verify: [{ kind: 'quotation', id: r.quotation_id }] })
     })
   }
   return r.quotation_id
