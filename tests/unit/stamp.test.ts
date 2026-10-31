@@ -56,13 +56,36 @@ describe('the approved artwork', () => {
     expect(legal.t === 'text' && legal.fit).toBe(150)
   })
 
-  it('keeps the legal name readable in the compact variant (at least 5 pt)', () => {
+  it('keeps the legal name readable in the compact variant (at least 4.8 pt, bold capitals spanning the whole lockup)', () => {
     const legal = layoutMark(opts({ variant: 'compact' })).items.find((i) => i.t === 'text' && i.text === CORPORATE_NAME)!
-    expect(legal.t === 'text' && legal.size).toBeGreaterThanOrEqual(5)
+    expect(legal.t === 'text' && legal.size).toBeGreaterThanOrEqual(4.8)
   })
 })
 
 describe('layout', () => {
+  it('makes the lockup exactly as tall as the QR modules when they sit side by side, aligned to them, in every variant and at any scale', () => {
+    for (const variant of ['compact', 'standard', 'signing'] as const) for (const scale of [0.9, 1, 1.4]) {
+      const l = layoutMark(opts({ variant, scale, signing }))
+      const qr = l.items.find((i) => i.t === 'qr')!
+      if (qr.t !== 'qr') throw new Error('x')
+      const n = qrMatrix(URL_).size, quiet = (qr.size * 4) / (n + 8)
+      const lockItems = l.items.filter((i) => i.t === 'icon' || i.t === 'wordmark' || (i.t === 'rule' && !i.color) || (i.t === 'text' && i.text === CORPORATE_NAME))
+      const top = Math.min(...lockItems.map((i) => (i.t === 'text' ? i.y - i.size * 0.718 : i.y)))
+      const bottom = Math.max(...lockItems.map((i) => (i.t === 'text' ? i.y : i.t === 'qr' ? 0 : i.y + ('h' in i ? i.h : 0))))
+      expect(top, `${variant}@${scale} top`).toBeCloseTo(qr.y + quiet, 4)
+      expect(bottom, `${variant}@${scale} bottom`).toBeCloseTo(qr.y + qr.size - quiet, 4)
+    }
+  })
+
+  it('sets the icon, wordmark, rule and name close together: the gaps between them are small next to the wordmark', () => {
+    const lock = lockup(100, 0.58)
+    const [icon, word, rule, name] = lock.items
+    if (icon.t !== 'icon' || word.t !== 'wordmark' || rule.t !== 'rule' || name.t !== 'text') throw new Error('x')
+    expect(word.y - (icon.y + icon.h)).toBeLessThan(word.h * 0.2)
+    expect(rule.y - (word.y + word.h)).toBeLessThan(word.h * 0.2)
+    expect(name.y - name.size * 0.718 - (rule.y + rule.h)).toBeLessThan(word.h * 0.2)
+  })
+
   it('never lets the QR code touch the lockup or any text, in any variant, arrangement or scale', () => {
     for (const variant of ['compact', 'standard', 'signing'] as const) for (const arrangement of ['horizontal', 'stacked'] as const) for (const scale of [0.8, 1, 1.3]) {
       const l = layoutMark(opts({ variant, arrangement, scale, signing, preview: scale === 0.8 }))
@@ -89,12 +112,19 @@ describe('layout', () => {
     const narrow = t(layoutMark(opts({ variant: 'standard', arrangement: 'stacked' })))
     expect(narrow).toContain('voraworld.id/verify')
     expect(narrow).toContain('ABCDEFGH')
-    expect(t(l)).toMatch(/PREVIEW/)
+    expect(l.badge?.text).toBe('PREVIEW')                                                          // labelled, outside the box
     expect(t(l)).not.toMatch(/Signed:/)
+    expect(t(l)).toContain('Time is set when the document is signed')
     expect(t(l)).toMatch(/Non-certified electronic signature/)
     const done = t(layoutMark(opts({ variant: 'signing', signing })))
     expect(done).toContain('Signed: 31 Oct 2026 11:42 WIB')
-    expect(done).not.toMatch(/PREVIEW/)
+    expect(layoutMark(opts({ variant: 'signing', signing })).badge).toBeUndefined()
+    // A preview and the final mark take exactly the same space, so a placement confirmed on the preview is the placement of the signed file.
+    expect(layoutMark(opts({ variant: 'signing', signing, preview: true })).height).toBeCloseTo(layoutMark(opts({ variant: 'signing', signing })).height, 6)
+    const corporate = t(layoutMark(opts({ variant: 'signing', signing: { ...signing, personal: false, name: 'PT Satu Arah International', position: '', eventRef: 'SEL-1' } })))
+    expect(corporate).toContain('VORA mark, not a personal electronic signature')
+    expect(corporate).toContain('Document no.: SEL-1')
+    expect(corporate).not.toMatch(/Non-certified electronic signature/)
     expect(t(layoutMark(opts({ variant: 'signing', lang: 'id', signing })))).toContain('Tanda tangan elektronik tidak tersertifikasi')
   })
 

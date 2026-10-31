@@ -1,3 +1,5 @@
+import { getVerification } from '@/server/verification'
+import { publicBaseUrl } from '@/server/env'
 import { notFound } from 'next/navigation'
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { DocumentForm } from '@/components/admin/DocumentForm'
@@ -12,11 +14,13 @@ export default async function EditDocument({ params, searchParams }: { params: P
   const type = doc ? documentType(doc.kind as string) : undefined
   if (!doc || !type) notFound()
   const stored = doc.fields as StoredFields
+  const verification = await getVerification('document', id)
+  const verifyUrl = verification ? `${publicBaseUrl()}/verify/${verification.token}` : undefined
   return (
     <AdminPage heading={`Edit ${doc.number as string}`} sp={await searchParams}>
       {doc.status !== 'draft'
         ? <div className="admin-panel"><p>Only a draft can be edited. <a href={`/admin/documents/${id}`}>Back to the document</a></p></div>
-        : <DocumentForm type={type} lang={doc.language as Lang} record={id} values={stored.values} documentDate={doc.documentDate as string} customerId={doc.customerId as number | null} articles={stored.articles} sourceName={stored.source?.name} invoiceIds={(stored.invoices ?? []).map((i) => i.id)} />}
+        : <DocumentForm type={type} lang={doc.language as Lang} record={id} values={stored.values} documentDate={doc.documentDate as string} customerId={doc.customerId as number | null} articles={stored.articles} sourceName={stored.source?.name} verifyUrl={verifyUrl} invoiceIds={(stored.invoices ?? []).map((i) => i.id)} />}
     </AdminPage>
   )
 }

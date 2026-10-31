@@ -118,6 +118,7 @@ export function linkOverMark(page: PDFPage, layout: MarkLayout, url: string, at:
 export function paintMark(page: PDFPage, fonts: MarkFonts, layout: MarkLayout, url: string, at: PointMap): void {
   page.pushOperators(pushGraphicsState())
   for (const item of layout.items) paintItem(page, fonts, item, at, url)
+  if (layout.badge) paintItem(page, fonts, { t: 'text', x: 0, y: -3, text: layout.badge.text, size: layout.badge.size, bold: true, color: '#B43E31' }, at, url)
   page.pushOperators(popGraphicsState())
   linkOverMark(page, layout, url, at)
 }

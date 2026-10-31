@@ -42,20 +42,27 @@ export interface TrustPolicy {
   /** What opening the verification page does and does not confirm. */
   confirms: Bi
   doesNotConfirm: Bi
+  /**
+   * `immutable`: the PDF is archived when it is issued and every download is those bytes. `live`: the PDF is drawn from the business record each time, as it always was,
+   * because its body shows a status that changes (the payment status of an invoice and of a receipt's invoice, the approval address and state of a quotation);
+   * archiving it would freeze that status or take it out of the document. A `live` document still has its verification record, mark and link, and the verification page
+   * reads the live status; it has no recorded file fingerprint, and the page says so. Changing this flag is the whole switch.
+   */
+  archive: 'immutable' | 'live'
   /** The live status the page reads from the business record, if any. */
   liveStatus: 'payment' | 'receipt' | 'prepayment' | 'approval' | 'delivery' | 'pod' | 'validity' | null
 }
 
-const BASE = { pageMark: 'compact' as const }
+const BASE = { pageMark: 'compact' as const, archive: 'immutable' as const }
 
 const FIXED: Record<Exclude<TrustKind, 'document'>, TrustPolicy> = {
   invoice: {
-    ...BASE, kind: 'invoice', family: 'invoice', signing: 'optional', nonCertified: 'allowed', endMark: null, multiParty: false, liveStatus: 'payment',
+    ...BASE, archive: 'live', kind: 'invoice', family: 'invoice', signing: 'optional', nonCertified: 'allowed', endMark: null, multiParty: false, liveStatus: 'payment',
     confirms: { id: 'VORA menerbitkan invoice ini. Status pembayaran di bawah dibaca langsung dari catatan keuangan VORA.', en: 'VORA issued this invoice. The payment status below is read live from VORA\'s finance records.' },
     doesNotConfirm: { id: 'Berkas PDF tidak berubah ketika status pembayaran berubah. Pemindaian QR tidak membuktikan bahwa berkas di tangan Anda belum diubah.', en: 'The PDF does not change when the payment status does. Scanning the QR does not show that the file you hold is unmodified.' },
   },
   receipt: {
-    ...BASE, kind: 'receipt', family: 'receipt', signing: 'conditional', nonCertified: 'allowed', endMark: null, multiParty: false, liveStatus: 'receipt',
+    ...BASE, archive: 'live', kind: 'receipt', family: 'receipt', signing: 'conditional', nonCertified: 'allowed', endMark: null, multiParty: false, liveStatus: 'receipt',
     confirms: { id: 'VORA menerbitkan tanda terima pembayaran resmi ini setelah Keuangan VORA mengonfirmasi dana diterima.', en: 'VORA issued this official payment receipt after VORA Finance confirmed the funds.' },
     doesNotConfirm: { id: 'Bea meterai elektronik diterapkan secara terpisah dan statusnya ditampilkan sebagaimana tercatat.', en: 'The e-meterai is applied separately and its status is shown as recorded.' },
   },
@@ -65,7 +72,7 @@ const FIXED: Record<Exclude<TrustKind, 'document'>, TrustPolicy> = {
     doesNotConfirm: { id: 'Tanda terima pra-pembayaran bukan bukti bahwa dana sudah diterima. Bukti pembayaran hanyalah tanda terima pembayaran resmi VORA.', en: 'A pre-payment receipt is not proof that payment was made. Payment is proven only by VORA\'s official payment receipt.' },
   },
   quotation: {
-    ...BASE, kind: 'quotation', family: 'quotation', signing: 'conditional', nonCertified: 'allowed', endMark: null, multiParty: false, liveStatus: 'approval',
+    ...BASE, archive: 'live', kind: 'quotation', family: 'quotation', signing: 'conditional', nonCertified: 'allowed', endMark: null, multiParty: false, liveStatus: 'approval',
     confirms: { id: 'VORA menerbitkan Surat Perjanjian Harga (penawaran) ini. Persetujuan pelanggan dan validasi akhir VORA adalah tahap terpisah.', en: 'VORA issued this Price Agreement Letter (quotation). The customer\'s acceptance and VORA\'s final validation are separate steps.' },
     doesNotConfirm: { id: 'Penerbitan oleh VORA bukan persetujuan pelanggan dan bukan tanda tangan pelanggan.', en: 'Issuance by VORA is not the customer\'s acceptance and not the customer\'s signature.' },
   },

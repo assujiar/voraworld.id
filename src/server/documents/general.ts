@@ -223,9 +223,8 @@ export async function setDocumentStatus(actorId: number, id: number, action: str
       if (!verification || verification.revoked) throw new ActionError('The document has no active verification link', 409)
       const sealedAt = new Date()
       const made = await sealPdf(await readSource(stored.source), {
-        verificationUrl: `${baseUrl.replace(/\/+$/, '')}/verify/${verification.token}`, number: doc.number as string, lang: p.lang, purpose: p.fields.values.purpose, pages: p.fields.values.pages,
-        corner: p.fields.values.corner, size: p.fields.values.size, pageNumber: p.fields.values.page_number, posX: p.fields.values.pos_x, posY: p.fields.values.pos_y, signatoryName: p.fields.values.signatory_name, signatoryTitle: p.fields.values.signatory_title,
-        company: 'PT Satu Arah International', sealedAt: `${businessDateTime(sealedAt)} WIB`, sourceSha256: stored.source.sha256,
+        verificationUrl: `${baseUrl.replace(/\/+$/, '')}/verify/${verification.token}`, reference: doc.number as string, lang: p.lang, purpose: p.fields.values.purpose, pages: p.fields.values.pages,
+        corner: p.fields.values.corner, size: p.fields.values.size, pageNumber: p.fields.values.page_number, posX: p.fields.values.pos_x, posY: p.fields.values.pos_y, issuedAt: `${businessDateTime(sealedAt)} WIB`,
       })
       sealedKey = `seal/${randomUUID()}-sealed.pdf`
       await putObject('documents', sealedKey, made.bytes, 'application/pdf')

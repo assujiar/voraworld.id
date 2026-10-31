@@ -1,5 +1,6 @@
 import { HELVETICA_WIDTHS } from './helvetica-metrics'
 import { ICON_ART, WORDMARK_ART } from './stamp-art'
+import { qrMatrix, QUIET_MODULES } from './trust-qr'
 
 /**
  * The VORA Document Verification Mark: the corporate lockup (the approved A icon, the approved wordmark, a rule and PT SATU ARAH INTERNATIONAL, in one red,
@@ -26,7 +27,11 @@ export type MarkItem =
   | { t: 'rule'; x: number; y: number; w: number; h: number; color?: string }
   | { t: 'text'; x: number; y: number; text: string; size: number; bold: boolean; color: string; /** Spread the letters so that the text is exactly this wide. */ fit?: number }
 
-export interface MarkLayout { width: number; height: number; qrSize: number; items: MarkItem[]; variant: MarkVariant; arrangement: Arrangement }
+export interface MarkLayout {
+  width: number; height: number; qrSize: number; items: MarkItem[]; variant: MarkVariant; arrangement: Arrangement
+  /** A preview is labelled just above the mark's box; the label is not part of the box, so a preview and the final mark occupy exactly the same space. */
+  badge?: { text: string; size: number }
+}
 
 export interface MarkOptions {
   variant: MarkVariant
@@ -36,17 +41,23 @@ export interface MarkOptions {
   url: string
   /** 1 is the size the variant is designed at; a smaller mark is the same drawing, uniformly smaller. The QR code never falls under MIN_QR_POINTS. */
   scale?: number
-  signing?: { purposeLabel: string; name: string; position: string; eventRef: string; signedAt?: string }
+  /**
+   * `personal: false` is VORA's own endorsement of a file (the corporate mark, issued by the application): it names the company, carries the document number instead of a
+   * signing event, and says plainly that it is not a personal electronic signature. `personal` (the default) is a signing by an authorised individual.
+   */
+  signing?: { purposeLabel: string; name: string; position: string; eventRef: string; signedAt?: string; personal?: boolean }
   /** A preview shows where the mark will go; it is marked as one and carries no signing time. */
   preview?: boolean
 }
 
 /** About 20 mm: under this a QR code of this density stops scanning reliably from a printout. */
 export const MIN_QR_POINTS = 56.7
-const QR_SIZE = { compact: 66, standard: 82, signing: 82 } as const
-const LOCKUP_WIDTH = { compact: 106, standard: 150, signing: 118 } as const
-const ICON_RATIO = { compact: 0.46, standard: 0.56, signing: 0.52 } as const
-const GAP = 12
+/** The QR square (quiet zone included) of each variant, in points: 26.8 mm, 32.5 mm and 29.6 mm. */
+const QR_SIZE = { compact: 76, standard: 92, signing: 84 } as const
+/** The icon is this fraction of the lockup's width (the approved reference has it a little over half). */
+const ICON_RATIO = 0.58
+/** Space between the QR square and the lockup. The QR square already carries its own white quiet zone, so the visible gap is larger than this. */
+const GAP = 5
 const CAP_HEIGHT = 0.718      // Helvetica Bold
 
 const [, , iw, ih] = ICON_ART.viewBox
@@ -54,9 +65,9 @@ const [, , ww, wh] = WORDMARK_ART.viewBox
 export const ICON_ASPECT = ih / iw
 export const WORDMARK_ASPECT = wh / ww
 
-const WORDS: Record<Lang, { verify: string; ref: string; preview: string; signedAt: string; pendingTime: string; eventRef: string; nonCertified: string; scan: string }> = {
-  id: { verify: 'Periksa keaslian dokumen', ref: 'Ref', preview: 'PRATINJAU', signedAt: 'Ditandatangani', pendingTime: 'Waktu ditetapkan saat penandatanganan', eventRef: 'Peristiwa tanda tangan', nonCertified: 'Tanda tangan elektronik tidak tersertifikasi', scan: 'Pindai untuk memeriksa' },
-  en: { verify: 'Verify document authenticity', ref: 'Ref', preview: 'PREVIEW', signedAt: 'Signed', pendingTime: 'Time is set when the document is signed', eventRef: 'Signing event', nonCertified: 'Non-certified electronic signature', scan: 'Scan to verify' },
+const WORDS: Record<Lang, { verify: string; ref: string; preview: string; signedAt: string; pendingTime: string; eventRef: string; nonCertified: string; scan: string; documentRef: string; registered: string; notPersonal: string }> = {
+  id: { verify: 'Periksa keaslian dokumen', ref: 'Ref', preview: 'PRATINJAU', signedAt: 'Ditandatangani', pendingTime: 'Waktu ditetapkan saat penandatanganan', eventRef: 'Peristiwa tanda tangan', nonCertified: 'Tanda tangan elektronik tidak tersertifikasi', scan: 'Pindai untuk memeriksa', documentRef: 'Nomor dokumen', registered: 'Didaftarkan', notPersonal: 'Penanda VORA, bukan tanda tangan elektronik pribadi' },
+  en: { verify: 'Verify document authenticity', ref: 'Ref', preview: 'PREVIEW', signedAt: 'Signed', pendingTime: 'Time is set when the document is signed', eventRef: 'Signing event', nonCertified: 'Non-certified electronic signature', scan: 'Scan to verify', documentRef: 'Document no.', registered: 'Registered', notPersonal: 'VORA mark, not a personal electronic signature' },
 }
 export const markWords = (lang: Lang) => WORDS[lang]
 
@@ -92,12 +103,12 @@ export function shortReference(url: string): { host: string; ref: string } {
 }
 
 /**
- * The line printed under a mark: the whole address when it fits the width at 5.4 pt or more (so a person can read it out or type it), otherwise the host and
+ * The line printed under a mark: the whole address when it fits the width at 5 pt or more (so a person can read it out or type it), otherwise the host and
  * the start of the token. It is the clickable link of the mark either way; the full address is always in the QR code and in the link itself.
  */
 export function linkLine(url: string, width: number): { text: string; size: number } {
   const bare = url.replace(/^https?:\/\//, '')
-  for (let size = 6.4; size >= 5.4; size -= 0.2) if (textWidth(bare, size) <= width) return { text: bare, size: Number(size.toFixed(1)) }
+  for (let size = 6.4; size >= 5.0; size -= 0.2) if (textWidth(bare, size) <= width) return { text: bare, size: Number(size.toFixed(1)) }
   const { host, ref } = shortReference(url)
   return { text: `${host}/verify  ${WORDS.en.ref} ${ref}`, size: 6.2 }
 }
@@ -108,9 +119,10 @@ interface Lockup { width: number; height: number; items: MarkItem[] }
 export function lockup(lw: number, iconRatio: number, x = 0, y = 0): Lockup {
   const iconW = lw * iconRatio, iconH = iconW * ICON_ASPECT
   const wordH = lw * WORDMARK_ASPECT
-  const g1 = lw * 0.07, g2 = lw * 0.045, ruleH = Math.max(0.6, lw * 0.0105), g3 = lw * 0.045
-  // The name is set at the size where its natural width is 90% of the lockup, then spread to the full width.
-  const size = (0.9 * lw) / textWidth(CORPORATE_NAME, 1, true)
+  // Close together, so that icon, wordmark, rule and name read as one stamp: the gaps are a few percent of the width.
+  const g1 = lw * 0.03, g2 = lw * 0.028, ruleH = Math.max(0.6, lw * 0.0105), g3 = lw * 0.028
+  // The name is set at the size where its natural width is the lockup's width, as in the approved reference (so it is not letter-spaced at all).
+  const size = lw / textWidth(CORPORATE_NAME, 1, true)
   const cap = CAP_HEIGHT * size
   let cy = y
   const items: MarkItem[] = []
@@ -120,6 +132,9 @@ export function lockup(lw: number, iconRatio: number, x = 0, y = 0): Lockup {
   items.push({ t: 'text', x, y: cy + cap, text: CORPORATE_NAME, size, bold: true, color: RED, fit: lw }); cy += cap
   return { width: lw, height: cy - y, items }
 }
+
+/** The lockup's height is proportional to its width: this is the width at which it is `height` tall. */
+export const lockupWidthForHeight = (height: number, iconRatio = ICON_RATIO): number => (height * 100) / lockup(100, iconRatio).height     // measured at 100 wide: the hairline rule has a minimum thickness, so a tiny reference would not be proportional
 
 /** Scales every length of a layout by `k` (the drawing is uniformly smaller or larger, never stretched). */
 function scaled(items: MarkItem[], k: number): MarkItem[] {
@@ -135,25 +150,33 @@ function scaled(items: MarkItem[], k: number): MarkItem[] {
 export function layoutMark(o: MarkOptions): MarkLayout {
   const words = WORDS[o.lang]
   const arrangement: Arrangement = o.variant === 'compact' ? 'horizontal' : (o.arrangement ?? 'horizontal')
-  const lw = LOCKUP_WIDTH[o.variant]
   const qr = QR_SIZE[o.variant]
-  const lock = lockup(lw, ICON_RATIO[o.variant])
   const items: MarkItem[] = []
   let width: number, height: number
-  const { host, ref } = shortReference(o.url)
+  // The part of the QR square that is dark modules: the quiet zone around it is white paper and cannot be seen. The lockup is as tall as this, and is aligned to it.
+  const n = qrMatrix(o.url).size
+  const quiet = (qr * QUIET_MODULES) / (n + 2 * QUIET_MODULES)
+  const modules = qr - 2 * quiet
 
   if (arrangement === 'horizontal') {
-    const rowH = Math.max(qr, lock.height)
-    items.push({ t: 'qr', x: 0, y: (rowH - qr) / 2, size: qr })
+    const lw = lockupWidthForHeight(modules)
+    const lock = lockup(lw, ICON_RATIO)
+    items.push({ t: 'qr', x: 0, y: 0, size: qr })
     const lx = qr + GAP
-    for (const i of lock.items) items.push(shift(i, lx, (rowH - lock.height) / 2))
-    width = lx + lw; height = rowH
+    for (const i of lock.items) items.push(shift(i, lx, quiet))
+    width = lx + lw; height = qr
   } else {
-    width = Math.max(lw, qr)
-    for (const i of lock.items) items.push(shift(i, (width - lw) / 2, 0))
-    items.push({ t: 'qr', x: (width - qr) / 2, y: lock.height + GAP, size: qr })
+    // Stacked: the lockup is as wide as the QR's modules, centred above it; the captions below may be wider than the QR, and then the mark is as wide as they are.
+    const lw = modules
+    const lock = lockup(lw, ICON_RATIO)
+    const sr = shortReference(o.url)
+    width = Math.max(qr, o.variant === 'compact' ? 0 : Math.max(textWidth(WORDS[o.lang].verify, 7, true), textWidth(`${sr.host}/verify  ${WORDS.en.ref} ${sr.ref}`, 6.2)))
+    const ox = (width - qr) / 2
+    for (const i of lock.items) items.push(shift(i, ox + quiet, 0))
+    items.push({ t: 'qr', x: ox, y: lock.height + GAP, size: qr })
     height = lock.height + GAP + qr
   }
+  const { host, ref } = shortReference(o.url)
 
   if (o.variant !== 'compact') {
     height += 8
@@ -169,15 +192,16 @@ export function layoutMark(o: MarkOptions): MarkLayout {
   if (o.variant === 'signing') {
     const s = o.signing
     const rows: Array<[string, number, boolean, string]> = []
-    if (o.preview) rows.push([`${words.preview} - ${words.pendingTime}`, 6, true, RED])
     if (s) {
+      const personal = s.personal !== false
       rows.push([s.purposeLabel, 6.2, false, SLATE])
       rows.push([s.name, 8.6, true, INK])
-      rows.push([s.position, 6.8, false, INK])
-      rows.push([`${words.eventRef}: ${s.eventRef}`, 6, false, SLATE])
-      if (!o.preview) rows.push([s.signedAt ? `${words.signedAt}: ${s.signedAt}` : words.pendingTime, 6, false, SLATE])
-    }
-    rows.push([words.nonCertified, 5.6, false, SLATE])
+      if (s.position) rows.push([s.position, 6.8, false, INK])
+      rows.push([`${personal ? words.eventRef : words.documentRef}: ${s.eventRef}`, 6, false, SLATE])
+      // A preview, and a mark that has no time yet, carry no time: it is never invented. The row is there either way, so the box is the same size.
+      rows.push([!o.preview && s.signedAt ? `${personal ? words.signedAt : words.registered}: ${s.signedAt}` : words.pendingTime, 6, false, SLATE])
+      rows.push([personal ? words.nonCertified : words.notPersonal, 5.6, false, SLATE])
+    } else rows.push([words.nonCertified, 5.6, false, SLATE])
     height += 7
     for (const [text, size, bold, color] of rows) {
       items.push({ t: 'text', x: 0, y: height + size, text: fitText(text, size, bold, width), size, bold, color })
@@ -189,7 +213,7 @@ export function layoutMark(o: MarkOptions): MarkLayout {
   const k = Math.min(Math.max(o.scale ?? 1, minScale(o.variant)), 3)
   const out = k === 1 ? items : scaled(items, k)
   const qrSize = qr * k
-  return { width: width * k, height: height * k, qrSize, items: out, variant: o.variant, arrangement }
+  return { width: width * k, height: height * k, qrSize, items: out, variant: o.variant, arrangement, badge: o.preview ? { text: words.preview, size: 6.5 * k } : undefined }
 }
 
 function shift(i: MarkItem, dx: number, dy: number): MarkItem { return { ...i, x: i.x + dx, y: i.y + dy } }

@@ -31,7 +31,17 @@ export function withVerificationLinks(html: string, links: VerifyLink[], origin:
   return `${html}<div style="margin-top:20px;padding-top:12px;border-top:1px solid #DCE0E1;font-size:13px;line-height:1.5"><strong>Periksa keaslian dokumen / Verify this document</strong>${rows}<span style="color:#64717C">Klik tautan di atas untuk memeriksa dokumen dan status terkininya di voraworld.id. / Click the link above to check the document and its current status on voraworld.id.</span></div>`
 }
 
-const TABLES: Record<DocumentKind, string> = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations', prepayment: 'prepayment_receipts', document: 'documents', delivery: 'deliveries', pod: 'deliveries' }
+const TABLES: Record<DocumentKind, string> = { invoice: 'invoices', receipt: 'receipts', quotation: 'quotations', prepayment: 'prepayment_receipts', document: 'documents', delivery: 'deliveries', pod: 'delivery_proofs' }
+
+/** A document's number; a proof of delivery is numbered by the delivery note it belongs to. */
+async function labelOf(kind: DocumentKind, id: number): Promise<string> {
+  if (kind === 'pod') {
+    const proof = (await many('delivery_proofs', (q) => q.eq('id', id), 'delivery_id', 1))[0]
+    const note = proof ? (await many('deliveries', (q) => q.eq('id', proof.deliveryId as number), 'number', 1))[0] : undefined
+    return note ? `${note.number} (proof of delivery)` : ''
+  }
+  return String((await many(TABLES[kind], (q) => q.eq('id', id), 'number', 1))[0]?.number ?? '')
+}
 
 /** The verification links of documents, with their numbers as labels. `delivery` and `pod` get a verification record when they have none yet. */
 export async function resolveVerifyLinks(docs: Array<{ kind: DocumentKind; id: number }>, baseUrl: string): Promise<VerifyLink[]> {
@@ -41,8 +51,7 @@ export async function resolveVerifyLinks(docs: Array<{ kind: DocumentKind; id: n
       ? await rpc<string>('trust_ensure_verification', { p_kind: d.kind, p_document: d.id })
       : (await many('document_verification_tokens', (q) => q.eq('kind', d.kind).eq('document_id', d.id).eq('revoked', false).order('id'), 'token', 1))[0]?.token as string | undefined
     if (!token) continue
-    const num = (await many(TABLES[d.kind], (q) => q.eq('id', d.id), 'number', 1))[0]?.number as string | undefined
-    out.push({ label: d.kind === 'pod' && num ? `${num} (proof of delivery)` : (num ?? ''), url: `${baseUrl.replace(/\/+$/, '')}/verify/${token}` })
+    out.push({ label: await labelOf(d.kind, d.id), url: `${baseUrl.replace(/\/+$/, '')}/verify/${token}` })
   }
   return out
 }

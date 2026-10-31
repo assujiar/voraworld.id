@@ -12,6 +12,10 @@
 --   * A signing event is a non-certified electronic signature by an authenticated individual who held an active authority, consented explicitly, and proved
 --     control of a passkey for THIS exact payload. It is not a certificate-backed signature.
 
+-- The moment this system started. A document CREATED before it (an invoice, a letter, ...) keeps its legacy behaviour for ever: it is not given an archived artifact or
+-- an attestation, because that would claim evidence that was never kept. Only documents created at or after this moment are archived when they are issued.
+INSERT INTO settings (key, value, updated_at) VALUES ('trust_enabled_at', to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), now()) ON CONFLICT (key) DO NOTHING;
+
 -- ---------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Keys
 -- ---------------------------------------------------------------------------------------------------------------------------------------------------------

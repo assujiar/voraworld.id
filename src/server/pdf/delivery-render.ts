@@ -4,6 +4,7 @@ import { ActionError } from '../errors'
 import { one, rpc } from '../data'
 import { settingMap } from '../settings'
 import { renderDeliveryNote, renderPod } from './delivery'
+import { trustedPdf } from '../trust/serve'
 import type { DeliveryNoteData, Issuer } from './types'
 
 async function issuerOf(): Promise<Issuer> {
@@ -35,7 +36,10 @@ const noteData = (d: DeliveryView, captureUrl: string, verifyUrl: string, ref: {
 export async function deliveryNotePdf(id: number, baseUrl: string): Promise<Uint8Array> {
   const d = await deliveryBy('id', id)
   if (!d) throw new ActionError('Delivery note not found', 404)
-  return renderDeliveryNote(noteData(d, `${baseUrl.replace(/\/+$/, '')}/pod/${d.captureToken}`, await verifyUrlOf('delivery', id, baseUrl), await references(d)), await issuerOf())
+  return trustedPdf({
+    kind: 'delivery', id, number: d.number, candidate: { status: d.status, createdAt: d.createdAt },
+    render: async () => renderDeliveryNote(noteData(d, `${baseUrl.replace(/\/+$/, '')}/pod/${d.captureToken}`, await verifyUrlOf('delivery', id, baseUrl), await references(d)), await issuerOf()),
+  })
 }
 
 /** The proof of delivery as a PDF: the live proof, or the latest rejected one (marked) when none is live. */
@@ -45,9 +49,17 @@ export async function podPdf(id: number, baseUrl: string): Promise<Uint8Array> {
   const proofs = await proofsOf(id)
   const proof = proofs.find((p) => p.status === 'submitted') ?? proofs[0]
   if (!proof) throw new ActionError('This delivery has no recorded proof of delivery', 409)
+  // The proof of delivery is verified under the PROOF's own record (a rejected proof is revoked and a new one gets a new record), not the delivery's.
+  return trustedPdf({
+    kind: 'pod', id: proof.id, number: d.number, candidate: { status: proof.status === 'submitted' ? 'delivered' : 'rejected', createdAt: proof.serverTime },
+    render: () => renderProof(d, proof, baseUrl),
+  })
+}
+
+async function renderProof(d: DeliveryView, proof: Awaited<ReturnType<typeof proofsOf>>[number], baseUrl: string): Promise<Uint8Array> {
   const signature = await proofEvidence(proof, 'signature')
   const photos = await Promise.all(proof.photos.map(async (_photo, i) => (await proofEvidence(proof, `photo-${i + 1}`))!.bytes))
-  const { captureUrl: _none, ...note } = noteData(d, '', await verifyUrlOf('pod', id, baseUrl), await references(d))
+  const { captureUrl: _none, ...note } = noteData(d, '', await verifyUrlOf('pod', proof.id, baseUrl), await references(d))
   return renderPod({
     ...note, viewUrl: `${baseUrl.replace(/\/+$/, '')}/pod/view/${d.viewToken}`,
     proof: {
