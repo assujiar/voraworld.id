@@ -6,7 +6,7 @@ import type { Icons } from 'next/dist/lib/metadata/types/metadata-types'
  * and the 180 px square is what iOS puts on a home screen.
  */
 /** Changes when the icon artwork changes, so that browsers, which keep favicons for a long time, fetch the new files. */
-const V = '?v=4'
+const V = '?v=5'
 export const ICONS = {
   icon: [
     { url: '/favicon.ico' + V, sizes: '32x32' },
