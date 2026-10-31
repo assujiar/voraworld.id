@@ -1,41 +1,47 @@
 /**
- * Makes the site's icons from the approved reverse A icon (public/static/assets/vora-a-icon-reverse.svg): a Midnight Navy rounded square with the icon on it. The icon keeps the approved outline
- * and apex; the legs are heavier and the wedge larger so that it stays clear when small, and it is drawn as tall as it is wide, so that the padding is the same on all four sides (PAD).
+ * Makes the site's icons from the approved VORA logo (src/content/vora-motion-art.ts, its path data used as it is): the wordmark in white on a Midnight Navy rounded square, in two lines,
+ *   VO
+ *   RA
+ * The logo is one connected drawing, so the two lines are cut out of it, not redrawn: the V flows into the O, and the R flows into the A, so the cut falls between the O and the R. Both lines
+ * are as wide as the square allows and together they are as tall as it allows, so the padding is the same on all four sides (PAD). All of it is white, the wedge of the A included.
  *   public/favicon.svg             the rounded square as a vector (browsers that take SVG: Chrome, Edge, Firefox)
  *   public/favicon.ico             16, 32 and 48 px (PNG inside), for every browser that asks for /favicon.ico, Safari and the older ones above all
  *   public/icon-192.png, icon-512.png   the rounded square for Android and for installed sites
- *   public/icon-maskable-512.png   the icon on a full navy square, inside the safe zone, for the shapes Android cuts out
+ *   public/icon-maskable-512.png   the wordmark on a full navy square, inside the safe zone, for the shapes Android cuts out
  *   public/apple-touch-icon.png    180 px, a full navy square without transparency (iOS rounds it itself)
  * Run: npm run build:favicons
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import sharp from 'sharp'
+import { LOGO_ART } from '../src/content/vora-motion-art'
 
 const ROOT = resolve(__dirname, '..')
 const NAVY = '#101720'
-const svgText = readFileSync(resolve(ROOT, 'public/static/assets/vora-a-icon-reverse.svg'), 'utf8')
-const paths = [...svgText.matchAll(/<path d="([^"]+)" fill="([^"]+)"\/>/g)].map((m) => ({ d: m[1], fill: m[2] }))
-if (paths.length !== 2) throw new Error('The reverse icon is expected to hold two paths (the white A and the red wedge)')
-// Small sizes get an optical adaptation of the same shape: the same outline and apex, with heavier legs and a larger wedge, because the wide A is otherwise thin and unclear at 16 to 60 px.
-// The A keeps its outer outline (feet, apex, curve); only the inner opening is narrower. The wedge is rescaled to sit in the narrower opening.
-const SMALL = [
-  { d: 'M 0 520 L 442 42 Q 500 -27 558 42 L 1000 520 L 760 520 L 500 250 L 240 520 Z', fill: paths[0].fill },
-  { d: 'M 285 516 L 500 296 L 715 516 Q 500 410 285 516 Z', fill: paths[1].fill },
-]
-// The apex curve is a quadratic whose control point is at y -27, so the visible top is at y 7.5 (0.25 * 42 + 0.5 * -27 + 0.25 * 42); the feet end at y 520.
-const ART_W = 1000, ART_TOP = 7.5, ART_H = 520 - ART_TOP
 
-/**
- * The icon on a 512 x 512 canvas, drawn as a square of side 512 - 2 * pad: the art is 1000 wide and 512.5 tall, so it is stretched in height until both are equal and the padding is the same on all sides.
- *  */
-const icon = (pad: number) => { const side = 512 - 2 * pad; return `<g transform="translate(${pad} ${pad}) scale(${side / ART_W} ${side / ART_H}) translate(0 ${-ART_TOP})">${SMALL.map((p) => `<path d="${p.d}" fill="${p.fill}"/>`).join('')}</g>` }
-/** Padding, in 512 units, of the rounded square at the large sizes (11%) and at 16 px (9%), where every pixel counts. */
-const PAD = 56, PAD_16 = 46, RADIUS = 100
+// The wordmark is one drawing; its two lines are cut from it. The O is a ring centred at (759, 354) with a radius of about 190: everything left of x 759 plus a circle of 205 around that centre
+// is the first line (V, O), the rest is the second (R, A). The R begins at x 895, outside that circle. The boxes are each line's extent in the art's own units.
+const CUT = { x: 759, cx: 759, cy: 354, r: 205 }
+const LINE1 = { x0: 132, x1: 952, y0: 176, y1: 542 }
+const LINE2 = { x0: 895, x1: 1904, y0: 188, y1: 542 }
+const GAP = 0.06                                                   // the space between the lines, as a share of the side
+
+/** The two lines on a 512 x 512 canvas, each as wide as the square inside `pad`, both together as tall as it. */
+const wordmark = (pad: number) => {
+  const side = 512 - 2 * pad, h = (side * (1 - GAP)) / 2
+  const place = (b: typeof LINE1, y: number) => `translate(${pad} ${y}) scale(${side / (b.x1 - b.x0)} ${h / (b.y1 - b.y0)}) translate(${-b.x0} ${-b.y0})`
+  return `<defs><path id="i" d="${LOGO_ART.ink.d}" fill-rule="evenodd"/><path id="w" d="${LOGO_ART.red.d}" fill-rule="evenodd"/>`
+    + `<clipPath id="a"><rect width="${CUT.x}" height="900"/><circle cx="${CUT.cx}" cy="${CUT.cy}" r="${CUT.r}"/></clipPath>`
+    + `<mask id="b" maskUnits="userSpaceOnUse" width="2200" height="900"><rect width="2200" height="900" fill="#fff"/><rect width="${CUT.x}" height="900"/><circle cx="${CUT.cx}" cy="${CUT.cy}" r="${CUT.r}"/></mask></defs>`
+    + `<g fill="#fff"><g transform="${place(LINE1, pad)}" clip-path="url(#a)"><use href="#i"/></g>`
+    + `<g transform="${place(LINE2, pad + h + side * GAP)}" mask="url(#b)"><use href="#i"/><use href="#w"/></g></g>`
+}
+/** Padding, in 512 units, of the rounded square at the large sizes and at 16 px, where every pixel counts. */
+const PAD = 52, PAD_16 = 44, RADIUS = 100
 /** A faint light edge, so that a navy badge does not melt into a dark browser tab. */
 const edge = `<rect x="5" y="5" width="502" height="502" rx="${RADIUS - 5}" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="10"/>`
-const badge = (pad: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="${RADIUS}" fill="${NAVY}"/>${edge}${icon(pad)}</svg>`
-const square = (pad: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="${NAVY}"/>${icon(pad)}</svg>`
+const badge = (pad: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="${RADIUS}" fill="${NAVY}"/>${edge}${wordmark(pad)}</svg>`
+const square = (pad: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="${NAVY}"/>${wordmark(pad)}</svg>`
 
 const png = (svg: string, size: number) => sharp(Buffer.from(svg), { density: Math.max(72, (72 * size * 4) / 512) }).resize(size, size, { kernel: 'lanczos3' }).png({ compressionLevel: 9, effort: 10, palette: true, quality: 95 }).toBuffer()
 
@@ -56,14 +62,14 @@ function ico(images: Array<{ size: number; data: Buffer }>): Buffer {
 async function main() {
   const out = (name: string, data: Buffer | string) => { writeFileSync(resolve(ROOT, 'public', name), data); console.log(name, Buffer.byteLength(data)) }
   mkdirSync(resolve(ROOT, 'public'), { recursive: true })
-  out('favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>VORA</title><rect width="512" height="512" rx="${RADIUS}" fill="${NAVY}"/>${edge}${icon(PAD)}</svg>\n`)
+  out('favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>VORA</title><rect width="512" height="512" rx="${RADIUS}" fill="${NAVY}"/>${edge}${wordmark(PAD)}</svg>\n`)
   const small: Array<[number, number]> = [[16, PAD_16], [32, PAD], [48, PAD]]
   const icoImages = await Promise.all(small.map(async ([size, pad]) => ({ size, data: await png(badge(pad), size) })))
   out('favicon.ico', ico(icoImages))
   out('favicon-32.png', icoImages[1].data)
   out('icon-192.png', await png(badge(PAD), 192))
   out('icon-512.png', await png(badge(PAD), 512))
-  // Maskable: platforms cut a circle of 80% of the width; the feet of the icon are its corners, so the square is 280 wide: (512 - 280) / 2 = 116.
+  // Maskable: platforms cut a circle of 80% of the width; the corners of the wordmark are its extremes, so the square is 280 wide: (512 - 280) / 2 = 116.
   out('icon-maskable-512.png', await png(square(116), 512))
   // iOS rounds the corners by itself (about 22% of the width), so the icon keeps clear of them.
   out('apple-touch-icon.png', await sharp(Buffer.from(square(70)), { density: 288 }).resize(180, 180).flatten({ background: NAVY }).png({ compressionLevel: 9, effort: 10 }).toBuffer())
