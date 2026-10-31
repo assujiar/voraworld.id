@@ -9,8 +9,11 @@ import { lockup, RED } from '@/content/trust-mark'
  *
  * A WATERMARK IS A DETERRENT, NOT PROOF. It does not stop a screenshot from being edited and it establishes nothing: the findings on the page and the file check do.
  */
-const LOCK_W = 118
-const TILE_W = 300, TILE_H = 210
+const LOCK_W = 100
+const LOCK_H = LOCK_W * 0.684                       // the lockup is 118 wide and 80.7 high, whatever its size
+/** One cell holds one stamp with a narrow margin; a tile is two cells across and two down, the second stamp in the opposite corner, so the pattern is close and staggered. */
+const CELL_W = 116, CELL_H = 82
+const TILE_W = CELL_W * 2, TILE_H = CELL_H * 2
 const ROTATE = -24
 
 function Art({ art, x, y, w, h }: { art: Art; x: number; y: number; w: number; h: number }) {
@@ -41,8 +44,8 @@ export function Watermark({ layer, id }: { layer: 'back' | 'front'; id: string }
       <defs>
         {/* Two stamps per tile, the second shifted half a tile across and down: a staggered pattern that repeats exactly. */}
         <pattern id={pid} width={TILE_W} height={TILE_H} patternUnits="userSpaceOnUse" patternTransform={`rotate(${ROTATE})`}>
-          <Stamp x={(TILE_W / 2 - LOCK_W) / 2} y={(TILE_H / 2 - 80) / 2} />
-          <Stamp x={TILE_W / 2 + (TILE_W / 2 - LOCK_W) / 2} y={TILE_H / 2 + (TILE_H / 2 - 80) / 2} />
+          <Stamp x={(CELL_W - LOCK_W) / 2} y={(CELL_H - LOCK_H) / 2} />
+          <Stamp x={CELL_W + (CELL_W - LOCK_W) / 2} y={CELL_H + (CELL_H - LOCK_H) / 2} />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill={`url(#${pid})`} />
