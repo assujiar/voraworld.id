@@ -35,7 +35,7 @@ export function Footer({ locale, settings }: { locale: Locale; settings: Record<
           </div>
         </div>
         <div className="v-footer__base">
-          <span>© {new Date().getFullYear()} VORA · {settings.legal_name || 'PT Satu Arah International'}</span>
+          <span>© 2023 VORA · {settings.legal_name || 'PT Satu Arah International'}</span>
           <span><a href={`/${locale}/privacy`}>{t('Privacy', 'Privasi')}</a> · <a href={`/${locale}/terms`}>{t('Terms', 'Ketentuan')}</a></span>
         </div>
       </div>
