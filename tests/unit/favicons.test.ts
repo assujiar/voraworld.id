@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest'
 import sharp from 'sharp'
 import { ICONS, MANIFEST } from '@/lib/favicons'
 
-/** The site's icons: a round Midnight Navy badge with the approved reverse A icon on it, small, clear and present for every browser that asks. */
+/** The site's icons: a Midnight Navy rounded square with the approved reverse A icon on it, small, clear and present for every browser that asks. */
 const pub = (name: string) => `public/${name}`
 const NAVY = [0x10, 0x17, 0x20]
 
 describe('the favicon set', () => {
-  it('has a vector badge made of the reverse icon (its outline kept, legs heavier for small sizes) on a navy circle', () => {
+  it('has a vector badge made of the reverse icon (its outline kept, legs heavier for small sizes) on a navy rounded square', () => {
     const svg = readFileSync(pub('favicon.svg'), 'utf8'), reverse = readFileSync('public/static/assets/vora-a-icon-reverse.svg', 'utf8')
-    expect(svg).toContain('<circle cx="256" cy="256" r="256" fill="#101720"/>')
+    expect(svg).toMatch(/<rect width="512" height="512" rx="\d+" fill="#101720"\/>/)
     const outline = /<path d="(M 0 520 L 442 42 Q 500 -27 558 42 L 1000 520)/.exec(reverse)?.[1]
     expect(outline, 'the approved A starts with this outline').toBeTruthy(); expect(svg, 'the outer outline of the A is kept').toContain(outline!)
     expect(svg).toContain('fill="#FFFFFF"'); expect(svg).toContain('fill="#B43E31"')
@@ -32,7 +32,7 @@ describe('the favicon set', () => {
     expect(statSync(pub('favicon.ico')).size).toBeLessThan(6000)
   })
 
-  it('draws every PNG at its size: round and transparent at the corners, or a full navy square where the platform rounds it itself', async () => {
+  it('draws every PNG at its size: rounded and transparent at the corners, or a full navy square where the platform rounds it itself', async () => {
     const px = async (name: string) => { const { data, info } = await sharp(pub(name)).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); return { data, w: info.width, h: info.height } }
     const at = (img: { data: Buffer; w: number }, x: number, y: number) => [...img.data.subarray((y * img.w + x) * 4, (y * img.w + x) * 4 + 4)]
     for (const [name, size] of [['favicon-32.png', 32], ['icon-192.png', 192], ['icon-512.png', 512]] as const) {
@@ -47,6 +47,18 @@ describe('the favicon set', () => {
       expect([img.w, img.h], name).toEqual([size, size])
       for (const [x, y] of [[0, 0], [size - 1, 0], [0, size - 1], [size - 1, size - 1]]) expect(at(img, x, y), `${name} fills its corners with navy`).toEqual([...NAVY, 255])
     }
+  })
+
+  it('draws the icon as tall as it is wide, with the same padding on all four sides, so that it is as large as the square allows', async () => {
+    const { data, info } = await sharp(pub('icon-512.png')).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+    let x0 = 512, x1 = 0, y0 = 512, y1 = 0
+    for (let y = 30; y < 482; y++) for (let x = 30; x < 482; x++) {
+      const i = (y * info.width + x) * 4, r = data[i], g = data[i + 1], b = data[i + 2]
+      if (r > 150 || (r > 120 && g < 90)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y) }  // white or the red of the wedge
+    }
+    const left = x0, right = 511 - x1, top = y0, bottom = 511 - y1
+    for (const m of [right, top, bottom]) expect(Math.abs(m - left), `margins ${left} ${right} ${top} ${bottom}`).toBeLessThanOrEqual(4)
+    expect(left).toBeLessThanOrEqual(64)
   })
 
   it('keeps every file small', () => {
@@ -67,8 +79,8 @@ describe('the favicon set', () => {
 
   it('is what the three layouts point at: .ico, SVG, the 192 px badge and the iOS square, with the manifest', () => {
     const urls = (ICONS.icon as Array<{ url: string }>).map((i) => i.url)
-    expect(urls).toEqual(expect.arrayContaining(['/favicon.ico?v=2', '/favicon.svg?v=2', '/icon-192.png?v=2']))
-    expect((ICONS.apple as Array<{ url: string }>)[0].url).toBe('/apple-touch-icon.png?v=2'); expect(MANIFEST).toBe('/site.webmanifest')
+    expect(urls).toEqual(expect.arrayContaining(['/favicon.ico?v=3', '/favicon.svg?v=3', '/icon-192.png?v=3']))
+    expect((ICONS.apple as Array<{ url: string }>)[0].url).toBe('/apple-touch-icon.png?v=3'); expect(MANIFEST).toBe('/site.webmanifest')
     for (const layout of ['src/app/(site)/[locale]/layout.tsx', 'src/app/(docs)/layout.tsx', 'src/app/(admin)/layout.tsx']) {
       const s = readFileSync(layout, 'utf8')
       expect(s, layout).toContain('icons: ICONS'); expect(s, layout).toContain('manifest: MANIFEST'); expect(s, layout).not.toContain('vora-a-icon-primary')
