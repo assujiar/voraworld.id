@@ -1,5 +1,7 @@
 import type { Viewport } from 'next'
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
+import { NavProgress } from '@/components/feedback/NavProgress'
 import { Header } from '@/components/site/Header'
 import { Footer } from '@/components/site/Footer'
 import { isLocale, makeT } from '@/content'
@@ -27,10 +29,11 @@ export default async function LocaleLayout({ children, params }: { children: Rea
         <link rel="preload" href="/static/fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="stylesheet" href="/static/css/site.css" />
         <link rel="stylesheet" href="/static/css/vora.css?v=11" />
-        <link rel="stylesheet" href="/static/css/feedback.css?v=6" />
+        <link rel="stylesheet" href="/static/css/feedback.css?v=8" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body className="v-body">
+        <Suspense fallback={null}><NavProgress /></Suspense>
         <a className="v-skip" href="#main">{t('Skip to content', 'Langsung ke konten')}</a>
         <Header locale={locale} nav={nav} />
         <main id="main">{children}</main>

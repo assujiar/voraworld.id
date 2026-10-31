@@ -12,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test'
  */
 const ROOT = resolve(__dirname, '..', '..')
 const WIDTHS: Array<[number, number]> = [[320, 700], [360, 800], [375, 812], [390, 844], [430, 932], [844, 390], [768, 1024], [1024, 768], [1280, 800], [1440, 900]]
-let server: Server, base = '', pages: Record<string, string> = {}, models: Record<string, unknown> = {}, clientJs = ''
+let server: Server, base = '', pages: Record<string, string> = {}, models: Record<string, unknown> = {}, clientJs = '', navJs = ''
 
 test.beforeAll(async () => {
   const out = join(mkdtempSync(join(tmpdir(), 'vora-visual-')), 'fixtures.cjs')
@@ -22,10 +22,19 @@ test.beforeAll(async () => {
   const client = join(dirname(out), 'client.js')
   buildSync({ entryPoints: [join(ROOT, 'tests/visual/client-entry.tsx')], bundle: true, platform: 'browser', format: 'iife', jsx: 'automatic', outfile: client, alias: { '@': join(ROOT, 'src') }, logLevel: 'silent', define: { 'process.env.NODE_ENV': '"production"' } })
   clientJs = readFileSync(client, 'utf8')
+  const nav = join(dirname(out), 'nav.js')
+  buildSync({ entryPoints: [join(ROOT, 'tests/visual/nav-entry.tsx')], bundle: true, platform: 'browser', format: 'iife', jsx: 'automatic', outfile: nav, alias: { '@': join(ROOT, 'src') }, logLevel: 'silent', define: { 'process.env.NODE_ENV': '"production"' } })
+  navJs = readFileSync(nav, 'utf8')
   server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x')
     const live = /^\/live\/([a-z]+)$/.exec(url.pathname)
     if (live && models[live[1]]) { res.setHeader('content-type', 'text/html; charset=utf-8'); return void res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/static/css/verify.css"></head><body><div id="root"></div><script>window.__MODEL__=${JSON.stringify(models[live[1]])}</script><script src="/client.js"></script></body></html>`) }
+    if (url.pathname === '/nav.js') { res.setHeader('content-type', 'text/javascript'); return void res.end(navJs) }
+    if (url.pathname === '/nav') {
+      res.setHeader('content-type', 'text/html; charset=utf-8')
+      return void res.end(`<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/static/css/feedback.css"></head><body><nav><a id="page" href="/slow">Another page</a> <a id="same" href="/nav">This page</a> <a id="hash" href="/nav#x">A place in it</a> <a id="blank" href="/slow" target="_blank">New tab</a> <a id="pdf" href="/admin/documents/1/pdf/x.pdf">A PDF</a> <a id="other" href="https://example.invalid/x">Elsewhere</a></nav><div id="root"></div><script src="/nav.js"></script></body></html>`)
+    }
+    if (url.pathname === '/slow') { setTimeout(() => { res.setHeader('content-type', 'text/html; charset=utf-8'); res.end('<!doctype html><title>slow</title><p>arrived</p>') }, 1500); return }
     if (url.pathname === '/client.js') { res.setHeader('content-type', 'text/javascript'); return void res.end(clientJs) }
     const m = /^\/page\/([a-z]+)$/.exec(url.pathname)
     if (m && pages[m[1]]) { res.setHeader('content-type', 'text/html; charset=utf-8'); return void res.end(pages[m[1]]) }
@@ -138,4 +147,43 @@ test('print: the back watermark stays (as content, not a background), the front 
   const pdf = await page.pdf({ format: 'A4', printBackground: false })
   expect(pdf.length).toBeGreaterThan(2000)
   expect(await overflow(page)).toEqual({ doc: 0, body: 0 })
+})
+
+test.describe('moving between pages shows that something is loading', () => {
+  test('pressing a link to another page starts the bar and marks the link; a download, a new tab, the same page or another site does not', async ({ page }) => {
+    await page.route('https://example.invalid/**', (r) => r.abort())
+    await page.goto(`${base}/nav`)
+    const bar = page.getByTestId('nav-progress')
+    await expect(bar).toHaveClass(/is-idle/)
+    for (const id of ['same', 'hash']) {
+      await page.evaluate((i) => document.getElementById(i)!.addEventListener('click', (e) => e.preventDefault()), id)     // press it without leaving the test page
+      await page.locator(`#${id}`).click()
+      await expect(bar, id).toHaveClass(/is-idle/); expect(await page.locator(`#${id}[data-nav-pending]`).count(), id).toBe(0)
+    }
+    // A download and a new tab have no page to wait for: no bar, but the press is acknowledged for a moment, and the mark goes away by itself.
+    await page.evaluate(() => document.getElementById('pdf')!.addEventListener('click', (e) => e.preventDefault()))
+    await page.locator('#pdf').click()
+    await expect(page.locator('#pdf')).toHaveAttribute('data-nav-pending', ''); await expect(bar).toHaveClass(/is-idle/)
+    await expect(page.locator('#pdf')).not.toHaveAttribute('data-nav-pending', '', { timeout: 4000 })
+    const popup = page.waitForEvent('popup'); await page.locator('#blank').click()
+    await expect(page.locator('#blank')).toHaveAttribute('data-nav-pending', ''); await expect(bar).toHaveClass(/is-idle/); await (await popup).close()
+    // While the next page is still on its way, the old one is on screen: note what it shows 250 ms after the press (the test cannot ask a page that is being replaced).
+    await page.evaluate(() => document.getElementById('page')!.addEventListener('click', () => setTimeout(() => sessionStorage.setItem('seen', JSON.stringify({
+      bar: document.querySelector('[data-testid=nav-progress]')!.className, opacity: getComputedStyle(document.querySelector('[data-testid=nav-progress]')!).opacity, pending: document.getElementById('page')!.hasAttribute('data-nav-pending'),
+    })), 250)))
+    await page.locator('#page').click({ noWaitAfter: true })
+    await page.waitForURL(/\/slow$/)
+    await expect(page.locator('p')).toHaveText('arrived')
+    const seen = JSON.parse(await page.evaluate(() => sessionStorage.getItem('seen') ?? '{}')) as { bar?: string; opacity?: string; pending?: boolean }
+    expect(seen.bar).toContain('is-loading'); expect(seen.opacity).toBe('1'); expect(seen.pending).toBe(true)
+  })
+  test('the bar ends when the page is shown again from the browser\'s memory, and nothing stays pending', async ({ page }) => {
+    await page.goto(`${base}/nav`)
+    await page.evaluate(() => document.getElementById('page')!.addEventListener('click', (e) => e.preventDefault()))
+    await page.locator('#page').click()
+    await expect(page.getByTestId('nav-progress')).toHaveClass(/is-loading/)
+    await page.evaluate(() => window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true })))
+    await expect(page.getByTestId('nav-progress')).toHaveClass(/is-(done|idle)/)
+    await expect(page.locator('#page[data-nav-pending]')).toHaveCount(0)
+  })
 })

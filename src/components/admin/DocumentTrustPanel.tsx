@@ -1,3 +1,5 @@
+import { PendingForm } from '@/components/feedback/scope'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
 import { cancelSigningRequestAction, fulfilPartyAction, requestSigningAction, signNowAction, trackPartiesAction } from '@/actions/signing'
 import { fmt } from '@/components/admin/AdminPage'
 import { fileHref } from '@/content/file-names'
@@ -36,7 +38,7 @@ export async function DocumentTrustPanel({ id, documentKind, status, number, sig
       {requests.filter((r) => r.status === 'pending').map((r) => (
         <p key={r.id as number} className="mini">Signing requested {r.ref as string} ({r.purpose as string}) for {profiles.find((p) => p.id === r.signerProfileId)?.displayName as string} · expires {fmt(r.expiresAt as Date)}
           {mine && r.signerProfileId === mine.id ? <> · <a className="button" href={`/admin/signing/${r.id}`}>Sign now</a></> : null}
-          <form action={cancelSigningRequestAction} style={{ display: 'inline', marginLeft: 8 }}><input type="hidden" name="request_id" value={r.id as number} /><input type="hidden" name="back" value={here} /><button className="button-outline">Cancel</button></form></p>
+          <PendingForm action={cancelSigningRequestAction} style={{ display: 'inline', marginLeft: 8 }}><input type="hidden" name="request_id" value={r.id as number} /><input type="hidden" name="back" value={here} /><AsyncButton className="button-outline">Cancel</AsyncButton></PendingForm></p>
       ))}
       {parties.length ? (
         <div>
@@ -44,37 +46,37 @@ export async function DocumentTrustPanel({ id, documentKind, status, number, sig
           <ul className="mini">{parties.map((p) => (
             <li key={p.id as number}>{p.name as string} ({p.role as string}){p.required ? '' : ' · optional'} - {p.method ? `${METHOD_LABEL[p.method as string]?.en ?? p.method}${p.evidenceNote ? `: ${p.evidenceNote}` : ''}` : 'not yet signed'}
               {!p.method ? (
-                <form action={fulfilPartyAction} style={{ display: 'inline-flex', gap: 6, marginLeft: 8, flexWrap: 'wrap' }}>
+                <PendingForm action={fulfilPartyAction} style={{ display: 'inline-flex', gap: 6, marginLeft: 8, flexWrap: 'wrap' }}>
                   <input type="hidden" name="party_id" value={p.id as number} />
                   <select name="method" aria-label="How the party signed"><option value="external_pdf_uploaded">Signed PDF received (not validated)</option><option value="wet_ink_uploaded">Wet-ink document received</option><option value="manually_validated">Validated by VORA by hand</option><option value="external_certified_verified">Certified signature checked elsewhere</option></select>
-                  <input name="note" placeholder="Evidence seen" required minLength={5} /> <button className="button-outline">Record</button>
-                </form>
+                  <input name="note" placeholder="Evidence seen" required minLength={5} /> <AsyncButton className="button-outline">Record</AsyncButton>
+                </PendingForm>
               ) : null}
             </li>))}</ul>
         </div>
-      ) : policy.multiParty ? <form action={trackPartiesAction}><input type="hidden" name="document_id" value={id} /><button className="button-outline">Track the parties of this agreement</button></form> : null}
+      ) : policy.multiParty ? <PendingForm action={trackPartiesAction}><input type="hidden" name="document_id" value={id} /><AsyncButton className="button-outline">Track the parties of this agreement</AsyncButton></PendingForm> : null}
       {status === 'issued' && eligible.ok && artifacts.length && mine && (policy.family !== 'seal' || signMode) ? (
-        <form action={signNowAction} style={{ marginTop: 10 }}>
+        <PendingForm action={signNowAction} style={{ marginTop: 10 }}>
           <input type="hidden" name="kind" value="document" /><input type="hidden" name="document_id" value={id} />
           <strong className="mini">Sign {number} yourself</strong><br />
           <select name="purpose" aria-label="Purpose" defaultValue="signed">{SIGNING_PURPOSES.map((s) => <option key={s} value={s}>{PURPOSE_LABELS.en[s]}</option>)}</select>{' '}
           {parties.length ? <select name="party_role" aria-label="Party">{parties.map((p) => <option key={p.id as number} value={p.role as string}>{p.name as string}</option>)}</select> : null}
           {eligible.needsLegalReview ? <><br /><textarea name="legal_review_note" rows={2} placeholder="Legal review: who reviewed this document and what was decided (required for this kind of document)" required minLength={10} style={{ width: '100%', maxWidth: 520 }} /></> : null}
-          <br /><button className="button">Sign this document</button>
+          <br /><AsyncButton className="button">Sign this document</AsyncButton>
           <p className="mini muted">You sign as {mine.displayName as string}, {mine.position as string}, with your own passkey. You need current authority for this kind of document: nobody has to ask you first.</p>
-        </form>
+        </PendingForm>
       ) : null}
       {status === 'issued' && eligible.ok && artifacts.length ? (
-        <form action={requestSigningAction} style={{ marginTop: 10 }}>
+        <PendingForm action={requestSigningAction} style={{ marginTop: 10 }}>
           <input type="hidden" name="kind" value="document" /><input type="hidden" name="document_id" value={id} /><input type="hidden" name="back" value={here} />
           <strong className="mini">{mine ? 'Ask somebody else to sign' : 'Ask for a signature on'} {number}</strong><br />
           <select name="signer_profile_id" required aria-label="Signer"><option value="">Signer...</option>{profiles.map((p) => <option key={p.id as number} value={p.id as number}>{p.displayName as string}, {p.position as string}</option>)}</select>{' '}
           <select name="purpose" aria-label="Purpose">{SIGNING_PURPOSES.map((s) => <option key={s} value={s}>{PURPOSE_LABELS.en[s]}</option>)}</select>{' '}
           {parties.length ? <select name="party_role" aria-label="Party">{parties.map((p) => <option key={p.id as number} value={p.role as string}>{p.name as string}</option>)}</select> : null}
           {eligible.needsLegalReview ? <><br /><textarea name="legal_review_note" rows={2} placeholder="Legal review: who reviewed this document and what was decided (required for this kind of document)" required minLength={10} style={{ width: '100%', maxWidth: 520 }} /></> : null}
-          <br /><button className="button">Request signature</button>
+          <br /><AsyncButton className="button">Request signature</AsyncButton>
           <p className="mini muted">The signer must hold current authority for this kind of document and signs from their own account with their own passkey. Nobody can sign on their behalf.</p>
-        </form>
+        </PendingForm>
       ) : null}
     </div>
   )

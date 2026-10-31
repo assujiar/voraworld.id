@@ -54,19 +54,19 @@ export default async function Signers({ searchParams }: { searchParams: Promise<
                     <div key={a.id as number} className="mini">
                       {(a.scope as string[]).join(', ')} · granted {fmt(a.grantedAt as Date)}{a.validUntil ? ` · until ${fmt(a.validUntil as Date)}` : ''}{a.soleAdminGrant ? ' · sole administrator' : ''}
                       {a.revokedAt ? <strong> · ended {fmt(a.revokedAt as Date)}: {a.revokeReason as string}</strong> : (
-                        <form action={revokeAuthorityAction} style={{ display: 'inline' }}><input type="hidden" name="authority_id" value={a.id as number} /><input name="reason" placeholder="Reason" required minLength={5} style={{ width: 140 }} /> <button className="button-outline">End</button></form>
+                        <PendingForm action={revokeAuthorityAction} style={{ display: 'inline' }}><input type="hidden" name="authority_id" value={a.id as number} /><input name="reason" placeholder="Reason" required minLength={5} style={{ width: 140 }} /> <AsyncButton className="button-outline">End</AsyncButton></PendingForm>
                       )}
                     </div>
                   ))}
-                  <form action={grantAuthorityAction} className="mini" style={{ marginTop: 6 }}>
+                  <PendingForm action={grantAuthorityAction} className="mini" style={{ marginTop: 6 }}>
                     <input type="hidden" name="profile_id" value={p.id as number} />
                     {SCOPES.map((s) => <label key={s} style={{ marginRight: 8, fontWeight: 400 }}><input type="checkbox" name="scope" value={s} style={{ width: 'auto', minHeight: 0 }} /> {s}</label>)}
                     <label style={{ marginRight: 8, fontWeight: 400 }}><input type="checkbox" name="scope" value="*" style={{ width: 'auto', minHeight: 0 }} /> all</label><br />
-                    <input type="date" name="valid_until" aria-label="Until" /> <input name="note" placeholder="Basis (for example the board decision)" style={{ width: 220 }} /> <button className="button-outline">Grant authority</button>
-                  </form>
+                    <input type="date" name="valid_until" aria-label="Until" /> <input name="note" placeholder="Basis (for example the board decision)" style={{ width: 220 }} /> <AsyncButton className="button-outline">Grant authority</AsyncButton>
+                  </PendingForm>
                 </td>
                 <td>{passkeys.filter((k) => k.profileId === p.id).length}{me?.id === p.userId ? passkeys.filter((k) => k.profileId === p.id).map((k) => (
-                  <form key={k.id as number} action={revokePasskeyAction} style={{ display: 'inline' }}><input type="hidden" name="credential_id" value={k.id as number} /> <button className="button-outline" title="Remove this passkey">× {(k.label as string) || (k.deviceType as string)}</button></form>
+                  <PendingForm key={k.id as number} action={revokePasskeyAction} style={{ display: 'inline' }}><input type="hidden" name="credential_id" value={k.id as number} /> <AsyncButton className="button-outline" title="Remove this passkey">× {(k.label as string) || (k.deviceType as string)}</AsyncButton></PendingForm>
                 )) : null}</td>
               </tr>
             )
@@ -80,18 +80,18 @@ export default async function Signers({ searchParams }: { searchParams: Promise<
           </details>
         ) : null}
         <h4>New signer profile</h4>
-        <form action={createSignerProfileAction}>
+        <PendingForm action={createSignerProfileAction}>
           <select name="user_id" required>{users.filter((u) => u.authUserId && !withProfile.has(u.id)).map((u) => <option key={u.id as number} value={u.id as number}>{u.email as string}</option>)}</select>{' '}
           <input name="display_name" placeholder="Full name as it appears on documents" required minLength={3} style={{ width: 260 }} />{' '}
           <input name="position" placeholder="Position" required style={{ width: 200 }} />{' '}
-          <button className="button">Create profile</button>
-        </form>
+          <AsyncButton className="button">Create profile</AsyncButton>
+        </PendingForm>
       </div>
       {open.length ? (
         <div className="admin-panel"><h4>Open signing requests</h4>
           <table><thead><tr><th>Reference</th><th>Document</th><th>Purpose</th><th>Expires</th><th /></tr></thead><tbody>
             {open.map((r) => <tr key={r.id as number}><td>{r.ref as string}</td><td>{r.kind as string} #{r.documentId as number}</td><td>{r.purpose as string}</td><td>{fmt(r.expiresAt as Date)}</td>
-              <td><form action={cancelSigningRequestAction}><input type="hidden" name="request_id" value={r.id as number} /><input type="hidden" name="back" value="/admin/signers" /><button className="button-outline">Cancel</button></form></td></tr>)}
+              <td><PendingForm action={cancelSigningRequestAction}><input type="hidden" name="request_id" value={r.id as number} /><input type="hidden" name="back" value="/admin/signers" /><AsyncButton className="button-outline">Cancel</AsyncButton></PendingForm></td></tr>)}
           </tbody></table>
         </div>
       ) : null}
