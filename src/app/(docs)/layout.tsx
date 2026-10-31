@@ -13,7 +13,7 @@ export const viewport: Viewport = { themeColor: '#101720', width: 'device-width'
 export default function DocsRoot({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head><link rel="stylesheet" href="/static/css/site.css" /><link rel="stylesheet" href="/static/css/feedback.css?v=9" /><link rel="stylesheet" href="/static/css/verify.css?v=6" /></head>
+      <head><link rel="stylesheet" href="/static/css/site.css" /><link rel="stylesheet" href="/static/css/feedback.css?v=10" /><link rel="stylesheet" href="/static/css/verify.css?v=6" /></head>
       <body><Suspense fallback={null}><NavProgress /></Suspense>{children}</body>
     </html>
   )

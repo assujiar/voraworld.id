@@ -1,4 +1,5 @@
 import { makeT, navLabels, serviceGroups, siteText, type Locale } from '@/content'
+import { FooterLogo } from '@/components/site/FooterLogo'
 import { FOOTER_DESCRIPTION } from '@/content/footer'
 
 export function Footer({ locale, settings }: { locale: Locale; settings: Record<string, string> }) {
@@ -10,7 +11,7 @@ export function Footer({ locale, settings }: { locale: Locale; settings: Record<
       <div className="v-wrap">
         <div className="v-footer__grid">
           <div>
-            <a href={`/${locale}`}><img src="/static/assets/vora-reverse.svg" alt="VORA" width={150} height={44} /></a>
+            <a href={`/${locale}`} aria-label="VORA" className="v-footer__home"><FooterLogo /></a>
             <p className="v-footer__tag">{text.home_title}</p>
             <p className="v-footer__about">{settings[`footer_description_${locale}`]?.trim() || FOOTER_DESCRIPTION[locale]}</p>
           </div>

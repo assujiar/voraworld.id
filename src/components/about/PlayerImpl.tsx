@@ -12,11 +12,13 @@ export interface PlayerProps {
   stillFrame: number
   /** Scrubbing: the Player does not play, it shows this frame. */
   frame?: number
+  /** Start again when it ends (for a loop that never jumps). */
+  loop?: boolean
   active: boolean
   apiRef?: MutableRefObject<PlayerRef | null>
 }
 
-export default function PlayerImpl({ component, inputProps, w, h, frames, still, stillFrame, frame, active, apiRef }: PlayerProps) {
+export default function PlayerImpl({ component, inputProps, w, h, frames, still, stillFrame, frame, loop = false, active, apiRef }: PlayerProps) {
   const player = useRef<PlayerRef>(null)
   const scrubbing = frame !== undefined
   useEffect(() => { if (apiRef) apiRef.current = player.current })
@@ -31,7 +33,7 @@ export default function PlayerImpl({ component, inputProps, w, h, frames, still,
   return (
     <Player
       ref={player} component={component as ComponentType<Record<string, unknown>>} inputProps={inputProps} durationInFrames={frames} fps={30} compositionWidth={w} compositionHeight={h}
-      autoPlay={!still && !scrubbing && active} loop={false} controls={false} clickToPlay={false} doubleClickToFullscreen={false} spaceKeyToPlayOrPause={false}
+      autoPlay={!still && !scrubbing && active} loop={loop} controls={false} clickToPlay={false} doubleClickToFullscreen={false} spaceKeyToPlayOrPause={false}
       initialFrame={still ? stillFrame : scrubbing ? Math.round(frame ?? 0) : 0} style={{ width: '100%', height: '100%' }} numberOfSharedAudioTags={0} acknowledgeRemotionLicense
     />
   )

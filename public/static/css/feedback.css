@@ -185,3 +185,8 @@ nav a[data-nav-pending]::after,.admin-sidebar a[data-nav-pending]::after{content
 .vl-line{position:relative;display:block;width:min(220px,55vw);height:3px;overflow:hidden;border-radius:2px;background:#e4e7e9}
 .vl-line::after{content:"";position:absolute;inset:0 auto 0 -40%;width:40%;background:var(--red,#b43e31);animation:vora-wait 1.2s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.vl *{animation:none!important}.vl-shine{display:none}.vl-page{animation:none}.vl-line::after{animation:none;inset:0;width:100%;opacity:.5}}
+
+/* The footer logo: a box of the loop's own shape (so that nothing moves when the loop arrives), the still logo in it until then. */
+.v-footer a.v-footer__home{display:block;width:clamp(150px,16vw,184px);padding:0}
+.v-footer__logo{width:100%}
+.v-footer__logo .ab-fallback,.v-footer__logo-img{position:absolute;left:0;top:0;width:100%;max-width:100%;height:auto;margin:0;opacity:1}
