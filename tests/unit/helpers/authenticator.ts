@@ -11,21 +11,21 @@ export class SoftPasskey {
 
   private authData(flags: number, withKey: boolean): Uint8Array {
     const counter = new Uint8Array(4); new DataView(counter.buffer).setUint32(0, this.counter)
-    const parts = [createHash('sha256').update(this.rpId).digest(), Uint8Array.of(flags), counter]
+    const parts: Uint8Array[] = [createHash('sha256').update(this.rpId).digest(), Uint8Array.of(flags), counter]
     if (withKey) {
       const jwk = this.pair.publicKey.export({ format: 'jwk' })
-      const cose = isoCBOR.encode(new Map<number, unknown>([[1, 2], [3, -7], [-1, 1], [-2, isoBase64URL.toBuffer(jwk.x!)], [-3, isoBase64URL.toBuffer(jwk.y!)]]))
-      const id = isoBase64URL.toBuffer(this.credentialId)
+      const cose = isoCBOR.encode(new Map<number, unknown>([[1, 2], [3, -7], [-1, 1], [-2, isoBase64URL.toBuffer(jwk.x!)], [-3, isoBase64URL.toBuffer(jwk.y!)]]) as never)
+      const id = isoBase64URL.toBuffer(this.credentialId) as Uint8Array
       const len = new Uint8Array(2); new DataView(len.buffer).setUint16(0, id.length)
       parts.push(new Uint8Array(16), len, id, cose)
     }
-    return isoUint8Array.concat(parts)
+    return isoUint8Array.concat(parts as never)
   }
 
   register(challenge: string, o: { origin?: string; verified?: boolean } = {}): RegistrationResponseJSON {
     this.counter = 0
     const clientData = JSON.stringify({ type: 'webauthn.create', challenge, origin: o.origin ?? this.origin, crossOrigin: false })
-    const attestation = isoCBOR.encode(new Map<string, unknown>([['fmt', 'none'], ['attStmt', new Map()], ['authData', this.authData(o.verified === false ? 0x41 : 0x45, true)]]))
+    const attestation = isoCBOR.encode(new Map<string, unknown>([['fmt', 'none'], ['attStmt', new Map()], ['authData', this.authData(o.verified === false ? 0x41 : 0x45, true)]]) as never)
     return { id: this.credentialId, rawId: this.credentialId, type: 'public-key', clientExtensionResults: {}, response: { clientDataJSON: isoBase64URL.fromUTF8String(clientData), attestationObject: isoBase64URL.fromBuffer(attestation) } }
   }
 
