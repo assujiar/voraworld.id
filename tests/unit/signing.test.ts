@@ -9,7 +9,7 @@ const all = Object.fromEntries(CONFIRMATIONS.map((c) => [c, true])) as SigningPa
 const input = (over: Partial<SigningPayloadInput> = {}): SigningPayloadInput => ({
   requestRef: 'VORA-SIG-A1B2C3D4', kind: 'document', documentId: 7, documentNumber: 'LTR-1', sourceArtifactId: 11, sourceVersion: 1, sourceSha256: 'a'.repeat(64),
   signerProfileId: 3, signerUserId: 5, signerName: 'Siti Rahma', signerPosition: 'Direktur', purpose: 'approved', partyRole: 'vora',
-  placement: { pages: 'last', page_number: null, corner: 'custom', size: 'medium', pos_x: '0.3000', pos_y: '0.4000' }, confirmations: all,
+  placement: { pages: 'last', page_number: null, corner: 'custom', size: 'medium', pos_x: '0.3000', pos_y: '0.4000', background: false }, confirmations: all,
   nonce: 'n'.repeat(22), issuedAt: new Date('2026-11-02T03:00:00Z'), expiresAt: new Date('2026-11-02T03:05:00Z'), ...over,
 })
 
@@ -20,8 +20,8 @@ describe('the signing payload', () => {
     expect(challengeOf(signingPayload(input())).challenge).toBe(base.challenge)                                      // deterministic
     const changes: Array<Partial<SigningPayloadInput>> = [
       { sourceSha256: 'b'.repeat(64) }, { sourceVersion: 2 }, { sourceArtifactId: 12 }, { documentId: 8 }, { kind: 'invoice' }, { signerProfileId: 4 }, { signerUserId: 6 }, { signerName: 'Budi' }, { signerPosition: 'Staf' },
-      { purpose: 'verified' }, { partyRole: 'counterparty' }, { placement: { pages: 'last', page_number: null, corner: 'custom', size: 'medium', pos_x: '0.3001', pos_y: '0.4000' } },
-      { placement: { pages: 'all', page_number: null, corner: 'custom', size: 'medium', pos_x: '0.3000', pos_y: '0.4000' } }, { nonce: 'm'.repeat(22) }, { expiresAt: new Date('2026-11-02T03:06:00Z') }, { requestRef: 'VORA-SIG-FFFFFFFF' },
+      { purpose: 'verified' }, { partyRole: 'counterparty' }, { placement: { pages: 'last', page_number: null, corner: 'custom', size: 'medium', pos_x: '0.3001', pos_y: '0.4000', background: false } },
+      { placement: { pages: 'all', page_number: null, corner: 'custom', size: 'medium', pos_x: '0.3000', pos_y: '0.4000', background: false } }, { nonce: 'm'.repeat(22) }, { expiresAt: new Date('2026-11-02T03:06:00Z') }, { requestRef: 'VORA-SIG-FFFFFFFF' },
     ]
     for (const c of changes) expect(challengeOf(signingPayload(input(c))).challenge, JSON.stringify(c)).not.toBe(base.challenge)
   })
@@ -43,9 +43,9 @@ describe('the signing payload', () => {
     expect(checkedPlacement({ pages: 'last', corner: 'bottom-right', size: 'small' }).background).toBe(false)                      // transparent unless chosen (an older request has no such field)
     expect(checkedPlacement({ pages: 'last', corner: 'bottom-right', size: 'small', background: true }).background).toBe(true)
     expect(checkedPlacement({ pages: 'last', corner: 'bottom-right', size: 'small', background: 'yes' }).background).toBe(false)   // only a real boolean counts
-    expect(checkedPlacement({ pages: 'one', page_number: '2', corner: 'custom', size: 'medium', pos_x: '0.25', pos_y: '1' })).toMatchObject({ page_number: 2, pos_x: '0.25', pos_y: '1' })
+    expect(checkedPlacement({ pages: 'one', page_number: '2', corner: 'custom', size: 'medium', pos_x: '0.25', pos_y: '1', background: false })).toMatchObject({ page_number: 2, pos_x: '0.25', pos_y: '1' })
     for (const bad of [{ pages: 'some', corner: 'custom', size: 'small' }, { pages: 'last', corner: 'middle', size: 'small' }, { pages: 'last', corner: 'custom', size: 'huge' }, { pages: 'last', corner: 'custom', size: 'small' },
-      { pages: 'last', corner: 'custom', size: 'small', pos_x: '2', pos_y: '0.5' }, { pages: 'last', corner: 'custom', size: 'small', pos_x: 'left', pos_y: '0.5' }, { pages: 'one', corner: 'top-left', size: 'small' }, null]) expect(() => checkedPlacement(bad), JSON.stringify(bad)).toThrow()
+      { pages: 'last', corner: 'custom', size: 'small', pos_x: '2', pos_y: '0.5', background: false }, { pages: 'last', corner: 'custom', size: 'small', pos_x: 'left', pos_y: '0.5' }, { pages: 'one', corner: 'top-left', size: 'small' }, null]) expect(() => checkedPlacement(bad), JSON.stringify(bad)).toThrow()
   })
 })
 
@@ -82,7 +82,7 @@ describe('passkeys: the signer\'s own authentication', () => {
     // The same assertion does not authenticate a document with a different fingerprint or a different placement.
     const other = challengeOf(signingPayload(input({ sourceSha256: 'c'.repeat(64) }))).challenge
     await expect(verifyAssertion(response, other, stored, rp)).rejects.toThrow(/challenge/i)
-    const moved = challengeOf(signingPayload(input({ placement: { pages: 'last', page_number: null, corner: 'custom', size: 'medium', pos_x: '0.9000', pos_y: '0.9000' } }))).challenge
+    const moved = challengeOf(signingPayload(input({ placement: { pages: 'last', page_number: null, corner: 'custom', size: 'medium', pos_x: '0.9000', pos_y: '0.9000', background: false } }))).challenge
     await expect(verifyAssertion(response, moved, stored, rp)).rejects.toThrow(/challenge/i)
   })
   it('refuses an assertion made for another site, a replayed one (a counter that does not advance), and one without user verification', async () => {
