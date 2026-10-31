@@ -26,7 +26,9 @@ const SMALL = [
 const CX = 500, CY = 246.5, ART_W = 1000
 
 /** The icon on a 512 x 512 canvas: `width` is its width in canvas units. */
-const icon = (width: number) => `<g transform="translate(256 256) scale(${width / ART_W}) translate(${-CX} ${-CY})">${SMALL.map((p) => `<path d="${p.d}" fill="${p.fill}"/>`).join('')}</g>`
+// The wide A leaves the top and bottom of a round badge empty, so the badge's A is taller: STRETCH times its natural height at the same width (the feet stay inside the circle).
+const STRETCH = 1.43
+const icon = (width: number) => `<g transform="translate(256 256) scale(${width / ART_W} ${(width / ART_W) * STRETCH}) translate(${-CX} ${-CY})">${SMALL.map((p) => `<path d="${p.d}" fill="${p.fill}"/>`).join('')}</g>`
 /** A faint light edge, so that a navy badge does not melt into a dark browser tab. */
 const ring = '<circle cx="256" cy="256" r="251" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="10"/>'
 const badge = (iconWidth: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256" fill="${NAVY}"/>${ring}${icon(iconWidth)}</svg>`
@@ -51,17 +53,17 @@ function ico(images: Array<{ size: number; data: Buffer }>): Buffer {
 async function main() {
   const out = (name: string, data: Buffer | string) => { writeFileSync(resolve(ROOT, 'public', name), data); console.log(name, Buffer.byteLength(data)) }
   mkdirSync(resolve(ROOT, 'public'), { recursive: true })
-  // The vector badge: the icon at 86% of the width (it is a wide shape, so a round badge needs it large to stay clear).
-  out('favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>VORA</title><circle cx="256" cy="256" r="256" fill="${NAVY}"/>${ring}${icon(440)}</svg>\n`)
+  // The vector badge: the icon at 86% of the width (a wide shape, so it is made taller to use the round badge).
+  out('favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>VORA</title><circle cx="256" cy="256" r="256" fill="${NAVY}"/>${ring}${icon(388)}</svg>\n`)
   // The icon fills the badge as far as the circle allows: 88% at 16 px, 87% at 32 px, 86% at 48 px.
-  const small: Array<[number, number]> = [[16, 450], [32, 446], [48, 442]]
+  const small: Array<[number, number]> = [[16, 394], [32, 390], [48, 388]]
   const icoImages = await Promise.all(small.map(async ([size, w]) => ({ size, data: await png(badge(w), size) })))
   out('favicon.ico', ico(icoImages))
   out('favicon-32.png', icoImages[1].data)
-  out('icon-192.png', await png(badge(444), 192))
-  out('icon-512.png', await png(badge(440), 512))
-  out('icon-maskable-512.png', await png(square(300), 512))
-  out('apple-touch-icon.png', await sharp(Buffer.from(square(340)), { density: 288 }).resize(180, 180).flatten({ background: NAVY }).png({ compressionLevel: 9, effort: 10 }).toBuffer())
+  out('icon-192.png', await png(badge(390), 192))
+  out('icon-512.png', await png(badge(388), 512))
+  out('icon-maskable-512.png', await png(square(310), 512))
+  out('apple-touch-icon.png', await sharp(Buffer.from(square(370)), { density: 288 }).resize(180, 180).flatten({ background: NAVY }).png({ compressionLevel: 9, effort: 10 }).toBuffer())
   out('site.webmanifest', JSON.stringify({
     name: 'VORA', short_name: 'VORA', description: 'Bringing the World Within Reach.', start_url: '/', display: 'browser', background_color: NAVY, theme_color: NAVY,
     icons: [
