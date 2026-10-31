@@ -61,6 +61,8 @@ export interface DeliveryNoteData {
   notes: string
   items: Array<{ description: string; quantity: string; unit: string; remarks: string }>
   captureUrl: string
+  /** The address of this document's verification page (its QR code in the footer and its clickable link). Not the driver's capture address. */
+  verifyUrl: string
 }
 
 /** The proof of delivery: the delivery note plus what the receiver gave, and the evidence files themselves. */

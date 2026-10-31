@@ -1,7 +1,7 @@
-import type { PDFImage } from 'pdf-lib'
 import { BILLING_HEADINGS, documentType, longDate, WORDS, type DocumentType, type Lang, type SignerDef } from '../../content/document-types'
 import { daysBetween } from '../dates'
 import { money } from '../money'
+import { layoutMark } from '../../content/trust-mark'
 import { Flow } from './flow'
 import { BAND_H, H, INK, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { GeneralDocData, Issuer } from './types'
@@ -21,8 +21,8 @@ const TOP = H - BAND_H - 30
 const BODY = 9.2
 const LEADING = 13
 const METERAI = 72
-/** The QR code that signs a document. */
-const QR_SIZE = 72
+/** The space left for a signature (wet ink, or the VORA signing stamp placed later). The verification QR code is NOT a signature and is never drawn here. */
+const SIGN_SPACE = 72
 
 const MARKER = /^(\s*(?:\d+[.)]|[a-z][.)]|[-*•]))\s+/
 
@@ -32,10 +32,9 @@ export async function renderGeneral(d: GeneralDocData, issuer: Issuer, verificat
   const lang = d.language
   const title = type.label[lang].toUpperCase()
   const s = await Sheet.create({ title: `${type.label[lang]} | ${d.number}`, author: issuer.legalName, subject: 'Document with online verification' })
-  const qr = await s.qr(verificationUrl)
   const f = new Flow(s, { top: TOP, limit: LIMIT, left: LEFT, right: RIGHT })
 
-  layout(s, f, type, d, issuer, qr)
+  layout(s, f, type, d, issuer, verificationUrl)
 
   const pageWord = lang === 'id' ? ['HALAMAN', 'DARI'] : ['PAGE', 'OF']
   f.draw((pageNo, total) => {
@@ -47,16 +46,18 @@ export async function renderGeneral(d: GeneralDocData, issuer: Issuer, verificat
     s.right(RIGHT, H - 66, d.number, 6.8, WHITE)
     if (d.status !== 'issued') s.right(RIGHT, H - 86, d.status.toUpperCase(), 7, '#E8B3AA', true)
     s.footer(FOOTER_TOP, LEFT, RIGHT)
+    const mark = s.verificationMark({ url: verificationUrl, lang, right: RIGHT, bottom: 7.5 })
+    const column = mark.left - 12 - LEFT
     s.text(LEFT, 71, lang === 'id' ? 'VORA / VERIFIKASI DOKUMEN' : 'VORA / DOCUMENT VERIFICATION', 7.7, SLATE, true)
     s.text(LEFT, 60, WORDS.verifyOnline[lang], 6.4, SLATE)
-    s.linkLines(LEFT, 50, verificationUrl, WIDTH, 5.9, INK)
+    s.linkLines(LEFT, 50, verificationUrl, column, 5.9, INK)
     s.text(LEFT, 36, issuer.email, 7.2, INK)
     s.text(LEFT, 24, `${title}  /  ${pageWord[0]} ${pageNo} ${pageWord[1]} ${total}`, 7.1, SLATE)
   })
   return s.save()
 }
 
-function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer: Issuer, qr: PDFImage): void {
+function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer: Issuer, verificationUrl: string): void {
   const lang = d.language
   const v = d.values
   const t = (key: keyof typeof WORDS) => WORDS[key][lang]
@@ -133,25 +134,38 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
     gap(LEADING)
     paragraphs(v.closing)
     gap(LEADING)
-    signers(s, f, type, d, lang, qr)
+    signers(s, f, type, d, lang)
   }
   const placeAndDate = () => { f.keep(LEADING * 2); f.right(RIGHT, f.y, `${v.place}, ${longDate(d.documentDate, lang)}`, BODY, INK); f.y -= LEADING * 1.6 }
 
   /**
-   * The signature block, kept in one piece: greeting, company, the QR code that IS the signature (no handwriting), name and position.
-   * Scanning the code opens the document's verification page.
+   * The signature block, kept in one piece: greeting, company, room to sign, name and position. The QR code is not part of it: it is a way to CHECK the
+   * document, not a signature (see the verification block at the end).
    */
   const signature = (name: string, position: string) => {
-    f.keep(LEADING * 4 + QR_SIZE + 14)
+    f.keep(LEADING * 4 + SIGN_SPACE + 14)
     f.text(LEFT, f.y, t('regards'), BODY, INK); f.y -= LEADING
     f.text(LEFT, f.y, issuer.legalName, BODY, INK, true); f.y -= 10
     const top = f.y
-    f.put(() => s.page.drawImage(qr, { x: LEFT, y: top - QR_SIZE, width: QR_SIZE, height: QR_SIZE }))
-    f.text(LEFT + QR_SIZE + 12, top - 16, t('eSigned'), 8.2, INK, true)
-    s.wrap(t('eSignedHow'), WIDTH - QR_SIZE - 12, 7.2).forEach((row, i) => f.text(LEFT + QR_SIZE + 12, top - 29 - i * 9.5, row, 7.2, SLATE))
-    f.y -= QR_SIZE + 14
+    f.put(() => s.rule(top - SIGN_SPACE + 6, LEFT, LEFT + 170, '#AEB6BA', 0.5))
+    f.y -= SIGN_SPACE + 14
     if (name) { f.text(LEFT, f.y, name, BODY, INK, true); f.y -= LEADING }
     if (position) { f.text(LEFT, f.y, position, BODY, SLATE); f.y -= LEADING }
+  }
+  /**
+   * The verification block that closes the document: the standard VORA mark (QR code, corporate lockup and the clickable address) with what it means, kept apart from
+   * the signatures above it. Reserved before it is drawn, so it never overlaps the text.
+   */
+  const endBlock = () => {
+    const mark = layoutMark({ variant: 'standard', lang, url: verificationUrl })
+    gap(LEADING)
+    f.keep(mark.height + 34)
+    const top = f.y
+    f.text(LEFT, top, t('verifyTitle'), 7.2, RED, true)
+    f.rule(top - 5)
+    s.wrap(t('verifyHow'), WIDTH - mark.width - 20, 6.8).forEach((row, i) => f.text(LEFT + mark.width + 20, top - 20 - i * 9, row, 6.8, SLATE))
+    f.put(() => s.verificationMarkAt({ url: verificationUrl, lang, cx: LEFT + mark.width / 2, top: top - 14 }))
+    f.y = top - mark.height - 22
   }
   const copies = () => {
     if (!v.cc) return
@@ -178,6 +192,7 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
     gap(LEADING)
     signature(v.signatory_name, v.signatory_title)
     copies()
+    endBlock()
     return
   }
 
@@ -202,7 +217,8 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
   paragraphs(v.closing)
   gap(LEADING)
   placeAndDate()
-  signers(s, f, type, d, lang, qr)
+  signers(s, f, type, d, lang)
+  endBlock()
 }
 
 /** The table of open invoices, the total, the pay-by date and the bank accounts. */
@@ -260,7 +276,7 @@ function billing(_s: Sheet, f: Flow, d: GeneralDocData, lang: Lang, paragraphs: 
  * One signature column per signer: the QR code that signs the document and, beside it, the square (1:1) for the stamp duty or the
  * company stamp when the type has one. There is no handwritten signature: the name and position are printed under the QR code.
  */
-function signers(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, lang: Lang, qr: PDFImage): void {
+function signers(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, lang: Lang): void {
   const list = (type.signers ?? []).filter((x) => d.values[`${x.party}_name`])
   if (!list.length) return
   const height = METERAI + 90
@@ -273,20 +289,20 @@ function signers(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, lang:
     f.text(centre - s.width(signer.role[lang], BODY, true) / 2, top, signer.role[lang], BODY, INK, true)
     const hidden = type.key === 'statement' && d.values.stamp_duty === 'no'
     const box = signer.box && !hidden ? signer.box[lang].toUpperCase() : ''
-    const together = box ? QR_SIZE * 2 + 14 : QR_SIZE
+    const together = box ? SIGN_SPACE * 2 + 14 : SIGN_SPACE
     const qrX = centre - together / 2
     const qrTop = top - 10
-    f.put(() => s.page.drawImage(qr, { x: qrX, y: qrTop - QR_SIZE, width: QR_SIZE, height: QR_SIZE }))
+    f.put(() => s.rule(qrTop - SIGN_SPACE + 4, qrX, qrX + SIGN_SPACE, '#AEB6BA', 0.5))                        // room to sign: the QR code is not a signature
     if (box) {
-      const boxX = qrX + QR_SIZE + 14
+      const boxX = qrX + SIGN_SPACE + 14
       f.outline(boxX, qrTop - METERAI, METERAI, METERAI, SLATE, 0.8, [3, 2])                    // a 1:1 square, dashed: "put it here"
       f.text(boxX + (METERAI - s.width(box, 6.4, true)) / 2, qrTop - METERAI / 2 - 2, box, 6.4, '#AEB6BA', true)
     }
-    const caption = WORDS.eSigned[lang]
-    f.text(qrX + (QR_SIZE - s.width(caption, 5.6)) / 2, qrTop - QR_SIZE - 8, caption, 5.6, SLATE)
+    const caption = WORDS.signHere[lang]
+    f.text(qrX + (SIGN_SPACE - s.width(caption, 5.6)) / 2, qrTop - SIGN_SPACE - 8, caption, 5.6, SLATE)
     const name = d.values[`${signer.party}_name`]
     const position = d.values[`${signer.party}_position`] ?? ''
-    const nameY = qrTop - QR_SIZE - 24
+    const nameY = qrTop - SIGN_SPACE - 24
     const rows = s.wrap(name, columnWidth, BODY, true).slice(0, 2)
     rows.forEach((row, i) => f.text(centre - s.width(row, BODY, true) / 2, nameY - i * LEADING, row, BODY, INK, true))
     if (position) f.text(centre - s.width(position.slice(0, 40), 8.2) / 2, nameY - rows.length * LEADING, position.slice(0, 40), 8.2, SLATE)

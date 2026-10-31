@@ -36,7 +36,6 @@ async function compose(d: InvoiceData, issuer: Issuer, verificationUrl: string, 
   const pages: LineData[][] = summaryPage ? [...chunks, []] : chunks
 
   const s = await Sheet.create({ title: `INVOICE | ${d.number}`, author: 'VORA | PT Satu Arah International', subject: 'Invoice with online document verification' })
-  const qr = await s.qr(verificationUrl)
 
   const block = (x: number, y: number, data: string, width: number, size = 8, leading = 10.3, fill = INK, bold = false): number => {
     for (const line of s.wrap(data, width, size, bold)) { s.text(x, y, line, size, fill, bold); y -= leading }
@@ -61,15 +60,16 @@ async function compose(d: InvoiceData, issuer: Issuer, verificationUrl: string, 
     s.right(R, H - 87, `${issuance} / ${payment}`, 7.0, '#E8B3AA', true)
     // Repeated verification footer on every page.
     s.footer(83, L, R)
-    s.text(L, 66, 'VORA / DIGITAL DOCUMENT VERIFICATION', 7.6, INK, true)
-    s.text(L, 51, 'Scan QR to check document status with VORA.', 7.1, SLATE)
-    s.text(L, 36, issuer.email, 7.6, INK)
-    s.text(L, 21, `DOCUMENT  /  PAGE ${String(pageNo).padStart(2, '0')} OF ${String(total).padStart(2, '0')}`, 7.3, SLATE)
+    const mark = s.verificationMark({ url: verificationUrl, lang: 'en', right: R, bottom: 7.5 })
+    const column = mark.left - 12 - L
+    s.text(L, 72, 'VORA / DIGITAL DOCUMENT VERIFICATION', 7.6, INK, true)
+    s.text(L, 63, 'Scan the QR, or click this link, to check document status with VORA:', 6.2, SLATE)
+    s.linkLines(L, 54, verificationUrl, column, 5.9, INK)
     // An invoice is a payment request. Proof of payment is only the receipt issued after cleared funds.
-    s.text(L + 232, 66, 'PAYMENT REQUEST - NOT PROOF OF PAYMENT', 6.9, RED, true)
-    s.text(L + 232, 51, 'Proof of payment is the official VORA receipt,', 6.5, SLATE)
-    s.text(L + 232, 41, 'issued only after Finance confirms cleared funds.', 6.5, SLATE)
-    s.page.drawImage(qr, { x: R - 73, y: 8, width: 72, height: 72 })
+    s.text(L, 43, 'PAYMENT REQUEST - NOT PROOF OF PAYMENT', 6.9, RED, true)
+    s.text(L, 34, 'Proof of payment is the official VORA receipt, issued only', 6.2, SLATE)
+    s.text(L, 26, 'after Finance confirms cleared funds.', 6.2, SLATE)
+    s.text(L, 14, `${issuer.email}  /  PAGE ${String(pageNo).padStart(2, '0')} OF ${String(total).padStart(2, '0')}`, 6.8, SLATE)
   }
 
   const partiesAndMetadata = (): number => {

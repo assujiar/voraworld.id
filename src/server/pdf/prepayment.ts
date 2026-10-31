@@ -126,11 +126,12 @@ export async function renderPrepayment(d: PrepaymentData, issuer: Issuer, verifi
   if (y < 117) throw new PdfLayoutError('Pre-payment receipt contents exceed the reserved A4 layout')
 
   s.footer(99, L, R)
-  s.text(L, 83, 'VORA / DOCUMENT AUTHENTICITY VERIFICATION', 7.8, INK, true)
-  s.text(L, 69, 'Scan the QR or open the link to check this document and its current status.', 6.9, SLATE)
-  s.linkLines(L, 56, verificationUrl, R - 95 - L, 5.9, INK)
-  s.text(L, 38, issuer.email, 7.2, INK)
+  const mark = s.verificationMark({ url: verificationUrl, lang: 'en', right: R, bottom: 10 })
+  s.text(L, 86, 'VORA / DOCUMENT AUTHENTICITY VERIFICATION', 7.8, INK, true)
+  s.text(L, 75, 'Scan the QR, or click this link, to check this document and its current status:', 6.4, SLATE)
+  s.linkLines(L, 66, verificationUrl, mark.left - 12 - L, 5.9, INK)
+  s.text(L, 49, 'Not proof of payment: see the official VORA payment receipt.', 6.9, SLATE)
+  s.text(L, 36, issuer.email, 7.2, INK)
   s.text(L, 22, 'PRE-PAYMENT RECEIPT / PAGE 01 OF 01', 7.0, SLATE)
-  s.page.drawImage(await s.qr(verificationUrl), { x: R - 85, y: 9, width: 82, height: 82 })
   return s.save()
 }

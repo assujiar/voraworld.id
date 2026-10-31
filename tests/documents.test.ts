@@ -213,14 +213,16 @@ describe('the document PDFs', () => {
     const id = await createDocument(actor, input(kind, { customerId, invoiceIds, ...o }))
     return id
   }
-  it.each(DOCUMENT_TYPES.filter((t) => !['agreement', 'seal'].includes(t.family)).map((t) => t.key))('%s renders as a verifiable document: number, QR signature, clickable address, no handwriting', async (kind) => {
+  it.each(DOCUMENT_TYPES.filter((t) => !['agreement', 'seal'].includes(t.family)).map((t) => t.key))('%s renders as a verifiable document: number, verification mark, clickable address, room to sign, and the QR code never called a signature', async (kind) => {
     const id = await prepare(kind)
     await setDocumentStatus(actor, id, 'issue')
     const d = await row(id)
     const pdf = await renderDocumentPdf('document', id, BASE)
     const t = squash((await pdfPages(pdf)).join(' '))
     expect(t).toContain(d.number as string)
-    expect(t).toContain('Ditandatangani secara elektronik')                 // the QR code is the signature
+    expect(t).not.toContain('Ditandatangani secara elektronik')            // a QR code is a way to check the document, not a signature
+    expect(t).toContain('Kode QR bukan tanda tangan pribadi')
+    expect(t).toContain('PT SATU ARAH INTERNATIONAL')                       // the corporate mark is drawn beside the QR code
     expect(t).not.toMatch(/DRAFT|VOID/)
     const [token] = (await sql`select token from document_verification_tokens where kind = 'document' and document_id = ${id}`).map((r) => r.token as string)
     expect((await pdfLinks(pdf)).flat()).toContain(`${BASE}/verify/${token}`)
@@ -276,10 +278,10 @@ describe('the document PDFs', () => {
 
   it('lays a power of attorney out with two signers and the stamp duty on the grantor\'s side only', async () => {
     const t = await text(await prepare('authorization'))
-    expect(t).toContain('Pemberi Kuasa'); expect(t).toContain('Penerima Kuasa'); expect(t.match(/Ditandatangani secara elektronik/g)?.length).toBe(2); expect(t.match(/METERAI/g)?.length).toBe(1)
+    expect(t).toContain('Pemberi Kuasa'); expect(t).toContain('Penerima Kuasa'); expect(t).not.toContain('Ditandatangani secara elektronik'); expect(t.match(/Tanda tangan \/ cap/g)?.length).toBe(2); expect(t.match(/METERAI/g)?.length).toBe(1)
   })
 
-  it('draws a certificate on one landscape page with the holder\'s name, however long, and a QR signature per signatory', async () => {
+  it('draws a certificate on one landscape page with the holder\'s name, however long, and a line to sign per signatory', async () => {
     const id = await prepare('certificate', { values: { ...MIN.certificate, recipient_name: 'Muhammad Abdurrahman Wahid Setiawan Prasetyo Kusumawardhana Hidayatullah Nugroho Santoso', signatory2_name: 'Budi Santoso', signatory2_title: 'Direktur Utama' } })
     const pdf = await renderDocumentPdf('document', id, BASE)
     const doc = await PDFDocument.load(pdf)
@@ -288,7 +290,7 @@ describe('the document PDFs', () => {
     expect(width).toBeCloseTo(841.89, 1); expect(height).toBeCloseTo(595.28, 1)
     const t = squash((await pdfPages(pdf)).join(' '))
     for (const part of ['SERTIFIKAT PENGHARGAAN', 'diberikan kepada', 'Muhammad Abdurrahman', 'Hidayatullah Nugroho Santoso', 'Siti Rahma', 'Budi Santoso', 'Direktur Utama']) expect(t, part).toContain(part)
-    expect(t.match(/Ditandatangani secara elektronik/g)?.length).toBe(2)
+    expect(t).not.toContain('Ditandatangani secara elektronik')
     const img = rasterize(pdf, 1)
     if (img) expect(img.width).toBeGreaterThan(img.height)
   })

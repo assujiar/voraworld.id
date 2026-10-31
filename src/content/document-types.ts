@@ -349,8 +349,9 @@ export const BILLING_HEADINGS: Record<string, Bi> = {
 /** Words the layouts print around the user's text, by language. */
 export const WORDS = {
   number: T('Nomor', 'No.'), attachments: T('Lampiran', 'Attachments'), subject: T('Perihal', 'Subject'), to: T('Kepada Yth.', 'To'), attention: T('U.p.', 'Attn.'),
-  regards: T('Hormat kami,', 'Sincerely,'), eSigned: T('Ditandatangani secara elektronik', 'Electronically signed'),
-  eSignedHow: T('Kode QR ini adalah tanda tangan dokumen. Pindai untuk memeriksa keaslian dan status dokumen.', 'This QR code is the signature of the document. Scan it to check the document\'s authenticity and status.'), copyTo: T('Tembusan', 'Copy to'), validUntil: T('Berlaku sampai', 'Valid until'),
+  regards: T('Hormat kami,', 'Sincerely,'), issuedByVora: T('Diterbitkan oleh VORA', 'Issued by VORA'),
+  verifyHow: T('Penerbitan dan status dokumen ini diperiksa melalui tautan dan kode QR verifikasi di bawah. Kode QR bukan tanda tangan pribadi.', 'The issuance and status of this document are checked through the verification link and QR code below. The QR code is not a personal signature.'),
+  verifyTitle: T('VERIFIKASI DOKUMEN', 'DOCUMENT VERIFICATION'), signHere: T('Tanda tangan / cap', 'Signature / stamp'), copyTo: T('Tembusan', 'Copy to'), validUntil: T('Berlaku sampai', 'Valid until'),
   invoiceNo: T('No. Invoice', 'Invoice no.'), issued: T('Tanggal', 'Date'), due: T('Jatuh tempo', 'Due'), overdue: T('Terlambat', 'Overdue'), outstanding: T('Sisa tagihan', 'Outstanding'),
   days: T('hari', 'days'), notDue: T('belum jatuh tempo', 'not yet due'), total: T('TOTAL TAGIHAN', 'TOTAL DUE'), payBy: T('Mohon dibayar paling lambat', 'Please pay no later than'),
   transferTo: T('Pembayaran dapat ditransfer ke:', 'Payment can be transferred to:'), stampHere: T('Tempel meterai / cap di sini', 'Stamp here'),
