@@ -22,7 +22,6 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
   const rfq = siteText[locale].rfq
   const schema = { '@context': 'https://schema.org', '@type': 'Service', name, description: sub ? sub[1] : detail.intro, provider: { '@type': 'Organization', name: 'VORA' }, url: absoluteUrl(`/${locale}/services/${group}${mode ? '/' + mode : ''}`), serviceType: name }
   const guide = mode ? modeGuides[`${group}/${mode}`]?.[locale] : undefined
-  const family = ({ 'international-freight-forwarding': 'decision', 'customs-brokerage': 'document', '3pl-warehousing': 'flow', 'domestic-distribution': 'ledger', 'project-cargo': 'study' } as Record<string, string>)[group] ?? 'decision'
   const needs = (
     <div>
       <h2 className="v-h2 v-h2--section">{extras.needsTitle}</h2>
@@ -33,19 +32,19 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
-      <section className={`v-svc-hero v-svc-hero--${family}${sub ? ' v-svc-hero--mode' : ''}`}>
+      <section className="v-svc-hero">
         <div className="v-wrap v-svc-hero__grid">
           <div className="v-svc-hero__copy">
             <nav className="v-crumbs" aria-label={t('Breadcrumb', 'Jejak halaman')}>
               <a href={`/${locale}/services`}>{t('Services', 'Layanan')}</a> / {sub ? <><a href={`/${locale}/services/${group}`}>{detail.name}</a> / </> : null}<span>{name}</span>
             </nav>
             <h1>{name}</h1>
-            <p className="v-lead">{sub ? sub[1] : detail.strap}</p>
-            <p className="v-muted v-svc-hero__intro">{sub ? sub[2] : detail.intro}</p>
+            <p className="v-lead" style={{ marginTop: 22 }}>{sub ? sub[1] : detail.strap}</p>
+            <p className="v-muted" style={{ maxWidth: '48ch' }}>{sub ? sub[2] : detail.intro}</p>
             <div className="v-actions"><a className="v-btn" href={quote}>{rfq}</a><a className="v-link" href={`/${locale}/services`}>{t('All services', 'Semua layanan')}</a></div>
           </div>
-          <div className="v-svc-hero__art">
-            <img src={`/static/assets/${encodeURIComponent(image)}`} alt={name} width={680} height={620} fetchPriority="high" />
+          <div className={`v-svc-hero__art${group === 'project-cargo' && !sub ? ' v-svc-hero__art--wide' : ''}`}>
+            <img src={`/static/assets/${encodeURIComponent(image)}`} alt={`${name}`} width={680} height={620} fetchPriority="high" />
           </div>
         </div>
       </section>
