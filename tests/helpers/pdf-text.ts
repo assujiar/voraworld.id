@@ -31,12 +31,12 @@ export interface Raster { width: number; height: number; /** pixels per point */
  * One page as pixels (72 dpi by default, so one pixel is one point; y counted from the TOP), drawn by Poppler: what a person
  * sees, not what the drawing commands say. Null when Poppler is not installed (the visual checks are then skipped).
  */
-export function rasterize(bytes: Uint8Array, page: number, dpi = 72): Raster | null {
+export function rasterize(bytes: Uint8Array, page: number, dpi = 72, cropbox = false): Raster | null {
   if (!hasPdftoppm) return null
   const dir = mkdtempSync(join(tmpdir(), 'vora-raster-'))
   try {
     writeFileSync(join(dir, 'in.pdf'), bytes)
-    const r = spawnSync('pdftoppm', ['-r', String(dpi), '-f', String(page), '-l', String(page), '-singlefile', join(dir, 'in.pdf'), join(dir, 'out')])
+    const r = spawnSync('pdftoppm', ['-r', String(dpi), ...(cropbox ? ['-cropbox'] : []), '-f', String(page), '-l', String(page), '-singlefile', join(dir, 'in.pdf'), join(dir, 'out')])
     if (r.status !== 0) throw new Error('pdftoppm rejected the file: ' + r.stderr.toString())
     const ppm = readFileSync(join(dir, 'out.ppm'))                              // P6 <width> <height> 255 <binary RGB>
     let pos = 0

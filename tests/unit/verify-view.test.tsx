@@ -147,3 +147,20 @@ describe('canonical JSON', () => {
     expect(verifyAttestation(a.canonical, 'not-a-signature', 'not-a-key')).toBe(false)
   })
 })
+
+describe('the configured attestation key', () => {
+  it('is read from the environment, and absent means no attestation rather than a made-up key', async () => {
+    const { configuredSigner } = await import('@/server/trust/attestation')
+    const saved = { id: process.env.VORA_ATTESTATION_KEY_ID, key: process.env.VORA_ATTESTATION_PRIVATE_KEY }
+    try {
+      delete process.env.VORA_ATTESTATION_KEY_ID; delete process.env.VORA_ATTESTATION_PRIVATE_KEY
+      expect(configuredSigner()).toBeNull()
+      process.env.VORA_ATTESTATION_KEY_ID = 'prod-key-1'; process.env.VORA_ATTESTATION_PRIVATE_KEY = PRIV
+      expect(configuredSigner()?.keyId).toBe('prod-key-1'); expect(configuredSigner()?.publicKeyB64).toBe(PUB)
+      process.env.VORA_ATTESTATION_PRIVATE_KEY = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64')
+      expect(() => configuredSigner()).toThrow(/Ed25519/)                                  // a key of another kind is refused, not used
+      process.env.VORA_ATTESTATION_KEY_ID = 'bad id!'; process.env.VORA_ATTESTATION_PRIVATE_KEY = PRIV
+      expect(() => configuredSigner()).toThrow(/key id/)
+    } finally { for (const [k, v] of [['VORA_ATTESTATION_KEY_ID', saved.id], ['VORA_ATTESTATION_PRIVATE_KEY', saved.key]] as const) { if (v === undefined) delete process.env[k]; else process.env[k] = v } }
+  })
+})

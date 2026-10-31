@@ -29,6 +29,7 @@ export async function DocumentTrustPanel({ id, documentKind, status, number }: {
           {artifacts.map((a) => <tr key={a.id}><td>v{a.version}</td><td><a href={`/admin/documents/${id}/artifact/${a.version}`} target="_blank" rel="noopener">{stateOf(a.role)} ↗</a></td><td className="mini" style={{ overflowWrap: 'anywhere' }}>{a.sha256}</td><td>{fmt(a.createdAt)}</td></tr>)}
         </tbody></table>
       ) : <p className="mini">No archived file: {status === 'issued' ? 'this document was issued before the archive existed, or its PDF has not been made yet (open it once). Documents issued before the archive are not given one afterwards.' : 'it is archived when it is issued.'}</p>}
+      {artifacts.length ? <p className="mini"><a href={`/admin/evidence/document/${id}`}>Download the evidence export (JSON) ↓</a></p> : null}
       {chain.events ? <p className="mini">{chain.ok ? `Evidence history intact (${chain.events} events).` : 'Evidence history failed its check: do not rely on this document and tell the administrator.'}</p> : null}
       {events.length ? <div><strong className="mini">Signing evidence</strong>{events.map((e) => <p key={e.ref as string} className="mini">{e.signerName as string}, {e.signerPosition as string} · {PURPOSE_LABELS.en[e.purpose as keyof typeof PURPOSE_LABELS.en]} · {fmt(e.signedAt as Date)} · {e.ref as string}</p>)}</div> : null}
       {requests.filter((r) => r.status === 'pending').map((r) => (

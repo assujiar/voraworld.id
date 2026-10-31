@@ -2,7 +2,7 @@
 import { startAuthentication } from '@simplewebauthn/browser'
 import { useState } from 'react'
 import { SealPlacer, type ConfirmedPlacement } from '@/components/admin/SealPlacer'
-import { CONFIRMATIONS, CONFIRMATION_TEXT, type Confirmation } from '@/server/trust/signing-payload'
+import { CONFIRMATIONS, CONFIRMATION_TEXT, type Confirmation } from '@/content/signing-consent'
 import type { Lang } from '@/content/trust-mark'
 
 /**

@@ -49,8 +49,8 @@ export function signerFrom(keyId: string, privateKeyRaw: string): AttestationSig
 }
 
 /** The configured signer, or null when no key is provisioned (issuance then proceeds and records that no attestation could be made). */
-export function configuredSigner(env: NodeJS.ProcessEnv = process.env): AttestationSigner | null {
-  const id = env.VORA_ATTESTATION_KEY_ID?.trim(), key = env.VORA_ATTESTATION_PRIVATE_KEY?.trim()
+export function configuredSigner(): AttestationSigner | null {
+  const id = process.env.VORA_ATTESTATION_KEY_ID?.trim(), key = process.env.VORA_ATTESTATION_PRIVATE_KEY?.trim()
   if (!id || !key) return null
   return signerFrom(id, key)
 }
