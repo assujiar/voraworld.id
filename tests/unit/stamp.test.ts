@@ -69,6 +69,12 @@ describe('Signature Type 1 and Signature Type 2: one size contract', () => {
     }
     expect(SIGNATURE_WIDTH).toBeCloseTo(95 * 72 / 25.4, 6)
   })
+  it('writes the registration time to the second, broken between the day and the time, never losing the zone', () => {
+    const l = layoutSignature(sig({ type: 1, registeredAt: '2026-10-31 15:24:37 WIB' }))
+    const mono = texts(l.items).filter((t) => t.font === 'mono').map((t) => t.text)
+    expect(mono).toEqual(expect.arrayContaining(['2026-10-31', '15:24:37 WIB']))
+    expect(mono.join(' ')).not.toMatch(/\.\.\.|…/)
+  })
   it('has a transparent box unless a white background is chosen, for both types', () => {
     for (const type of [1, 2] as const) {
       expect(frame(layoutSignature(sig({ type }))).fill).toBeUndefined()

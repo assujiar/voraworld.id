@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from 'next'
+import { Suspense } from 'react'
+import { NavProgress } from '@/components/feedback/NavProgress'
 
 export const dynamic = 'force-dynamic'
 /** PDF rendering, uploads and sending email run inside these routes: allow more than the platform default. */
@@ -10,8 +12,8 @@ export const viewport: Viewport = { themeColor: '#101720', width: 'device-width'
 export default function DocsRoot({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head><link rel="stylesheet" href="/static/css/site.css" /><link rel="stylesheet" href="/static/css/feedback.css?v=6" /><link rel="stylesheet" href="/static/css/verify.css?v=3" /></head>
-      <body>{children}</body>
+      <head><link rel="stylesheet" href="/static/css/site.css" /><link rel="stylesheet" href="/static/css/feedback.css?v=8" /><link rel="stylesheet" href="/static/css/verify.css?v=6" /></head>
+      <body><Suspense fallback={null}><NavProgress /></Suspense>{children}</body>
     </html>
   )
 }

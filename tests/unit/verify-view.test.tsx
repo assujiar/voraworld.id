@@ -82,7 +82,7 @@ describe('what the page says', () => {
     const h = html()
     expect(h).not.toMatch(/authentic(?!ity)/i)
     expect(h).toContain('ISSUANCE RECORD FOUND'); expect(h).toContain('CATATAN PENERBITAN DITEMUKAN')
-    expect(h).toContain('Viewed on voraworld.id'); expect(h).toContain('31 Oct 2026, 11:42 WIB')        // 04:42 UTC is 11:42 in Jakarta
+    expect(h).toContain('Viewed on voraworld.id'); expect(h).toContain('31 Oct 2026, 11:42:00 WIB')        // 04:42 UTC is 11:42 in Jakarta
     expect(h).toContain('A screenshot alone is not independent verification evidence.')
     expect(h).toContain('Tangkapan layar bukan bukti verifikasi yang berdiri sendiri.')
     expect(h).toContain('Ref ABCDEFGH')
@@ -106,11 +106,12 @@ describe('what the page says', () => {
   it('names the signer, the position, the purpose and the non-certified method, from the records', () => {
     const h = html(deriveView(raw({ signings: [{ ref: 'VORA-SIG-1', purpose: 'approved', signerName: 'Siti Rahma', signerPosition: 'Direktur', signedAt: '2026-11-02T03:00:00.000Z', version: 2, method: 'webauthn' }] })))
     for (const w of ['Siti Rahma', 'Direktur', 'Approved by', 'VORA-SIG-1', 'Signing evidence available', 'Electronically signed within VORA']) expect(h, w).toContain(w)
+    expect(h).toContain('02 Nov 2026, 10:00:00 WIB')                                                    // when it was signed, to the second
   })
   it('puts the repeating watermark behind the information, hidden from assistive technology, and nothing in the way of a click', () => {
     const h = html()
     expect((h.match(/data-watermark="back"/g) ?? []).length).toBe(1)
-    expect((h.match(/data-watermark="front"/g) ?? []).length).toBeGreaterThanOrEqual(3)
+    expect((h.match(/data-watermark="front"/g) ?? []).length).toBe(1)                                // one layer in front, for the whole page (a layer per card would be cut at its edges)
     expect((h.match(/<svg class="vf-wm [^"]*" aria-hidden="true" focusable="false"/g) ?? []).length).toBe((h.match(/class="vf-wm /g) ?? []).length)
     expect(h).toContain('patternTransform="rotate(-24)"')
     expect(h).toContain('PT SATU ARAH INTERNATIONAL')

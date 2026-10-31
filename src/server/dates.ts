@@ -18,6 +18,17 @@ export function businessDateTime(d: Date): string {
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`
 }
 
+/**
+ * "2026-10-29 14:05:37 WIB" for a moment in time, read off the Jakarta clock, to the second: when a file was issued or signed, as the stamps and the verification page show it.
+ * The moment itself is recorded by the server; this is how it is written.
+ */
+export function businessStamp(d: Date): string {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(d).map((x) => [x.type, x.value]))
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} WIB`
+}
+
 export function isIsoDay(value: string): boolean {
   const m = ISO_DAY.exec(value)
   if (!m) return false
