@@ -1,7 +1,7 @@
 import { one } from './data'
 import { sha256Hex } from './crypto'
 
-export type DocumentKind = 'invoice' | 'receipt' | 'quotation' | 'prepayment' | 'document' | 'delivery'
+export type DocumentKind = 'invoice' | 'receipt' | 'quotation' | 'prepayment' | 'document' | 'delivery' | 'pod'
 
 /** The QR token of a document is created inside the database function that creates the document (`vr_create_verification`). */
 export async function getVerification(kind: DocumentKind, documentId: number) {

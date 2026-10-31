@@ -1,6 +1,6 @@
 import { money } from '../money'
 import { Flow } from './flow'
-import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet, withoutCurrency } from './kit'
+import { BAND_H, H, INK, PALE, RED, SLATE, TAGLINE, W, WHITE, PdfLayoutError, Sheet, withoutCurrency } from './kit'
 import type { Issuer, QuotationData } from './types'
 
 /**
@@ -26,7 +26,6 @@ const BAND_EDGE_FOOT = 4
 
 export async function renderQuotation(q: QuotationData, issuer: Issuer, verificationUrl: string): Promise<Uint8Array> {
   const s = await Sheet.create({ title: `${TITLE} | ${q.number}`, author: 'VORA | PT Satu Arah International', subject: 'Price agreement letter (quotation) with online document verification' })
-  const qr = await s.qr(verificationUrl)
 
   let flow = place(s, q, issuer, SIZES[0])
   if (flow.pages.length > 1) {
@@ -43,13 +42,11 @@ export async function renderQuotation(q: QuotationData, issuer: Issuer, verifica
     s.right(RIGHT, H - 46, TITLE, 16, WHITE, true)
     s.right(RIGHT, H - 66, q.number, 6.8, WHITE)
     s.right(RIGHT, H - 86, (q.status || 'draft').toUpperCase().replace(/_/g, ' '), 7, '#E8B3AA', true)
-    s.footer(FOOTER_TOP, LEFT, RIGHT, BAND_EDGE_FOOT)
-    s.text(LEFT, 71, 'VORA / DOCUMENT VERIFICATION', 7.7, SLATE, true)
-    s.text(LEFT, 60, 'Scan the QR code, or open this link, to check the document online:', 6.4, SLATE)
-    s.linkLines(LEFT, 50, verificationUrl, RIGHT - 70 - LEFT, 5.9, INK)
-    s.text(LEFT, 36, issuer.email, 7.2, INK)
-    s.text(LEFT, 24, `${TITLE}  /  PAGE ${pageNo} OF ${total}`, 7.1, SLATE)
-    s.page.drawImage(qr, { x: RIGHT - 65, y: 13, width: 64, height: 64 })
+    s.pageEdge(BAND_EDGE_FOOT)
+    s.verificationFooter({
+      left: LEFT, right: RIGHT, top: FOOTER_TOP - 3, bottom: 9, url: verificationUrl, number: q.number, issuedOn: q.issuedAt, issuer: { address: issuer.address, taxId: issuer.taxId, email: issuer.email }, tagline: TAGLINE,
+      heading: 'VORA | DOCUMENT VERIFICATION', instruction: 'Scan the QR code, or click this link, to check the document online:', pageLine: `${TITLE}  |  PAGE ${pageNo} OF ${total}`,
+    })
   })
   return s.save()
 }

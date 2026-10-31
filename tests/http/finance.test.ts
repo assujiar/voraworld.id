@@ -26,7 +26,7 @@ describe('QR verification page', () => {
     const { res, html } = await page(seed.tokens.invoice)
     expect(res.status).toBe(200)
     const [inv] = await db`select number from invoices where id = ${seed.ids.invoices}`
-    expect(html).toContain('AUTHENTIC'); expect(html).toContain('PARTIALLY PAID'); expect(html).toContain(inv.number as string)
+    expect(html).toContain('ISSUANCE RECORD FOUND'); expect(html).toContain('PARTIALLY PAID'); expect(html).toContain(inv.number as string)
     expect(html).toContain('VORA / PT Satu Arah International'); expect(html).toContain('Invoice')
     for (const secret of ['HTTP Fixture Customer', 'billing@fixture.example', 'Jl. Fixture', '1,000,000', '400,000', '9900001111']) expect(html, secret).not.toContain(secret)
     expect(res.headers.get('x-robots-tag')).toContain('noindex')
@@ -37,43 +37,43 @@ describe('QR verification page', () => {
   it('tells apart draft, void, pending e-meterai and issued documents', async () => {
     expect((await page(seed.tokens.draftInvoice)).html).toContain('DRAFT')
     const voided = (await page(seed.tokens.voidInvoice)).html
-    expect(voided).toContain('VOID'); expect(voided).not.toContain('AWAITING PAYMENT')
+    expect(voided).toContain('REVOKED'); expect(voided).not.toContain('AWAITING PAYMENT')
     expect((await page(seed.tokens.stampReceipt)).html).toContain('PENDING E-METERAI')
     const receipt = (await page(seed.tokens.receipt)).html
-    expect(receipt).toContain('AUTHENTIC'); expect(receipt).toContain('Receipt')
+    expect(receipt).toContain('ISSUANCE RECORD FOUND'); expect(receipt).toContain('Receipt')
     expect((await page(seed.tokens.quotation)).html).toContain('Price Agreement Letter')
   })
   it('shows a pre-payment receipt as such: its state, the state of its invoice, and that it is no proof of payment', async () => {
     const released = (await page(seed.tokens.prepayment)).html
-    expect(released).toContain('Pre-Payment Receipt'); expect(released).toContain('AUTHENTIC'); expect(released).toContain('Status of the invoice:'); expect(released).toContain('PARTIALLY PAID')
+    expect(released).toContain('Pre-Payment Receipt'); expect(released).toContain('ISSUANCE RECORD FOUND'); expect(released).toContain('Status of the invoice'); expect(released).toContain('PARTIALLY PAID')
     expect(released).toContain('not proof that payment was made')
     const [p] = await db`select number from prepayment_receipts where id = ${seed.ids.prepayments}`
     expect(released).toContain(p.number as string)
     for (const secret of ['HTTP Fixture Customer', 'billing@fixture.example', '1,000,000', '9900001111']) expect(released, secret).not.toContain(secret)
     expect((await page(seed.tokens.draftPrepayment)).html).toContain('DRAFT')
     const voided = (await page(seed.tokens.voidPrepayment)).html
-    expect(voided).toContain('VOID'); expect(voided).not.toContain('AWAITING PAYMENT')
+    expect(voided).toContain('REVOKED'); expect(voided).not.toContain('AWAITING PAYMENT')
     expect((await page(seed.tokens.stampPrepayment)).html).toContain('PENDING E-METERAI')
   })
   it('names a general document by its type in its own language and shows nothing of what it says; a certificate names its holder', async () => {
     const letter = (await page(seed.tokens.document)).html
     const [d] = await db`select number from documents where id = ${seed.ids.documents}`
-    expect(letter).toContain('AUTHENTIC'); expect(letter).toContain('Surat Umum'); expect(letter).toContain(d.number as string); expect(letter).toContain('2026-10-30')
+    expect(letter).toContain('ISSUANCE RECORD FOUND'); expect(letter).toContain('Surat Umum'); expect(letter).toContain(d.number as string); expect(letter).toContain('2026-10-30')
     for (const secret of ['Rahasia', 'PT Penerima', 'Isi surat', 'Siti Rahma']) expect(letter, secret).not.toContain(secret)
     const certificate = (await page(seed.tokens.certificate)).html
-    expect(certificate).toContain('AUTHENTIC'); expect(certificate).toContain('Sertifikat'); expect(certificate).toContain('Awarded to:'); expect(certificate).toContain('Rina Wijaya')
+    expect(certificate).toContain('ISSUANCE RECORD FOUND'); expect(certificate).toContain('Sertifikat'); expect(certificate).toContain('Awarded to'); expect(certificate).toContain('Rina Wijaya')
     expect(certificate).toContain('SERTIFIKAT PENGHARGAAN'); expect(certificate).toContain('2027-10-30'); expect(certificate).not.toContain('Atas dedikasinya')
     const draft = (await page(seed.tokens.draftDocument)).html
     expect(draft).toContain('DRAFT'); expect(draft).toContain('Surat Pernyataan'); expect(draft).not.toContain('Budi Draft')
     const voided = (await page(seed.tokens.voidDocument)).html
-    expect(voided).toContain('VOID'); expect(voided).toContain('General letter')               // written in English, so named in English
+    expect(voided).toContain('REVOKED'); expect(voided).toContain('General letter')               // written in English, so named in English
     await db`update documents set status = 'draft' where id = ${seed.ids.certificates}`
     expect((await page(seed.tokens.certificate)).html).not.toContain('Rina Wijaya')            // nobody is named before the certificate is issued
     await db`update documents set status = 'issued' where id = ${seed.ids.certificates}`
   })
   it('follows a revoked link to VOID and answers 404 for anything unknown', async () => {
     await db`update document_verification_tokens set revoked = true where token = ${seed.tokens.receipt}`
-    expect((await page(seed.tokens.receipt)).html).toContain('VOID')
+    expect((await page(seed.tokens.receipt)).html).toContain('REVOKED')
     await db`update document_verification_tokens set revoked = false where token = ${seed.tokens.receipt}`
     for (const t of ['nope', 'x'.repeat(200), '..%2f..%2fetc', seed.tokens.invoice.slice(0, -1) + (seed.tokens.invoice.endsWith('A') ? 'B' : 'A')]) expect((await anon.get(`/verify/${t}`)).status, t).toBe(404)
   })

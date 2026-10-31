@@ -5,6 +5,7 @@ import { saveDocumentAction, documentStatusAction } from '@/actions/documents'
 import { sha256Hex } from '@/server/crypto'
 import { createDocument, setDocumentStatus, storeSourcePdf, updateDocument, type DocumentInput } from '@/server/documents/general'
 import { renderDocumentPdf } from '@/server/pdf/documents'
+import { sealDims } from '@/content/seal-layout'
 import { act, createUser, sessionFor } from './helpers/actions'
 import { sql } from './helpers/db'
 import { pdfPages, rasterize, squash } from './helpers/pdf-text'
@@ -13,6 +14,8 @@ process.env.MAIL_ENCRYPTION_KEY = randomBytes(32).toString('base64')
 const files = vi.hoisted(() => new Map<string, Uint8Array>())
 vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-storage')).memoryStorage(await original(), files))
 const BASE = 'https://testserver'
+/** The room the mark takes, from the same function the editor and the PDF use (the address only has to be about as long as a real one). */
+const dimsOf = (size: string, lang: 'id' | 'en' = 'id') => sealDims({ type: 2, lang, url: `${BASE}/verify/${'x'.repeat(48)}`, size, number: 'SEL-VORA-V0000000000-202610-00000' })
 let actor: number
 
 /** A PDF somebody else could have issued: some pages of text, optionally rotated. */
@@ -35,7 +38,7 @@ const file = (bytes: Uint8Array, name = 'partner.pdf') => new File([Buffer.from(
 
 const values = (o: Record<string, string> = {}) => ({
   source_title: 'Certificate of Origin', source_issuer: 'Kamar Dagang Contoh', source_reference: 'COO-2026-0042', signatory_name: 'Siti Rahma', signatory_title: 'Direktur',
-  purpose: 'verified', pages: 'last', corner: 'bottom-right', size: 'medium', ...o,
+  purpose: 'verified', pages: 'last', corner: 'bottom-right', size: 'medium', placement_confirmed: 'yes', ...o,
 })
 async function seal(bytes: Uint8Array, v: Record<string, string> = {}, lang: 'id' | 'en' = 'id'): Promise<number> {
   const source = await storeSourcePdf(file(bytes))
@@ -76,23 +79,37 @@ describe('QR seal on a PDF issued by somebody else', () => {
       expect(out).toHaveLength(3)
       out.forEach((t, i) => {
         expect(squash(t)).toContain(`Original certificate page ${i + 1}`)
-        expect(squash(t).includes('SEGEL DIGITAL VORA'), `page ${i + 1} with pages=${pages}`).toBe(sealedOn.includes(i + 1))
+        expect(squash(t).includes('Nomor dokumen'), `page ${i + 1} with pages=${pages}`).toBe(sealedOn.includes(i + 1))
       })
       expect((await fields(id)).seal!.pagesSealed).toBe(sealedOn.length)
     }
   })
 
-  it('says who endorsed it, what it means, when, and what it is not, in the language chosen', async () => {
+  it('shows Signature Type 2: the document number, when it was registered, the issuer, and the complete verification address, in the language chosen, and names no person who has not signed', async () => {
     const id = await seal(await thirdParty(), { purpose: 'approved' }, 'en')
     await setDocumentStatus(actor, id, 'issue', BASE)
     const t = squash((await pdfPages(await renderDocumentPdf('document', id, BASE))).join(' '))
-    for (const w of ['VORA DIGITAL SEAL', 'Approved by', 'Siti Rahma', 'Direktur', 'PT Satu Arah International', 'WIB']) expect(t).toContain(w)
+    for (const w of ['Document no.', 'Registered', 'Name', 'Position', 'PT Satu Arah International', 'Document issuer', 'WIB']) expect(t).toContain(w)
+    const [token] = (await sql`select token from document_verification_tokens where kind = 'document' and document_id = ${id}`).map((r) => r.token as string)
+    expect(t.replace(/\s/g, '')).toContain(`${BASE}/verify/${token}`.replace(/\s/g, ''))               // the whole address, in the box
+    expect(t).not.toContain('Siti Rahma'); expect(t).not.toContain('Direktur')         // the intended signatory is a note: nobody has signed, so nobody is named
     const [{ number }] = await sql`select number from documents where id = ${id}`
     expect(t).toContain(number as string)
   })
 
+  it('refuses to save a draft whose placement was not confirmed, and keeps an older unconfirmed draft issuable', async () => {
+    const source = await storeSourcePdf(file(await thirdParty()))
+    const input: DocumentInput = { kind: 'seal', language: 'id', customerId: null, documentDate: '2026-10-30', values: values({ placement_confirmed: '' }), invoiceIds: [], source }
+    await refused(createDocument(actor, input), /Confirm where the VORA mark goes/)
+    const id = await createDocument(actor, { ...input, values: values() })
+    await sql`update documents set fields = jsonb_set(fields, '{values,placement_confirmed}', '""') where id = ${id}`          // a draft made before the rule
+    await setDocumentStatus(actor, id, 'issue', BASE)
+    expect((await sql`select status from documents where id = ${id}`)[0].status).toBe('issued')
+  })
+
   it.each([0, 90, 180, 270])('puts the seal in the corner the reader sees, whatever the page rotation (%i degrees)', async (rotate) => {
     const original = await thirdParty({ rotate })
+    const d = dimsOf('small')
     const near = (r: NonNullable<ReturnType<typeof rasterize>>, cx: number, cy: number) => {          // dark or red pixels within a box of 60x30 points around a point
       let n = 0
       for (let y = Math.max(0, Math.round(cy - 15)); y < Math.min(r.height, cy + 15); y++) for (let x = Math.max(0, Math.round(cx - 30)); x < Math.min(r.width, cx + 30); x++) { const [R, G, B] = r.at(x, y); if (R < 200 || G < 200 || B < 200) n++ }
@@ -104,8 +121,9 @@ describe('QR seal on a PDF issued by somebody else', () => {
       const r = rasterize(await renderDocumentPdf('document', id, BASE), 1)
       if (!r) return                                                                                    // Poppler is not installed: the visual check is skipped
       const w = r.width, h = r.height
-      const at = { 'bottom-right': [w - 22 - 98, h - 22 - 32], 'bottom-left': [22 + 98, h - 22 - 32], 'top-right': [w - 22 - 98, 22 + 32], 'top-left': [22 + 98, 22 + 32] }[corner]!
-      const opposite = { 'bottom-right': [22 + 98, 22 + 32], 'bottom-left': [w - 22 - 98, 22 + 32], 'top-right': [22 + 98, h - 22 - 32], 'top-left': [w - 22 - 98, h - 22 - 32] }[corner]!
+      const hw = d.w / 2, hh = d.h / 2
+      const at = { 'bottom-right': [w - 22 - hw, h - 22 - hh], 'bottom-left': [22 + hw, h - 22 - hh], 'top-right': [w - 22 - hw, 22 + hh], 'top-left': [22 + hw, 22 + hh] }[corner]!
+      const opposite = { 'bottom-right': [22 + hw, 22 + hh], 'bottom-left': [w - 22 - hw, 22 + hh], 'top-right': [22 + hw, h - 22 - hh], 'top-left': [w - 22 - hw, h - 22 - hh] }[corner]!
       expect(near(r, at[0], at[1]), `${corner} @${rotate}`).toBeGreaterThan(150)
       expect(near(r, opposite[0], opposite[1]), `opposite of ${corner} @${rotate}`).toBe(0)
     }
@@ -120,7 +138,8 @@ describe('QR seal on a PDF issued by somebody else', () => {
     const w = r.width, h = r.height
     const dark = (x0: number, y0: number, x1: number, y1: number) => { let n = 0; for (let y = Math.round(y0); y < y1; y++) for (let x = Math.round(x0); x < x1; x++) { const [R, G, B] = r.at(x, y); if (R < 200 || G < 200 || B < 200) n++ } return n }
     const left = 0.3 * w, top = 0.4 * h
-    expect(dark(left + 4, top + 4, left + 66, top + 62), `inside the dropped box @${rotate}`).toBeGreaterThan(300)                      // the QR code is there
+    const dd = dimsOf('small')
+    expect(dark(left + 4, top + 4, left + dd.h * 0.8, top + dd.h * 0.8), `inside the dropped box @${rotate}`).toBeGreaterThan(300)                      // the QR code is there
     expect(dark(left - 40, top - 40, left - 4, top - 4), `just outside it @${rotate}`).toBe(0)
     expect(dark(w - 140, h - 80, w - 24, h - 24), `not in the old corner @${rotate}`).toBe(0)
   })
@@ -130,7 +149,7 @@ describe('QR seal on a PDF issued by somebody else', () => {
     const id = await seal(original, { corner: 'custom', pos_x: '1', pos_y: '1', pages: 'one', page_number: '2' })
     await setDocumentStatus(actor, id, 'issue', BASE)
     const out = await pdfPages(await renderDocumentPdf('document', id, BASE))
-    expect(out.map((t) => squash(t).includes('SEGEL DIGITAL VORA'))).toEqual([false, true, false])
+    expect(out.map((t) => squash(t).includes('Nomor dokumen'))).toEqual([false, true, false])
     const r = rasterize(await renderDocumentPdf('document', id, BASE), 2)
     if (r) {                                                                                            // dropped past the corner: pulled back inside the page
       let outside = 0

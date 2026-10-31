@@ -53,6 +53,7 @@ export async function uploadPrepaymentStamp(actorId: number, id: number, input: 
 
 export async function voidPrepayment(actorId: number, id: number): Promise<void> {
   await rpc('prepayment_void', { p_actor: actorId, p_id: id })
+  await (await import('../trust/revocation')).recordVoided(actorId, 'prepayment', id)
 }
 
 /** What the email needs; shared by the stand-alone "email" button and the invoice email that carries the receipt along. */

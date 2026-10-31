@@ -1,7 +1,9 @@
-import { degrees, PDFDocument, PDFFont, PDFImage, PDFPage, PDFString, StandardFonts, rgb, setCharacterSpacing, type RGB } from 'pdf-lib'
+import { degrees, PDFArray, PDFDocument, PDFFont, PDFImage, PDFName, PDFNumber, PDFPage, PDFString, StandardFonts, rgb, setCharacterSpacing, type RGB } from 'pdf-lib'
 import QRCode from 'qrcode'
 import { ActionError } from '../errors'
 import { PDF_ASSETS } from './brand-assets'
+import { embedMarkFonts, paintMark, upright, type MarkFonts } from './trust-mark'
+import { layoutFooter, layoutSignature, SIGNATURE_HEIGHT, SIGNATURE_WIDTH, type FooterOptions, type SignatureOptions } from '../../content/verification-blocks'
 
 /** A4 in PDF points. */
 export const W = 595.28
@@ -32,7 +34,7 @@ const color = (c: string): RGB => rgb(parseInt(c.slice(1, 3), 16) / 255, parseIn
 export class Sheet {
   private constructor(
     readonly doc: PDFDocument, private regular: PDFFont, private bold: PDFFont, private chars: Set<number>,
-    private logo: PDFImage, private watermarkImage: PDFImage, public page: PDFPage,
+    private logo: PDFImage, private watermarkImage: PDFImage, public page: PDFPage, private markFonts: MarkFonts,
     /** The page size: A4 portrait, or A4 landscape for a certificate. */
     readonly w: number = W, readonly h: number = H,
   ) {}
@@ -45,7 +47,7 @@ export class Sheet {
     const logo = await doc.embedPng(Buffer.from(PDF_ASSETS.logoReverse, 'base64'))
     const watermark = await doc.embedPng(Buffer.from(PDF_ASSETS.watermark, 'base64'))
     const [w, h] = meta.landscape ? [H, W] : [W, H]
-    return new Sheet(doc, regular, bold, new Set(regular.getCharacterSet()), logo, watermark, doc.addPage([w, h]), w, h)
+    return new Sheet(doc, regular, bold, new Set(regular.getCharacterSet()), logo, watermark, doc.addPage([w, h]), await embedMarkFonts(doc), w, h)
   }
 
   newPage(): PDFPage { this.page = this.doc.addPage([this.w, this.h]); return this.page }
@@ -101,6 +103,24 @@ export class Sheet {
       if (line) rows.push(line)
     }
     return rows
+  }
+
+  /**
+   * Footer Type 3 on the current page: one framed, equal-height row across the printable width (from `left` to `right`), its top at `top` and its bottom at `bottom`.
+   * The address and the QR code in it are real links. Everything in it is monospaced.
+   */
+  verificationFooter(o: { left: number; right: number; top: number; bottom: number } & Omit<FooterOptions, 'width' | 'height'>): void {
+    const { left, right, top, bottom, ...rest } = o
+    const layout = layoutFooter({ ...rest, width: right - left, height: top - bottom })
+    paintMark(this.page, this.markFonts, layout, rest.url, upright(left, top), false)
+  }
+
+  /** Signature Type 1 or 2 with its top left at (left, top) on the current page. Returns its size. */
+  signatureBlock(o: SignatureOptions & { left: number; top: number }): { width: number; height: number } {
+    const { left, top, ...rest } = o
+    const layout = layoutSignature(rest)
+    paintMark(this.page, this.markFonts, layout, rest.url, upright(left, top))
+    return { width: layout.width, height: layout.height }
   }
 
   /** A QR code image that carries the verification link. It is a lookup token, never a signature. */
@@ -162,6 +182,9 @@ export class Sheet {
     this.page.pushOperators(setCharacterSpacing(0))
   }
 
+  /** The red edge along the foot of the page (the answer to the red edge under the header). The verification footer sits above it. */
+  pageEdge(edge = 4): void { this.rect(0, 0, this.w, edge, RED) }
+
   /** A clickable area on the current page that opens `url`. */
   link(x: number, y: number, w: number, h: number, url: string): void {
     const annotation = this.doc.context.obj({
@@ -211,7 +234,39 @@ export class Sheet {
     this.page.drawText(this.clean(word), { x, y, size, font: this.bold, color: color(fill), opacity: 0.1, rotate: degrees(35) })
   }
 
-  save(): Promise<Uint8Array> { return this.doc.save() }
+  private slot?: [number, number, number]
+
+  /**
+   * Marks the room a document leaves for its signature (the space between the issuer's name and the printed name of the signer): the page and the top left corner of a
+   * box of the signature's size. It is written into the file (see `readSignSlot`), so that the signing ceremony starts the mark exactly there.
+   */
+  markSignSlot(x: number, top: number): void { this.slot = [this.doc.getPageCount() - 1, x, top] }
+
+  save(): Promise<Uint8Array> {
+    if (this.slot) {
+      const [page, x, top] = this.slot
+      this.doc.catalog.set(PDFName.of(SIGN_SLOT_KEY), this.doc.context.obj([page, x, top, SIGNATURE_WIDTH, SIGNATURE_HEIGHT]))
+    }
+    return this.doc.save()
+  }
+}
+
+const SIGN_SLOT_KEY = 'VoraSignSlot'
+
+/** Where a document asked for its signature (from `markSignSlot`), as the page number (from 1) and the placement fractions the signing mark uses; null when it has no such room. */
+export async function readSignSlot(bytes: Uint8Array): Promise<{ page: number; x: number; y: number } | null> {
+  try {
+    const doc = await PDFDocument.load(bytes, { updateMetadata: false })
+    const entry = doc.catalog.lookup(PDFName.of(SIGN_SLOT_KEY))
+    if (!(entry instanceof PDFArray) || entry.size() < 3) return null
+    const n = [0, 1, 2].map((i) => { const v = entry.lookup(i); return v instanceof PDFNumber ? v.asNumber() : NaN })
+    if (n.some((v) => !Number.isFinite(v))) return null
+    const page = doc.getPages()[n[0]]
+    if (!page) return null
+    const { width, height } = page.getSize()
+    const clamp = (v: number) => Math.min(Math.max(v, 0), 1)
+    return { page: n[0] + 1, x: clamp(n[1] / width), y: clamp((height - n[2]) / height) }
+  } catch { return null }
 }
 
 /** `IDR 1,234,567` -> `1,234,567` (the currency is printed once in the document header). */

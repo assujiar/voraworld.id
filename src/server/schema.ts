@@ -26,6 +26,17 @@ export interface ArticlesRow {
   updatedAt: Date
 }
 
+export interface AttestationKeysRow {
+  keyId: string
+  algorithm: string
+  publicKey: string
+  status: string
+  note: string | null
+  createdAt: Date
+  retiredAt: Date | null
+  compromisedAt: Date | null
+}
+
 export interface AuditLogsRow {
   id: number
   actorId: number | null
@@ -167,6 +178,48 @@ export interface DeliveryProofsRow {
   rejectReason: string
 }
 
+export interface DocumentArtifactsRow {
+  id: number
+  kind: string
+  documentId: number
+  version: number
+  role: string
+  storageKey: string
+  sha256: string
+  byteSize: number
+  pages: number | null
+  sourceSha256: string | null
+  supersedesArtifactId: number | null
+  createdBy: number | null
+  createdAt: Date
+}
+
+export interface DocumentAttestationsRow {
+  id: number
+  artifactId: number
+  keyId: string
+  algorithm: string
+  payloadCanonical: string
+  signature: string
+  issuedAt: Date
+}
+
+export interface DocumentPartiesRow {
+  id: number
+  kind: string
+  documentId: number
+  role: string
+  name: string
+  required: boolean
+  method: string | null
+  signingEventId: number | null
+  evidenceNote: string | null
+  evidenceSha256: string | null
+  fulfilledAt: Date | null
+  fulfilledBy: number | null
+  createdAt: Date
+}
+
 export interface DocumentSealsRow {
   id: number
   kind: string
@@ -186,6 +239,10 @@ export interface DocumentVerificationTokensRow {
   documentId: number
   revoked: boolean
   createdAt: Date
+  revokedAt: Date | null
+  revokedReason: string | null
+  supersededByKind: string | null
+  supersededById: number | null
 }
 
 export interface DocumentsRow {
@@ -241,6 +298,19 @@ export interface EmailTemplatesRow {
   subject: string
   html: string
   updatedAt: Date
+}
+
+export interface EvidenceEventsRow {
+  id: number
+  kind: string
+  documentId: number
+  artifactId: number | null
+  eventType: string
+  actorId: number | null
+  payload: unknown
+  prevHash: string
+  hash: string
+  createdAt: Date
 }
 
 export interface FaqsRow {
@@ -541,6 +611,100 @@ export interface SettingsRow {
   updatedAt: Date
 }
 
+export interface SignerAuthoritiesRow {
+  id: number
+  profileId: number
+  scope: string
+  grantedBy: number
+  grantedAt: Date
+  validUntil: Date | null
+  soleAdminGrant: boolean
+  note: string | null
+  revokedAt: Date | null
+  revokedBy: number | null
+  revokeReason: string | null
+}
+
+export interface SignerCredentialsRow {
+  id: number
+  profileId: number
+  credentialId: string
+  publicKey: string
+  counter: number
+  transports: string | null
+  deviceType: string | null
+  backedUp: boolean | null
+  label: string | null
+  createdAt: Date
+  lastUsedAt: Date | null
+  revokedAt: Date | null
+}
+
+export interface SignerProfilesRow {
+  id: number
+  userId: number
+  displayName: string
+  position: string
+  status: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface SigningChallengesRow {
+  id: number
+  purpose: string
+  profileId: number
+  requestId: number | null
+  challenge: string
+  payloadCanonical: string | null
+  createdAt: Date
+  expiresAt: Date
+  consumedAt: Date | null
+}
+
+export interface SigningEventsRow {
+  id: number
+  requestId: number
+  ref: string
+  profileId: number
+  userId: number
+  credentialId: number
+  kind: string
+  documentId: number
+  sourceArtifactId: number
+  signedArtifactId: number
+  purpose: string
+  signerName: string
+  signerPosition: string
+  payloadCanonical: string
+  payloadSha256: string
+  consent: unknown
+  authentication: unknown
+  placement: unknown
+  signedAt: Date
+}
+
+export interface SigningRequestsRow {
+  id: number
+  ref: string
+  kind: string
+  documentId: number
+  family: string
+  sourceArtifactId: number
+  sourceSha256: string
+  signerProfileId: number
+  purpose: string
+  partyRole: string
+  createdBy: number
+  legalReviewNote: string | null
+  legalReviewBy: number | null
+  status: string
+  createdAt: Date
+  expiresAt: Date
+  completedAt: Date | null
+  resultArtifactId: number | null
+}
+
 export interface UsersRow {
   id: number
   email: string
@@ -555,17 +719,22 @@ export interface UsersRow {
 export const DATE_COLUMNS: Readonly<Record<string, readonly string[]>> = {
   app_secrets: ['createdAt'],
   articles: ['createdAt', 'publishedAt', 'updatedAt'],
+  attestation_keys: ['createdAt', 'retiredAt', 'compromisedAt'],
   audit_logs: ['createdAt'],
   bank_accounts: ['createdAt', 'updatedAt'],
   coverage: ['verifiedAt'],
   customers: ['createdAt'],
   deliveries: ['createdAt', 'updatedAt', 'issuedAt', 'deliveredAt'],
   delivery_proofs: ['serverTime', 'rejectedAt'],
+  document_artifacts: ['createdAt'],
+  document_attestations: ['issuedAt'],
+  document_parties: ['fulfilledAt', 'createdAt'],
   document_seals: ['issuedAt'],
-  document_verification_tokens: ['createdAt'],
+  document_verification_tokens: ['createdAt', 'revokedAt'],
   documents: ['createdAt', 'updatedAt', 'issuedAt'],
   email_jobs: ['nextAttemptAt', 'sentAt', 'createdAt'],
   email_templates: ['updatedAt'],
+  evidence_events: ['createdAt'],
   invoice_delivery_notes: ['createdAt', 'releasedAt'],
   invoices: ['createdAt'],
   lead_activities: ['createdAt'],
@@ -580,5 +749,11 @@ export const DATE_COLUMNS: Readonly<Record<string, readonly string[]>> = {
   receipts: ['createdAt', 'stampUploadedAt'],
   revisions: ['createdAt'],
   settings: ['updatedAt'],
+  signer_authorities: ['grantedAt', 'validUntil', 'revokedAt'],
+  signer_credentials: ['createdAt', 'lastUsedAt', 'revokedAt'],
+  signer_profiles: ['createdAt', 'updatedAt'],
+  signing_challenges: ['createdAt', 'expiresAt', 'consumedAt'],
+  signing_events: ['signedAt'],
+  signing_requests: ['createdAt', 'expiresAt', 'completedAt'],
   users: ['createdAt'],
 }

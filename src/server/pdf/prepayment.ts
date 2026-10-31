@@ -1,6 +1,6 @@
 import { STAMP_LIMIT_IDR } from '../finance/pdf-inspect'
 import { amountInWords, money } from '../money'
-import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
+import { BAND_H, H, INK, PALE, RED, SLATE, TAGLINE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { Issuer, PrepaymentData } from './types'
 
 /**
@@ -125,12 +125,10 @@ export async function renderPrepayment(d: PrepaymentData, issuer: Issuer, verifi
   y = lines(L + 4, y - 6, duty, WIDTH - 8, 7.0, 9.4, SLATE, false, 3)
   if (y < 117) throw new PdfLayoutError('Pre-payment receipt contents exceed the reserved A4 layout')
 
-  s.footer(99, L, R)
-  s.text(L, 83, 'VORA / DOCUMENT AUTHENTICITY VERIFICATION', 7.8, INK, true)
-  s.text(L, 69, 'Scan the QR or open the link to check this document and its current status.', 6.9, SLATE)
-  s.linkLines(L, 56, verificationUrl, R - 95 - L, 5.9, INK)
-  s.text(L, 38, issuer.email, 7.2, INK)
-  s.text(L, 22, 'PRE-PAYMENT RECEIPT / PAGE 01 OF 01', 7.0, SLATE)
-  s.page.drawImage(await s.qr(verificationUrl), { x: R - 85, y: 9, width: 82, height: 82 })
+  s.pageEdge()
+  s.verificationFooter({
+    left: L, right: R, top: 96, bottom: 9, url: verificationUrl, number: d.number, issuedOn: d.issuedOn, issuer: { address: issuer.address, taxId: issuer.taxId, email: issuer.email }, tagline: TAGLINE,
+    heading: 'VORA | DOCUMENT AUTHENTICITY VERIFICATION', instruction: 'Scan the QR, or click this link, to check this document and its current status:', pageLine: 'PRE-PAYMENT RECEIPT | PAGE 01 OF 01',
+  })
   return s.save()
 }

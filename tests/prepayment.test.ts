@@ -174,7 +174,7 @@ describe('the pre-payment receipt PDF', () => {
     const text = squash(pages[0])
     for (const part of ['PRE-PAYMENT RECEIPT', p.number as string, inv.number as string, 'PT Pelanggan Satu', 'IDR 12,500,000', 'Twelve Million Five Hundred Thousand Indonesian Rupiah',
       'It is NOT proof that payment has been made', 'official VORA payment receipt', 'Bank Contoh', '1234567890', 'PENDING E-METERAI', 'E-METERAI HERE',
-      'because the amount is above IDR 5,000,000', 'PRE-PAYMENT RECEIPT / PAGE 01 OF 01', 'PO-77', 'JOB-9']) expect(text, part).toContain(part)
+      'because the amount is above IDR 5,000,000', 'PRE-PAYMENT RECEIPT | PAGE 01 OF 01', 'PO-77', 'JOB-9']) expect(text, part).toContain(part)
     // It is a receipt that travels with the invoice, not something anyone approves: no signature area, and the whole document is English.
     for (const absent of ['SIGNATURE', 'AUTHORISED', 'POSITION', 'kwitansi', 'terbilang', 'sejumlah', 'pembayaran', 'diterima']) expect(text, absent).not.toContain(absent)
     const [token] = (await sql`select token from document_verification_tokens where kind = 'prepayment' and document_id = ${p.id}`).map((r) => r.token as string)

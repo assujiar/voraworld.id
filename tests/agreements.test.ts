@@ -53,7 +53,8 @@ describe('agreements (perjanjian)', () => {
     expect(t).toContain('PIHAK PERTAMA')
     expect(t).toContain('PIHAK KEDUA')
     expect(t).toContain('Budi Santoso')
-    expect(t).toContain('Ditandatangani secara elektronik')
+    expect(t).not.toContain('Ditandatangani secara elektronik')                 // the QR code is not a signature
+    expect(t).toContain('Tanda tangan / cap')
     const en = await createDocument(actor, agreement('nda', 'en', { values: { ...values, subject: 'Non-Disclosure Agreement' } }))
     await setDocumentStatus(actor, en, 'issue', BASE)
     const e = await text(en)

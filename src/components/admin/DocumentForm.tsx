@@ -18,10 +18,14 @@ export interface DocumentFormProps {
   articles?: Article[]
   /** The PDF already stored for a seal document being edited. */
   sourceName?: string
+  /** The verification address of the draft (its QR code in the placement preview); a placeholder for a document not saved yet. */
+  verifyUrl?: string
+  /** The draft's number, when it has been saved. */
+  documentNumber?: string
 }
 
 /** One form for every document type: the fields, their limits and their starting wording all come from the type. */
-export async function DocumentForm({ type, lang, record, values, documentDate, customerId, invoiceIds, articles, sourceName }: DocumentFormProps) {
+export async function DocumentForm({ type, lang, record, values, documentDate, customerId, invoiceIds, articles, sourceName, verifyUrl, documentNumber }: DocumentFormProps) {
   const customers = type.family === 'billing' ? [] : await many('customers', (q) => q.order('name'), 'id,name', 500)
   const open = type.family === 'billing' && customerId
     ? await many('invoices', (q) => q.eq('customer_id', customerId).in('status', ['issued', 'partially_paid']).gt('outstanding_minor', 0).order('issued_at').order('id'), 'id,number,due_at,currency,outstanding_minor', 200)
@@ -69,7 +73,7 @@ export async function DocumentForm({ type, lang, record, values, documentDate, c
               </div>
             </div>
           ))}
-          {type.family === 'seal' ? <SealPlacer recordId={record} initial={Object.fromEntries(['pages', 'page_number', 'corner', 'size', 'pos_x', 'pos_y'].flatMap((k) => (values?.[k] ? [[k, values[k]]] : [])))} /> : null}
+          {type.family === 'seal' ? <SealPlacer recordId={record} signatureType={2} documentNumber={documentNumber} lang={lang} verifyUrl={verifyUrl ?? 'https://voraworld.id/verify/preview'} initial={Object.fromEntries(['pages', 'page_number', 'corner', 'size', 'pos_x', 'pos_y', 'purpose', 'placement_confirmed'].flatMap((k) => (values?.[k] ? [[k, values[k]]] : [])))} /> : null}
           {type.family === 'agreement' ? (
             <div className="field wide">
               <h4 style={{ margin: '14px 0 6px' }}>Articles (Pasal)</h4>

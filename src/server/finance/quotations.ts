@@ -89,6 +89,7 @@ export async function createQuotation(actorId: number, input: QuotationInput): P
 /** issue: draft -> issued. void: any live state -> void, revoking the QR link and any open approval link (a validated one only while nothing was made from it). */
 export async function setQuotationStatus(actorId: number, id: number, action: string): Promise<void> {
   await rpc('quotation_set_status', { p_actor: actorId, p_id: id, p_action: action })
+  if (action === 'void') await (await import('../trust/revocation')).recordVoided(actorId, 'quotation', id)
 }
 
 const APPROVAL_LINK_DAYS = 14
@@ -201,7 +202,7 @@ export async function reviewApproval(actorId: number, id: number, outcome: strin
       const q = await one('quotations', (f) => f.eq('id', r.quotation_id), 'pic_email')
       const c = await one('customers', (f) => f.eq('id', r.customer_id as number), 'name,email,pic_email')
       const to = ((q?.picEmail as string) || (c?.picEmail as string) || (c?.email as string)) ?? ''
-      if (to) await enqueue('quotation_validated_customer', to, { customer_name: c?.name ?? '', document_number: r.number }, { dedupeKey: `quotation-validated-${id}` })
+      if (to) await enqueue('quotation_validated_customer', to, { customer_name: c?.name ?? '', document_number: r.number }, { dedupeKey: `quotation-validated-${id}`, verify: [{ kind: 'quotation', id: r.quotation_id }] })
     })
   }
   return r.quotation_id

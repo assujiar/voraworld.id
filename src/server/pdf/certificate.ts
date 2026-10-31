@@ -1,21 +1,18 @@
 import { longDate, WORDS } from '../../content/document-types'
-import { BAND_H, INK, RED, SLATE, WHITE, Sheet } from './kit'
+import { BAND_H, INK, RED, SLATE, TAGLINE, WHITE, Sheet } from './kit'
 import type { GeneralDocData, Issuer } from './types'
 
 /**
  * The certificate: one landscape A4 page under the VORA letterhead, in the language it was written in. The holder's name is the
- * largest thing on it (set smaller, or over two lines, only when it is very long). There is no handwritten signature: the QR code
- * above each signatory's name is the signature, and scanning it opens the page that confirms the certificate online (its
- * clickable address is in the foot).
+ * largest thing on it (set smaller, or over two lines, only when it is very long). Each signatory has a line to sign on, with the name and position printed
+ * under it. The verification mark (QR code, VORA lockup and the clickable address) sits in the foot, small and apart from the signatures: it checks the
+ * certificate online, it is not anybody's signature.
  */
-/** The QR code that signs the certificate. */
-const QR = 56
 
 export async function renderCertificate(d: GeneralDocData, issuer: Issuer, verificationUrl: string): Promise<Uint8Array> {
   const lang = d.language
   const v = d.values
   const s = await Sheet.create({ title: `${v.title} | ${d.number}`, author: issuer.legalName, subject: 'Certificate with online verification', landscape: true })
-  const qr = await s.qr(verificationUrl)
   const { w, h } = s
   const left = 50
   const right = w - 50
@@ -60,24 +57,22 @@ export async function renderCertificate(d: GeneralDocData, issuer: Issuer, verif
   if (v.valid_until) { centred(`${WORDS.validUntil[lang]}: ${longDate(v.valid_until, lang)}`, y, 9, SLATE); y -= 16 }
   centred(`${v.place}, ${longDate(d.documentDate, lang)}`, Math.max(y - 4, 206), 9.5, INK)
 
-  // Signatories: the QR code is the signature; the name and position are printed under it.
+  // Signatories: a line to sign on (wet ink, or the VORA signing stamp placed later); the name and position are printed under it.
   const people = [[v.signatory_name, v.signatory_title], [v.signatory2_name, v.signatory2_title]].filter(([n]) => n)
   const slot = people.length === 2 ? [w * 0.3, w * 0.7] : [mid]
   people.forEach(([n, t], i) => {
     const cx = slot[i]
-    s.page.drawImage(qr, { x: cx - QR / 2, y: 142, width: QR, height: QR })
+    s.rule(150, cx - 85, cx + 85, '#AEB6BA', 0.6)
     centred2(s, cx, n, 130, 9.5, true)
     if (t) centred2(s, cx, t, 118, 8.2, false, SLATE)
-    centred2(s, cx, WORDS.eSigned[lang], 108, 6.2, false, SLATE)
   })
 
   // Footer: how to verify it.
-  s.footer(86, left, right)
-  s.text(left, 71, lang === 'id' ? 'VORA / VERIFIKASI SERTIFIKAT' : 'VORA / CERTIFICATE VERIFICATION', 7.7, SLATE, true)
-  s.text(left, 60, WORDS.verifyOnline[lang], 6.4, SLATE)
-  s.linkLines(left, 50, verificationUrl, right - left, 5.9, INK)
-  s.text(left, 36, issuer.email, 7.2, INK)
-  s.text(left, 24, `${label}  /  ${d.number}`, 7.1, SLATE)
+  s.pageEdge()
+  s.verificationFooter({
+    left, right, top: 83, bottom: 9, url: verificationUrl, number: d.number, issuedOn: d.documentDate, issuer: { address: issuer.address, taxId: issuer.taxId, email: issuer.email }, tagline: TAGLINE,
+    heading: lang === 'id' ? 'VORA | VERIFIKASI SERTIFIKAT' : 'VORA | CERTIFICATE VERIFICATION', instruction: WORDS.verifyOnline[lang], pageLine: `${label}  |  ${d.number}`,
+  })
   return s.save()
 }
 

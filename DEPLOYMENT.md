@@ -58,6 +58,10 @@ No longer used, safe to delete **after** the site works: `DATABASE_URL`, `POSTGR
 
 `NEXT_PUBLIC_*` values are written into the build: after changing one, **redeploy**.
 
+### Document trust (migration 0029): extra variables and one-time steps
+
+Apply `migrations/0029_document_trust.sql` like the others (it is additive; nothing is applied for you). Then make VORA's issuance attestation key: `npx tsx scripts/provision-attestation-key.ts <key-id>`. It prints `VORA_ATTESTATION_KEY_ID` and `VORA_ATTESTATION_PRIVATE_KEY` (set both in Vercel, the second as **Sensitive**, never committed) and the SQL that registers the public key. Without the key the application still archives and fingerprints, and says on the verification page that no attestation was available. `PUBLIC_BASE_URL` must be `https://voraworld.id`: it is the passkey origin. Rotation, compromise and the post-deploy checks are in `DOCUMENT_TRUST.md` section 12.
+
 ## 7. Deploy
 
 Merge to `main` (Vercel deploys by itself), or *Deployments > latest > Redeploy*.

@@ -42,6 +42,8 @@ export interface PrepaymentData {
 /** A general document (letter, statement, certificate...): what was typed, plus the invoices and bank accounts a billing letter lists. */
 export interface GeneralDocData {
   number: string; kind: string; language: 'id' | 'en'; status: string; documentDate: string
+  /** When it was issued, already in Jakarta time ("31 Okt 2026 11:42 WIB"); absent for a draft. */
+  issuedAt?: string
   values: Record<string, string>
   invoices: Array<{ number: string; issuedAt: string; dueAt: string; currency: string; totalMinor: number; outstandingMinor: number }>
   banks: BankLine[]
@@ -61,6 +63,8 @@ export interface DeliveryNoteData {
   notes: string
   items: Array<{ description: string; quantity: string; unit: string; remarks: string }>
   captureUrl: string
+  /** The address of this document's verification page (its QR code in the footer and its clickable link). Not the driver's capture address. */
+  verifyUrl: string
 }
 
 /** The proof of delivery: the delivery note plus what the receiver gave, and the evidence files themselves. */

@@ -9,6 +9,8 @@ import { getVerification, type DocumentKind } from '../verification'
 import { documentType } from '../../content/document-types'
 import { readSealed, readSource, type StoredFields } from '../documents/general'
 import { sealPdf } from './seal'
+import { trustedPdf } from '../trust/serve'
+import { trustPolicy } from '../../content/trust-policy'
 import { businessDateTime } from '../dates'
 import { renderCertificate } from './certificate'
 import { renderGeneral } from './general'
@@ -42,11 +44,31 @@ async function verifyUrl(kind: DocumentKind, id: number, baseUrl: string): Promi
  * a re-rendered copy would not carry the stamp.
  */
 export async function renderDocumentPdf(kind: DocumentKind, id: number, baseUrl: string): Promise<Uint8Array> {
+  const meta = await metaOf(kind, id)
+  // A receipt that needed an e-meterai is released as the stored stamped file, never re-rendered; the live path below hands that back (after its SHA-256 check).
+  return trustedPdf({ kind, id, number: meta.number, documentKind: meta.documentKind, candidate: meta.candidate, sourceSha256: meta.sourceSha256, render: () => renderLive(kind, id, baseUrl) })
+}
+
+/** The few facts the archive decision needs about a document, read from its own table. */
+async function metaOf(kind: DocumentKind, id: number): Promise<{ number: string; documentKind?: string; candidate: { status: string; createdAt: Date | null; stampRequired?: boolean }; sourceSha256?: string }> {
+  const table = { invoice: 'invoices', quotation: 'quotations', receipt: 'receipts', prepayment: 'prepayment_receipts', document: 'documents', delivery: 'deliveries', pod: 'deliveries' }[kind]
+  const row = await one(table, (q) => q.eq('id', id))
+  if (!row) throw new ActionError(`${{ invoice: 'Invoice', quotation: 'Quotation', receipt: 'Receipt', prepayment: 'Pre-payment receipt', document: 'Document', delivery: 'Delivery note', pod: 'Delivery note' }[kind]} not found`, 404)
+  const stored = kind === 'document' ? (row.fields as StoredFields | null) : null
+  return {
+    number: row.number as string, documentKind: kind === 'document' ? (row.kind as string) : undefined,
+    candidate: { status: row.status as string, createdAt: (row.createdAt as Date) ?? null, stampRequired: Boolean(row.stampRequired) },
+    sourceSha256: stored?.source?.sha256,
+  }
+}
+
+async function renderLive(kind: DocumentKind, id: number, baseUrl: string): Promise<Uint8Array> {
   if (kind === 'invoice') return invoicePdf(id, baseUrl)
   if (kind === 'quotation') return quotationPdf(id, baseUrl)
   if (kind === 'prepayment') return prepaymentPdf(id, baseUrl)
   if (kind === 'document') return generalPdf(id, baseUrl)
-  return receiptPdf(id, baseUrl)
+  if (kind === 'receipt') return receiptPdf(id, baseUrl)
+  throw new ActionError('Delivery notes and proofs of delivery have their own PDF routes', 400)
 }
 
 async function invoicePdf(id: number, baseUrl: string): Promise<Uint8Array> {
@@ -163,6 +185,7 @@ async function generalPdf(id: number, baseUrl: string): Promise<Uint8Array> {
   const rows = invoices.length ? acceptedAccounts(await many('invoice_bank_instructions', (q) => q.in('invoice_id', invoices.map((i) => i.id)), 'bank_name,account_number,account_holder,currency,swift_code,position')) : []
   const data: GeneralDocData = {
     number: doc.number as string, kind: type.key, language: doc.language as 'id' | 'en', status: doc.status as string, documentDate: String(doc.documentDate),
+    issuedAt: doc.issuedAt ? `${businessDateTime(doc.issuedAt as Date)} WIB` : undefined,
     values: stored.values ?? {}, invoices, articles: stored.articles ?? [],
     banks: rows.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: Number(b.position) })),
   }
@@ -185,7 +208,7 @@ async function sealedFile(doc: Record<string, unknown>, stored: StoredFields, id
   if (!stored.source) throw new ActionError('This document has no PDF to seal', 409)
   const v = stored.values
   return (await sealPdf(await readSource(stored.source), {
-    verificationUrl: await verifyUrl('document', id, baseUrl), number: doc.number as string, lang: doc.language as 'id' | 'en', purpose: v.purpose, pages: v.pages, corner: v.corner, size: v.size, pageNumber: v.page_number, posX: v.pos_x, posY: v.pos_y,
-    signatoryName: v.signatory_name, signatoryTitle: v.signatory_title, company: 'PT Satu Arah International', sealedAt: `${businessDateTime(new Date())} WIB`, sourceSha256: stored.source.sha256, preview: true,
+    type: trustPolicy('document', doc.kind as string).signature, verificationUrl: await verifyUrl('document', id, baseUrl), number: doc.number as string, lang: doc.language as 'id' | 'en', pages: v.pages, corner: v.corner, size: v.size,
+    pageNumber: v.page_number, posX: v.pos_x, posY: v.pos_y, preview: true,
   })).bytes
 }
