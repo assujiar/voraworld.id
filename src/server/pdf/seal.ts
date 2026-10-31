@@ -20,6 +20,8 @@ export interface SealOptions {
   /** The number of the document (the first row). */
   number: string
   pages: string; corner: string; size: string
+  /** A white background behind the mark (otherwise transparent). */
+  background?: boolean
   /** The page chosen when `pages` is `one`, and where the mark was dropped when `corner` is `custom` (0 to 1 from the top left). */
   pageNumber?: string; posX?: string; posY?: string
   /** When it was registered or signed, shown as it is, already in Jakarta time. Absent in a preview. */
@@ -40,7 +42,7 @@ export async function sealPdf(source: Uint8Array, o: SealOptions): Promise<{ byt
   }
   const total = doc.getPageCount()
   if (total < 1 || total > MAX_SEAL_PAGES) throw new ActionError(`The PDF must have 1 to ${MAX_SEAL_PAGES} pages`)
-  const input = { type: o.type, lang: o.lang, url: o.verificationUrl, size: o.size, number: o.number, signer: o.signer, registeredAt: o.issuedAt, preview: o.preview }
+  const input = { type: o.type, lang: o.lang, url: o.verificationUrl, size: o.size, number: o.number, signer: o.signer, registeredAt: o.issuedAt, preview: o.preview, background: o.background }
   const layout = layoutSignature(sealMarkOptions(input))
   const dims = sealDims(input)
   const fonts = await embedMarkFonts(doc)

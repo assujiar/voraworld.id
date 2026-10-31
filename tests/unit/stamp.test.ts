@@ -69,6 +69,13 @@ describe('Signature Type 1 and Signature Type 2: one size contract', () => {
     }
     expect(SIGNATURE_WIDTH).toBeCloseTo(95 * 72 / 25.4, 6)
   })
+  it('has a transparent box unless a white background is chosen, for both types', () => {
+    for (const type of [1, 2] as const) {
+      expect(frame(layoutSignature(sig({ type }))).fill).toBeUndefined()
+      expect(frame(layoutSignature(sig({ type, background: false }))).fill).toBeUndefined()
+      expect(frame(layoutSignature(sig({ type, background: true }))).fill).toBe('#FFFFFF')
+    }
+  })
   it('keeps everything inside the box, and the QR (with its quiet zone) at about 32 mm', () => {
     for (const type of [1, 2] as const) for (const scale of [0.8, 1]) {
       const l = layoutSignature(sig({ type, scale }))

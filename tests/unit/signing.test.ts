@@ -40,6 +40,9 @@ describe('the signing payload', () => {
   })
   it('refuses a placement the PDF would have to guess at', () => {
     expect(checkedPlacement({ pages: 'last', corner: 'bottom-right', size: 'small' })).toMatchObject({ corner: 'bottom-right', pos_x: null })
+    expect(checkedPlacement({ pages: 'last', corner: 'bottom-right', size: 'small' }).background).toBe(false)                      // transparent unless chosen (an older request has no such field)
+    expect(checkedPlacement({ pages: 'last', corner: 'bottom-right', size: 'small', background: true }).background).toBe(true)
+    expect(checkedPlacement({ pages: 'last', corner: 'bottom-right', size: 'small', background: 'yes' }).background).toBe(false)   // only a real boolean counts
     expect(checkedPlacement({ pages: 'one', page_number: '2', corner: 'custom', size: 'medium', pos_x: '0.25', pos_y: '1' })).toMatchObject({ page_number: 2, pos_x: '0.25', pos_y: '1' })
     for (const bad of [{ pages: 'some', corner: 'custom', size: 'small' }, { pages: 'last', corner: 'middle', size: 'small' }, { pages: 'last', corner: 'custom', size: 'huge' }, { pages: 'last', corner: 'custom', size: 'small' },
       { pages: 'last', corner: 'custom', size: 'small', pos_x: '2', pos_y: '0.5' }, { pages: 'last', corner: 'custom', size: 'small', pos_x: 'left', pos_y: '0.5' }, { pages: 'one', corner: 'top-left', size: 'small' }, null]) expect(() => checkedPlacement(bad), JSON.stringify(bad)).toThrow()

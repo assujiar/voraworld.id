@@ -6,7 +6,7 @@ import { renderDeliveryNote, renderPod } from '@/server/pdf/delivery'
 import { renderGeneral } from '@/server/pdf/general'
 import { readSignSlot } from '@/server/pdf/kit'
 import { sealPdf } from '@/server/pdf/seal'
-import { SIGNATURE_HEIGHT, SIGNATURE_WIDTH } from '@/content/verification-blocks'
+import { SIGNATURE_HEIGHT, SIGNATURE_WIDTH, signatureHeight } from '@/content/verification-blocks'
 import { trustPolicy } from '@/content/trust-policy'
 import { PDFDocument, PDFArray, PDFDict, PDFName, PDFNumber } from 'pdf-lib'
 import { renderInvoice } from '@/server/pdf/invoice'
@@ -108,6 +108,22 @@ describe('every document carries the verification mark, a clickable link and the
     expect((await pdfLinks(company))[0].filter((u) => u === URL_).length).toBe(3)                // the footer's address and QR code, and the company signature
     const slot = await readSignSlot(company)
     expect(slot).not.toBeNull()                                                                  // the file still says where the room is
+  })
+  it('letter with the company signature: a white background is drawn only when it is chosen', async () => {
+    const make = (signatureBackground: boolean) => renderGeneral({ ...letter, issuedAt: '31 Okt 2026 11:42 WIB', companySignature: true, signatureBackground }, issuer, URL_)
+    // The page watermark runs behind the signature block: inside the box a transparent block shows its faint grey, a white one hides it.
+    const faintInside = async (bytes: Uint8Array) => {
+      const r = rasterize(bytes, 1, 100)!, slot = (await readSignSlot(bytes))!
+      const left = Math.round(slot.x * 595.28 * r.scale), top = Math.round(slot.y * 841.89 * r.scale)
+      let n = 0
+      for (let y = top + 4; y < top + Math.round(signatureHeight(1) * r.scale) - 4; y++) for (let x = left + 4; x < left + Math.round(SIGNATURE_WIDTH * r.scale) - 4; x++) {
+        const [R, G, B] = r.at(x, y)
+        if (R < 254 && R > 200 && Math.abs(R - G) < 6 && Math.abs(G - B) < 6) n++
+      }
+      return n
+    }
+    const transparent = await faintInside(await make(false)), white = await faintInside(await make(true))
+    expect(transparent).toBeGreaterThan(white + 300)
   })
   it('letters of every general type render with the mark', async () => {
     const values: Record<string, string> = { place: 'Jakarta', subject: 'Uji', recipient_name: 'PT Mitra', body: 'Isi surat.', closing: 'Hormat kami,', signatory_name: 'Siti Rahma', signatory_title: 'Direktur', declarant_name: 'Budi', declarant_id_number: '1', declarant_position: 'Staf', declarant_address: 'Jl. X', location: 'Jakarta', period: '1 tahun',

@@ -46,6 +46,8 @@ export interface GeneralDocData {
   issuedAt?: string
   /** Issued with the company's own (universal) signature in the room for the signature, instead of leaving it for a personal signature. */
   companySignature?: boolean
+  /** A white background behind the company's signature block (otherwise transparent). */
+  signatureBackground?: boolean
   values: Record<string, string>
   invoices: Array<{ number: string; issuedAt: string; dueAt: string; currency: string; totalMinor: number; outstandingMinor: number }>
   banks: BankLine[]

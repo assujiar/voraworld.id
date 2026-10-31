@@ -84,6 +84,11 @@ export default async function DocumentDetail({ params, searchParams }: { params:
             <input type="hidden" name="record" value={id} /><Back to={here} />
             <h4>Issue this document</h4>
             <label style={{ display: 'block', fontWeight: 400 }}><input type="radio" name="signature" value="company" defaultChecked style={{ width: 'auto', minHeight: 0 }} /> Issue now with the company&apos;s signature. {type.family === 'letter' || type.family === 'billing' ? 'The company signature (QR code, number, date, issuer) is placed where the signature goes.' : 'It carries the verification footer and, where the kind of document has one, the company\'s closing block.'}</label>
+            {type.family === 'letter' || type.family === 'billing' || type.family === 'agreement' ? (
+              <label style={{ display: 'block', fontWeight: 400, margin: '2px 0 0 22px' }}>Background of the company signature{' '}
+                <select name="signature_background" defaultValue="no" aria-label="Background of the company signature"><option value="no">Transparent</option><option value="yes">White</option></select>
+              </label>
+            ) : null}
             {personal ? (
               <label style={{ display: 'block', fontWeight: 400, marginTop: 6 }}><input type="radio" name="signature" value="personal" disabled={!signers.length} style={{ width: 'auto', minHeight: 0 }} /> Issue and ask for a personal signature{signers.length ? ': ' : '. Nobody holds authority to sign this kind of document yet (Signers).'}
                 {signers.length ? <select name="signer_profile_id" aria-label="Who signs"><option value="">Who signs...</option>{signers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select> : null}

@@ -14,14 +14,14 @@ import { requestSigning } from './signing'
  *               person issuing is that signer, they go straight to the signing page, since nobody else has to ask them).
  * The personal route is checked BEFORE the document is issued (the signer holds authority, a review is recorded where one is required), so that a refusal leaves the draft as it was.
  */
-export async function issueWithSignature(user: SessionUser, id: number, o: { signature: string; signerProfileId: number; legalReviewNote: string; baseUrl: string }): Promise<{ to: string; notice: string }> {
+export async function issueWithSignature(user: SessionUser, id: number, o: { signature: string; signerProfileId: number; legalReviewNote: string; baseUrl: string; background?: boolean }): Promise<{ to: string; notice: string }> {
   const doc = await one('documents', (q) => q.eq('id', id), 'id,kind,status')
   if (!doc) throw new ActionError('Document not found', 404)
   const type = documentType(doc.kind as string)
   if (!type) throw new ActionError('Unknown document type', 409)
   const here = `/admin/documents/${id}`
   if (o.signature !== 'personal') {
-    await setDocumentStatus(user.id, id, 'issue', o.baseUrl, { signature: 'company' })
+    await setDocumentStatus(user.id, id, 'issue', o.baseUrl, { signature: 'company', background: o.background })
     return { to: here, notice: 'Document issued with the company signature' }
   }
   const policy = trustPolicy('document', type.key)

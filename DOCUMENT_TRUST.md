@@ -124,4 +124,5 @@ The policy encodes this reading, which a lawyer must confirm before launch (the 
 * **Invoice, quotation, receipt, pre-payment receipt and delivery note pages**: a Verification panel with the public verification address, and the archive and evidence export where the kind is archived.
 * **Overview**: a "Waiting for your signature" count for a signer.
 * **Issuing a document** (a draft's page): **Issue now with the company's signature** (Signature Type 1 of the company in a letter's room for the signature; an agreement carries the company's closing block as before), or **Issue and ask for a personal signature** (choose who signs; it waits in that person's Documents you can sign, and choosing yourself goes straight to signing). The personal route is checked before issuing: the signer holds authority, and a review is recorded where the kind requires one.
+* **Background of the signature block:** transparent by default (the page's watermark shows through) or white, chosen where the block is placed: in the placement step of the signing ceremony and of a QR seal (`background` is part of the signed placement), and when a draft is issued with the company's signature.
 

@@ -157,7 +157,7 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
     f.put(() => {
       s.markSignSlot(LEFT, top)
       // Issued with the company's own signature: the Signature Type 1 mark of the company sits in the room. Otherwise the room is left for a personal signature.
-      if (d.companySignature && d.issuedAt) s.signatureBlock({ type: 1, lang, url: verificationUrl, number: d.number, registeredAt: d.issuedAt, name: issuer.legalName, position: lang === 'id' ? 'Penerbit dokumen' : 'Document issuer', left: LEFT, top })
+      if (d.companySignature && d.issuedAt) s.signatureBlock({ type: 1, lang, url: verificationUrl, number: d.number, registeredAt: d.issuedAt, name: issuer.legalName, position: lang === 'id' ? 'Penerbit dokumen' : 'Document issuer', left: LEFT, top, background: d.signatureBackground })
       else s.rule(top - ROOM - 3, LEFT, LEFT + 170, '#AEB6BA', 0.5)
     })
     f.y -= ROOM + 14
@@ -173,7 +173,7 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
     gap(LEADING)
     f.keep(SIGNATURE_HEIGHT + 12)
     const top = f.y
-    f.put(() => s.signatureBlock({ type: 2, lang, url: verificationUrl, number: d.number, registeredAt: d.issuedAt, name: issuer.legalName, position: lang === 'id' ? 'Penerbit dokumen' : 'Document issuer', left: LEFT, top }))
+    f.put(() => s.signatureBlock({ type: 2, lang, url: verificationUrl, number: d.number, registeredAt: d.issuedAt, name: issuer.legalName, position: lang === 'id' ? 'Penerbit dokumen' : 'Document issuer', left: LEFT, top, background: d.signatureBackground }))
     f.y = top - SIGNATURE_HEIGHT - 12
   }
   const copies = () => {
