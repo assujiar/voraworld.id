@@ -18,6 +18,7 @@
     "test:e2e": "next build && playwright test",
     "test:visual": "playwright test -c playwright.visual.config.ts",
     "db:migrate": "tsx scripts/apply-migrations.ts",
+    "build:favicons": "tsx scripts/build-favicons.ts",
     "build:setup-sql": "tsx scripts/build-manual-setup.ts",
     "gen:schema": "tsx scripts/gen-schema-types.ts",
     "build:pdf-assets": "tsx scripts/embed-pdf-assets.ts",

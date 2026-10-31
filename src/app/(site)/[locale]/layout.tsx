@@ -1,6 +1,7 @@
 import type { Viewport } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { ICONS, MANIFEST } from '@/lib/favicons'
 import { NavProgress } from '@/components/feedback/NavProgress'
 import { Header } from '@/components/site/Header'
 import { Footer } from '@/components/site/Footer'
@@ -12,7 +13,7 @@ import { absoluteUrl, getNav, getSettings } from '@/server/site'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30      // form submissions queue and send email
 export const viewport: Viewport = { themeColor: '#101720', width: 'device-width', initialScale: 1 }
-export const metadata = { icons: { icon: [{ url: '/static/assets/vora-a-icon-primary.svg', type: 'image/svg+xml' }] } }
+export const metadata = { icons: ICONS, manifest: MANIFEST }
 
 export default async function LocaleLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -29,7 +30,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
         <link rel="preload" href="/static/fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="stylesheet" href="/static/css/site.css" />
         <link rel="stylesheet" href="/static/css/vora.css?v=11" />
-        <link rel="stylesheet" href="/static/css/feedback.css?v=8" />
+        <link rel="stylesheet" href="/static/css/feedback.css?v=9" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body className="v-body">

@@ -151,10 +151,37 @@ button.is-busy[disabled]{opacity:1}
 .seal-toolbar .button-outline{min-height:34px;min-width:34px;padding:2px 10px;font-size:.8rem}
 .seal-toolbar label{font-size:.8rem;display:inline-flex;align-items:center;gap:6px;margin:0 6px}
 
-/* Moving between pages: a bar along the top of the window while the next page loads, and the pressed link marked as pending. */
-.nav-progress{position:fixed;z-index:1000;top:0;left:0;height:3px;width:0;background:var(--red,#b43e31);box-shadow:0 0 8px rgba(180,62,49,.45);opacity:0;pointer-events:none}
-.nav-progress.is-loading{width:86%;opacity:1;transition:width 14s cubic-bezier(.08,.75,.2,1),opacity .1s}
-.nav-progress.is-done{width:100%;opacity:0;transition:width .2s ease-out,opacity .35s .15s}
+/* Moving between pages. NavProgress sets data-navigating on <html> the moment a link is pressed; everything here is drawn from that attribute (no render in between). A bar runs
+   along the top of the window, a label with a ring sits at the bottom, and the pressed link is marked as pending. */
+.nav-progress{position:fixed;z-index:1000;top:0;left:0;height:4px;width:0;background:var(--red,#b43e31);box-shadow:0 0 10px rgba(180,62,49,.55);opacity:0;pointer-events:none}
+html[data-navigating] .nav-progress{opacity:1;animation:vora-nav 16s cubic-bezier(.06,.8,.2,1) forwards}
+@keyframes vora-nav{from{width:0}to{width:90%}}
+.nav-chip{position:fixed;z-index:1001;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:10px 16px;border-radius:999px;background:#101720;color:#fff;font-size:.8125rem;font-weight:600;line-height:1.2;font-family:inherit;box-shadow:0 8px 24px rgba(16,23,32,.35);pointer-events:none;white-space:nowrap}
+html[data-navigating] .nav-chip{display:flex;animation:vora-chip .18s .12s ease-out both}
+@keyframes vora-chip{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+html[data-navigating]{cursor:progress}
 a[data-nav-pending],button[data-nav-pending]{cursor:progress;opacity:.62}
+nav a[data-nav-pending],.admin-sidebar a[data-nav-pending]{background:rgba(255,255,255,.1)}
 nav a[data-nav-pending]::after,.admin-sidebar a[data-nav-pending]::after{content:"";display:inline-block;width:.75em;height:.75em;margin-left:.55em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-.1em;animation:vora-spin .8s linear infinite}
-@media (prefers-reduced-motion:reduce){.nav-progress.is-loading{width:60%;transition:none}nav a[data-nav-pending]::after,.admin-sidebar a[data-nav-pending]::after{animation-duration:2.4s}}
+@media (prefers-reduced-motion:reduce){html[data-navigating] .nav-progress{animation:none;width:60%}html[data-navigating] .nav-chip{animation:none}nav a[data-nav-pending]::after,.admin-sidebar a[data-nav-pending]::after{animation-duration:2.4s}}
+
+/* VORA loading motion (components/feedback/VoraLoader.tsx): the approved logo and A icon, CSS animation only. It arrives once, then stays small and slow. */
+.vl{display:inline-block;max-width:100%;line-height:0}
+.vl svg{display:block;width:100%;height:auto;overflow:visible}
+.vl-reveal{transform-box:fill-box}
+.vl-logo .vl-reveal{transform-origin:0 50%;animation:vl-wipe-x 1s cubic-bezier(.22,.8,.2,1) both}
+.vl-mark .vl-reveal{transform-origin:50% 100%;animation:vl-wipe-y .85s cubic-bezier(.22,.8,.2,1) both}
+@keyframes vl-wipe-x{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes vl-wipe-y{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.vl-ink{transform-box:fill-box;transform-origin:50% 100%;animation:vl-rise .9s ease-out both}
+@keyframes vl-rise{from{opacity:0;transform:translateY(6%)}to{opacity:1;transform:none}}
+.vl-red{transform-box:fill-box;transform-origin:50% 100%;animation:vl-ignite .55s .7s cubic-bezier(.3,1.6,.5,1) both,vl-breathe 1.9s 1.5s ease-in-out infinite}
+@keyframes vl-ignite{from{opacity:0;transform:scale(.15)}to{opacity:1;transform:scale(1)}}
+@keyframes vl-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.vl-shine{transform-box:fill-box;opacity:0;animation:vl-shine 2.8s 1.7s ease-in-out infinite}
+@keyframes vl-shine{0%{opacity:1;transform:translateX(-130%) skewX(-18deg)}55%,100%{opacity:1;transform:translateX(560%) skewX(-18deg)}}
+.vl-page{display:grid;justify-items:center;align-content:center;gap:20px;min-height:55vh;padding:56px 16px;animation:vl-appear .25s .2s both}
+@keyframes vl-appear{from{opacity:0}to{opacity:1}}
+.vl-line{position:relative;display:block;width:min(220px,55vw);height:3px;overflow:hidden;border-radius:2px;background:#e4e7e9}
+.vl-line::after{content:"";position:absolute;inset:0 auto 0 -40%;width:40%;background:var(--red,#b43e31);animation:vora-wait 1.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.vl *{animation:none!important}.vl-shine{display:none}.vl-page{animation:none}.vl-line::after{animation:none;inset:0;width:100%;opacity:.5}}
