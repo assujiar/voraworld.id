@@ -124,3 +124,4 @@
 /* a calm join between a light section and a dark one */
 .ab-founder+.ab-capabilities,.ab-how+.ab-trust{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
 @media (prefers-reduced-motion:reduce){.ab-reveal.is-armed,.ab-reveal.is-in{opacity:1;translate:none;transition:none}.ab-record{transition:none}}
+.ab-how,.ab-trust{scroll-margin-top:76px}

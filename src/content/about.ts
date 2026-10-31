@@ -11,7 +11,7 @@ export const pick = (b: Bi, locale: Locale) => b[locale]
 
 export const ABOUT = {
   eyebrow: { en: 'About VORA', id: 'Tentang VORA' },
-  cta: { quote: { en: 'Request a quote', id: 'Minta penawaran' }, verify: { en: 'See how we verify', id: 'Lihat cara verifikasi kami' } },
+  cta: { quote: { en: 'Request a quote', id: 'Minta penawaran' }, how: { en: 'See how we work', id: 'Lihat cara kerja kami' } },
   hint: { hero: { en: 'Click VORA to reveal our line.', id: 'Klik VORA untuk melihat semboyan kami.' }, hintTouch: { en: 'Tap VORA to reveal our line.', id: 'Ketuk VORA untuk melihat semboyan kami.' } },
   manifesto: {
     label: { en: 'How VORA works', id: 'Cara kerja VORA' },
@@ -116,11 +116,11 @@ export const COMMITMENTS = {
 }
 
 export const TRUST = {
-  label: { en: 'Verification', id: 'Verifikasi' },
-  title: { en: 'Every document can be checked.', id: 'Setiap dokumen bisa Anda periksa.' },
+  label: { en: 'Paperwork', id: 'Dokumen' },
+  title: { en: 'Paperwork you can check.', id: 'Dokumen yang bisa Anda cek.' },
   body: {
-    en: 'Every document VORA issues carries a QR code and a link to a public verification page. The page shows the record of that document and its current status.',
-    id: 'Setiap dokumen yang diterbitkan VORA memuat kode QR dan tautan ke halaman verifikasi publik. Halaman itu menampilkan catatan dokumen tersebut beserta statusnya saat ini.',
+    en: 'Quotations, invoices, delivery notes and payment receipts from VORA carry a QR code and a link. Scan it to see the record of that document and its current status.',
+    id: 'Penawaran, invoice, surat jalan, dan tanda terima pembayaran dari VORA memuat kode QR dan tautan. Pindai untuk melihat catatan dokumen itu dan statusnya saat ini.',
   },
   body2: {
     en: 'You can also check a PDF you hold against the record. The check runs in your browser and the file is not uploaded.',
@@ -135,7 +135,7 @@ export const TRUST = {
     status: { en: 'Status', id: 'Status' },
     issued: { en: 'Issued', id: 'Diterbitkan' },
     check: { en: 'Where to check', id: 'Tempat memeriksa' },
-    page: { en: 'Public verification page', id: 'Halaman verifikasi publik' },
+    page: { en: 'Public record page', id: 'Halaman catatan publik' },
   },
 }
 

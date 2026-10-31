@@ -38,7 +38,7 @@ export default async function About({ params }: LocaleParams) {
   const items = FOUNDER.items.map((i) => ({ title: pick(i.title, locale), problem: pick(i.problem, locale), answer: pick(i.answer, locale) }))
   return (
     <>
-      <link rel="stylesheet" href="/static/css/about.css?v=4" precedence="default" />
+      <link rel="stylesheet" href="/static/css/about.css?v=5" precedence="default" />
       <HeroStage hint={pick(ABOUT.hint.hero, locale)} hintTouch={pick(ABOUT.hint.hintTouch, locale)}>
         <div className="ab-wrap ab-hero__copy">
           <p className="ab-eyebrow">{pick(ABOUT.eyebrow, locale)}</p>
@@ -46,7 +46,7 @@ export default async function About({ params }: LocaleParams) {
           <p className="ab-lead">{text.about_body}</p>
           <p className="ab-actions">
             <a className="ab-btn ab-btn--solid" href={`/${locale}/request-quote`}>{pick(ABOUT.cta.quote, locale)}</a>
-            <a className="ab-btn ab-btn--ghost" href="#verify">{pick(ABOUT.cta.verify, locale)}</a>
+            <a className="ab-btn ab-btn--ghost" href="#how">{pick(ABOUT.cta.how, locale)}</a>
           </p>
         </div>
       </HeroStage>
@@ -81,7 +81,7 @@ export default async function About({ params }: LocaleParams) {
         </div>
       </section>
 
-      <section className="ab-section ab-how">
+      <section className="ab-section ab-how" id="how">
         <div className="ab-wrap">
           <Reveal>
             <p className="ab-eyebrow">{pick(COMMITMENTS.label, locale)}</p>
@@ -91,7 +91,7 @@ export default async function About({ params }: LocaleParams) {
         </div>
       </section>
 
-      <section className="ab-section ab-trust" id="verify">
+      <section className="ab-section ab-trust" id="paperwork">
         <div className="ab-wrap ab-trust__grid">
           <Reveal>
             <p className="ab-eyebrow">{pick(TRUST.label, locale)}</p>
