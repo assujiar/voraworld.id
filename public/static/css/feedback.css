@@ -188,5 +188,8 @@ nav a[data-nav-pending]::after,.admin-sidebar a[data-nav-pending]::after{content
 
 /* The footer logo: a box of the loop's own shape (so that nothing moves when the loop arrives), the still logo in it until then. */
 .v-footer a.v-footer__home{display:block;width:clamp(150px,16vw,184px);padding:0}
-.v-footer__logo{width:100%}
-.v-footer__logo .ab-fallback,.v-footer__logo-img{position:absolute;left:0;top:0;width:100%;max-width:100%;height:auto;margin:0;opacity:1}
+/* The loop's canvas is larger than the logo (130 px at the sides, 110 above, 70 below, on an 890 px wide logo) so that its rings and glow are not cut off. The negative margins give that room back,
+   so the logo sits exactly where the image did and nothing around it moves; the canvas never takes a click. */
+.v-footer__logo{position:relative;width:129.213%;margin:-12.360% -14.607% -7.865%;pointer-events:none}
+.v-footer__logo>div{position:absolute;inset:0}
+.v-footer__logo .ab-fallback,.v-footer__logo-img{position:absolute;left:11.304%;top:27.363%;width:77.391%;max-width:none;height:auto;margin:0;opacity:1}
