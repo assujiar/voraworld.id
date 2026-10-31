@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { deliveryStatusAction, rejectProofAction, resendReceivedAction } from '@/actions/deliveries'
+import { VerificationPanel } from '@/components/admin/VerificationPanel'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { many, one } from '@/server/data'
 import { deliveryBy, proofsOf } from '@/server/delivery/deliveries'
@@ -94,6 +95,7 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
           </div>
         ) : null}
       </div>
+      <VerificationPanel kind="delivery" id={id} />
     </AdminPage>
   )
 }

@@ -34,7 +34,7 @@ async function pdfjs() {
 }
 
 /** The placement a person confirmed, as it is stored and signed: the same fractions the PDF uses. */
-export interface ConfirmedPlacement { pages: Mode; page_number: number | null; corner: string; size: 'small' | 'medium'; pos_x: string | null; pos_y: string | null }
+export interface ConfirmedPlacement { pages: Mode; page_number: number | null; corner: string; size: 'small' | 'medium'; pos_x: string | null; pos_y: string | null; background: boolean }
 
 export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUrl, signer, documentNumber, signatureType = 2, onPlacement }: {
   recordId?: number; initial: Record<string, string>; verifyUrl: string; lang?: Lang
@@ -54,6 +54,7 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUr
   const [pageNumber, setPageNumber] = useState(Number.parseInt(typed('page_number', '1'), 10) || 1)
   const [corner, setCorner] = useState(typed('corner', 'bottom-right'))
   const [size, setSize] = useState(typed('size', 'medium'))
+  const [background, setBackground] = useState(typed('background', 'no') === 'yes')
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: Number(typed('pos_x', '0.6')) || 0.6, y: Number(typed('pos_y', '0.85')) || 0.85 })
   const [confirmed, setConfirmed] = useState(initial.placement_confirmed === 'yes')
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null)
@@ -73,7 +74,7 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUr
   const tap = useRef<{ x: number; y: number; t: number; id: number } | null>(null)
   const loadId = useRef(0)
 
-  const markInput = useMemo(() => ({ type: signatureType, lang, url: verifyUrl, size, number: documentNumber ?? (lang === 'id' ? '(nomor ditetapkan saat diterbitkan)' : '(number assigned on issue)'), preview: true, signer }), [signatureType, lang, verifyUrl, size, documentNumber, signer])
+  const markInput = useMemo(() => ({ type: signatureType, lang, url: verifyUrl, size, number: documentNumber ?? (lang === 'id' ? '(nomor ditetapkan saat diterbitkan)' : '(number assigned on issue)'), preview: true, signer, background }), [signatureType, lang, verifyUrl, size, documentNumber, signer, background])
   const dims = useMemo(() => sealDims(markInput), [markInput])
   const layout = useMemo(() => layoutSignature(sealMarkOptions(markInput)), [markInput])
 
@@ -198,9 +199,9 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUr
 
   const finalPos = corner === 'custom' ? pos : { x: rect.left / (box.pw * scale), y: rect.top / (box.ph * scale) }
   useEffect(() => {
-    onPlacement?.(confirmed ? { pages: mode, page_number: mode === 'one' ? Math.min(Math.max(pageNumber, 1), pages || pageNumber) : null, corner, size: size === 'small' ? 'small' : 'medium', pos_x: corner === 'custom' ? finalPos.x.toFixed(4) : null, pos_y: corner === 'custom' ? finalPos.y.toFixed(4) : null } : null)
+    onPlacement?.(confirmed ? { pages: mode, page_number: mode === 'one' ? Math.min(Math.max(pageNumber, 1), pages || pageNumber) : null, corner, size: size === 'small' ? 'small' : 'medium', pos_x: corner === 'custom' ? finalPos.x.toFixed(4) : null, pos_y: corner === 'custom' ? finalPos.y.toFixed(4) : null, background } : null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [confirmed, mode, pageNumber, corner, size, finalPos.x, finalPos.y])
+  }, [confirmed, mode, pageNumber, corner, size, background, finalPos.x, finalPos.y])
   const loupeSize = { w: Math.min(280, typeof window === 'undefined' ? 280 : window.innerWidth - 16), h: 0 }
   loupeSize.h = loupeSize.w * (dims.h / dims.w)
   const loupe = finger && typeof document !== 'undefined' ? loupePosition(finger, { width: window.innerWidth, height: window.innerHeight }, loupeSize) : null
@@ -209,7 +210,7 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUr
     <div className="seal-placer wide" ref={root} style={{ gridColumn: '1 / -1' }}>
       <h4 style={{ margin: '14px 0 6px' }}>{signer ? 'Where your signing mark goes' : 'Where the VORA mark goes'}</h4>
       <input type="hidden" name="pages" value={mode} /><input type="hidden" name="page_number" value={mode === 'one' ? String(Math.min(Math.max(pageNumber, 1), pages || pageNumber)) : ''} />
-      <input type="hidden" name="corner" value={corner} /><input type="hidden" name="size" value={size} />
+      <input type="hidden" name="corner" value={corner} /><input type="hidden" name="size" value={size} /><input type="hidden" name="background" value={background ? 'yes' : 'no'} />
       <input type="hidden" name="pos_x" value={finalPos.x.toFixed(4)} /><input type="hidden" name="pos_y" value={finalPos.y.toFixed(4)} />
       <input type="hidden" name="placement_confirmed" value={confirmed ? 'yes' : ''} />
       <div className="seal-controls">
@@ -220,6 +221,10 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUr
         </fieldset>
         <fieldset><legend>Size</legend>
           {([['medium', 'Medium'], ['small', 'Small']] as const).map(([v, l]) => <label key={v}><input type="radio" name="seal_size_ui" checked={size === v} onChange={() => { setSize(v); setConfirmed(false) }} /> {l}</label>)}
+        </fieldset>
+        <fieldset><legend>Background of the mark</legend>
+          {([[false, 'Transparent'], [true, 'White']] as const).map(([v, l]) => <label key={l}><input type="radio" name="seal_background_ui" checked={background === v} onChange={() => { setBackground(v); setConfirmed(false) }} /> {l}</label>)}
+          <span className="mini muted">Transparent lets the page show through the mark; white keeps it on a plain background.</span>
         </fieldset>
         <fieldset><legend>Snap to a corner</legend>
           <div className="seal-corners">{CORNERS.map(([v, l]) => <button key={v} type="button" className={corner === v ? 'button' : 'button-outline'} aria-pressed={corner === v} onClick={() => snap(v)}>{l}</button>)}</div>

@@ -26,7 +26,7 @@ export interface SourceFile { key: string; sha256: string; bytes: number; pages:
 /** The same PDF with the VORA seal added, made when the document is issued. */
 export interface SealedFile { key: string; sha256: string; bytes: number; pagesSealed: number; sealedAt: string }
 /** What is stored in `documents.fields`. */
-export interface StoredFields { values: Record<string, string>; invoices?: InvoiceSnapshot[]; articles?: Article[]; source?: SourceFile; seal?: SealedFile }
+export interface StoredFields { /** How it was issued: with the company's signature, or for a personal signature (asked of a signer). */ signature?: 'company' | 'personal'; /** A white background behind the company's signature block. */ signatureBackground?: boolean; values: Record<string, string>; invoices?: InvoiceSnapshot[]; articles?: Article[]; source?: SourceFile; seal?: SealedFile }
 
 export interface DocumentInput {
   kind: string; language: string; customerId: number | null; documentDate: string; values: Record<string, string>; invoiceIds: number[]
@@ -208,7 +208,7 @@ function assertNoPlaceholders(p: Prepared): void {
 }
 
 /** issue: draft -> issued (a billing letter takes the invoices as they stand now; a seal is made now). void: any draft or issued document; its QR link stops verifying. */
-export async function setDocumentStatus(actorId: number, id: number, action: string, baseUrl = ''): Promise<void> {
+export async function setDocumentStatus(actorId: number, id: number, action: string, baseUrl = '', opts: { signature?: 'company' | 'personal'; background?: boolean } = {}): Promise<void> {
   const doc = await one('documents', (q) => q.eq('id', id))
   if (!doc) throw new ActionError('Document not found', 404)
   if (action === 'issue' && doc.status === 'draft') {
@@ -219,8 +219,14 @@ export async function setDocumentStatus(actorId: number, id: number, action: str
     const p = await prepare({ kind: type.key, language: doc.language as string, customerId: doc.customerId as number | null, documentDate: doc.documentDate as string, values: stored.values, invoiceIds: (stored.invoices ?? []).map((i) => i.id), articles: stored.articles, source: stored.source },
       { kind: type.key, language: doc.language as Lang })
     assertNoPlaceholders(p)
+    if (opts.signature) p.fields.signature = opts.signature
+    if (opts.background) p.fields.signatureBackground = true
     let sealedKey = ''
-    if (type.family === 'seal') {
+    if (type.family === 'seal' && p.fields.values.mode === 'sign') {
+      // A document that a signer uploaded to sign: it is issued as the original file, untouched, and the signing ceremony adds the one mark, with the signer's name.
+      if (!stored.source) throw new ActionError('This document has no PDF to sign', 409)
+      p.fields.seal = { key: stored.source.key, sha256: stored.source.sha256, bytes: stored.source.bytes, pagesSealed: 0, sealedAt: new Date().toISOString() }
+    } else if (type.family === 'seal') {
       if (!stored.source) throw new ActionError('This document has no PDF to seal', 409)
       if (!baseUrl) throw new ActionError('The public address of the site is not known', 500)
       const verification = await getVerification('document', id)
@@ -228,7 +234,7 @@ export async function setDocumentStatus(actorId: number, id: number, action: str
       const sealedAt = new Date()
       const made = await sealPdf(await readSource(stored.source), {
         type: trustPolicy('document', type.key).signature, verificationUrl: `${baseUrl.replace(/\/+$/, '')}/verify/${verification.token}`, number: doc.number as string, lang: p.lang, pages: p.fields.values.pages,
-        corner: p.fields.values.corner, size: p.fields.values.size, pageNumber: p.fields.values.page_number, posX: p.fields.values.pos_x, posY: p.fields.values.pos_y, issuedAt: `${businessDateTime(sealedAt)} WIB`,
+        corner: p.fields.values.corner, size: p.fields.values.size, pageNumber: p.fields.values.page_number, posX: p.fields.values.pos_x, posY: p.fields.values.pos_y, background: p.fields.values.background === 'yes', issuedAt: `${businessDateTime(sealedAt)} WIB`,
       })
       sealedKey = `seal/${randomUUID()}-sealed.pdf`
       await putObject('documents', sealedKey, made.bytes, 'application/pdf')

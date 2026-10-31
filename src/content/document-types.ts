@@ -313,6 +313,8 @@ export const DOCUMENT_TYPES: DocumentType[] = [
       { name: 'page_number', label: T('Nomor halaman', 'Page number'), input: 'text', max: 3, hidden: true },
       { ...sealSelect('corner', T('Posisi segel', 'Position of the seal'), [['bottom-right', 'Kanan bawah', 'Bottom right'], ['bottom-left', 'Kiri bawah', 'Bottom left'], ['top-right', 'Kanan atas', 'Top right'], ['top-left', 'Kiri atas', 'Top left'], ['custom', 'Digeser sendiri', 'Dragged by hand']], 'bottom-right'), hidden: true },
       { name: 'placement_confirmed', label: T('Penempatan dikonfirmasi', 'Placement confirmed'), input: 'text', max: 3, hidden: true },
+      { name: 'mode', label: T('Cara', 'Mode'), input: 'text', max: 8, hidden: true },
+      { name: 'background', label: T('Latar segel', 'Seal background'), input: 'text', max: 3, hidden: true },
       { name: 'pos_x', label: T('Posisi mendatar', 'Horizontal position'), input: 'text', max: 8, hidden: true },
       { name: 'pos_y', label: T('Posisi tegak', 'Vertical position'), input: 'text', max: 8, hidden: true },
       { ...sealSelect('size', T('Ukuran segel', 'Size of the seal'), [['medium', 'Sedang', 'Medium'], ['small', 'Kecil', 'Small']], 'medium'), hidden: true },

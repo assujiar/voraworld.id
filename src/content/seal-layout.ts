@@ -25,6 +25,8 @@ export function fraction(value: string | undefined): number | null {
 
 export interface SealMarkInput {
   type: SignatureType; lang: Lang; url: string; size: string
+  /** A white background behind the mark (otherwise transparent). */
+  background?: boolean
   /** The document's number (what the first row shows). */
   number: string
   /** When it was registered or signed, already formatted; absent in a preview. */
@@ -39,7 +41,7 @@ const ISSUER_ROLE: Record<Lang, string> = { id: 'Penerbit dokumen', en: 'Documen
 
 /** The options of the signature component for a seal: a personal signing names the signer; VORA's own registration names the company as the issuer. The browser and the PDF build them here, from the same inputs. */
 export function sealMarkOptions(i: SealMarkInput): SignatureOptions {
-  return { type: i.type, lang: i.lang, url: i.url, number: i.number, registeredAt: i.registeredAt, name: i.signer?.name ?? ISSUER_NAME, position: i.signer?.position ?? ISSUER_ROLE[i.lang], scale: SIZE_SCALE[i.size] ?? 1, preview: i.preview }
+  return { type: i.type, lang: i.lang, url: i.url, number: i.number, registeredAt: i.registeredAt, name: i.signer?.name ?? ISSUER_NAME, position: i.signer?.position ?? ISSUER_ROLE[i.lang], scale: SIZE_SCALE[i.size] ?? 1, preview: i.preview, background: i.background }
 }
 
 /** How much room the component takes on the page, in points. The same for a preview and for the finished one, and the same for Type 1 and Type 2. */

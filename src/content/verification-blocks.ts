@@ -32,6 +32,8 @@ export interface SignatureOptions {
   number: string; registeredAt?: string; name: string; position: string
   /** Uniform only: the box is the same shape at any scale. */
   scale?: number
+  /** A white background behind the box. Without it the box is transparent: whatever is on the page (a watermark, the document's own text) shows through. */
+  background?: boolean
   /** A preview is labelled; it shows no time that has not happened. */
   preview?: boolean
 }
@@ -107,7 +109,7 @@ export function layoutSignature(o: SignatureOptions): MarkLayout {
   const W = SIGNATURE_WIDTH, H = signatureHeight(o.type), PAD = 8
   const labels = LABELS[o.lang]
   const items: MarkItem[] = []
-  items.push({ t: 'frame', x: 0.4, y: 0.4, w: W - 0.8, h: H - 0.8, r: 9, stroke: BORDER, width: 0.8 })
+  items.push({ t: 'frame', x: 0.4, y: 0.4, w: W - 0.8, h: H - 0.8, r: 9, stroke: BORDER, width: 0.8, ...(o.background ? { fill: '#FFFFFF' } : {}) })
   const URLH = LINK_ROW
   const y0 = PAD, y1 = o.type === 2 ? H - URLH : H - PAD
   const qrCell = SIGNATURE_QR + 4

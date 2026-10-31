@@ -18,7 +18,7 @@ export function consentStatement(): string {
 }
 export const consentStatementSha256 = (): string => createHash('sha256').update(consentStatement(), 'utf8').digest('hex')
 
-export interface Placement { pages: 'first' | 'last' | 'all' | 'one'; page_number: number | null; corner: string; size: 'small' | 'medium'; pos_x: string | null; pos_y: string | null }
+export interface Placement { pages: 'first' | 'last' | 'all' | 'one'; page_number: number | null; corner: string; size: 'small' | 'medium'; pos_x: string | null; pos_y: string | null; /** A white background behind the mark; otherwise transparent. */ background: boolean }
 
 export interface SigningPayloadInput {
   requestRef: string; kind: string; documentId: number; documentNumber: string
@@ -66,5 +66,5 @@ export function checkedPlacement(raw: unknown): Placement {
   if (corner === 'custom' && (x === null || y === null)) throw new TypeError('Place the signing mark on the page')
   const page = p.page_number === null || p.page_number === undefined || p.page_number === '' ? null : Number(p.page_number)
   if (pages === 'one' && (!Number.isInteger(page) || (page as number) < 1 || (page as number) > 500)) throw new TypeError('Choose the page')
-  return { pages: pages as Placement['pages'], page_number: pages === 'one' ? page : null, corner, size: size as Placement['size'], pos_x: corner === 'custom' ? x : null, pos_y: corner === 'custom' ? y : null }
+  return { pages: pages as Placement['pages'], page_number: pages === 'one' ? page : null, corner, size: size as Placement['size'], pos_x: corner === 'custom' ? x : null, pos_y: corner === 'custom' ? y : null, background: p.background === true }
 }

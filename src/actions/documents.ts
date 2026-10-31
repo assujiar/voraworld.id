@@ -41,6 +41,11 @@ export async function documentStatusAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
     const id = int(form, 'record')
     const action = str(form, 'action', 10)
+    if (action === 'issue' && str(form, 'signature', 10)) {
+      const { issueWithSignature } = await import('@/server/trust/issue-sign')
+      const done = await issueWithSignature(user, id, { signature: str(form, 'signature', 10), signerProfileId: int(form, 'signer_profile_id'), legalReviewNote: str(form, 'legal_review_note', 500), baseUrl: publicBaseUrl(), background: str(form, 'signature_background', 3) === 'yes' })
+      return { to: done.to, notice: done.notice }
+    }
     await setDocumentStatus(user.id, id, action, publicBaseUrl())
     return { to: `/admin/documents/${id}`, notice: 'Document state updated' }
   })

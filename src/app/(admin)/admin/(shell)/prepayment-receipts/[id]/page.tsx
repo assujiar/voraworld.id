@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { sendPrepaymentAction, uploadPrepaymentStampAction, voidPrepaymentAction } from '@/actions/finance'
+import { VerificationPanel } from '@/components/admin/VerificationPanel'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
 import { one, withRelated } from '@/server/data'
 import { maxUploadBytes } from '@/server/env'
@@ -52,6 +53,7 @@ export default async function PrepaymentReceiptDetail({ params, searchParams }: 
           {status !== 'void' ? <PendingForm action={voidPrepaymentAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Void pre-payment receipt</AsyncButton></PendingForm> : null}
         </div>
       </div>
+      <VerificationPanel kind="prepayment" id={id} />
     </AdminPage>
   )
 }
