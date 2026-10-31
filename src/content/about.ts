@@ -30,8 +30,8 @@ export const FOUNDER = {
     id: 'VORA didirikan oleh seorang profesional dengan pengalaman lebih dari sepuluh tahun di freight forwarding, logistik, dan kargo.',
   },
   body: {
-    en: 'In that time the same problems came back, shipment after shipment. They were rarely about the truck or the vessel. They were about what happened around the cargo: who had agreed to what, which document said what, and who was meant to act next.',
-    id: 'Selama itu, masalah yang sama terus muncul di pengiriman demi pengiriman. Jarang soal truk atau kapalnya. Masalahnya ada di sekitar barang: siapa menyepakati apa, dokumen mana menyebut apa, dan siapa yang harus bertindak berikutnya.',
+    en: 'In that time the same problems came back, shipment after shipment. Most of them had little to do with the truck or the vessel. They came from what happened around the cargo: who had agreed to what, which document said what, and who was meant to act next.',
+    id: 'Selama itu, masalah yang sama terus muncul di pengiriman demi pengiriman. Sebagian besar tidak berkaitan dengan truk atau kapalnya. Asalnya dari apa yang terjadi di sekitar barang: siapa menyepakati apa, dokumen mana menyebut apa, dan siapa yang harus bertindak berikutnya.',
   },
   choose: {
     en: 'VORA is the founder’s answer to four of them. Select a problem to see what we do about it.',
