@@ -1,3 +1,4 @@
+import { fileName } from '@/content/file-names'
 import { one } from '@/server/data'
 import { requireUser } from '@/server/auth/guard'
 import { ActionError } from '@/server/errors'
@@ -10,9 +11,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     await requireUser(request)
     const { id: rawId, version: rawVersion } = await params
     const id = routeId(rawId), version = routeId(rawVersion)
-    const doc = id ? await one('documents', (q) => q.eq('id', id), 'number') : undefined
+    const doc = id ? await one('documents', (q) => q.eq('id', id), 'number,subject') : undefined
     const artifact = doc ? (await artifactsOf('document', id)).find((a) => a.version === version) : undefined
     if (!doc || !artifact) throw new ActionError('Not found', 404)
-    return pdfResponse(await readArtifact(artifact), `${doc.number}-v${version}.pdf`)
+    return pdfResponse(await readArtifact(artifact), fileName(doc.number as string, doc.subject as string, `v${version}`))
   } catch (e) { return errorResponse(e) }
 }

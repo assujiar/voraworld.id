@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { cancelPaymentAction, confirmPaymentAction, ensurePrepaymentAction, invoiceStatusAction, sendInvoiceAction } from '@/actions/finance'
 import { VerificationPanel } from '@/components/admin/VerificationPanel'
+import { fileHref } from '@/content/file-names'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { MailHistory } from '@/components/admin/MailHistory'
 import { RecordPaymentForm } from '@/components/admin/RecordPaymentForm'
@@ -76,7 +77,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
         <div className="inline-actions">
           {status === 'draft' ? <PendingForm action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue">Issue invoice</AsyncButton></PendingForm> : null}
           {['draft', 'issued'].includes(status) ? <PendingForm action={invoiceStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
-          <a className="button-outline" href={`/admin/invoices/${id}/pdf`} target="_blank" rel="noopener">Download PDF ↗</a>
+          <a className="button-outline" href={fileHref(`/admin/invoices/${id}/pdf`, inv.number as string)} target="_blank" rel="noopener">Download PDF ↗</a>
           {!['draft', 'void'].includes(status) ? <PendingForm action={sendInvoiceAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Kirim Invoice &amp; Pre-Payment Receipt</AsyncButton></PendingForm> : null}
         </div>
         {open ? <><hr /><RecordPaymentForm invoiceId={id} currency={cur} today={today()} banks={accounts} /></> : null}

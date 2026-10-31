@@ -4,7 +4,7 @@ import { int, str } from '@/server/http'
 import { cancelRequest, createProfile, grantAuthority, requestSigning, revokeAuthority, revokePasskey, signNow } from '@/server/trust/signing'
 import { isTrustKind } from '@/content/trust-policy'
 import { publicBaseUrl } from '@/server/env'
-import { uploadAndSign } from '@/server/trust/upload-sign'
+import { discardOwnSigning, uploadAndSign } from '@/server/trust/upload-sign'
 
 /**
  * Who may sign, and the requests to sign. These are administrator actions; the SIGNING itself is not an action of an administrator: it is done by the signer, in their own
@@ -67,6 +67,14 @@ export async function uploadAndSignAction(form: FormData) {
     if (!(file instanceof File) || !file.size) throw new ActionError('Choose the PDF to sign')
     const id = await uploadAndSign(user, { file, title: str(form, 'source_title', 160), issuer: str(form, 'source_issuer', 160), reference: str(form, 'source_reference', 100), language: str(form, 'language', 2), baseUrl: publicBaseUrl() })
     return { to: `/admin/signing/${id}` }
+  })
+}
+
+/** A signer drops a signing they started themselves and did not finish. */
+export async function discardSigningAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    await discardOwnSigning(user, int(form, 'request_id'))
+    return { to: '/admin/signing', notice: 'Dropped. Nothing was signed.' }
   })
 }
 

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { deliveryStatusAction, rejectProofAction, resendReceivedAction } from '@/actions/deliveries'
 import { VerificationPanel } from '@/components/admin/VerificationPanel'
+import { fileHref } from '@/content/file-names'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { many, one } from '@/server/data'
 import { deliveryBy, proofsOf } from '@/server/delivery/deliveries'
@@ -59,7 +60,7 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
         <div className="inline-actions">
           {d.status === 'draft' ? <a className="button-outline" href={`/admin/deliveries/${id}/edit`}>Edit draft</a> : null}
           {d.status === 'draft' ? <PendingForm action={deliveryStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue">Issue delivery note</AsyncButton></PendingForm> : null}
-          <a className="button-outline" href={`/admin/deliveries/${id}/pdf`} target="_blank" rel="noopener">{d.status === 'draft' || d.status === 'void' ? `Download PDF (marked ${d.status})` : 'Download PDF'} ↗</a>
+          <a className="button-outline" href={fileHref(`/admin/deliveries/${id}/pdf`, d.number as string)} target="_blank" rel="noopener">{d.status === 'draft' || d.status === 'void' ? `Download PDF (marked ${d.status})` : 'Download PDF'} ↗</a>
           {d.status === 'draft' || d.status === 'issued' ? <PendingForm action={deliveryStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
         </div>
         {d.status === 'draft' ? <p className="note mini">A draft is marked DRAFT on every page and its QR code does not work yet. Issuing makes the QR code live; to change an issued note, void it and write a new one.</p> : null}
@@ -86,7 +87,7 @@ export default async function DeliveryDetail({ params, searchParams }: { params:
         ))}
         {live ? (
           <div className="inline-actions" style={{ marginTop: 16 }}>
-            <a className="button-outline" href={`/admin/deliveries/${id}/pod-pdf`} target="_blank" rel="noopener">Download proof of delivery (PDF) ↗</a>
+            <a className="button-outline" href={fileHref(`/admin/deliveries/${id}/pod-pdf`, 'POD', d.number as string)} target="_blank" rel="noopener">Download proof of delivery (PDF) ↗</a>
             <a className="button-outline" href={`/pod/view/${d.viewToken}`} target="_blank" rel="noopener">Open the consignee&apos;s view ↗</a>
             {d.consigneeEmail ? <PendingForm action={resendReceivedAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Email the proof to the consignee again</AsyncButton></PendingForm> : null}
             <PendingForm action={rejectProofAction} className="inline-actions"><input type="hidden" name="record" value={id} /><Back to={here} />

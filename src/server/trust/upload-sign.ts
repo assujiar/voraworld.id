@@ -1,11 +1,11 @@
 import { documentType } from '../../content/document-types'
 import { createDocument, setDocumentStatus, storeSourcePdf } from '../documents/general'
-import { rpc } from '../data'
+import { one, rpc } from '../data'
 import { ActionError } from '../errors'
 import type { SessionUser } from '../auth/guard'
 import { renderDocumentPdf } from '../pdf/documents'
 import { removeObject } from '../storage'
-import { profileOfUser, signNow } from './signing'
+import { cancelRequest, profileOfUser, signNow } from './signing'
 
 export interface UploadToSign { file: File; title: string; issuer: string; reference: string; language: string; baseUrl: string }
 
@@ -41,4 +41,20 @@ export async function uploadAndSign(user: SessionUser, i: UploadToSign): Promise
     else await removeObject('documents', source.key).catch(() => undefined)
     throw e
   }
+}
+
+/**
+ * Drops a signing the signer started themselves and did not finish (a request they made for themselves; one somebody else asked of them is not theirs to drop, they leave it to
+ * expire or to be cancelled by whoever asked). The request is cancelled; and a document they uploaded only to sign it, which nobody signed, is voided, so that no unsigned
+ * file is left behind as if it were finished.
+ */
+export async function discardOwnSigning(user: SessionUser, requestId: number): Promise<void> {
+  const profile = await profileOfUser(user.id)
+  const request = profile ? await one('signing_requests', (q) => q.eq('id', requestId).eq('signer_profile_id', profile.id).eq('created_by', user.id).eq('status', 'pending'), 'id,kind,document_id') : undefined
+  if (!request) throw new ActionError('Only a signing you started yourself, and did not finish, can be dropped here', 403)
+  await cancelRequest(user, requestId, 'dropped by the signer')
+  if (request.kind !== 'document') return
+  const doc = await one('documents', (q) => q.eq('id', request.documentId as number), 'id,kind,status,fields')
+  const signedAlready = await one('signing_events', (q) => q.eq('kind', 'document').eq('document_id', request.documentId as number), 'ref')
+  if (doc && doc.status === 'issued' && !signedAlready && (doc.fields as { values?: Record<string, string> }).values?.mode === 'sign') await setDocumentStatus(user.id, doc.id as number, 'void')
 }

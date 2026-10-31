@@ -25,7 +25,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   ])
   const me = await currentUser()
   const signer = me ? await profileOfUser(me.id) : undefined
-  const waitingForMe = signer ? await count('signing_requests', (f) => f.eq('signer_profile_id', signer.id).eq('status', 'pending').gt('expires_at', new Date().toISOString())) : 0
+  const waitingForMe = signer ? await count('signing_requests', (f) => f.eq('signer_profile_id', signer.id).eq('status', 'pending').neq('created_by', me?.id ?? 0).gt('expires_at', new Date().toISOString())) : 0
   const attention: Array<{ n: number; label: string; href: string; hint: string }> = [
     { n: newLeads, label: 'New leads', href: '/admin/leads?status=new', hint: 'Not contacted yet' },
     { n: toValidate, label: 'Quotations to validate', href: '/admin/quotations?status=customer_approved', hint: 'The customer has signed; check the signature and stamp' },

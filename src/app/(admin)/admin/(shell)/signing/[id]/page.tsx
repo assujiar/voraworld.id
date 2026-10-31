@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { fileHref } from '@/content/file-names'
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
 import { SigningCeremony } from '@/components/admin/SigningCeremony'
 import { currentUser } from '@/server/auth/guard'
@@ -20,7 +21,7 @@ export default async function SigningPage({ params, searchParams }: { params: Pr
   const verifyUrl = `${publicBaseUrl()}/verify/${view.verifyToken ?? 'preview'}`
   return (
     <AdminPage heading={`Sign ${view.doc.number}`} sp={await searchParams}>
-      <SigningCeremony requestId={view.request.id} fileUrl={`/admin/signing/${view.request.id}/file`} verifyUrl={verifyUrl} lang={view.doc.language} signer={{ name: view.profile.displayName, position: view.profile.position }}
+      <SigningCeremony requestId={view.request.id} fileUrl={fileHref(`/admin/signing/${view.request.id}/file`, view.doc.number, `v${view.artifact.version}`)} verifyUrl={verifyUrl} lang={view.doc.language} signer={{ name: view.profile.displayName, position: view.profile.position }}
         reference={view.request.ref} purposeLabel={view.purposeLabel} signatureType={view.signatureType} sha256={view.artifact.sha256} version={view.artifact.version} number={view.doc.number} passkeys={view.passkeys} changed={view.changed} slot={view.slot} />
     </AdminPage>
   )

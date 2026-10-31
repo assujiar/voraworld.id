@@ -4,6 +4,7 @@ import { b64url, sha256Hex } from '../crypto'
 import { many, one, rpc, insert, update } from '../data'
 import { businessDateTime } from '../dates'
 import { documentType } from '../../content/document-types'
+import { fileName } from '../../content/file-names'
 import { PURPOSE_LABELS, SIGNING_PURPOSES, signingEligibility, trustPolicy, type SigningPurpose } from '../../content/trust-policy'
 import { ActionError } from '../errors'
 import type { SessionUser } from '../auth/guard'
@@ -267,5 +268,6 @@ export async function ceremonyFile(user: SessionUser, requestId: number): Promis
   const { request } = await requestForSigner(user, requestId)
   const source = (await artifactsOf(request.kind, request.documentId)).find((a) => a.id === request.sourceArtifactId)
   if (!source) throw new ActionError('Not found', 404)
-  return { bytes: await readArtifact(source), filename: `${request.ref}-v${source.version}.pdf` }
+  const doc = await docFacts(request.kind, request.documentId)
+  return { bytes: await readArtifact(source), filename: fileName(doc.number, `v${source.version}`) }
 }

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { sendPrepaymentAction, uploadPrepaymentStampAction, voidPrepaymentAction } from '@/actions/finance'
 import { VerificationPanel } from '@/components/admin/VerificationPanel'
+import { fileHref } from '@/content/file-names'
 import { AdminPage, Back, type Notices } from '@/components/admin/AdminPage'
 import { one, withRelated } from '@/server/data'
 import { maxUploadBytes } from '@/server/env'
@@ -33,7 +34,7 @@ export default async function PrepaymentReceiptDetail({ params, searchParams }: 
           <div className="admin-panel">
             <h3>Manual e-meterai required</h3>
             <p className="note">Download the draft, apply an authentic e-meterai manually through an authorised provider, then upload the stamped PDF. The pre-payment receipt is not released to the customer, and cannot be verified as final, before this step. VORA calls no external API and does not check the stamp itself: that review is yours.</p>
-            <a className="button-outline" href={`/admin/prepayment-receipts/${id}/pdf`} target="_blank" rel="noopener">Download PDF for stamping ↗</a>
+            <a className="button-outline" href={fileHref(`/admin/prepayment-receipts/${id}/pdf`, r.number as string)} target="_blank" rel="noopener">Download PDF for stamping ↗</a>
             <PendingForm action={uploadPrepaymentStampAction} style={{ marginTop: 16 }}>
               <input type="hidden" name="record" value={id} /><Back to={here} />
               <div className="admin-form-grid">
@@ -48,7 +49,7 @@ export default async function PrepaymentReceiptDetail({ params, searchParams }: 
           <p className="note">Stamped PDF uploaded and stored privately (SHA-256 {(r.stampSha256 as string)?.slice(0, 16)}…). Official e-meterai reference: {r.stampProviderReference as string}</p>
         ) : null}
         <div className="inline-actions">
-          {status !== 'void' ? <a className="button" href={`/admin/prepayment-receipts/${id}/pdf`} target="_blank" rel="noopener">{status === 'issued' ? 'Download final PDF' : 'Download PDF draft'} ↗</a> : null}
+          {status !== 'void' ? <a className="button" href={fileHref(`/admin/prepayment-receipts/${id}/pdf`, r.number as string)} target="_blank" rel="noopener">{status === 'issued' ? 'Download final PDF' : 'Download PDF draft'} ↗</a> : null}
           {status === 'issued' ? <PendingForm action={sendPrepaymentAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Email pre-payment receipt to customer</AsyncButton></PendingForm> : null}
           {status !== 'void' ? <PendingForm action={voidPrepaymentAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Void pre-payment receipt</AsyncButton></PendingForm> : null}
         </div>

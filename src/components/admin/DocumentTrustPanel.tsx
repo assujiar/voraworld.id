@@ -1,5 +1,6 @@
 import { cancelSigningRequestAction, fulfilPartyAction, requestSigningAction, signNowAction, trackPartiesAction } from '@/actions/signing'
 import { fmt } from '@/components/admin/AdminPage'
+import { fileHref } from '@/content/file-names'
 import { SIGNING_PURPOSES, PURPOSE_LABELS, signingEligibility, trustPolicy } from '@/content/trust-policy'
 import { METHOD_LABEL } from '@/content/verify-labels'
 import { currentUser } from '@/server/auth/guard'
@@ -26,7 +27,7 @@ export async function DocumentTrustPanel({ id, documentKind, status, number, sig
       <p className="mini muted">Policy for this kind of document: {policy.signing === 'none' ? 'issued and verified, not signed by a person' : policy.signing === 'party_based' ? 'each party signs for itself' : 'a person may sign it'} · {eligible.ok ? (eligible.needsLegalReview ? 'electronic signing in VORA needs a recorded legal review first' : 'electronic signing in VORA is allowed (non-certified)') : eligible.message.en}</p>
       {artifacts.length ? (
         <table><thead><tr><th>Version</th><th>File</th><th>SHA-256</th><th>Recorded</th></tr></thead><tbody>
-          {artifacts.map((a) => <tr key={a.id}><td>v{a.version}</td><td><a href={`/admin/documents/${id}/artifact/${a.version}`} target="_blank" rel="noopener">{stateOf(a.role)} ↗</a></td><td className="mini" style={{ overflowWrap: 'anywhere' }}>{a.sha256}</td><td>{fmt(a.createdAt)}</td></tr>)}
+          {artifacts.map((a) => <tr key={a.id}><td>v{a.version}</td><td><a href={fileHref(`/admin/documents/${id}/artifact/${a.version}`, number, `v${a.version}`)} target="_blank" rel="noopener">{stateOf(a.role)} ↗</a></td><td className="mini" style={{ overflowWrap: 'anywhere' }}>{a.sha256}</td><td>{fmt(a.createdAt)}</td></tr>)}
         </tbody></table>
       ) : <p className="mini">No archived file: {status === 'issued' ? 'this document was issued before the archive existed, or its PDF has not been made yet (open it once). Documents issued before the archive are not given one afterwards.' : 'it is archived when it is issued.'}</p>}
       {artifacts.length ? <p className="mini"><a href={`/admin/evidence/document/${id}`}>Download the evidence export (JSON) ↓</a></p> : null}

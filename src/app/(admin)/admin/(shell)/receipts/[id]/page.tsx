@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { resendReceiptAction, uploadStampAction, voidReceiptAction } from '@/actions/finance'
 import { VerificationPanel } from '@/components/admin/VerificationPanel'
+import { fileHref } from '@/content/file-names'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { MailHistory } from '@/components/admin/MailHistory'
 import { one, withRelated } from '@/server/data'
@@ -38,7 +39,7 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
           <div className="admin-panel">
             <h3>Manual e-meterai required</h3>
             <p className="note">Download the draft receipt, apply an authentic e-meterai manually through an authorised provider, then upload the stamped PDF. The receipt is not released to the customer, and cannot be verified as final, before this step. VORA calls no external API and does not check the stamp itself: that review is yours.</p>
-            <a className="button-outline" href={`/admin/receipts/${id}/pdf`} target="_blank" rel="noopener">Download PDF for stamping ↗</a>
+            <a className="button-outline" href={fileHref(`/admin/receipts/${id}/pdf`, r.number as string)} target="_blank" rel="noopener">Download PDF for stamping ↗</a>
             <PendingForm action={uploadStampAction} style={{ marginTop: 16 }}>
               <input type="hidden" name="record" value={id} /><Back to={here} />
               <div className="admin-form-grid">
@@ -54,7 +55,7 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
         ) : null}
         <div className="inline-actions">
           {status === 'issued' ? <PendingForm action={resendReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Send the receipt to the customer again</AsyncButton></PendingForm> : null}
-          {status !== 'void' ? <a className="button" href={`/admin/receipts/${id}/pdf`} target="_blank" rel="noopener">{status === 'pending_stamp' ? 'Download PDF draft' : 'Download final PDF'} ↗</a> : null}
+          {status !== 'void' ? <a className="button" href={fileHref(`/admin/receipts/${id}/pdf`, r.number as string)} target="_blank" rel="noopener">{status === 'pending_stamp' ? 'Download PDF draft' : 'Download final PDF'} ↗</a> : null}
           {status !== 'void' ? <PendingForm action={voidReceiptAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline">Void receipt and reverse payment</AsyncButton></PendingForm> : null}
         </div>
       </div>
