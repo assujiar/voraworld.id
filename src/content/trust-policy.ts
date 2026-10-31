@@ -93,7 +93,7 @@ const GENERAL: Record<Family, { signing: Signing; nonCertified: NonCertified; en
     confirms: { id: 'VORA menerbitkan surat ini.', en: 'VORA issued this letter.' }, doesNotConfirm: { id: 'Penerbitan bukan tanda tangan pribadi. Tanda tangan pribadi, bila ada, ditampilkan terpisah sebagai bukti penandatanganan.', en: 'Issuance is not a personal signature. A personal signature, where there is one, is shown separately as signing evidence.' }, liveStatus: null },
   billing: { signing: 'conditional', nonCertified: 'allowed', endMark: 'standard', multiParty: false,
     confirms: { id: 'VORA menerbitkan surat tagihan ini atas faktur yang tercantum.', en: 'VORA issued this billing letter for the invoices it lists.' }, doesNotConfirm: { id: 'Status pembayaran faktur yang tercantum dibaca dari catatan keuangan, bukan dari surat.', en: 'The payment status of the listed invoices comes from finance records, not from the letter.' }, liveStatus: null },
-  parties: { signing: 'conditional', nonCertified: 'legal_review_required', endMark: 'standard', multiParty: false,
+  parties: { signing: 'conditional', nonCertified: 'allowed', endMark: 'standard', multiParty: false,
     confirms: { id: 'VORA menerbitkan dokumen ini.', en: 'VORA issued this document.' }, doesNotConfirm: { id: 'Verifikasi tidak membuktikan identitas atau tanda tangan pihak yang membuat pernyataan atau pemberi kuasa.', en: 'Verification does not establish the identity or signature of the declarant or grantor.' }, liveStatus: null },
   certificate: { signing: 'conditional', nonCertified: 'allowed', endMark: 'standard', multiParty: false,
     confirms: { id: 'VORA menerbitkan sertifikat ini kepada pemegang yang tercantum.', en: 'VORA issued this certificate to the holder named.' }, doesNotConfirm: { id: 'Masa berlaku dan pencabutan dibaca langsung dari catatan VORA.', en: 'Validity and revocation are read live from VORA\'s records.' }, liveStatus: 'validity' },
@@ -101,6 +101,16 @@ const GENERAL: Record<Family, { signing: Signing; nonCertified: NonCertified; en
     confirms: { id: 'VORA menerbitkan naskah perjanjian ini.', en: 'VORA issued this agreement text.' }, doesNotConfirm: { id: 'Perjanjian belum dinyatakan terlaksana penuh sampai semua pihak yang disyaratkan menandatangani atau bukti pelaksanaan eksternal divalidasi.', en: 'The agreement is not fully executed until every required party has signed or external execution evidence has been validated.' }, liveStatus: null },
   seal: { signing: 'optional', nonCertified: 'allowed', endMark: null, multiParty: false,
     confirms: { id: 'VORA mendaftarkan dan menyetempel berkas pihak lain ini. Berkas asli disimpan utuh.', en: 'VORA registered and marked this third-party file. The original is preserved unchanged.' }, doesNotConfirm: { id: 'VORA tidak membuktikan keaslian penerbit eksternal atau isi dokumennya.', en: 'VORA does not establish the authenticity of the external issuer or the content of the document.' }, liveStatus: null },
+}
+
+/**
+ * Types whose legal weight differs from the rest of their family. A statement and a power of attorney carry formalities of their own (who the declarant or grantor is,
+ * and whether the law asks for more than an electronic signature), so signing them in VORA waits for a recorded legal review; a certification or assignment letter is
+ * VORA speaking for itself and does not.
+ */
+const TYPE_OVERRIDES: Record<string, Partial<Pick<TrustPolicy, 'nonCertified'>>> = {
+  statement: { nonCertified: 'legal_review_required' },
+  authorization: { nonCertified: 'legal_review_required' },
 }
 
 const UNKNOWN_DOCUMENT: TrustPolicy = {
@@ -113,7 +123,7 @@ export function trustPolicy(kind: TrustKind, documentKind?: string): TrustPolicy
   if (kind !== 'document') return FIXED[kind]
   const type = documentKind ? documentType(documentKind) : undefined
   if (!type) return UNKNOWN_DOCUMENT
-  return { ...BASE, kind: 'document', family: type.family, ...GENERAL[type.family] }
+  return { ...BASE, kind: 'document', family: type.family, ...GENERAL[type.family], ...TYPE_OVERRIDES[type.key] }
 }
 
 export type Eligibility =
