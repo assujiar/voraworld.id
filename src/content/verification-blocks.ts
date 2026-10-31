@@ -13,10 +13,12 @@ import { qrMatrix, QUIET_MODULES } from './trust-qr'
  * ever stretched on one axis. Verification links are never truncated: they are set whole, wrapped at natural boundaries when they have to be, and drawn in VORA red.
  */
 export const SIGNATURE_RATIO = 2
-export const SIGNATURE_DIMENSIONS = { widthMm: 120, heightMm: 60 } as const
+export const SIGNATURE_DIMENSIONS = { widthMm: 95, heightMm: 47.5 } as const
 export const PT_PER_MM = 72 / 25.4
 export const SIGNATURE_WIDTH = SIGNATURE_DIMENSIONS.widthMm * PT_PER_MM
 export const SIGNATURE_HEIGHT = SIGNATURE_DIMENSIONS.heightMm * PT_PER_MM
+/** The height of Type 2's link row, which Type 1 does not have: Type 1 is the same box without that row (same width, QR, radius, border and rows), so it carries no empty space where the link would be. */
+export const LINK_ROW = 26
 export const BORDER = '#D8DFE6'
 export const SOFT = '#F5F7F9'
 export const MUTED = '#667587'
@@ -96,33 +98,42 @@ function scaled(items: MarkItem[], k: number): MarkItem[] {
   })
 }
 
-export const SIGNATURE_QR = 96
+export const SIGNATURE_QR = 92
+export const signatureHeight = (type: SignatureType): number => (type === 2 ? SIGNATURE_HEIGHT : SIGNATURE_HEIGHT - LINK_ROW)
+/** The distance between the baselines of two rows: fixed and close, whatever the height of the box, so that the rows read as one block (it is centred in its region). */
+export const ROW_PITCH = 17
 
 export function layoutSignature(o: SignatureOptions): MarkLayout {
-  const W = SIGNATURE_WIDTH, H = SIGNATURE_HEIGHT, PAD = 10
+  const W = SIGNATURE_WIDTH, H = signatureHeight(o.type), PAD = 8
   const labels = LABELS[o.lang]
   const items: MarkItem[] = []
-  items.push({ t: 'frame', x: 0.4, y: 0.4, w: W - 0.8, h: H - 0.8, r: 9, stroke: BORDER, width: 0.8, fill: '#FFFFFF' })
-  const URLH = 36
+  items.push({ t: 'frame', x: 0.4, y: 0.4, w: W - 0.8, h: H - 0.8, r: 9, stroke: BORDER, width: 0.8 })
+  const URLH = LINK_ROW
   const y0 = PAD, y1 = o.type === 2 ? H - URLH : H - PAD
-  const qrCell = SIGNATURE_QR + 10
-  items.push({ t: 'qr', x: PAD + 5, y: y0 + (y1 - y0 - SIGNATURE_QR) / 2, size: SIGNATURE_QR })
-  const divider = PAD + qrCell + 2
+  const qrCell = SIGNATURE_QR + 4
+  items.push({ t: 'qr', x: PAD + 2, y: y0 + (y1 - y0 - SIGNATURE_QR) / 2, size: SIGNATURE_QR })
+  const divider = PAD + qrCell
   items.push({ t: 'line', x1: divider, y1: y0 + 2, x2: divider, y2: y1 - 2, color: BORDER, width: 0.6 })
-  const x0 = divider + 14, right = W - PAD
+  const x0 = divider + 8, right = W - 7
   const pending = o.preview || !o.registeredAt
   const values = [o.number, pending ? PENDING[o.lang] : (o.registeredAt as string), o.name, o.position]
   const glyphs = ['document', 'calendar', 'user', 'briefcase'] as const
-  const pitch = (y1 - y0) / 4
-  const LABEL_X = x0 + 19, LABEL_COL = 50, COLON_X = LABEL_X + LABEL_COL, VALUE_X = COLON_X + 9
-  const fitted = values.map((value) => monoFit(value, right - VALUE_X, 7.4, 5.2))
-  const valueSize = Math.min(...fitted.map((f) => f.size))      // one size for every value, so the rows read as a grid
+  const LABEL_X = x0 + 13, LABEL_COL = 50, COLON_X = LABEL_X + LABEL_COL, VALUE_X = COLON_X + 5
+  const mid = (y0 + y1) / 2
+  const vw = right - VALUE_X
+  const SIZE = 6.4
+  // A long value (a document number) is wrapped onto a second line rather than shrunk until it cannot be read; one size for every value.
+  const wrapped = values.map((v) => (monoWidth(printable(v), SIZE) <= vw ? [printable(v)] : wrapMono(v, vw, SIZE).slice(0, 2)))
   values.forEach((_, i) => {
-    const cy = y0 + pitch * (i + 0.5)
-    items.push({ t: 'glyph', name: glyphs[i], x: x0, y: cy - 6, size: 12, color: RED })
-    items.push({ t: 'text', x: LABEL_X, y: cy + 2.4, text: labels[i], size: 7, bold: false, color: MUTED })
-    items.push({ t: 'text', x: COLON_X, y: cy + 2.4, text: ':', size: 7, bold: false, color: MUTED })
-    items.push({ t: 'text', x: VALUE_X, y: cy + 2.5, text: fitted[i].text, size: valueSize, bold: false, color: INK, font: 'mono' })
+    const cy = mid + (i - 1.5) * ROW_PITCH
+    items.push({ t: 'glyph', name: glyphs[i], x: x0, y: cy - 5, size: 10, color: RED })
+    items.push({ t: 'text', x: LABEL_X, y: cy + 2.3, text: labels[i], size: 6.6, bold: false, color: MUTED })
+    items.push({ t: 'text', x: COLON_X, y: cy + 2.3, text: ':', size: 6.6, bold: false, color: MUTED })
+    const lines = wrapped[i], lead = SIZE + 1.4
+    lines.forEach((line, k) => {
+      const fit = monoFit(line, vw, SIZE, 4.4)                                  // a single run that is still too wide for the line is the only thing that is ever shrunk
+      items.push({ t: 'text', x: VALUE_X, y: cy + 2.4 + (k - (lines.length - 1) / 2) * lead, text: fit.text, size: fit.size, bold: false, color: INK, font: 'mono' })
+    })
   })
   if (o.type === 2) {
     const ly = H - URLH
@@ -189,7 +200,7 @@ export function layoutFooter(o: FooterOptions): MarkLayout {
   if (B < 130) throw new Error('The footer is too narrow for its sections')
   const xA = 0, xB = A, xC = A + B, xD = A + B + C, xE = A + B + C + D
   const items: MarkItem[] = []
-  items.push({ t: 'frame', x: 0.3, y: 0.3, w: W - 0.6, h: H - 0.6, r: 4, stroke: BORDER, width: 0.7, fill: '#FFFFFF' })
+  items.push({ t: 'frame', x: 0.3, y: 0.3, w: W - 0.6, h: H - 0.6, r: 4, stroke: BORDER, width: 0.7 })
   items.push({ t: 'line', x1: 4, y1: 0.8, x2: W - 4, y2: 0.8, color: RED, width: 1.6 })
   for (const x of [xB, xC, xD, xE]) items.push({ t: 'line', x1: x, y1: PV + 2, x2: x, y2: H - PV, color: BORDER, width: 0.6 })
 

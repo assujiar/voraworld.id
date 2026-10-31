@@ -1,9 +1,9 @@
-import { degrees, PDFDocument, PDFFont, PDFImage, PDFPage, PDFString, StandardFonts, rgb, setCharacterSpacing, type RGB } from 'pdf-lib'
+import { degrees, PDFArray, PDFDocument, PDFFont, PDFImage, PDFName, PDFNumber, PDFPage, PDFString, StandardFonts, rgb, setCharacterSpacing, type RGB } from 'pdf-lib'
 import QRCode from 'qrcode'
 import { ActionError } from '../errors'
 import { PDF_ASSETS } from './brand-assets'
 import { embedMarkFonts, paintMark, upright, type MarkFonts } from './trust-mark'
-import { layoutFooter, layoutSignature, type FooterOptions, type SignatureOptions } from '../../content/verification-blocks'
+import { layoutFooter, layoutSignature, SIGNATURE_HEIGHT, SIGNATURE_WIDTH, type FooterOptions, type SignatureOptions } from '../../content/verification-blocks'
 
 /** A4 in PDF points. */
 export const W = 595.28
@@ -234,7 +234,39 @@ export class Sheet {
     this.page.drawText(this.clean(word), { x, y, size, font: this.bold, color: color(fill), opacity: 0.1, rotate: degrees(35) })
   }
 
-  save(): Promise<Uint8Array> { return this.doc.save() }
+  private slot?: [number, number, number]
+
+  /**
+   * Marks the room a document leaves for its signature (the space between the issuer's name and the printed name of the signer): the page and the top left corner of a
+   * box of the signature's size. It is written into the file (see `readSignSlot`), so that the signing ceremony starts the mark exactly there.
+   */
+  markSignSlot(x: number, top: number): void { this.slot = [this.doc.getPageCount() - 1, x, top] }
+
+  save(): Promise<Uint8Array> {
+    if (this.slot) {
+      const [page, x, top] = this.slot
+      this.doc.catalog.set(PDFName.of(SIGN_SLOT_KEY), this.doc.context.obj([page, x, top, SIGNATURE_WIDTH, SIGNATURE_HEIGHT]))
+    }
+    return this.doc.save()
+  }
+}
+
+const SIGN_SLOT_KEY = 'VoraSignSlot'
+
+/** Where a document asked for its signature (from `markSignSlot`), as the page number (from 1) and the placement fractions the signing mark uses; null when it has no such room. */
+export async function readSignSlot(bytes: Uint8Array): Promise<{ page: number; x: number; y: number } | null> {
+  try {
+    const doc = await PDFDocument.load(bytes, { updateMetadata: false })
+    const entry = doc.catalog.lookup(PDFName.of(SIGN_SLOT_KEY))
+    if (!(entry instanceof PDFArray) || entry.size() < 3) return null
+    const n = [0, 1, 2].map((i) => { const v = entry.lookup(i); return v instanceof PDFNumber ? v.asNumber() : NaN })
+    if (n.some((v) => !Number.isFinite(v))) return null
+    const page = doc.getPages()[n[0]]
+    if (!page) return null
+    const { width, height } = page.getSize()
+    const clamp = (v: number) => Math.min(Math.max(v, 0), 1)
+    return { page: n[0] + 1, x: clamp(n[1] / width), y: clamp((height - n[2]) / height) }
+  } catch { return null }
 }
 
 /** `IDR 1,234,567` -> `1,234,567` (the currency is printed once in the document header). */

@@ -7,7 +7,7 @@ import { buildArt, buildMetrics, readArt, SOURCES } from '../../scripts/embed-tr
 import { ICON_ART, WORDMARK_ART } from '@/content/stamp-art'
 import { CORPORATE_NAME, ICON_ASPECT, lockup, monoWidth, RED, textWidth, WORDMARK_ASPECT, type MarkItem } from '@/content/trust-mark'
 import { qrMatrix, QUIET_MODULES } from '@/content/trust-qr'
-import { layoutFooter, layoutSignature, SIGNATURE_HEIGHT, SIGNATURE_RATIO, SIGNATURE_WIDTH, urlLines, wrapMono, type FooterOptions, type SignatureOptions } from '@/content/verification-blocks'
+import { layoutFooter, layoutSignature, LINK_ROW, SIGNATURE_HEIGHT, SIGNATURE_RATIO, SIGNATURE_WIDTH, urlLines, wrapMono, type FooterOptions, type SignatureOptions } from '@/content/verification-blocks'
 import { embedMarkFonts, PageView, paintMark, upright } from '@/server/pdf/trust-mark'
 import { rasterize } from '../helpers/pdf-text'
 
@@ -55,19 +55,21 @@ describe('the approved artwork', () => {
 })
 
 describe('Signature Type 1 and Signature Type 2: one size contract', () => {
-  it('are a fixed landscape box, twice as wide as it is tall, and exactly the same box for both types', () => {
+  it('are one box: Type 2 is the landscape 2 : 1 box, Type 1 the same box without the link row (same width, radius, border, QR, rows), and neither has a fill', () => {
     expect(SIGNATURE_WIDTH / SIGNATURE_HEIGHT).toBeCloseTo(SIGNATURE_RATIO, 9)
     for (const scale of [0.8, 1, 1.25]) {
       const a = layoutSignature(sig({ type: 1, scale })), b = layoutSignature(sig({ type: 2, scale }))
-      expect(a.width).toBe(b.width); expect(a.height).toBe(b.height)
-      expect(a.width / a.height).toBeCloseTo(2, 9)
+      expect(a.width).toBe(b.width)
+      expect(b.width / b.height).toBeCloseTo(2, 9)
+      expect(b.height - a.height).toBeCloseTo(LINK_ROW * scale, 9)                                                           // Type 1 is that box without the link row: no empty space where the link would be
       const fa = frame(a), fb = frame(b)
-      expect(fa.w).toBe(fb.w); expect(fa.h).toBe(fb.h); expect(fa.r).toBe(fb.r); expect(fa.width).toBe(fb.width)             // the same radius and border
+      expect(fa.w).toBe(fb.w); expect(fa.r).toBe(fb.r); expect(fa.width).toBe(fb.width)                                      // the same radius and border
+      expect(fa.fill).toBeUndefined(); expect(fb.fill).toBeUndefined()                                                       // transparent: the watermark behind the page shows through
       expect(a.qrSize).toBe(b.qrSize)                                                                                        // and the same QR
     }
-    expect(SIGNATURE_WIDTH).toBeCloseTo(120 * 72 / 25.4, 6)
+    expect(SIGNATURE_WIDTH).toBeCloseTo(95 * 72 / 25.4, 6)
   })
-  it('keeps everything inside the box, and the QR (with its quiet zone) at about 27 mm', () => {
+  it('keeps everything inside the box, and the QR (with its quiet zone) at about 32 mm', () => {
     for (const type of [1, 2] as const) for (const scale of [0.8, 1]) {
       const l = layoutSignature(sig({ type, scale }))
       for (const i of l.items) {
@@ -76,7 +78,7 @@ describe('Signature Type 1 and Signature Type 2: one size contract', () => {
         expect(box.x, `${type} ${i.t}`).toBeGreaterThanOrEqual(-0.01); expect(box.y).toBeGreaterThanOrEqual(-0.01)
         expect(box.x + box.w, `${type} ${i.t} right`).toBeLessThanOrEqual(l.width + 0.01); expect(box.y + box.h, `${type} ${i.t} bottom`).toBeLessThanOrEqual(l.height + 0.01)
       }
-      expect(l.qrSize / 72 * 25.4).toBeGreaterThan(scale === 1 ? 33 : 26)
+      expect(l.qrSize / 72 * 25.4).toBeGreaterThan(scale === 1 ? 32 : 25)
     }
   })
   it('gives the QR section and the metadata section exactly the same height, and centres both in it', () => {
@@ -91,6 +93,7 @@ describe('Signature Type 1 and Signature Type 2: one size contract', () => {
       expect((rows[0].y + rows[3].y + rows[3].size) / 2, `rows centre @${type}`).toBeCloseTo(mid, 0)
       const pitch = rows[1].y - rows[0].y
       for (let i = 1; i < 4; i++) expect(rows[i].y - rows[i - 1].y).toBeCloseTo(pitch, 6)                                     // one grid
+      expect(pitch, `compact rows @${type}`).toBeLessThanOrEqual(18)                                                       // close together, a block rather than four lines spread over the box
     }
   })
   it('Type 1 shows the QR and four rows only: no logo, no stamp, no address, no verification wording, no disclaimer', () => {
@@ -99,7 +102,7 @@ describe('Signature Type 1 and Signature Type 2: one size contract', () => {
     expect(l.items.some((i) => ['logo', 'icon', 'wordmark', 'hotspot'].includes(i.t))).toBe(false)
     const all = texts(l.items).map((t) => t.text).join('\n')
     for (const bad of ['http', 'voraworld', 'Periksa keaslian', 'verify', 'bukan tanda tangan', 'not a personal', 'electronic signature']) expect(all, bad).not.toContain(bad)
-    expect(texts(l.items).filter((t) => t.font === 'mono').map((t) => t.text)).toEqual(['AGR-VORA-C0123456789-202610-00001', '31 Okt 2026 11:42 WIB', 'Siti Rahma', 'Direktur'])
+    expect(texts(l.items).filter((t) => t.font === 'mono').map((t) => t.text).join('')).toBe('AGR-VORA-C0123456789-202610-00001' + '31 Okt 2026 11:42 WIB' + 'Siti Rahma' + 'Direktur')   // a long number is wrapped onto a second line, never shortened
     expect(texts(l.items).map((t) => t.text).filter((t) => /^[A-Z][a-z]/.test(t))).toEqual(expect.arrayContaining(['Nomor dokumen', 'Didaftarkan', 'Nama', 'Jabatan']))
     expect(new Set(texts(l.items).filter((t) => t.font === 'mono').map((t) => t.size)).size).toBe(1)                            // one value size: a grid
   })
@@ -130,7 +133,7 @@ describe('Signature Type 1 and Signature Type 2: one size contract', () => {
   })
   it('shows no time that has not happened in a preview, and labels it', () => {
     const l = layoutSignature(sig({ type: 1, preview: true, registeredAt: '31 Okt 2026 11:42 WIB' }))
-    expect(texts(l.items).map((t) => t.text).join('\n')).not.toContain('11:42'); expect(texts(l.items).map((t) => t.text)).toContain('Ditetapkan saat selesai')
+    expect(texts(l.items).map((t) => t.text).join('\n')).not.toContain('11:42'); expect(texts(l.items).map((t) => t.text).join(' ')).toContain('Ditetapkan saat selesai')
     expect(l.badge?.text).toBe('PRATINJAU')
     expect(layoutSignature(sig({ type: 1, preview: true })).width).toBe(l.width)
   })
@@ -240,9 +243,9 @@ describe('the drawn components in a PDF', () => {
     const red = [...counts.entries()].filter(([k]) => { const [R, G, B] = k.split(',').map(Number); return Math.abs(R - 180) < 8 && Math.abs(G - 62) < 8 && Math.abs(B - 49) < 8 })
     expect(red.reduce((n, [, c]) => n + c, 0)).toBeGreaterThan(300)                                                            // the link, its underline and the icons
   })
-  it('uses the same box in the PDF for Type 1 and Type 2', async () => {
+  it('uses the same box in the PDF for Type 1 and Type 2, except for Type 2\'s link row', async () => {
     const a = (await pdf('sig1')).layout, b = (await pdf('sig2')).layout
-    expect([a.width, a.height]).toEqual([b.width, b.height])
+    expect(a.width).toBe(b.width); expect(b.height - a.height).toBeCloseTo(LINK_ROW, 9)
   })
 })
 void upright

@@ -10,6 +10,7 @@ import type { SessionUser } from '../auth/guard'
 import { removeObject } from '../storage'
 import { getVerification, type DocumentKind } from '../verification'
 import { sealPdf } from '../pdf/seal'
+import { readSignSlot } from '../pdf/kit'
 import { artifactsOf, prepareSignedArtifact, readArtifact } from './artifacts'
 import { canonicalize } from './canonical'
 import { challengeOf, checkedConfirmations, checkedPlacement, consentStatement, consentStatementSha256, CONSENT_VERSION, signingPayload, type Placement } from './signing-payload'
@@ -160,7 +161,8 @@ export async function ceremonyView(user: SessionUser, requestId: number) {
   const doc = await docFacts(request.kind, request.documentId)
   const latest = (await artifactsOf(request.kind, request.documentId)).at(-1)!
   const policy = trustPolicy(request.kind, doc.documentKind)
-  return { request, profile, doc, artifact: { id: latest.id, version: latest.version, sha256: latest.sha256 }, changed: latest.id !== request.sourceArtifactId || latest.sha256 !== request.sourceSha256, family: policy.family, passkeys: (await credentialsOf(profile.id)).length, consent: consentStatement(), signatureType: policy.signature, purposeLabel: PURPOSE_LABELS[doc.language][request.purpose as SigningPurpose], verifyToken: (await getVerification(request.kind, request.documentId))?.token }
+  const slot = await readSignSlot(await readArtifact(latest)).catch(() => null)
+  return { request, profile, doc, slot, artifact: { id: latest.id, version: latest.version, sha256: latest.sha256 }, changed: latest.id !== request.sourceArtifactId || latest.sha256 !== request.sourceSha256, family: policy.family, passkeys: (await credentialsOf(profile.id)).length, consent: consentStatement(), signatureType: policy.signature, purposeLabel: PURPOSE_LABELS[doc.language][request.purpose as SigningPurpose], verifyToken: (await getVerification(request.kind, request.documentId))?.token }
 }
 
 export async function beginSigning(user: SessionUser, requestId: number, body: { placement: unknown; confirmations: unknown }) {

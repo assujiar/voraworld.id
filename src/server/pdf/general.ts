@@ -148,12 +148,13 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
    * document, not a signature (see the verification block at the end).
    */
   const signature = (name: string, position: string) => {
-    f.keep(LEADING * 4 + SIGN_SPACE + 14)
+    f.keep(LEADING * 4 + SIGNATURE_HEIGHT + 14)
     f.text(LEFT, f.y, t('regards'), BODY, INK); f.y -= LEADING
-    f.text(LEFT, f.y, issuer.legalName, BODY, INK, true); f.y -= 10
+    f.text(LEFT, f.y, issuer.legalName, BODY, INK, true); f.y -= 8
     const top = f.y
-    f.put(() => s.rule(top - SIGN_SPACE + 6, LEFT, LEFT + 170, '#AEB6BA', 0.5))
-    f.y -= SIGN_SPACE + 14
+    // Room for the signing mark exactly the size of the mark, between the company and the printed name: the signing ceremony starts it here.
+    f.put(() => { s.markSignSlot(LEFT, top); s.rule(top - SIGNATURE_HEIGHT - 3, LEFT, LEFT + 170, '#AEB6BA', 0.5) })
+    f.y -= SIGNATURE_HEIGHT + 14
     if (name) { f.text(LEFT, f.y, name, BODY, INK, true); f.y -= LEADING }
     if (position) { f.text(LEFT, f.y, position, BODY, SLATE); f.y -= LEADING }
   }

@@ -21,7 +21,7 @@ export default async function SigningPage({ params, searchParams }: { params: Pr
   return (
     <AdminPage heading={`Sign ${view.doc.number}`} sp={await searchParams}>
       <SigningCeremony requestId={view.request.id} fileUrl={`/admin/signing/${view.request.id}/file`} verifyUrl={verifyUrl} lang={view.doc.language} signer={{ name: view.profile.displayName, position: view.profile.position }}
-        reference={view.request.ref} purposeLabel={view.purposeLabel} signatureType={view.signatureType} sha256={view.artifact.sha256} version={view.artifact.version} number={view.doc.number} passkeys={view.passkeys} changed={view.changed} />
+        reference={view.request.ref} purposeLabel={view.purposeLabel} signatureType={view.signatureType} sha256={view.artifact.sha256} version={view.artifact.version} number={view.doc.number} passkeys={view.passkeys} changed={view.changed} slot={view.slot} />
     </AdminPage>
   )
 }

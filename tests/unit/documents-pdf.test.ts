@@ -4,6 +4,7 @@ import { documentType } from '@/content/document-types'
 import { renderCertificate } from '@/server/pdf/certificate'
 import { renderDeliveryNote, renderPod } from '@/server/pdf/delivery'
 import { renderGeneral } from '@/server/pdf/general'
+import { readSignSlot } from '@/server/pdf/kit'
 import { sealPdf } from '@/server/pdf/seal'
 import { SIGNATURE_HEIGHT, SIGNATURE_WIDTH } from '@/content/verification-blocks'
 import { trustPolicy } from '@/content/trust-policy'
@@ -83,6 +84,20 @@ describe('every document carries the verification mark, a clickable link and the
     const t = squash((await pdfPages(pdf)).join(' '))
     expect(t).toContain('VORA | VERIFIKASI DOKUMEN'); expect(t).not.toMatch(/bukan tanda tangan/i); expect(t).toContain('Siti Rahma')
     expect((await pdfLinks(pdf))[0].filter((u) => u === URL_).length).toBe(2)                // the address row and the QR code of the footer: nothing else on the page
+  })
+  it('letter: the room for the signature is the size of the mark, between the company and the printed name, and the file says where it is', async () => {
+    const pdf = await renderGeneral(letter, issuer, URL_)
+    const slot = await readSignSlot(pdf)
+    expect(slot).not.toBeNull()
+    const doc = await PDFDocument.load(pdf)
+    const { width, height } = doc.getPages()[slot!.page - 1].getSize()
+    const mark = { w: SIGNATURE_WIDTH / width, h: SIGNATURE_HEIGHT / height }
+    expect(slot!.x).toBeGreaterThan(0.05); expect(slot!.x + mark.w).toBeLessThan(0.95)
+    expect(slot!.y).toBeGreaterThan(0.25); expect(slot!.y + mark.h).toBeLessThan(0.97)               // the whole mark fits on the page there
+    const signed = (await sealPdf(pdf, { type: 1, verificationUrl: URL_, lang: 'id', number: letter.number, pages: 'one', pageNumber: String(slot!.page), corner: 'custom', posX: slot!.x.toFixed(4), posY: slot!.y.toFixed(4), size: 'medium', issuedAt: '31 Okt 2026 11:42 WIB', signer: { name: 'Siti Rahma', position: 'Direktur' } })).bytes
+    const t = squash((await pdfPages(signed)).join(' '))
+    expect(t).toContain('Nomor dokumen'); expect(t).toContain('Siti Rahma')
+    expect(await readSignSlot(new Uint8Array(await (await PDFDocument.create()).save()))).toBeNull()      // a file without one has none
   })
   it('letters of every general type render with the mark', async () => {
     const values: Record<string, string> = { place: 'Jakarta', subject: 'Uji', recipient_name: 'PT Mitra', body: 'Isi surat.', closing: 'Hormat kami,', signatory_name: 'Siti Rahma', signatory_title: 'Direktur', declarant_name: 'Budi', declarant_id_number: '1', declarant_position: 'Staf', declarant_address: 'Jl. X', location: 'Jakarta', period: '1 tahun',
