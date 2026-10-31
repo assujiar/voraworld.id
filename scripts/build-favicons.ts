@@ -1,5 +1,5 @@
 /**
- * Makes the site's icons from the approved reverse A icon (public/static/assets/vora-a-icon-reverse.svg, its path data used as it is): a round Midnight Navy badge with the icon on it.
+ * Makes the site's icons from the approved reverse A icon (public/static/assets/vora-a-icon-reverse.svg): a round Midnight Navy badge with the icon on it. The outline is the approved one; the legs are heavier and the wedge larger so it stays clear when small (see SMALL).
  *   public/favicon.svg             the badge as a vector (browsers that take SVG: Chrome, Edge, Firefox)
  *   public/favicon.ico             16, 32 and 48 px (PNG inside), for every browser that asks for /favicon.ico, Safari and the older ones above all
  *   public/icon-192.png, icon-512.png   the badge for Android and for installed sites
@@ -16,11 +16,17 @@ const NAVY = '#101720'
 const svgText = readFileSync(resolve(ROOT, 'public/static/assets/vora-a-icon-reverse.svg'), 'utf8')
 const paths = [...svgText.matchAll(/<path d="([^"]+)" fill="([^"]+)"\/>/g)].map((m) => ({ d: m[1], fill: m[2] }))
 if (paths.length !== 2) throw new Error('The reverse icon is expected to hold two paths (the white A and the red wedge)')
+// Small sizes get an optical adaptation of the same shape: the same outline and apex, with heavier legs and a larger wedge, because the wide A is otherwise thin and unclear at 16 to 60 px.
+// The A keeps its outer outline (feet, apex, curve); only the inner opening is narrower. The wedge is rescaled to sit in the narrower opening.
+const SMALL = [
+  { d: 'M 0 520 L 442 42 Q 500 -27 558 42 L 1000 520 L 760 520 L 500 250 L 240 520 Z', fill: paths[0].fill },
+  { d: 'M 285 516 L 500 296 L 715 516 Q 500 410 285 516 Z', fill: paths[1].fill },
+]
 // The artwork occupies x 0..1000 and y -27..520; its centre is (500, 246.5).
 const CX = 500, CY = 246.5, ART_W = 1000
 
 /** The icon on a 512 x 512 canvas: `width` is its width in canvas units. */
-const icon = (width: number) => `<g transform="translate(256 256) scale(${width / ART_W}) translate(${-CX} ${-CY})">${paths.map((p) => `<path d="${p.d}" fill="${p.fill}"/>`).join('')}</g>`
+const icon = (width: number) => `<g transform="translate(256 256) scale(${width / ART_W}) translate(${-CX} ${-CY})">${SMALL.map((p) => `<path d="${p.d}" fill="${p.fill}"/>`).join('')}</g>`
 /** A faint light edge, so that a navy badge does not melt into a dark browser tab. */
 const ring = '<circle cx="256" cy="256" r="251" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="10"/>'
 const badge = (iconWidth: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256" fill="${NAVY}"/>${ring}${icon(iconWidth)}</svg>`
@@ -45,17 +51,17 @@ function ico(images: Array<{ size: number; data: Buffer }>): Buffer {
 async function main() {
   const out = (name: string, data: Buffer | string) => { writeFileSync(resolve(ROOT, 'public', name), data); console.log(name, Buffer.byteLength(data)) }
   mkdirSync(resolve(ROOT, 'public'), { recursive: true })
-  // The vector badge: the icon at 62% of the width.
-  out('favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>VORA</title><circle cx="256" cy="256" r="256" fill="${NAVY}"/>${ring}${icon(318)}</svg>\n`)
-  // Larger icon at the small sizes: 16 px 74%, 32 px 70%, 48 px 66%.
-  const small: Array<[number, number]> = [[16, 380], [32, 358], [48, 338]]
+  // The vector badge: the icon at 86% of the width (it is a wide shape, so a round badge needs it large to stay clear).
+  out('favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>VORA</title><circle cx="256" cy="256" r="256" fill="${NAVY}"/>${ring}${icon(440)}</svg>\n`)
+  // The icon fills the badge as far as the circle allows: 88% at 16 px, 87% at 32 px, 86% at 48 px.
+  const small: Array<[number, number]> = [[16, 450], [32, 446], [48, 442]]
   const icoImages = await Promise.all(small.map(async ([size, w]) => ({ size, data: await png(badge(w), size) })))
   out('favicon.ico', ico(icoImages))
   out('favicon-32.png', icoImages[1].data)
-  out('icon-192.png', await png(badge(330), 192))
-  out('icon-512.png', await png(badge(318), 512))
-  out('icon-maskable-512.png', await png(square(230), 512))
-  out('apple-touch-icon.png', await sharp(Buffer.from(square(268)), { density: 288 }).resize(180, 180).flatten({ background: NAVY }).png({ compressionLevel: 9, effort: 10 }).toBuffer())
+  out('icon-192.png', await png(badge(444), 192))
+  out('icon-512.png', await png(badge(440), 512))
+  out('icon-maskable-512.png', await png(square(300), 512))
+  out('apple-touch-icon.png', await sharp(Buffer.from(square(340)), { density: 288 }).resize(180, 180).flatten({ background: NAVY }).png({ compressionLevel: 9, effort: 10 }).toBuffer())
   out('site.webmanifest', JSON.stringify({
     name: 'VORA', short_name: 'VORA', description: 'Bringing the World Within Reach.', start_url: '/', display: 'browser', background_color: NAVY, theme_color: NAVY,
     icons: [

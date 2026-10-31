@@ -8,10 +8,11 @@ const pub = (name: string) => `public/${name}`
 const NAVY = [0x10, 0x17, 0x20]
 
 describe('the favicon set', () => {
-  it('has a vector badge made of the approved reverse icon on a navy circle', () => {
+  it('has a vector badge made of the reverse icon (its outline kept, legs heavier for small sizes) on a navy circle', () => {
     const svg = readFileSync(pub('favicon.svg'), 'utf8'), reverse = readFileSync('public/static/assets/vora-a-icon-reverse.svg', 'utf8')
     expect(svg).toContain('<circle cx="256" cy="256" r="256" fill="#101720"/>')
-    for (const m of reverse.matchAll(/<path d="([^"]+)"/g)) expect(svg, 'the icon paths are used as they are').toContain(m[1])
+    const outline = /<path d="(M 0 520 L 442 42 Q 500 -27 558 42 L 1000 520)/.exec(reverse)?.[1]
+    expect(outline, 'the approved A starts with this outline').toBeTruthy(); expect(svg, 'the outer outline of the A is kept').toContain(outline!)
     expect(svg).toContain('fill="#FFFFFF"'); expect(svg).toContain('fill="#B43E31"')
     expect(statSync(pub('favicon.svg')).size).toBeLessThan(1500)
   })
@@ -66,8 +67,8 @@ describe('the favicon set', () => {
 
   it('is what the three layouts point at: .ico, SVG, the 192 px badge and the iOS square, with the manifest', () => {
     const urls = (ICONS.icon as Array<{ url: string }>).map((i) => i.url)
-    expect(urls).toEqual(expect.arrayContaining(['/favicon.ico', '/favicon.svg', '/icon-192.png']))
-    expect((ICONS.apple as Array<{ url: string }>)[0].url).toBe('/apple-touch-icon.png'); expect(MANIFEST).toBe('/site.webmanifest')
+    expect(urls).toEqual(expect.arrayContaining(['/favicon.ico?v=2', '/favicon.svg?v=2', '/icon-192.png?v=2']))
+    expect((ICONS.apple as Array<{ url: string }>)[0].url).toBe('/apple-touch-icon.png?v=2'); expect(MANIFEST).toBe('/site.webmanifest')
     for (const layout of ['src/app/(site)/[locale]/layout.tsx', 'src/app/(docs)/layout.tsx', 'src/app/(admin)/layout.tsx']) {
       const s = readFileSync(layout, 'utf8')
       expect(s, layout).toContain('icons: ICONS'); expect(s, layout).toContain('manifest: MANIFEST'); expect(s, layout).not.toContain('vora-a-icon-primary')
