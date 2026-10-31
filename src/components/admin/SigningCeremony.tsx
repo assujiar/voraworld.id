@@ -10,9 +10,9 @@ import type { Lang } from '@/content/trust-mark'
  * passkey. The button stays off until the placement is confirmed and every box is ticked; the passkey then signs a payload the SERVER built from what it holds (never from
  * this page), so the page can neither change what is signed nor sign for anybody else.
  */
-export function SigningCeremony({ requestId, fileUrl, verifyUrl, lang, signer, reference, purpose, purposeLabel, sha256, version, number, passkeys, changed }: {
-  requestId: number; fileUrl: string; verifyUrl: string; lang: Lang; signer: { name: string; position: string }; reference: string; purpose: string; purposeLabel: string
-  sha256: string; version: number; number: string; passkeys: number; changed: boolean
+export function SigningCeremony({ requestId, fileUrl, verifyUrl, lang, signer, reference, purposeLabel, sha256, version, number, passkeys, changed, signatureType }: {
+  requestId: number; fileUrl: string; verifyUrl: string; lang: Lang; signer: { name: string; position: string }; reference: string; purposeLabel: string
+  sha256: string; version: number; number: string; passkeys: number; changed: boolean; signatureType: 1 | 2
 }) {
   const [placement, setPlacement] = useState<ConfirmedPlacement | null>(null)
   const [ticks, setTicks] = useState<Record<Confirmation, boolean>>(() => Object.fromEntries(CONFIRMATIONS.map((c) => [c, false])) as Record<Confirmation, boolean>)
@@ -44,7 +44,7 @@ export function SigningCeremony({ requestId, fileUrl, verifyUrl, lang, signer, r
         <p className="mini">You sign as <strong>{signer.name}</strong>, {signer.position}. Purpose: <strong>{purposeLabel}</strong>. Reference {reference}.</p>
       </section>
       <section className="admin-panel">
-        <SealPlacer initial={{}} verifyUrl={verifyUrl} lang={lang} sourceUrl={fileUrl} signer={signer} reference={reference} fixedPurpose={purpose} onPlacement={setPlacement} />
+        <SealPlacer initial={{}} verifyUrl={verifyUrl} lang={lang} sourceUrl={fileUrl} signer={signer} documentNumber={number} signatureType={signatureType} onPlacement={setPlacement} />
       </section>
       <section className="admin-panel">
         <h4>2. Your confirmations</h4>

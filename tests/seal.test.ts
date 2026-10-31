@@ -15,7 +15,7 @@ const files = vi.hoisted(() => new Map<string, Uint8Array>())
 vi.mock('@/server/storage', async (original) => (await import('./helpers/memory-storage')).memoryStorage(await original(), files))
 const BASE = 'https://testserver'
 /** The room the mark takes, from the same function the editor and the PDF use (the address only has to be about as long as a real one). */
-const dimsOf = (size: string, lang: 'id' | 'en' = 'id') => sealDims({ lang, url: `${BASE}/verify/${'x'.repeat(48)}`, purpose: 'verified', size, reference: 'SEL-VORA-V0000000000-202610-00000' })
+const dimsOf = (size: string, lang: 'id' | 'en' = 'id') => sealDims({ type: 2, lang, url: `${BASE}/verify/${'x'.repeat(48)}`, size, number: 'SEL-VORA-V0000000000-202610-00000' })
 let actor: number
 
 /** A PDF somebody else could have issued: some pages of text, optionally rotated. */
@@ -79,17 +79,19 @@ describe('QR seal on a PDF issued by somebody else', () => {
       expect(out).toHaveLength(3)
       out.forEach((t, i) => {
         expect(squash(t)).toContain(`Original certificate page ${i + 1}`)
-        expect(squash(t).includes('PT SATU ARAH INTERNATIONAL'), `page ${i + 1} with pages=${pages}`).toBe(sealedOn.includes(i + 1))
+        expect(squash(t).includes('Nomor dokumen'), `page ${i + 1} with pages=${pages}`).toBe(sealedOn.includes(i + 1))
       })
       expect((await fields(id)).seal!.pagesSealed).toBe(sealedOn.length)
     }
   })
 
-  it('says that VORA registered it, what that means, the document number and when, in the language chosen, and names no person who has not signed', async () => {
+  it('shows Signature Type 2: the document number, when it was registered, the issuer, and the complete verification address, in the language chosen, and names no person who has not signed', async () => {
     const id = await seal(await thirdParty(), { purpose: 'approved' }, 'en')
     await setDocumentStatus(actor, id, 'issue', BASE)
     const t = squash((await pdfPages(await renderDocumentPdf('document', id, BASE))).join(' '))
-    for (const w of ['Approved by', 'PT Satu Arah International', 'PT SATU ARAH INTERNATIONAL', 'Registered:', 'WIB', 'voraworld.id/verify']) expect(t).toContain(w)
+    for (const w of ['Document no.', 'Registered', 'Name', 'Position', 'PT Satu Arah International', 'Document issuer', 'WIB']) expect(t).toContain(w)
+    const [token] = (await sql`select token from document_verification_tokens where kind = 'document' and document_id = ${id}`).map((r) => r.token as string)
+    expect(t.replace(/\s/g, '')).toContain(`${BASE}/verify/${token}`.replace(/\s/g, ''))               // the whole address, in the box
     expect(t).not.toContain('Siti Rahma'); expect(t).not.toContain('Direktur')         // the intended signatory is a note: nobody has signed, so nobody is named
     const [{ number }] = await sql`select number from documents where id = ${id}`
     expect(t).toContain(number as string)
@@ -147,7 +149,7 @@ describe('QR seal on a PDF issued by somebody else', () => {
     const id = await seal(original, { corner: 'custom', pos_x: '1', pos_y: '1', pages: 'one', page_number: '2' })
     await setDocumentStatus(actor, id, 'issue', BASE)
     const out = await pdfPages(await renderDocumentPdf('document', id, BASE))
-    expect(out.map((t) => squash(t).includes('PT SATU ARAH INTERNATIONAL'))).toEqual([false, true, false])
+    expect(out.map((t) => squash(t).includes('Nomor dokumen'))).toEqual([false, true, false])
     const r = rasterize(await renderDocumentPdf('document', id, BASE), 2)
     if (r) {                                                                                            // dropped past the corner: pulled back inside the page
       let outside = 0

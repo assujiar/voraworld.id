@@ -1,5 +1,5 @@
 import { amountInWords, money } from '../money'
-import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
+import { BAND_H, H, INK, PALE, RED, SLATE, TAGLINE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { Issuer, ReceiptData } from './types'
 
 /**
@@ -107,14 +107,11 @@ export async function renderReceipt(r: ReceiptData, issuer: Issuer, verification
   if (r.stampRequired && r.status === 'pending_stamp') y = detail(y, 'DOCUMENT RELEASE CONTROL', 'Manual official e-meterai application pending; document not released.')
   if (y < 117) throw new PdfLayoutError('Receipt contents exceed the reserved A4 layout')
 
-  s.footer(99, L, R)
-  const mark = s.verificationMark({ url: verificationUrl, lang: 'en', right: R, bottom: 10 })
-  const column = mark.left - 12 - L
-  s.text(L, 86, 'VORA | DOCUMENT AUTHENTICITY VERIFICATION', 7.8, INK, true)
-  s.text(L, 75, 'Scan the QR, or click this link, to check this receipt and its current status:', 6.4, SLATE)
-  s.linkLines(L, 66, verificationUrl, column, 5.9, INK)
-  s.text(L, 49, 'Issued after VORA Finance confirmed cleared funds.', 6.9, SLATE)
-  s.text(L, 36, issuer.email, 7.2, INK)
-  s.text(L, 22, 'RECEIPT | PAGE 01 OF 01', 7.0, SLATE)
+  s.pageEdge()
+  s.verificationFooter({
+    left: L, right: R, top: 96, bottom: 9, url: verificationUrl, number: r.number, issuedOn: r.issuedOn, issuer: { address: issuer.address, taxId: issuer.taxId, email: issuer.email }, tagline: TAGLINE,
+    heading: 'VORA | DOCUMENT AUTHENTICITY VERIFICATION', instruction: 'Scan the QR, or click this link, to check this receipt and its current status:',
+    notes: ['Issued after VORA Finance confirmed cleared funds.'], pageLine: 'RECEIPT | PAGE 01 OF 01',
+  })
   return s.save()
 }

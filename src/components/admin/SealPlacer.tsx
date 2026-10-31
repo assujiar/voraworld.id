@@ -6,7 +6,8 @@ import { useTypedValue } from '@/components/admin/ActionForm'
 import { TrustMark } from '@/components/trust/TrustMark'
 import { clampZoom, cssRect, describePlacement, dragTo, loupePosition, nudge, scaleOf, tapTo, type PageBox } from '@/content/placer-geometry'
 import { sealDims, sealMarkOptions } from '@/content/seal-layout'
-import { layoutMark, type Lang } from '@/content/trust-mark'
+import type { Lang } from '@/content/trust-mark'
+import { layoutSignature, type SignatureType } from '@/content/verification-blocks'
 
 /**
  * Where the VORA mark goes on somebody else's PDF. The pages are drawn in this browser by PDF.js (the file is not sent anywhere for this); the mark shown on them is
@@ -35,12 +36,16 @@ async function pdfjs() {
 /** The placement a person confirmed, as it is stored and signed: the same fractions the PDF uses. */
 export interface ConfirmedPlacement { pages: Mode; page_number: number | null; corner: string; size: 'small' | 'medium'; pos_x: string | null; pos_y: string | null }
 
-export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUrl, signer, reference, fixedPurpose, onPlacement }: {
+export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUrl, signer, documentNumber, signatureType = 2, onPlacement }: {
   recordId?: number; initial: Record<string, string>; verifyUrl: string; lang?: Lang
   /** Where to fetch the PDF to show (the signing ceremony shows the exact file being signed). */
   sourceUrl?: string
-  /** A personal signing: the preview shows the signer's name and position and the signing reference, not VORA's corporate mark. */
-  signer?: { name: string; position: string }; reference?: string; fixedPurpose?: string
+  /** A personal signing: the preview shows the signer's name and position; otherwise VORA's registration of the file (the company as the issuer). */
+  signer?: { name: string; position: string }
+  /** The document's number when it has one (a draft that is not saved yet shows a placeholder). */
+  documentNumber?: string
+  /** Which signature component the policy gives this document: 1 for a regular VORA document, 2 for a third-party document or an agreement. */
+  signatureType?: SignatureType
   /** Called with the placement when it is confirmed, and with null when it is changed again. */
   onPlacement?: (p: ConfirmedPlacement | null) => void
 }) {
@@ -51,7 +56,6 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUr
   const [size, setSize] = useState(typed('size', 'medium'))
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: Number(typed('pos_x', '0.6')) || 0.6, y: Number(typed('pos_y', '0.85')) || 0.85 })
   const [confirmed, setConfirmed] = useState(initial.placement_confirmed === 'yes')
-  const [purpose, setPurpose] = useState(fixedPurpose || initial.purpose || 'verified')
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null)
   const [pages, setPages] = useState(0)
   const [view, setView] = useState(1)
@@ -69,9 +73,9 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUr
   const tap = useRef<{ x: number; y: number; t: number; id: number } | null>(null)
   const loadId = useRef(0)
 
-  const markInput = useMemo(() => ({ lang, url: verifyUrl, purpose, size, reference: reference ?? '-', preview: true, signer }), [lang, verifyUrl, purpose, size, reference, signer])
+  const markInput = useMemo(() => ({ type: signatureType, lang, url: verifyUrl, size, number: documentNumber ?? (lang === 'id' ? '(nomor ditetapkan saat diterbitkan)' : '(number assigned on issue)'), preview: true, signer }), [signatureType, lang, verifyUrl, size, documentNumber, signer])
   const dims = useMemo(() => sealDims(markInput), [markInput])
-  const layout = useMemo(() => layoutMark(sealMarkOptions(markInput)), [markInput])
+  const layout = useMemo(() => layoutSignature(sealMarkOptions(markInput)), [markInput])
 
   const load = useCallback(async (data: ArrayBuffer) => {
     const id = ++loadId.current
@@ -89,15 +93,12 @@ export function SealPlacer({ recordId, initial, verifyUrl, lang = 'id', sourceUr
   useEffect(() => {
     const form = root.current?.closest('form')
     const input = form?.querySelector<HTMLInputElement>('input[name=source_pdf]')
-    const select = form?.querySelector<HTMLSelectElement>('select[name=purpose]')
     const onChange = async () => { const f = input?.files?.[0]; if (f) await load(await f.arrayBuffer()); else if (!recordId) { setDoc(null); setState('empty') } }
-    const onPurpose = () => select && setPurpose(select.value)
-    input?.addEventListener('change', onChange); select?.addEventListener('change', onPurpose)
-    if (select && !fixedPurpose) setPurpose(select.value)
+    input?.addEventListener('change', onChange)
     if (sourceUrl) fetch(sourceUrl).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('source')))).then(load).catch(() => setState('failed'))
     else if (recordId && !input?.files?.length) fetch(`/admin/documents/${recordId}/source`).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('source')))).then(load).catch(() => setState('failed'))
-    return () => { input?.removeEventListener('change', onChange); select?.removeEventListener('change', onPurpose) }
-  }, [recordId, load, sourceUrl, fixedPurpose])
+    return () => input?.removeEventListener('change', onChange)
+  }, [recordId, load, sourceUrl])
 
   // The page is drawn as wide as the column allows, and again when the window changes (a phone turned sideways, a resized window).
   useEffect(() => {

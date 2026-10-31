@@ -1,5 +1,5 @@
-import { layoutMark, type Lang, type MarkOptions } from './trust-mark'
-import { PURPOSE_LABELS, type SigningPurpose } from './trust-policy'
+import type { Lang } from './trust-mark'
+import { layoutSignature, type SignatureOptions, type SignatureType } from './verification-blocks'
 
 /**
  * THE placement geometry model, for the browser editor and for the PDF that is made. One function decides where a mark sits on a page, and both use it, so the
@@ -24,29 +24,27 @@ export function fraction(value: string | undefined): number | null {
 }
 
 export interface SealMarkInput {
-  lang: Lang; url: string; purpose: string; size: string
-  /** The document number (a corporate mark) or the signing reference (a personal signing). */
-  reference: string
-  /** A personal signing: who signed, in what position. Absent for VORA's own corporate mark. */
+  type: SignatureType; lang: Lang; url: string; size: string
+  /** The document's number (what the first row shows). */
+  number: string
+  /** When it was registered or signed, already formatted; absent in a preview. */
+  registeredAt?: string
+  /** A personal signing: who signed, in what position. Absent for VORA's own corporate registration of a file. */
   signer?: { name: string; position: string }
-  signedAt?: string
   preview?: boolean
 }
 
-/** The mark options for a seal: VORA's corporate endorsement (no signer), or a personal signing stamp (a signer). The browser and the PDF build them here, from the same inputs. */
-export function sealMarkOptions(i: SealMarkInput): MarkOptions {
-  const purpose = (i.purpose in PURPOSE_LABELS[i.lang] ? i.purpose : 'verified') as SigningPurpose
-  return {
-    variant: 'signing', lang: i.lang, url: i.url, scale: SIZE_SCALE[i.size] ?? 1, preview: i.preview,
-    signing: i.signer
-      ? { purposeLabel: PURPOSE_LABELS[i.lang][purpose], name: i.signer.name, position: i.signer.position, eventRef: i.reference, signedAt: i.signedAt, personal: true }
-      : { purposeLabel: PURPOSE_LABELS[i.lang][purpose], name: 'PT Satu Arah International', position: '', eventRef: i.reference, signedAt: i.signedAt, personal: false },
-  }
+const ISSUER_NAME = 'PT Satu Arah International'
+const ISSUER_ROLE: Record<Lang, string> = { id: 'Penerbit dokumen', en: 'Document issuer' }
+
+/** The options of the signature component for a seal: a personal signing names the signer; VORA's own registration names the company as the issuer. The browser and the PDF build them here, from the same inputs. */
+export function sealMarkOptions(i: SealMarkInput): SignatureOptions {
+  return { type: i.type, lang: i.lang, url: i.url, number: i.number, registeredAt: i.registeredAt, name: i.signer?.name ?? ISSUER_NAME, position: i.signer?.position ?? ISSUER_ROLE[i.lang], scale: SIZE_SCALE[i.size] ?? 1, preview: i.preview }
 }
 
-/** How much room the mark takes on the page, in points. The same for a preview and for the finished mark. */
+/** How much room the component takes on the page, in points. The same for a preview and for the finished one, and the same for Type 1 and Type 2. */
 export function sealDims(i: SealMarkInput): { w: number; h: number } {
-  const l = layoutMark(sealMarkOptions(i))
+  const l = layoutSignature(sealMarkOptions(i))
   return { w: l.width, h: l.height }
 }
 

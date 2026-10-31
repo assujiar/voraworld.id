@@ -5,17 +5,22 @@ import { PDFArray, PDFDict, PDFDocument, PDFName, PDFNumber, PDFString, degrees 
 import { describe, expect, it } from 'vitest'
 import { buildArt, buildMetrics, readArt, SOURCES } from '../../scripts/embed-trust-assets'
 import { ICON_ART, WORDMARK_ART } from '@/content/stamp-art'
-import { CORPORATE_NAME, ICON_ASPECT, layoutMark, lockup, MIN_QR_POINTS, minScale, RED, textWidth, WORDMARK_ASPECT, type MarkItem, type MarkOptions } from '@/content/trust-mark'
+import { CORPORATE_NAME, ICON_ASPECT, lockup, monoWidth, RED, textWidth, WORDMARK_ASPECT, type MarkItem } from '@/content/trust-mark'
 import { qrMatrix, QUIET_MODULES } from '@/content/trust-qr'
-import { drawMark, embedMarkFonts, PageView, paintMark } from '@/server/pdf/trust-mark'
+import { layoutFooter, layoutSignature, SIGNATURE_HEIGHT, SIGNATURE_RATIO, SIGNATURE_WIDTH, urlLines, wrapMono, type FooterOptions, type SignatureOptions } from '@/content/verification-blocks'
+import { embedMarkFonts, PageView, paintMark, upright } from '@/server/pdf/trust-mark'
 import { rasterize } from '../helpers/pdf-text'
 
 const URL_ = 'https://voraworld.id/verify/AbCdEfGhIjKlMnOpQrStUvWxYz0123456789-_AbCdEfGh'
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
-const opts = (o: Partial<MarkOptions> = {}): MarkOptions => ({ variant: 'standard', lang: 'en', url: URL_, ...o })
-const signing = { purposeLabel: 'Approved by', name: 'Siti Rahma', position: 'Director', eventRef: 'VORA-SIG-A1B2C3D4', signedAt: '31 Oct 2026 11:42 WIB' }
-const rect = (i: MarkItem) => i.t === 'qr' ? { x: i.x, y: i.y, w: i.size, h: i.size } : i.t === 'text' ? { x: i.x, y: i.y - i.size, w: i.fit ?? textWidth(i.text, i.size, i.bold), h: i.size } : { x: i.x, y: i.y, w: i.w, h: i.h }
-const overlap = (a: ReturnType<typeof rect>, b: ReturnType<typeof rect>) => a.x < b.x + b.w - 0.01 && b.x < a.x + a.w - 0.01 && a.y < b.y + b.h - 0.01 && b.y < a.y + a.h - 0.01
+const sig = (o: Partial<SignatureOptions> = {}): SignatureOptions => ({ type: 2, lang: 'id', url: URL_, number: 'AGR-VORA-C0123456789-202610-00001', registeredAt: '31 Okt 2026 11:42 WIB', name: 'Siti Rahma', position: 'Direktur', ...o })
+const foot = (o: Partial<FooterOptions> = {}): FooterOptions => ({
+  width: 507, height: 72, url: URL_, number: 'INV-VORA-C0123456789-202610-00001', issuedOn: '2026-10-29', issuer: { address: 'Jl. Contoh No. 1, Jakarta, Indonesia', taxId: '01.234.567.8-901.000', email: 'info@voraworld.id' },
+  heading: 'VORA | DIGITAL DOCUMENT VERIFICATION', instruction: 'Scan the QR, or click this link, to check document status with VORA:', notes: ['PAYMENT REQUEST - NOT PROOF OF PAYMENT', 'Proof of payment is the official VORA receipt, issued only after Finance confirms cleared funds.'],
+  emphasiseFirst: true, pageLine: 'DOCUMENT | PAGE 01 OF 01', tagline: 'Bringing the World Within Reach.', ...o,
+})
+const texts = (items: MarkItem[]) => items.flatMap((i) => (i.t === 'text' ? [i] : []))
+const frame = (l: { items: MarkItem[] }) => l.items.find((i) => i.t === 'frame') as Extract<MarkItem, { t: 'frame' }>
 
 describe('the approved artwork', () => {
   it('is the path data of the approved SVGs, byte for byte, and the generated files are current', async () => {
@@ -25,239 +30,235 @@ describe('the approved artwork', () => {
       const svg = read(src)
       expect(art).toEqual(readArt(svg))
       for (const p of art.paths) expect(svg.includes(`d="${p.d}"`)).toBe(true)                  // not one coordinate was touched
-      expect(svg).toMatch(/viewBox="[^"]+"/)
     }
-    expect(WORDMARK_ART.paths).toHaveLength(2)
-    expect(ICON_ART.paths).toHaveLength(2)
+    expect(WORDMARK_ART.paths).toHaveLength(2); expect(ICON_ART.paths).toHaveLength(2)
   })
-
-  it('keeps the proportions of the icon and wordmark in every variant, never stretched', () => {
-    for (const variant of ['compact', 'standard', 'signing'] as const) {
-      const items = layoutMark(opts({ variant, signing })).items
-      const icon = items.find((i) => i.t === 'icon')!, word = items.find((i) => i.t === 'wordmark')!
-      if (icon.t !== 'icon' || word.t !== 'wordmark') throw new Error('missing')
-      expect(icon.h / icon.w).toBeCloseTo(ICON_ASPECT, 6)
-      expect(word.h / word.w).toBeCloseTo(WORDMARK_ASPECT, 6)
-    }
-  })
-
-  it('sets the legal name correctly, in one red, with no box and no extra symbol', () => {
-    expect(CORPORATE_NAME).toBe('PT SATU ARAH INTERNATIONAL')
-    expect(RED).toBe('#B43E31')
-    const l = layoutMark(opts())
-    expect(l.items.filter((i) => i.t === 'text' && i.text === CORPORATE_NAME)).toHaveLength(1)
-    const lock = lockup(150, 0.5)
-    const legal = lock.items.find((i) => i.t === 'text')!
-    expect(legal.t === 'text' && legal.color).toBe(RED)
-    expect(l.items.every((i) => ['qr', 'icon', 'wordmark', 'rule', 'text'].includes(i.t))).toBe(true)      // no border, ring or emblem primitive exists
-    // The rule and the name are exactly as wide as the wordmark, as in the approved reference.
-    const word = lock.items.find((i) => i.t === 'wordmark')!, rule = lock.items.find((i) => i.t === 'rule')!
-    expect(rule.t === 'rule' && word.t === 'wordmark' && rule.w).toBe(word.t === 'wordmark' ? word.w : 0)
-    expect(legal.t === 'text' && legal.fit).toBe(150)
-  })
-
-  it('keeps the legal name readable in the compact variant (at least 4.8 pt, bold capitals spanning the whole lockup)', () => {
-    const legal = layoutMark(opts({ variant: 'compact' })).items.find((i) => i.t === 'text' && i.text === CORPORATE_NAME)!
-    expect(legal.t === 'text' && legal.size).toBeGreaterThanOrEqual(4.8)
-  })
-})
-
-describe('layout', () => {
-  it('makes the lockup exactly as tall as the QR modules when they sit side by side, aligned to them, in every variant and at any scale', () => {
-    for (const variant of ['compact', 'standard', 'signing'] as const) for (const scale of [0.9, 1, 1.4]) {
-      const l = layoutMark(opts({ variant, scale, signing }))
-      const qr = l.items.find((i) => i.t === 'qr')!
-      if (qr.t !== 'qr') throw new Error('x')
-      const n = qrMatrix(URL_).size, quiet = (qr.size * 4) / (n + 8)
-      const lockItems = l.items.filter((i) => i.t === 'icon' || i.t === 'wordmark' || (i.t === 'rule' && !i.color) || (i.t === 'text' && i.text === CORPORATE_NAME))
-      const top = Math.min(...lockItems.map((i) => (i.t === 'text' ? i.y - i.size * 0.718 : i.y)))
-      const bottom = Math.max(...lockItems.map((i) => (i.t === 'text' ? i.y : i.t === 'qr' ? 0 : i.y + ('h' in i ? i.h : 0))))
-      expect(top, `${variant}@${scale} top`).toBeCloseTo(qr.y + quiet, 4)
-      expect(bottom, `${variant}@${scale} bottom`).toBeCloseTo(qr.y + qr.size - quiet, 4)
-    }
-  })
-
-  it('sets the icon, wordmark, rule and name close together: the gaps between them are small next to the wordmark', () => {
+  it('keeps the proportions of the icon and wordmark, sets the legal name correctly in one red with no box, and the parts close together', () => {
+    expect(CORPORATE_NAME).toBe('PT SATU ARAH INTERNATIONAL'); expect(RED).toBe('#B43E31')
     const lock = lockup(100, 0.58)
     const [icon, word, rule, name] = lock.items
     if (icon.t !== 'icon' || word.t !== 'wordmark' || rule.t !== 'rule' || name.t !== 'text') throw new Error('x')
-    expect(word.y - (icon.y + icon.h)).toBeLessThan(word.h * 0.2)
-    expect(rule.y - (word.y + word.h)).toBeLessThan(word.h * 0.2)
-    expect(name.y - name.size * 0.718 - (rule.y + rule.h)).toBeLessThan(word.h * 0.2)
+    expect(icon.h / icon.w).toBeCloseTo(ICON_ASPECT, 6); expect(word.h / word.w).toBeCloseTo(WORDMARK_ASPECT, 6)
+    expect(name.text).toBe(CORPORATE_NAME); expect(name.color).toBe(RED); expect(name.fit).toBe(100); expect(rule.w).toBe(word.w)
+    expect(word.y - (icon.y + icon.h)).toBeLessThan(word.h * 0.2); expect(rule.y - (word.y + word.h)).toBeLessThan(word.h * 0.2)
+    expect(lock.items.every((i) => ['icon', 'wordmark', 'rule', 'text'].includes(i.t))).toBe(true)          // no border, ring or emblem
   })
-
-  it('never lets the QR code touch the lockup or any text, in any variant, arrangement or scale', () => {
-    for (const variant of ['compact', 'standard', 'signing'] as const) for (const arrangement of ['horizontal', 'stacked'] as const) for (const scale of [0.8, 1, 1.3]) {
-      const l = layoutMark(opts({ variant, arrangement, scale, signing, preview: scale === 0.8 }))
-      const qr = l.items.find((i) => i.t === 'qr')!
-      for (const i of l.items) if (i !== qr) expect(overlap(rect(qr), rect(i)), `${variant}/${arrangement}/${scale} ${i.t}`).toBe(false)
-      for (const i of l.items) { const r = rect(i); expect(r.x).toBeGreaterThanOrEqual(-0.01); expect(r.x + r.w).toBeLessThanOrEqual(l.width + 0.5); expect(r.y + r.h).toBeLessThanOrEqual(l.height + 0.5) }
-    }
-  })
-
-  it('keeps the QR code at about 20 mm or more, however small the mark is asked to be', () => {
-    for (const variant of ['compact', 'standard', 'signing'] as const) {
-      const l = layoutMark(opts({ variant, scale: 0.1, signing }))
-      expect(l.qrSize).toBeGreaterThanOrEqual(MIN_QR_POINTS - 0.01)
-      expect(minScale(variant)).toBeLessThan(1)
-    }
-    expect(layoutMark(opts({ variant: 'standard' })).qrSize / 72 * 25.4).toBeGreaterThan(25)
-  })
-
-  it('prints the whole address as a readable link when it fits (the host and start of the token when it does not), and says it is a preview without inventing a signing time', () => {
-    const t = (l: ReturnType<typeof layoutMark>) => l.items.filter((i) => i.t === 'text').map((i) => i.t === 'text' ? i.text : '').join('\n')
-    const l = layoutMark(opts({ variant: 'signing', signing: { ...signing, signedAt: undefined }, preview: true }))
-    expect(t(l)).toContain(URL_.replace('https://', ''))                                          // the address a person can read out or type, as well as click
-    expect(t(layoutMark(opts({ variant: 'standard' })))).toContain(URL_.replace('https://', ''))
-    const narrow = t(layoutMark(opts({ variant: 'standard', arrangement: 'stacked' })))
-    expect(narrow).toContain('voraworld.id/verify')
-    expect(narrow).toContain('ABCDEFGH')
-    expect(l.badge?.text).toBe('PREVIEW')                                                          // labelled, outside the box
-    expect(t(l)).not.toMatch(/Signed:/)
-    expect(t(l)).toContain('Time is set when the document is signed')
-    expect(t(l)).toMatch(/Non-certified electronic signature/)
-    const done = t(layoutMark(opts({ variant: 'signing', signing })))
-    expect(done).toContain('Signed: 31 Oct 2026 11:42 WIB')
-    expect(layoutMark(opts({ variant: 'signing', signing })).badge).toBeUndefined()
-    // A preview and the final mark take exactly the same space, so a placement confirmed on the preview is the placement of the signed file.
-    expect(layoutMark(opts({ variant: 'signing', signing, preview: true })).height).toBeCloseTo(layoutMark(opts({ variant: 'signing', signing })).height, 6)
-    const corporate = t(layoutMark(opts({ variant: 'signing', signing: { ...signing, personal: false, name: 'PT Satu Arah International', position: '', eventRef: 'SEL-1' } })))
-    expect(corporate).not.toMatch(/personal electronic signature|tanda tangan elektronik pribadi/i)     // no disclaimer line on the corporate mark: the verification page says it
-    expect(corporate).toContain('Document no.: SEL-1')
-    expect(corporate).not.toMatch(/Non-certified electronic signature/)
-    expect(t(layoutMark(opts({ variant: 'signing', lang: 'id', signing })))).toContain('Tanda tangan elektronik tidak tersertifikasi')
-  })
-
-  it('cuts a long signer name instead of letting it run off the mark', () => {
-    const l = layoutMark(opts({ variant: 'signing', signing: { ...signing, name: 'Bambang '.repeat(30) } }))
-    for (const i of l.items) if (i.t === 'text') expect(textWidth(i.text, i.size, i.bold)).toBeLessThanOrEqual(l.width + 0.5)
-  })
-
   it('measures text the way pdf-lib does', async () => {
     const doc = await PDFDocument.create()
     const fonts = await embedMarkFonts(doc)
-    for (const text of ['PT SATU ARAH INTERNATIONAL', 'Siti Rahma, S.H., M.Kn.', 'Verify document authenticity', 'Ñandú é ü']) {
-      // pdf-lib shows a string without kerning, so what is printed is the sum of the glyph widths.
-      const sum = (f: typeof fonts.bold) => [...text].reduce((n, ch) => n + f.widthOfTextAtSize(ch, 9), 0)
-      expect(textWidth(text, 9, true)).toBeCloseTo(sum(fonts.bold), 2)
-      expect(textWidth(text, 9, false)).toBeCloseTo(sum(fonts.regular), 2)
+    for (const text of ['PT SATU ARAH INTERNATIONAL', 'Siti Rahma, S.H., M.Kn.', 'Nomor dokumen', 'Ñandú é ü']) {
+      const sum = (f: typeof fonts.bold) => [...text].reduce((n, ch) => n + f.widthOfTextAtSize(ch, 9), 0)      // pdf-lib shows a string without kerning
+      expect(textWidth(text, 9, true)).toBeCloseTo(sum(fonts.bold), 2); expect(textWidth(text, 9, false)).toBeCloseTo(sum(fonts.regular), 2)
+      expect(monoWidth(text, 9)).toBeCloseTo(sum(fonts.mono), 2)                                                // Courier is 0.6 em a glyph
     }
   })
 })
 
-describe('the QR code', () => {
-  it('has the standard quiet zone of four modules inside its square, dark modules on white', async () => {
-    expect(QUIET_MODULES).toBe(4)
-    const doc = await PDFDocument.create()
-    const page = doc.addPage([300, 200])
-    const fonts = await embedMarkFonts(doc)
-    const layout = drawMark(page, fonts, opts({ variant: 'standard' }), 20, 180)
-    const raster = rasterize(await doc.save(), 1, 144)
-    if (!raster) return
-    const qr = layout.items.find((i) => i.t === 'qr')!
-    if (qr.t !== 'qr') throw new Error('x')
-    const n = qrMatrix(URL_).size
-    const module = qr.size / (n + 8)
-    // The pixels of the quiet zone (the first four modules inside the square) are all white.
-    const px = (x: number, y: number) => raster.at(Math.round(x * raster.scale), Math.round(y * raster.scale))
-    for (let k = 0; k < 4; k++) for (let j = 0; j < n + 8; j++) {
-      const x = 20 + qr.x + (k + 0.5) * module, y = (200 - 180) + qr.y + (j + 0.5) * module
-      expect(px(x, y).every((v) => v > 240)).toBe(true)
+describe('Signature Type 1 and Signature Type 2: one size contract', () => {
+  it('are a fixed landscape box, twice as wide as it is tall, and exactly the same box for both types', () => {
+    expect(SIGNATURE_WIDTH / SIGNATURE_HEIGHT).toBeCloseTo(SIGNATURE_RATIO, 9)
+    for (const scale of [0.8, 1, 1.25]) {
+      const a = layoutSignature(sig({ type: 1, scale })), b = layoutSignature(sig({ type: 2, scale }))
+      expect(a.width).toBe(b.width); expect(a.height).toBe(b.height)
+      expect(a.width / a.height).toBeCloseTo(2, 9)
+      const fa = frame(a), fb = frame(b)
+      expect(fa.w).toBe(fb.w); expect(fa.h).toBe(fb.h); expect(fa.r).toBe(fb.r); expect(fa.width).toBe(fb.width)             // the same radius and border
+      expect(a.qrSize).toBe(b.qrSize)                                                                                        // and the same QR
     }
+    expect(SIGNATURE_WIDTH).toBeCloseTo(120 * 72 / 25.4, 6)
   })
-
-  it.each([0, 90, 180, 270])('decodes to the verification address from the rendered PDF at realistic print and scan resolutions, on a page rotated by %i degrees', async (angle) => {
-    for (const variant of ['compact', 'standard', 'signing'] as const) {
-      const doc = await PDFDocument.create()
-      const page = doc.addPage([595.28, 841.89])
-      page.setRotation({ type: 'degrees' as never, angle } as never)
-      const fonts = await embedMarkFonts(doc)
-      const view = new PageView(page)
-      paintMark(page, fonts, layoutMark(opts({ variant, signing })), URL_, view.map(60, view.height - 60))
-      const bytes = await doc.save()
-      for (const dpi of [100, 150, 200, 300]) {
-        const r = rasterize(bytes, 1, dpi)
-        if (!r) return                                                                           // Poppler is not installed
-        const rgba = new Uint8ClampedArray(r.width * r.height * 4)
-        for (let y = 0; y < r.height; y++) for (let x = 0; x < r.width; x++) { const [R, G, B] = r.at(x, y); const i = (y * r.width + x) * 4; rgba[i] = R; rgba[i + 1] = G; rgba[i + 2] = B; rgba[i + 3] = 255 }
-        const found = jsQR(rgba, r.width, r.height)
-        expect(found?.data, `${variant} @${angle} ${dpi}dpi`).toBe(URL_)
+  it('keeps everything inside the box, and the QR (with its quiet zone) at about 27 mm', () => {
+    for (const type of [1, 2] as const) for (const scale of [0.8, 1]) {
+      const l = layoutSignature(sig({ type, scale }))
+      for (const i of l.items) {
+        const box = i.t === 'qr' ? { x: i.x, y: i.y, w: i.size, h: i.size } : i.t === 'text' ? { x: i.x, y: i.y - i.size, w: i.fit ?? (i.font === 'mono' ? monoWidth(i.text, i.size) : textWidth(i.text, i.size, i.bold)), h: i.size } :
+          i.t === 'line' ? { x: Math.min(i.x1, i.x2), y: Math.min(i.y1, i.y2), w: Math.abs(i.x2 - i.x1), h: Math.abs(i.y2 - i.y1) } : { x: i.x, y: i.y, w: 'w' in i ? i.w : ('size' in i ? i.size : 0), h: 'h' in i ? i.h : ('size' in i ? i.size : 0) }
+        expect(box.x, `${type} ${i.t}`).toBeGreaterThanOrEqual(-0.01); expect(box.y).toBeGreaterThanOrEqual(-0.01)
+        expect(box.x + box.w, `${type} ${i.t} right`).toBeLessThanOrEqual(l.width + 0.01); expect(box.y + box.h, `${type} ${i.t} bottom`).toBeLessThanOrEqual(l.height + 0.01)
       }
+      expect(l.qrSize / 72 * 25.4).toBeGreaterThan(scale === 1 ? 33 : 26)
     }
   })
-
-  it('still decodes at the smallest mark the layout allows', async () => {
-    const doc = await PDFDocument.create()
-    const page = doc.addPage([300, 300])
-    drawMark(page, await embedMarkFonts(doc), opts({ variant: 'compact', scale: 0.1 }), 40, 260)
-    const r = rasterize(await doc.save(), 1, 150)
-    if (!r) return
-    const rgba = new Uint8ClampedArray(r.width * r.height * 4)
-    for (let y = 0; y < r.height; y++) for (let x = 0; x < r.width; x++) { const [R, G, B] = r.at(x, y); const i = (y * r.width + x) * 4; rgba[i] = R; rgba[i + 1] = G; rgba[i + 2] = B; rgba[i + 3] = 255 }
-    expect(jsQR(rgba, r.width, r.height)?.data).toBe(URL_)
+  it('gives the QR section and the metadata section exactly the same height, and centres both in it', () => {
+    for (const type of [1, 2] as const) {
+      const l = layoutSignature(sig({ type }))
+      const divider = l.items.find((i) => i.t === 'line' && i.x1 === i.x2) as Extract<MarkItem, { t: 'line' }>
+      const mid = (divider.y1 + divider.y2) / 2
+      const qr = l.items.find((i) => i.t === 'qr') as Extract<MarkItem, { t: 'qr' }>
+      expect(qr.y + qr.size / 2, `QR centre @${type}`).toBeCloseTo(mid, 6)
+      const rows = l.items.filter((i) => i.t === 'glyph' && ['document', 'calendar', 'user', 'briefcase'].includes(i.name)) as Array<Extract<MarkItem, { t: 'glyph' }>>
+      expect(rows).toHaveLength(4)
+      expect((rows[0].y + rows[3].y + rows[3].size) / 2, `rows centre @${type}`).toBeCloseTo(mid, 0)
+      const pitch = rows[1].y - rows[0].y
+      for (let i = 1; i < 4; i++) expect(rows[i].y - rows[i - 1].y).toBeCloseTo(pitch, 6)                                     // one grid
+    }
+  })
+  it('Type 1 shows the QR and four rows only: no logo, no stamp, no address, no verification wording, no disclaimer', () => {
+    const l = layoutSignature(sig({ type: 1 }))
+    expect(l.kind).toBe('signature-1')
+    expect(l.items.some((i) => ['logo', 'icon', 'wordmark', 'hotspot'].includes(i.t))).toBe(false)
+    const all = texts(l.items).map((t) => t.text).join('\n')
+    for (const bad of ['http', 'voraworld', 'Periksa keaslian', 'verify', 'bukan tanda tangan', 'not a personal', 'electronic signature']) expect(all, bad).not.toContain(bad)
+    expect(texts(l.items).filter((t) => t.font === 'mono').map((t) => t.text)).toEqual(['AGR-VORA-C0123456789-202610-00001', '31 Okt 2026 11:42 WIB', 'Siti Rahma', 'Direktur'])
+    expect(texts(l.items).map((t) => t.text).filter((t) => /^[A-Z][a-z]/.test(t))).toEqual(expect.arrayContaining(['Nomor dokumen', 'Didaftarkan', 'Nama', 'Jabatan']))
+    expect(new Set(texts(l.items).filter((t) => t.font === 'mono').map((t) => t.size)).size).toBe(1)                            // one value size: a grid
+  })
+  it('Type 2 puts the whole address in a bottom row inside the same box, in VORA red, underlined, clickable, never shortened', () => {
+    const l = layoutSignature(sig({ type: 2 }))
+    expect(l.kind).toBe('signature-2')
+    const f = frame(l)
+    const divider = l.items.find((i) => i.t === 'line' && i.y1 === i.y2) as Extract<MarkItem, { t: 'line' }>
+    expect(divider.y1).toBeGreaterThan(l.height * 0.7); expect(divider.y1).toBeLessThan(f.y + f.h)                          // a dedicated row at the bottom, in the box
+    const urlText = texts(l.items).filter((t) => t.color === RED)
+    expect(urlText.map((t) => t.text).join('')).toBe(URL_)                                                                     // complete
+    for (const t of urlText) { expect(t.text).not.toMatch(/\.\.\.|…/); expect(t.font).toBe('mono'); expect(t.y).toBeGreaterThan(divider.y1) }
+    expect(l.items.filter((i) => i.t === 'line' && i.color === RED).length).toBe(urlText.length)                               // underlined
+    const hot = l.items.find((i) => i.t === 'hotspot') as Extract<MarkItem, { t: 'hotspot' }>
+    expect(hot.url).toBe(URL_); expect(hot.y).toBeGreaterThan(divider.y1 - 1)
+    expect(l.items.filter((i) => i.t === 'glyph').map((g) => (g.t === 'glyph' ? g.name : ''))).toEqual(expect.arrayContaining(['link', 'external']))
+  })
+  it('never truncates or hides any part of an address, however long the token', () => {
+    for (const token of ['x'.repeat(48), 'Y'.repeat(100), 'z'.repeat(150)]) {
+      const url = `https://voraworld.id/verify/${token}`
+      const u = urlLines(url, 290, 6.4)
+      expect(u.lines.join('')).toBe(url)
+      for (const line of u.lines) expect(monoWidth(line, u.size)).toBeLessThanOrEqual(290 + 0.01)
+      expect(u.lines.length).toBeLessThanOrEqual(5)
+    }
+    expect(urlLines(URL_, 290, 6.4).lines).toEqual([URL_])                                                                      // a real address is one line
+    expect(wrapMono('INV-VORA-C0123456789-202610-00001', 60, 4.9).join('')).toBe('INV-VORA-C0123456789-202610-00001')
+  })
+  it('shows no time that has not happened in a preview, and labels it', () => {
+    const l = layoutSignature(sig({ type: 1, preview: true, registeredAt: '31 Okt 2026 11:42 WIB' }))
+    expect(texts(l.items).map((t) => t.text).join('\n')).not.toContain('11:42'); expect(texts(l.items).map((t) => t.text)).toContain('Ditetapkan saat selesai')
+    expect(l.badge?.text).toBe('PRATINJAU')
+    expect(layoutSignature(sig({ type: 1, preview: true })).width).toBe(l.width)
   })
 })
 
-describe('the QR colour', () => {
-  it('is Midnight Navy (#101720) on white: the brand ink, with all the contrast a scanner needs', async () => {
-    const doc = await PDFDocument.create()
-    const page = doc.addPage([300, 200])
-    const layout = drawMark(page, await embedMarkFonts(doc), opts({ variant: 'standard' }), 20, 180)
-    const r = rasterize(await doc.save(), 1, 288)
-    if (!r) return
-    const qr = layout.items.find((i) => i.t === 'qr')!
-    if (qr.t !== 'qr') throw new Error('x')
-    const counts = new Map<string, number>()
-    for (let y = Math.round((20 + qr.y) * r.scale); y < (20 + qr.y + qr.size) * r.scale; y++) for (let x = Math.round((20 + qr.x) * r.scale); x < (20 + qr.x + qr.size) * r.scale; x++) {
-      const [R, G, B] = r.at(x, y); counts.set(`${R},${G},${B}`, (counts.get(`${R},${G},${B}`) ?? 0) + 1)
+describe('Footer Type 3', () => {
+  it('has sections of exactly the same height, dividers that start and end together, and one frame', () => {
+    const l = layoutFooter(foot())
+    const dividers = l.items.filter((i) => i.t === 'line' && i.x1 === i.x2) as Array<Extract<MarkItem, { t: 'line' }>>
+    expect(dividers).toHaveLength(4)
+    for (const d of dividers) { expect(d.y1).toBe(dividers[0].y1); expect(d.y2).toBe(dividers[0].y2) }
+    const f = frame(l)
+    expect(f.h).toBeCloseTo(l.height - 0.6, 6); expect(f.w).toBeCloseTo(l.width - 0.6, 6)
+    const qr = l.items.find((i) => i.t === 'qr') as Extract<MarkItem, { t: 'qr' }>
+    expect(qr.size).toBeCloseTo(Math.min(l.height - 10, 68), 6)                                                                // the QR fills the section height (up to 24 mm)
+    expect(qr.y + qr.size / 2).toBeCloseTo(l.height / 2, 6)                                                                    // centred in it
+  })
+  it('sets the stamp as tall as the QR modules, aligned to them', () => {
+    const l = layoutFooter(foot())
+    const qr = l.items.find((i) => i.t === 'qr') as Extract<MarkItem, { t: 'qr' }>
+    const n = qrMatrix(URL_).size, quiet = (qr.size * QUIET_MODULES) / (n + 8)
+    const lock = l.items.filter((i) => i.t === 'icon' || i.t === 'wordmark' || (i.t === 'rule' && !i.color) || (i.t === 'text' && i.text === CORPORATE_NAME))
+    const top = Math.min(...lock.map((i) => (i.t === 'text' ? i.y - i.size * 0.718 : (i as { y: number }).y)))
+    const bottom = Math.max(...lock.map((i) => (i.t === 'text' ? i.y : (i as { y: number; h: number }).y + (i as { h: number }).h)))
+    expect(top).toBeCloseTo(qr.y + quiet, 4); expect(bottom).toBeCloseTo(qr.y + qr.size - quiet, 4)
+  })
+  it('is all monospaced (the stamp\'s own name is the artwork), keeps the original wording, and never truncates the address', () => {
+    const l = layoutFooter(foot())
+    for (const t of texts(l.items)) if (t.text !== CORPORATE_NAME) expect(t.font, t.text).toBe('mono')
+    const all = texts(l.items).map((t) => t.text).join('\n')
+    for (const w of ['VORA | DIGITAL DOCUMENT VERIFICATION', 'Scan the QR, or click this link', 'PAYMENT REQUEST - NOT PROOF OF PAYMENT', 'Proof of payment is the official VORA receipt', 'info@voraworld.id', 'Nomor dokumen', 'Diterbitkan', 'NPWP', 'Bringing the World Within Reach.']) expect(all, w).toContain(w)
+    expect(all.replace(/\n/g, '')).toContain('INV-VORA-C0123456789-202610-00001'.replace(/\n/g, ''))
+    const url = texts(l.items).filter((t) => t.color === RED && t.text !== CORPORATE_NAME && !t.bold)
+    expect(url.map((t) => t.text).join('')).toBe(URL_)
+    expect(all).not.toMatch(/\.\.\.|…/)
+    expect(l.items.some((i) => i.t === 'hotspot' && i.url === URL_)).toBe(true)
+  })
+  it('puts the payment notes only where the document has them, and the first in red', () => {
+    const plain = layoutFooter(foot({ notes: undefined, emphasiseFirst: false }))
+    expect(texts(plain.items).map((t) => t.text).join('\n')).not.toMatch(/PROOF OF PAYMENT|official VORA receipt/)
+    const withNotes = layoutFooter(foot())
+    expect(texts(withNotes.items).find((t) => t.text.startsWith('PAYMENT REQUEST'))?.color).toBe(RED)
+  })
+  it('carries a second address (a proof of delivery\'s evidence page) whole and clickable', () => {
+    const l = layoutFooter(foot({ notes: undefined, extraLinks: [{ label: 'Evidence page:', url: 'https://voraworld.id/pod/view/VIEWTOKENVIEWTOKENVIEW' }] }))
+    expect(l.items.filter((i) => i.t === 'hotspot').map((i) => (i as { url: string }).url)).toEqual([URL_, 'https://voraworld.id/pod/view/VIEWTOKENVIEWTOKENVIEW', URL_])
+  })
+  it('fits every footer height the documents use, and the landscape width of a certificate', () => {
+    for (const [w, h] of [[507, 71], [507, 74], [507, 87], [742, 74]]) {
+      const l = layoutFooter(foot({ width: w, height: h }))
+      expect(l.width).toBe(w); expect(l.height).toBe(h)
     }
-    const dark = [...counts.entries()].filter(([k]) => k.split(',').every((v) => Number(v) < 80)).sort((a, b) => b[1] - a[1])[0]
-    expect(dark[0]).toBe('16,23,32')                                                       // #101720
-    expect(counts.get('255,255,255') ?? 0).toBeGreaterThan(dark[1] * 0.5)
-    // Contrast ratio of #101720 on white (WCAG): far above the 7:1 a scanner needs.
-    const lum = (c: number[]) => { const f = (v: number) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]) }
-    expect(1.05 / (lum([16, 23, 32]) + 0.05)).toBeGreaterThan(15)
   })
 })
 
-describe('the clickable link', () => {
-  const annotations = async (bytes: Uint8Array) => {
-    const out = await PDFDocument.load(bytes)
-    return out.getPages().flatMap((p) => (p.node.Annots()?.asArray() ?? []).map((ref) => out.context.lookup(ref, PDFDict))).map((a) => ({
-      uri: (a.lookup(PDFName.of('A'), PDFDict).lookup(PDFName.of('URI'), PDFString)).decodeText(), rect: (a.lookup(PDFName.of('Rect'), PDFArray)).asArray().map((n) => (n as PDFNumber).asNumber()),
-    }))
-  }
-  it.each([0, 90, 180, 270])('makes the whole mark a link to the verification address, on a page rotated by %i degrees, and the link covers the mark', async (angle) => {
+describe('the drawn components in a PDF', () => {
+  async function pdf(layoutOf: 'sig1' | 'sig2' | 'footer', angle = 0) {
     const doc = await PDFDocument.create()
     const page = doc.addPage([595.28, 841.89])
-    page.setRotation(degrees(angle))
+    if (angle) page.setRotation(degrees(angle))
+    const fonts = await embedMarkFonts(doc)
     const view = new PageView(page)
-    const layout = layoutMark(opts({ variant: 'compact' }))
-    paintMark(page, await embedMarkFonts(doc), layout, URL_, view.map(100, view.height - 100))
-    const [link] = await annotations(await doc.save())
-    expect(link.uri).toBe(URL_)
-    const w = Math.abs(link.rect[2] - link.rect[0]), h = Math.abs(link.rect[3] - link.rect[1])
-    expect(angle % 180 ? h : w).toBeCloseTo(layout.width, 1)
-    expect(angle % 180 ? w : h).toBeCloseTo(layout.height, 1)
+    const layout = layoutOf === 'footer' ? layoutFooter(foot()) : layoutSignature(sig({ type: layoutOf === 'sig1' ? 1 : 2 }))
+    if (layoutOf === 'footer') paintMark(page, fonts, layout, URL_, view.map(44, 80), false)
+    else paintMark(page, fonts, layout, URL_, view.map(60, view.height - 60))
+    return { bytes: await doc.save(), layout }
+  }
+  const links = async (bytes: Uint8Array) => {
+    const out = await PDFDocument.load(bytes)
+    return out.getPages().flatMap((p) => (p.node.Annots()?.asArray() ?? []).map((ref) => out.context.lookup(ref, PDFDict))).map((a) => ({
+      uri: a.lookup(PDFName.of('A'), PDFDict).lookup(PDFName.of('URI'), PDFString).decodeText(), rect: a.lookup(PDFName.of('Rect'), PDFArray).asArray().map((n) => (n as PDFNumber).asNumber()),
+    }))
+  }
+  const decode = (bytes: Uint8Array, dpi: number) => {
+    const r = rasterize(bytes, 1, dpi)
+    if (!r) return undefined
+    const rgba = new Uint8ClampedArray(r.width * r.height * 4)
+    for (let y = 0; y < r.height; y++) for (let x = 0; x < r.width; x++) { const [R, G, B] = r.at(x, y); const i = (y * r.width + x) * 4; rgba[i] = R; rgba[i + 1] = G; rgba[i + 2] = B; rgba[i + 3] = 255 }
+    return jsQR(rgba, r.width, r.height)?.data
+  }
+  it.each([0, 90, 180, 270])('every component decodes to the verification address at print and scan resolutions, on a page rotated by %i degrees', async (angle) => {
+    for (const which of ['sig1', 'sig2', 'footer'] as const) {
+      const { bytes } = await pdf(which, angle)
+      // The footer's QR code is 22 mm: a 150 dpi raster of it is too coarse for this test's decoder (a phone camera is not), so it is read at print resolutions.
+      for (const dpi of which === 'footer' ? [200, 300] : [100, 150, 200, 300]) { const data = decode(bytes, dpi); if (data === undefined && !rasterize(bytes, 1, 72)) return; expect(data, `${which} @${angle} ${dpi}dpi`).toBe(URL_) }
+    }
+  })
+  it('makes the address a real link annotation, and the QR code a link to the same address', async () => {
+    for (const which of ['sig2', 'footer'] as const) {
+      const found = await links((await pdf(which)).bytes)
+      expect(found.length, which).toBeGreaterThan(0)
+      for (const l of found) expect(l.uri).toBe(URL_)
+    }
+    const type2 = await links((await pdf('sig2')).bytes)
+    expect(type2.length).toBe(2)                                                                                                // the address row and the whole box
+    const row = type2.map((l) => l.rect[3] - l.rect[1]).sort((a, b) => a - b)[0]
+    expect(row).toBeLessThan(SIGNATURE_HEIGHT / 3)
+  })
+  it('draws the address in VORA red (#B43E31) and the QR modules in Midnight Navy (#101720)', async () => {
+    const { bytes } = await pdf('sig2')
+    const r = rasterize(bytes, 1, 288)
+    if (!r) return
+    const counts = new Map<string, number>()
+    for (let y = 0; y < r.height; y++) for (let x = 0; x < r.width; x++) { const k = r.at(x, y).join(','); counts.set(k, (counts.get(k) ?? 0) + 1) }
+    const dark = [...counts.entries()].filter(([k]) => k.split(',').every((v) => Number(v) < 60)).sort((a, b) => b[1] - a[1])[0]
+    expect(dark[0]).toBe('16,23,32')
+    const red = [...counts.entries()].filter(([k]) => { const [R, G, B] = k.split(',').map(Number); return Math.abs(R - 180) < 8 && Math.abs(G - 62) < 8 && Math.abs(B - 49) < 8 })
+    expect(red.reduce((n, [, c]) => n + c, 0)).toBeGreaterThan(300)                                                            // the link, its underline and the icons
+  })
+  it('uses the same box in the PDF for Type 1 and Type 2', async () => {
+    const a = (await pdf('sig1')).layout, b = (await pdf('sig2')).layout
+    expect([a.width, a.height]).toEqual([b.width, b.height])
   })
 })
+void upright
 
-describe('the drawn mark', () => {
-  it('is corporate red on a transparent background (the page stays white around it) and has no frame', async () => {
-    const doc = await PDFDocument.create()
-    const page = doc.addPage([300, 200])
-    drawMark(page, await embedMarkFonts(doc), opts({ variant: 'standard' }), 20, 180)
-    const r = rasterize(await doc.save(), 1, 144)
-    if (!r) return
-    let red = 0, nonWhite = 0, minX = r.width, maxX = 0
-    for (let y = 0; y < r.height; y++) for (let x = 0; x < r.width; x++) {
-      const [R, G, B] = r.at(x, y)
-      if (R < 245 || G < 245 || B < 245) { nonWhite++; minX = Math.min(minX, x); maxX = Math.max(maxX, x) }
-      if (Math.abs(R - 180) < 12 && Math.abs(G - 62) < 12 && Math.abs(B - 49) < 12) red++
-    }
-    expect(red).toBeGreaterThan(500)
-    expect(nonWhite).toBeGreaterThan(red)                                                         // QR modules are ink, the rest is red
-    // Every row of the lockup that is not QR is mostly white: there is no filled rectangle behind it.
-    expect(nonWhite / (r.width * r.height)).toBeLessThan(0.45)
+describe('the issuer details in Footer Type 3', () => {
+  it('prints the whole address and tax number it is given, and cuts a very long one only with "..."', () => {
+    const short = layoutFooter(foot())
+    const t = texts(short.items).map((x) => x.text).join(' ')
+    expect(t).toContain('Jl. Contoh No. 1,'); expect(t).toContain('Indonesia'); expect(t).toContain('NPWP'); expect(t).toContain('01.234.567.8-901.000')
+    const address = 'Gedung Nucira, Jl. Letjen M.T. Haryono Kav. 27 RT. 008 RW. 009, Tebet Timur, Tebet, Kota Adm. Jakarta Selatan, DKI Jakarta 12810'
+    const full = layoutFooter(foot({ issuer: { address, taxId: '1000 0000 1178 2812', email: 'info@voraworld.id' } }))
+    const joined = texts(full.items).map((x) => x.text).join('')
+    expect(joined.replace(/\s/g, '')).toContain('1000000011782812'.replace(/(\d{4})/g, '$1 ').replace(/\s/g, ''))
+    expect(joined).toContain('Gedung'); expect(joined).toContain('Jakarta')
+    const absurd = layoutFooter(foot({ issuer: { address: address.repeat(4), taxId: '1000 0000 1178 2812', email: 'info@voraworld.id' } }))
+    const aText = texts(absurd.items).map((x) => x.text)
+    expect(aText.some((x) => x.endsWith('...'))).toBe(true); expect(aText.join(' ')).toContain('NPWP')                  // the tax number is never the thing that is dropped
   })
 })

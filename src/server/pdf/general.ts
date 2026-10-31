@@ -1,9 +1,9 @@
 import { BILLING_HEADINGS, documentType, longDate, WORDS, type DocumentType, type Lang, type SignerDef } from '../../content/document-types'
 import { daysBetween } from '../dates'
 import { money } from '../money'
-import { layoutMark } from '../../content/trust-mark'
+import { SIGNATURE_HEIGHT } from '../../content/verification-blocks'
 import { Flow } from './flow'
-import { BAND_H, H, INK, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
+import { BAND_H, H, INK, RED, SLATE, TAGLINE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { GeneralDocData, Issuer } from './types'
 
 /**
@@ -45,14 +45,18 @@ export async function renderGeneral(d: GeneralDocData, issuer: Issuer, verificat
     s.right(RIGHT, H - 46, title, title.length > 22 ? 13 : 16, WHITE, true)
     s.right(RIGHT, H - 66, d.number, 6.8, WHITE)
     if (d.status !== 'issued') s.right(RIGHT, H - 86, d.status.toUpperCase(), 7, '#E8B3AA', true)
-    s.footer(FOOTER_TOP, LEFT, RIGHT)
-    const mark = s.verificationMark({ url: verificationUrl, lang, right: RIGHT, bottom: 7.5 })
-    const column = mark.left - 12 - LEFT
-    s.text(LEFT, 71, lang === 'id' ? 'VORA | VERIFIKASI DOKUMEN' : 'VORA | DOCUMENT VERIFICATION', 7.7, SLATE, true)
-    s.text(LEFT, 60, WORDS.verifyOnline[lang], 6.4, SLATE)
-    s.linkLines(LEFT, 50, verificationUrl, column, 5.9, INK)
-    s.text(LEFT, 36, issuer.email, 7.2, INK)
-    s.text(LEFT, 24, `${title}  |  ${pageWord[0]} ${pageNo} ${pageWord[1]} ${total}`, 7.1, SLATE)
+    s.pageEdge()
+    const pageText = `${title}  |  ${pageWord[0]} ${pageNo} ${pageWord[1]} ${total}`
+    if (type.family === 'agreement') {
+      // An agreement carries no verification footer: its verification (Signature Type 2) is the block that closes it. Only the page numbering stays.
+      s.rule(FOOTER_TOP - 12, LEFT, RIGHT)
+      s.text(LEFT, 24, pageText, 7.1, SLATE)
+    } else {
+      s.verificationFooter({
+        left: LEFT, right: RIGHT, top: FOOTER_TOP - 3, bottom: 9, url: verificationUrl, number: d.number, issuedOn: d.documentDate, issuer: { address: issuer.address, taxId: issuer.taxId, email: issuer.email }, tagline: TAGLINE,
+        heading: lang === 'id' ? 'VORA | VERIFIKASI DOKUMEN' : 'VORA | DOCUMENT VERIFICATION', instruction: WORDS.verifyOnline[lang], pageLine: pageText,
+      })
+    }
   })
   return s.save()
 }
@@ -135,6 +139,7 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
     paragraphs(v.closing)
     gap(LEADING)
     signers(s, f, type, d, lang)
+    endBlock()
   }
   const placeAndDate = () => { f.keep(LEADING * 2); f.right(RIGHT, f.y, `${v.place}, ${longDate(d.documentDate, lang)}`, BODY, INK); f.y -= LEADING * 1.6 }
 
@@ -153,19 +158,16 @@ function layout(s: Sheet, f: Flow, type: DocumentType, d: GeneralDocData, issuer
     if (position) { f.text(LEFT, f.y, position, BODY, SLATE); f.y -= LEADING }
   }
   /**
-   * The verification block that closes the document: the standard VORA mark (QR code, corporate lockup and the clickable address) with what it means, kept apart from
-   * the signatures above it. Reserved before it is drawn, so it never overlaps the text.
+   * The verification block that closes an AGREEMENT: Signature Type 2 (QR, document number, registration, issuer, and the complete verification link, in one box of the
+   * same size as every other signature). Every other document carries Footer Type 3 on each page instead, and this block is not used for it.
    */
   const endBlock = () => {
-    const mark = layoutMark({ variant: 'standard', lang, url: verificationUrl })
+    if (type.family !== 'agreement') return
     gap(LEADING)
-    f.keep(mark.height + 34)
+    f.keep(SIGNATURE_HEIGHT + 12)
     const top = f.y
-    f.text(LEFT, top, t('verifyTitle'), 7.2, RED, true)
-    f.rule(top - 5)
-    s.wrap(t('verifyHow'), WIDTH - mark.width - 20, 6.8).forEach((row, i) => f.text(LEFT + mark.width + 20, top - 20 - i * 9, row, 6.8, SLATE))
-    f.put(() => s.verificationMarkAt({ url: verificationUrl, lang, cx: LEFT + mark.width / 2, top: top - 14 }))
-    f.y = top - mark.height - 22
+    f.put(() => s.signatureBlock({ type: 2, lang, url: verificationUrl, number: d.number, registeredAt: d.issuedAt, name: issuer.legalName, position: lang === 'id' ? 'Penerbit dokumen' : 'Document issuer', left: LEFT, top }))
+    f.y = top - SIGNATURE_HEIGHT - 12
   }
   const copies = () => {
     if (!v.cc) return

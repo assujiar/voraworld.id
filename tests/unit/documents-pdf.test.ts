@@ -4,6 +4,10 @@ import { documentType } from '@/content/document-types'
 import { renderCertificate } from '@/server/pdf/certificate'
 import { renderDeliveryNote, renderPod } from '@/server/pdf/delivery'
 import { renderGeneral } from '@/server/pdf/general'
+import { sealPdf } from '@/server/pdf/seal'
+import { SIGNATURE_HEIGHT, SIGNATURE_WIDTH } from '@/content/verification-blocks'
+import { trustPolicy } from '@/content/trust-policy'
+import { PDFDocument, PDFArray, PDFDict, PDFName, PDFNumber } from 'pdf-lib'
 import { renderInvoice } from '@/server/pdf/invoice'
 import { renderPrepayment } from '@/server/pdf/prepayment'
 import { renderQuotation } from '@/server/pdf/quotation'
@@ -73,11 +77,12 @@ describe('every document carries the verification mark, a clickable link and the
   it('quotation', async () => { await expectVerifiable('quotation', await renderQuotation(quotation, issuer, URL_)) })
   it('official receipt', async () => { await expectVerifiable('receipt', await renderReceipt(receipt, issuer, URL_)) })
   it('pre-payment receipt', async () => { await expectVerifiable('prepayment', await renderPrepayment(prepayment, issuer, URL_)) })
-  it('letter, with the standard mark closing it, apart from the signature', async () => {
+  it('letter: Footer Type 3 on the page, room to sign, and no separate verification block', async () => {
     const pdf = await renderGeneral(letter, issuer, URL_)
     await expectVerifiable('letter', pdf)
     const t = squash((await pdfPages(pdf)).join(' '))
-    expect(t).toContain('VERIFIKASI DOKUMEN'); expect(t).toContain('dapat diperiksa melalui tautan dan kode QR verifikasi'); expect(t).not.toMatch(/bukan tanda tangan/i); expect(t).toContain('Siti Rahma')
+    expect(t).toContain('VORA | VERIFIKASI DOKUMEN'); expect(t).not.toMatch(/bukan tanda tangan/i); expect(t).toContain('Siti Rahma')
+    expect((await pdfLinks(pdf))[0].filter((u) => u === URL_).length).toBe(2)                // the address row and the QR code of the footer: nothing else on the page
   })
   it('letters of every general type render with the mark', async () => {
     const values: Record<string, string> = { place: 'Jakarta', subject: 'Uji', recipient_name: 'PT Mitra', body: 'Isi surat.', closing: 'Hormat kami,', signatory_name: 'Siti Rahma', signatory_title: 'Direktur', declarant_name: 'Budi', declarant_id_number: '1', declarant_position: 'Staf', declarant_address: 'Jl. X', location: 'Jakarta', period: '1 tahun',
@@ -95,7 +100,7 @@ describe('every document carries the verification mark, a clickable link and the
     const t = squash((await pdfPages(pdf)).join(' '))
     expect(t).toContain('SCAN TO RECORD DELIVERY')
     expect((await pdfLinks(pdf)).flat()).toContain(note.captureUrl)
-    expect(t).toContain('it is not the driver')
+    expect(t).toContain("not the driver's code")
   })
   it('proof of delivery: the verification mark, with the evidence page kept as a separate link', async () => {
     const { captureUrl: _c, ...rest } = note
@@ -105,5 +110,92 @@ describe('every document carries the verification mark, a clickable link and the
     const pdf = await renderPod(pod, issuer)
     await expectVerifiable('proof of delivery', pdf)
     expect((await pdfLinks(pdf)).flat()).toContain(pod.viewUrl)
+  })
+})
+
+
+/** The five documents of the acceptance list, made by the real renderers and overlays, and read back from the PDF. */
+describe('end to end: the right component on the right document, never both', () => {
+  const agreement = general('nda', { subject: 'Perjanjian Kerahasiaan', first_company: 'PT Satu Arah International', first_name: 'Siti Rahma', first_position: 'Direktur', first_address: 'Jakarta', second_company: 'PT Mitra', second_name: 'Budi', second_position: 'Direktur', second_address: 'Bandung', place: 'Jakarta', closing: 'Demikian.' },
+    { articles: [{ title: 'Maksud', body: 'Para Pihak sepakat menjaga kerahasiaan.' }], issuedAt: '31 Okt 2026 11:42 WIB' })
+  const bottomLinks = async (bytes: Uint8Array, page = 0) => {
+    const doc = await PDFDocument.load(bytes)
+    const annots = doc.getPage(page).node.Annots()?.asArray() ?? []
+    return annots.map((ref) => { const a = doc.context.lookup(ref, PDFDict); return { y: (a.lookup(PDFName.of('Rect'), PDFArray).asArray()[1] as PDFNumber).asNumber(), h: (a.lookup(PDFName.of('Rect'), PDFArray).asArray()[3] as PDFNumber).asNumber() } })
+  }
+  const signedBlock = async (base: Uint8Array, type: 1 | 2, o: { number: string }) => (await sealPdf(base, { type, verificationUrl: URL_, lang: 'id', number: o.number, pages: 'last', corner: 'top-right', size: 'medium', issuedAt: '31 Okt 2026 11:42 WIB', signer: { name: 'Siti Rahma', position: 'Direktur' } })).bytes
+
+  it('1. a standard VORA letter: Footer Type 3 on the page and Signature Type 1 when signed (no address in the signature)', async () => {
+    expect(trustPolicy('document', 'letter')).toMatchObject({ signature: 1, footer: 'type3' })
+    const letterPdf = await renderGeneral(letter, issuer, URL_)
+    const signed = await signedBlock(letterPdf, 1, { number: letter.number })
+    const t = squash((await pdfPages(signed)).join(' '))
+    expect(t).toContain('VORA | VERIFIKASI DOKUMEN')                     // the footer
+    expect(t).toContain('Nomor dokumen'); expect(t).toContain('Didaftarkan'); expect(t).toContain('Jabatan')
+    // The signature (Type 1) carries no address of its own: the page has the footer's address row and QR and the signature's whole-box link only.
+    const links = (await pdfLinks(signed))[0]
+    expect(links.every((u) => u === URL_)).toBe(true); expect(links.length).toBe(3)
+    expect(t.replace(/\s/g, '').split(URL_.replace(/\s/g, '')).length - 1).toBe(1)           // the address is printed once (in the footer): the signature has no address of its own
+    expect(footerQr(signed, 1)).toBe(URL_)
+  })
+
+  it('2. a third-party document: Signature Type 2 only, with the complete clickable address in the box, and no VORA footer', async () => {
+    const doc = await PDFDocument.create(); doc.addPage([595.28, 841.89])
+    const original = await doc.save()
+    expect(trustPolicy('document', 'seal')).toMatchObject({ signature: 2, footer: 'none' })
+    const out = await signedBlock(original, 2, { number: 'SEL-VORA-V0123456789-202610-00001' })
+    const t = squash((await pdfPages(out)).join(' '))
+    expect(t.replace(/\s/g, '')).toContain(URL_.replace(/\s/g, ''))
+    expect(t).not.toContain('VORA | DIGITAL'); expect(t).not.toContain('Diterbitkan')    // no footer
+    const links = await bottomLinks(out)
+    expect(links.length).toBe(2)                                                                              // the address row and the whole box, nothing else
+    const box = Math.max(...links.map((l) => l.h - l.y))
+    expect(box).toBeCloseTo(SIGNATURE_HEIGHT, 1)                                                              // the whole box is exactly the contract height
+    expect(Math.min(...links.map((l) => l.h - l.y))).toBeLessThan(SIGNATURE_HEIGHT / 3)                       // and the address row is a band inside it
+    expect(SIGNATURE_WIDTH / SIGNATURE_HEIGHT).toBeCloseTo(2, 9)
+  })
+
+  it('3. a VORA cooperation agreement: Signature Type 2 closes it, there is no verification footer, and the page numbering stays', async () => {
+    expect(trustPolicy('document', 'nda')).toMatchObject({ signature: 2, footer: 'none' })
+    const pdf = await renderGeneral(agreement, issuer, URL_)
+    const pages = await pdfPages(pdf)
+    const t = squash(pages.join(' '))
+    expect(t).not.toContain('VORA | VERIFIKASI DOKUMEN'); expect(t).not.toContain('Diterbitkan')                // nothing of Footer Type 3 (its metadata column says Diterbitkan)
+    expect(t).toMatch(/HALAMAN 1 DARI \d+/)                                                                  // page numbering is kept
+    expect(t).toContain('Nomor dokumen'); expect(t).toContain('31 Okt 2026 11:42 WIB')
+    expect(t.replace(/\s/g, '')).toContain(URL_.replace(/\s/g, ''))                                         // the complete address, once, in the block
+    const all = (await pdfLinks(pdf)).flat()
+    expect(all.length).toBe(2); expect(all.every((u) => u === URL_)).toBe(true)
+    // The QR code of the block decodes to the same address.
+    const r = rasterize(pdf, pages.length, 200)
+    if (r) {
+      const rgba = new Uint8ClampedArray(r.width * r.height * 4)
+      for (let y = 0; y < r.height; y++) for (let x = 0; x < r.width; x++) { const [R, G, B] = r.at(x, y); const i = (y * r.width + x) * 4; rgba[i] = R; rgba[i + 1] = G; rgba[i + 2] = B; rgba[i + 3] = 255 }
+      expect(jsQR(rgba, r.width, r.height)?.data).toBe(URL_)
+    }
+  })
+
+  it('4. a commercial invoice: Footer Type 3 with the original payment wording', async () => {
+    const pdf = await renderInvoice(invoice, issuer, URL_)
+    const t = squash((await pdfPages(pdf)).join(' '))
+    for (const w of ['VORA | DIGITAL DOCUMENT VERIFICATION', 'PAYMENT REQUEST - NOT PROOF OF PAYMENT', 'Proof of payment is the official VORA receipt, issued only after Finance confirms cleared funds.', 'info@voraworld.id', 'PAGE 01 OF 01']) expect(t.replace(/\s+/g, ' '), w).toContain(w)
+    expect(footerQr(pdf, 1)).toBe(URL_)
+  })
+
+  it('5. a receipt: Footer Type 3 with its own wording, and none of the invoice\'s payment-request wording', async () => {
+    const pdf = await renderReceipt(receipt, issuer, URL_)
+    const t = squash((await pdfPages(pdf)).join(' '))
+    expect(t).toContain('Issued after VORA Finance confirmed cleared funds.'); expect(t).toContain('RECEIPT | PAGE 01 OF 01')
+    expect(t).not.toContain('PAYMENT REQUEST - NOT PROOF OF PAYMENT')
+    expect(footerQr(pdf, 1)).toBe(URL_)
+  })
+
+  it('keeps a multi-page document\'s footer and numbering on every page', async () => {
+    const long = general('letter', { ...letter.values, body: Array.from({ length: 140 }, (_, i) => `Paragraf ${i + 1}: isi surat uji yang cukup panjang untuk memenuhi halaman.`).join('\n') })
+    const pdf = await renderGeneral(long, issuer, URL_)
+    const pages = await pdfPages(pdf)
+    expect(pages.length).toBeGreaterThan(1)
+    pages.forEach((p, i) => { expect(squash(p)).toContain(`HALAMAN ${i + 1} DARI ${pages.length}`); expect(squash(p)).toContain('VORA | VERIFIKASI DOKUMEN') })
+    for (const [i, links] of (await pdfLinks(pdf)).entries()) expect(links, `page ${i + 1}`).toContain(URL_)
   })
 })

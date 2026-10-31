@@ -42,6 +42,8 @@ export interface PrepaymentData {
 /** A general document (letter, statement, certificate...): what was typed, plus the invoices and bank accounts a billing letter lists. */
 export interface GeneralDocData {
   number: string; kind: string; language: 'id' | 'en'; status: string; documentDate: string
+  /** When it was issued, already in Jakarta time ("31 Okt 2026 11:42 WIB"); absent for a draft. */
+  issuedAt?: string
   values: Record<string, string>
   invoices: Array<{ number: string; issuedAt: string; dueAt: string; currency: string; totalMinor: number; outstandingMinor: number }>
   banks: BankLine[]

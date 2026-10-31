@@ -9,7 +9,7 @@ const after = new Date('2026-11-01T00:00:00Z'), before = new Date('2026-10-01T00
 describe('policy', () => {
   it('gives every kind of document a policy, and every general type the policy of its family', () => {
     for (const k of TRUST_KINDS) expect(trustPolicy(k).confirms.en.length, k).toBeGreaterThan(10)
-    for (const t of DOCUMENT_TYPES) { const p = trustPolicy('document', t.key); expect(p.family, t.key).toBe(t.family); expect(p.endMark, t.key).not.toBe(undefined) }
+    for (const t of DOCUMENT_TYPES) { const p = trustPolicy('document', t.key); expect(p.family, t.key).toBe(t.family); expect([1, 2], t.key).toContain(p.signature) }
     expect(trustPolicy('document', 'no-such-type').signing).toBe('none')                 // an unknown type is verified and never signed
   })
 
@@ -58,5 +58,19 @@ describe('which PDFs are archived', () => {
       expect(trustPolicy(kind).archive).toBe('live')
       expect(archiveEligible(kind, { status: kind === 'invoice' ? 'issued' : 'issued', createdAt: after }, CUTOFF)).toBe(false)
     }
+  })
+})
+
+describe('which verification components a document gets (decided in one place)', () => {
+  it('gives Signature Type 2 and no footer to agreements and third-party documents, and Footer Type 3 with Signature Type 1 to every other VORA document', () => {
+    for (const t of DOCUMENT_TYPES) {
+      const p = trustPolicy('document', t.key)
+      const two = t.family === 'agreement' || t.family === 'seal'
+      expect(p.signature, t.key).toBe(two ? 2 : 1)
+      expect(p.footer, t.key).toBe(two ? 'none' : 'type3')
+    }
+    for (const kind of ['invoice', 'receipt', 'prepayment', 'quotation', 'delivery', 'pod'] as const) expect(trustPolicy(kind), kind).toMatchObject({ signature: 1, footer: 'type3' })
+    for (const key of ['cooperation_agreement', 'logistics_service_agreement', 'nda', 'seal']) expect(trustPolicy('document', key)).toMatchObject({ signature: 2, footer: 'none' })
+    for (const key of ['letter', 'billing_letter', 'statement', 'authorization', 'information', 'assignment', 'certificate']) expect(trustPolicy('document', key)).toMatchObject({ signature: 1, footer: 'type3' })
   })
 })

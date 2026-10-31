@@ -8,6 +8,7 @@ import { sha256Hex } from '../crypto'
 import { maxUploadBytes } from '../env'
 import { inspectSourcePdf } from '../finance/pdf-inspect'
 import { sealPdf } from '../pdf/seal'
+import { trustPolicy } from '../../content/trust-policy'
 import { getObject, putObject, removeObject } from '../storage'
 import { businessDateTime } from '../dates'
 import { getVerification } from '../verification'
@@ -226,7 +227,7 @@ export async function setDocumentStatus(actorId: number, id: number, action: str
       if (!verification || verification.revoked) throw new ActionError('The document has no active verification link', 409)
       const sealedAt = new Date()
       const made = await sealPdf(await readSource(stored.source), {
-        verificationUrl: `${baseUrl.replace(/\/+$/, '')}/verify/${verification.token}`, reference: doc.number as string, lang: p.lang, purpose: p.fields.values.purpose, pages: p.fields.values.pages,
+        type: trustPolicy('document', type.key).signature, verificationUrl: `${baseUrl.replace(/\/+$/, '')}/verify/${verification.token}`, number: doc.number as string, lang: p.lang, pages: p.fields.values.pages,
         corner: p.fields.values.corner, size: p.fields.values.size, pageNumber: p.fields.values.page_number, posX: p.fields.values.pos_x, posY: p.fields.values.pos_y, issuedAt: `${businessDateTime(sealedAt)} WIB`,
       })
       sealedKey = `seal/${randomUUID()}-sealed.pdf`

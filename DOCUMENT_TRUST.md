@@ -14,14 +14,14 @@ Verification never gives one "authentic". The public page (`/verify/<token>`) re
 | Is the file in my hand the recorded one? | The visitor's browser computes SHA-256 locally and compares (nothing is uploaded). |
 | What is its status now? | Read live from the business records (payment, approval, delivery); never printed into an issued file. |
 
-A QR code, a corporate stamp and a watermark are **not** signatures. The attestation is an **internal application attestation**, not a PSrE-certified electronic seal (segel elektronik), and the signature is **non-certified**.
+A QR code, a corporate stamp and a watermark are **not** signatures (the page does not repeat this as a disclaimer). The attestation is an **internal application attestation**, not a PSrE-certified electronic seal (segel elektronik), and the signature is **non-certified**.
 
 ## 2. Modules (all under `src/server/trust/`, `src/content/`)
 
 | Capability | Code |
 |---|---|
 | Policy engine (what each kind of document gets) | `src/content/trust-policy.ts` |
-| Corporate stamp layout (one layout for PDF and screen) | `src/content/trust-mark.ts`, `trust-qr.ts`, `stamp-art.ts` (generated), `helvetica-metrics.ts` (generated) |
+| Verification components (one layout for PDF and screen) | `src/content/verification-blocks.ts` (Signature 1 and 2, Footer 3), `trust-mark.ts` (primitives, lockup), `trust-qr.ts`, `glyphs.ts`, `stamp-art.ts` (generated), `helvetica-metrics.ts` (generated) |
 | PDF painter, clickable link, page rotation/crop | `src/server/pdf/trust-mark.ts` |
 | Third-party PDF marking | `src/server/pdf/seal.ts`, geometry in `src/content/seal-layout.ts`, `placer-geometry.ts` |
 | Immutable artifacts + attestation | `trust/artifacts.ts`, `trust/attestation.ts`, `trust/canonical.ts`, `trust/serve.ts` |
@@ -49,14 +49,23 @@ A QR code, a corporate stamp and a watermark are **not** signatures. The attesta
 
 Documents created **before** migration 0029 (`settings.trust_enabled_at`) are never archived or attested afterwards: they show "issued before the verification system" and nothing more.
 
-## 4. The corporate stamp
+## 4. The three verification components
 
-* Artwork: the `d` of every path of `public/static/assets/vora-a-icon-primary.svg` and `vora-primary.svg`, copied verbatim by `npm run build:trust-assets` into `src/content/stamp-art.ts` (a test fails if they diverge). Only the fill colour is chosen (#B43E31). No coordinate is changed. The legal name is set in Helvetica Bold, one line, spread to the wordmark's width, as in the approved reference.
-* Variants: `compact` (footers), `standard` (end of letters/agreements), `signing` (corporate endorsement or personal signing stamp); horizontal and stacked arrangements; uniform scale only (the QR never falls under 20 mm).
-* Alongside the QR the lockup is exactly as tall as the QR's dark modules and aligned to them; icon, wordmark, rule and name are set close together.
-* QR: vector, dark modules **#101720 (Midnight Navy)** on white, error correction M, 4-module quiet zone inside its own white square, never overlapped. 27 to 32 mm squares.
-* Every mark is also a link annotation to the verification page, and the full address is printed as a clickable link in every footer.
-* The corporate mark carries no disclaimer line; a personal signing stamp says "Non-certified electronic signature".
+Chosen centrally by `trustPolicy(...).signature` and `.footer` (`content/trust-policy.ts`); never both Signature Type 2 and Footer Type 3 on one document.
+
+| Component | Used for | Shows |
+|---|---|---|
+| **Signature Type 1** | A regular VORA document when it is signed (the signing ceremony places it) | QR + four rows: Nomor dokumen, Didaftarkan, Nama, Jabatan. No logo, no stamp, no address. |
+| **Signature Type 2** | Third-party documents and VORA agreements (cooperation, logistics service, NDA) | The same box, and under a divider, inside it, the complete verification link. Agreements carry no verification footer: Type 2 closes them (corporate registration, VORA as the issuer) and the page numbering stays. |
+| **Footer Type 3** | Every other VORA document (invoice, receipt, pre-payment receipt, quotation, letters, statements, certificates, delivery note, proof of delivery) | One framed row of equal-height sections: brand (approved wordmark, tagline, the issuer's address and NPWP from the company settings) \| verification (heading, instruction, the complete address, the document's own notes) \| metadata (number, issued, e-mail, page) \| QR \| the VORA stamp. |
+
+* **One size contract for Types 1 and 2:** a fixed landscape box 2 : 1 (width : height), 120 x 60 mm (`SIGNATURE_DIMENSIONS`), identical for both, scaled only uniformly (the editor offers 100% and 80%). Type 2's link row is inside the box; the box never grows.
+* **Links:** VORA red #B43E31, underlined, complete (never truncated: set on one line, else split after `/verify/`, else wrapped inside the token only), real PDF link annotations (the address row, the whole box for signatures, and the QR), and the QR and the link are made from the same address.
+* **QR:** vector, dark modules #101720 (Midnight Navy) on white, error correction M, 4-module quiet zone, 22 to 43 mm squares, never overlapped.
+* **Typography:** values are Courier (monospaced); in the footer all text is Courier except the stamp's own name, which is part of the approved stamp artwork. Icons are inline line paths (`content/glyphs.ts`), not font glyphs.
+* **Artwork:** the `d` of every path of `public/static/assets/vora-a-icon-primary.svg` and `vora-primary.svg`, copied verbatim by `npm run build:trust-assets` into `src/content/stamp-art.ts` (a test fails if they diverge). The footer stamp is as tall as the QR modules and aligned to them; icon, wordmark, rule and name are set close together.
+* The corporate marks carry no "not a personal signature" disclaimer, anywhere.
+* The browser preview (`components/trust/TrustMark.tsx`) draws the very same layout items as the PDF painter (`server/pdf/trust-mark.ts`).
 
 ## 5. The verification page and watermark
 

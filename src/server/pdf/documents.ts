@@ -10,6 +10,7 @@ import { documentType } from '../../content/document-types'
 import { readSealed, readSource, type StoredFields } from '../documents/general'
 import { sealPdf } from './seal'
 import { trustedPdf } from '../trust/serve'
+import { trustPolicy } from '../../content/trust-policy'
 import { businessDateTime } from '../dates'
 import { renderCertificate } from './certificate'
 import { renderGeneral } from './general'
@@ -184,6 +185,7 @@ async function generalPdf(id: number, baseUrl: string): Promise<Uint8Array> {
   const rows = invoices.length ? acceptedAccounts(await many('invoice_bank_instructions', (q) => q.in('invoice_id', invoices.map((i) => i.id)), 'bank_name,account_number,account_holder,currency,swift_code,position')) : []
   const data: GeneralDocData = {
     number: doc.number as string, kind: type.key, language: doc.language as 'id' | 'en', status: doc.status as string, documentDate: String(doc.documentDate),
+    issuedAt: doc.issuedAt ? `${businessDateTime(doc.issuedAt as Date)} WIB` : undefined,
     values: stored.values ?? {}, invoices, articles: stored.articles ?? [],
     banks: rows.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: Number(b.position) })),
   }
@@ -206,7 +208,7 @@ async function sealedFile(doc: Record<string, unknown>, stored: StoredFields, id
   if (!stored.source) throw new ActionError('This document has no PDF to seal', 409)
   const v = stored.values
   return (await sealPdf(await readSource(stored.source), {
-    verificationUrl: await verifyUrl('document', id, baseUrl), reference: doc.number as string, lang: doc.language as 'id' | 'en', purpose: v.purpose, pages: v.pages, corner: v.corner, size: v.size,
+    type: trustPolicy('document', doc.kind as string).signature, verificationUrl: await verifyUrl('document', id, baseUrl), number: doc.number as string, lang: doc.language as 'id' | 'en', pages: v.pages, corner: v.corner, size: v.size,
     pageNumber: v.page_number, posX: v.pos_x, posY: v.pos_y, preview: true,
   })).bytes
 }

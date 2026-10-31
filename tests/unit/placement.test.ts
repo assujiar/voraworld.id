@@ -3,13 +3,13 @@ import { degrees, PDFDocument } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 import { clampZoom, cssRect, describePlacement, dragTo, loupePosition, nudge, tapTo, type PageBox } from '@/content/placer-geometry'
 import { fraction, placeSeal, placementFractions, sealDims, sealedPages } from '@/content/seal-layout'
-import { layoutMark } from '@/content/trust-mark'
+import { layoutSignature } from '@/content/verification-blocks'
 import { sealMarkOptions } from '@/content/seal-layout'
 import { sealPdf } from '@/server/pdf/seal'
 import { rasterize } from '../helpers/pdf-text'
 
 const URL_ = 'https://voraworld.id/verify/AbCdEfGhIjKlMnOpQrStUvWxYz0123456789-_AbCdEfGh'
-const input = { lang: 'id' as const, url: URL_, purpose: 'verified', size: 'medium', reference: 'SEL-1' }
+const input = { type: 2 as const, lang: 'id' as const, url: URL_, size: 'medium', number: 'SEL-1' }
 const dims = sealDims(input)
 
 describe('the shared placement geometry', () => {
@@ -62,8 +62,8 @@ describe('the shared placement geometry', () => {
     expect(sealedPages(3, 'last', null)).toEqual([2]); expect(sealedPages(3, 'all', null)).toEqual([0, 1, 2]); expect(sealedPages(3, 'one', 2)).toEqual([1]); expect(() => sealedPages(3, 'one', 4)).toThrow()
   })
   it('uses the same room for the preview and the finished mark, so a confirmed placement cannot move at signing', () => {
-    const preview = layoutMark(sealMarkOptions({ ...input, preview: true, signer: { name: 'Siti Rahma', position: 'Direktur' } }))
-    const final = layoutMark(sealMarkOptions({ ...input, signedAt: '31 Okt 2026 11:42 WIB', signer: { name: 'Siti Rahma', position: 'Direktur' } }))
+    const preview = layoutSignature(sealMarkOptions({ ...input, preview: true, signer: { name: 'Siti Rahma', position: 'Direktur' } }))
+    const final = layoutSignature(sealMarkOptions({ ...input, registeredAt: '31 Okt 2026 11:42 WIB', signer: { name: 'Siti Rahma', position: 'Direktur' } }))
     expect(preview.width).toBeCloseTo(final.width, 6); expect(preview.height).toBeCloseTo(final.height, 6)
   })
 })
@@ -88,7 +88,7 @@ describe('the finished PDF matches the confirmed placement', () => {
     for (const [size, crop] of [[[595.28, 841.89], undefined], [[612, 792], undefined], [[700, 900], [20, 30, 580, 770]]] as const) {
       for (const where of [{ corner: 'custom', posX: '0.3000', posY: '0.4000' }, { corner: 'bottom-right' }, { corner: 'top-left' }]) {
         const source = await pageWith(rotate, size as [number, number], crop as [number, number, number, number] | undefined)
-        const { bytes } = await sealPdf(source, { verificationUrl: URL_, lang: 'id', reference: 'SEL-1', purpose: 'verified', pages: 'last', size: 'medium', ...where })
+        const { bytes } = await sealPdf(source, { type: 2, verificationUrl: URL_, lang: 'id', number: 'SEL-1', pages: 'last', size: 'medium', ...where })
         const dpi = 200
         const { found, r } = qrCorner(bytes, dpi)
         expect(found?.data, `${rotate} ${JSON.stringify(where)}`).toBe(URL_)
@@ -97,7 +97,7 @@ describe('the finished PDF matches the confirmed placement', () => {
         const vh = rotate % 180 ? (crop ? crop[2] : size[0]) : (crop ? crop[3] : size[1])
         const k = dpi / 72
         const rect = placeSeal(vw, vh, dims, where.corner, where.posX ? Number(where.posX) : null, where.posY ? Number(where.posY) : null)
-        const layout = layoutMark(sealMarkOptions({ ...input }))
+        const layout = layoutSignature(sealMarkOptions({ ...input }))
         const qr = layout.items.find((i) => i.t === 'qr')!
         if (qr.t !== 'qr') throw new Error('x')
         // The QR square's top left, from the layout and the placement: where the decoder should find it (the finder pattern corners are inside the square).
@@ -111,9 +111,9 @@ describe('the finished PDF matches the confirmed placement', () => {
     }
   })
   it('puts the mark on the pages chosen and leaves every other page byte-for-byte as it was', async () => {
-    const doc = await PDFDocument.create(); for (let i = 0; i < 3; i++) doc.addPage([300, 400])
+    const doc = await PDFDocument.create(); for (let i = 0; i < 3; i++) doc.addPage([600, 800])
     const source = await doc.save()
-    const { bytes, pagesSealed } = await sealPdf(source, { verificationUrl: URL_, lang: 'en', reference: 'SEL-1', purpose: 'verified', pages: 'one', pageNumber: '2', corner: 'top-left', size: 'small' })
+    const { bytes, pagesSealed } = await sealPdf(source, { type: 1, verificationUrl: URL_, lang: 'en', number: 'SEL-1', pages: 'one', pageNumber: '2', corner: 'top-left', size: 'small' })
     expect(pagesSealed).toBe(1)
     const out = await PDFDocument.load(bytes)
     expect(out.getPage(0).node.Annots()?.size() ?? 0).toBe(0); expect(out.getPage(1).node.Annots()?.size()).toBe(1); expect(out.getPage(2).node.Annots()?.size() ?? 0).toBe(0)

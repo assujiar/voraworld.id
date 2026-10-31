@@ -1,5 +1,5 @@
 import { longDate, WORDS } from '../../content/document-types'
-import { BAND_H, INK, RED, SLATE, WHITE, Sheet } from './kit'
+import { BAND_H, INK, RED, SLATE, TAGLINE, WHITE, Sheet } from './kit'
 import type { GeneralDocData, Issuer } from './types'
 
 /**
@@ -68,13 +68,11 @@ export async function renderCertificate(d: GeneralDocData, issuer: Issuer, verif
   })
 
   // Footer: how to verify it.
-  s.footer(86, left, right)
-  const mark = s.verificationMark({ url: verificationUrl, lang, right, bottom: 7.5 })
-  s.text(left, 71, lang === 'id' ? 'VORA | VERIFIKASI SERTIFIKAT' : 'VORA | CERTIFICATE VERIFICATION', 7.7, SLATE, true)
-  s.text(left, 60, WORDS.verifyOnline[lang], 6.4, SLATE)
-  s.linkLines(left, 50, verificationUrl, mark.left - 12 - left, 5.9, INK)
-  s.text(left, 36, issuer.email, 7.2, INK)
-  s.text(left, 24, `${label}  |  ${d.number}`, 7.1, SLATE)
+  s.pageEdge()
+  s.verificationFooter({
+    left, right, top: 83, bottom: 9, url: verificationUrl, number: d.number, issuedOn: d.documentDate, issuer: { address: issuer.address, taxId: issuer.taxId, email: issuer.email }, tagline: TAGLINE,
+    heading: lang === 'id' ? 'VORA | VERIFIKASI SERTIFIKAT' : 'VORA | CERTIFICATE VERIFICATION', instruction: WORDS.verifyOnline[lang], pageLine: `${label}  |  ${d.number}`,
+  })
   return s.save()
 }
 

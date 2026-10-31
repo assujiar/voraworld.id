@@ -160,7 +160,7 @@ export async function ceremonyView(user: SessionUser, requestId: number) {
   const doc = await docFacts(request.kind, request.documentId)
   const latest = (await artifactsOf(request.kind, request.documentId)).at(-1)!
   const policy = trustPolicy(request.kind, doc.documentKind)
-  return { request, profile, doc, artifact: { id: latest.id, version: latest.version, sha256: latest.sha256 }, changed: latest.id !== request.sourceArtifactId || latest.sha256 !== request.sourceSha256, family: policy.family, passkeys: (await credentialsOf(profile.id)).length, consent: consentStatement(), purposeLabel: PURPOSE_LABELS[doc.language][request.purpose as SigningPurpose], verifyToken: (await getVerification(request.kind, request.documentId))?.token }
+  return { request, profile, doc, artifact: { id: latest.id, version: latest.version, sha256: latest.sha256 }, changed: latest.id !== request.sourceArtifactId || latest.sha256 !== request.sourceSha256, family: policy.family, passkeys: (await credentialsOf(profile.id)).length, consent: consentStatement(), signatureType: policy.signature, purposeLabel: PURPOSE_LABELS[doc.language][request.purpose as SigningPurpose], verifyToken: (await getVerification(request.kind, request.documentId))?.token }
 }
 
 export async function beginSigning(user: SessionUser, requestId: number, body: { placement: unknown; confirmations: unknown }) {
@@ -213,7 +213,7 @@ export async function finishSigning(user: SessionUser, requestId: number, respon
   const signedAt = new Date()
   const p = payload.placement
   const made = await sealPdf(bytes, {
-    verificationUrl: `${relyingParty().origin}/verify/${verification.token}`, reference: request.ref, lang: doc.language, purpose: request.purpose, pages: p.pages, corner: p.corner, size: p.size,
+    type: trustPolicy(request.kind, doc.documentKind).signature, verificationUrl: `${relyingParty().origin}/verify/${verification.token}`, number: doc.number, lang: doc.language, pages: p.pages, corner: p.corner, size: p.size,
     pageNumber: p.page_number ? String(p.page_number) : undefined, posX: p.pos_x ?? undefined, posY: p.pos_y ?? undefined, issuedAt: `${businessDateTime(signedAt)} WIB`, signer: { name: payload.signer.name, position: payload.signer.position },
   })
   const prepared = await prepareSignedArtifact({

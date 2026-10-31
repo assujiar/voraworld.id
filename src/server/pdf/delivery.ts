@@ -1,5 +1,5 @@
 import { Flow } from './flow'
-import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet } from './kit'
+import { BAND_H, H, INK, PALE, RED, SLATE, TAGLINE, W, WHITE, PdfLayoutError, Sheet } from './kit'
 import type { DeliveryNoteData, Issuer, PodData } from './types'
 
 /**
@@ -18,7 +18,7 @@ const LEADING = 10.6
 
 export type Row = { label: string; id?: string; value: string }
 
-export interface FrameOptions { title: string; subtitle: string; number: string; status: string; issuer: Issuer; label: string; verifyUrl: string; verifyLabel: string; evidenceUrl?: string }
+export interface FrameOptions { title: string; subtitle: string; number: string; status: string; issuer: Issuer; label: string; verifyUrl: string; verifyLabel: string; evidenceUrl?: string; issuedOn: string }
 
 /** What every page carries: the letterhead, the title, the state (a draft or void document is marked across the page) and the footer. */
 export function frame(s: Sheet, o: FrameOptions) {
@@ -31,17 +31,13 @@ export function frame(s: Sheet, o: FrameOptions) {
     s.right(RIGHT, H - 60, o.subtitle, 7.4, '#C9D0D4')
     s.right(RIGHT, H - 76, o.number, 6.8, WHITE)
     if (!['issued', 'delivered', 'received'].includes(o.status)) s.right(RIGHT, H - 92, o.status.toUpperCase(), 7, '#E8B3AA', true)
-    s.footer(FOOTER_TOP, LEFT, RIGHT)
-    const mark = s.verificationMark({ url: o.verifyUrl, lang: 'en', right: RIGHT, bottom: 7.5 })
-    const column = mark.left - 12 - LEFT
-    s.text(LEFT, 73, 'VORA | DELIVERY', 7.7, SLATE, true)
-    s.text(LEFT, 63, `${o.verifyLabel} (the QR code or this link; it is not the driver's code):`, 6.2, SLATE)
-    s.linkLines(LEFT, 54, o.verifyUrl, column, 5.9, INK)
-    if (o.evidenceUrl) {
-      s.text(LEFT, 43, 'Evidence page of the delivery (receiver and VORA only):', 6.2, SLATE)
-      s.linkLines(LEFT, 34, o.evidenceUrl, column, 5.4, INK)
-    }
-    s.text(LEFT, 22, `${o.issuer.email}  |  ${o.label}  |  PAGE ${pageNo} OF ${total}`, 6.9, SLATE)
+    s.pageEdge()
+    s.verificationFooter({
+      left: LEFT, right: RIGHT, top: FOOTER_TOP - 3, bottom: 9, url: o.verifyUrl, number: o.number, issuedOn: o.issuedOn, issuer: { address: o.issuer.address, taxId: o.issuer.taxId, email: o.issuer.email }, tagline: TAGLINE,
+      heading: 'VORA | DELIVERY', instruction: `${o.verifyLabel} (the QR code or this link; not the driver's code):`,
+      extraLinks: o.evidenceUrl ? [{ label: 'Evidence page of the delivery (receiver and VORA only):', url: o.evidenceUrl }] : undefined,
+      pageLine: `${o.label}  |  PAGE ${pageNo} OF ${total}`,
+    })
   }
 }
 
@@ -211,7 +207,7 @@ export async function renderDeliveryNote(d: DeliveryNoteData, issuer: Issuer): P
   f.put(() => s.linkLines(LEFT + 14, linkTop, d.captureUrl, qrSize + 16, 5.6, INK))
   f.y = top - BOX - 8
 
-  f.draw(frame(s, { title: 'DELIVERY NOTE', subtitle: 'SURAT JALAN', number: d.number, status: d.status, issuer, label: 'DELIVERY NOTE', verifyUrl: d.verifyUrl, verifyLabel: 'Check this delivery note online' }))
+  f.draw(frame(s, { title: 'DELIVERY NOTE', subtitle: 'SURAT JALAN', number: d.number, status: d.status, issuer, label: 'DELIVERY NOTE', verifyUrl: d.verifyUrl, verifyLabel: 'Check this delivery note online', issuedOn: d.deliveryDate }))
   return s.save()
 }
 
@@ -294,6 +290,6 @@ export async function renderPod(d: PodData, issuer: Issuer): Promise<Uint8Array>
     f.y = top - rowH - 22
   }
 
-  f.draw(frame(s, { title: 'PROOF OF DELIVERY', subtitle: 'BUKTI PENGIRIMAN', number: d.number, status: p.status === 'rejected' ? 'void' : d.status, issuer, label: 'PROOF OF DELIVERY', verifyUrl: d.verifyUrl, verifyLabel: 'Check this proof-of-delivery document online', evidenceUrl: d.viewUrl }))
+  f.draw(frame(s, { title: 'PROOF OF DELIVERY', subtitle: 'BUKTI PENGIRIMAN', number: d.number, status: p.status === 'rejected' ? 'void' : d.status, issuer, label: 'PROOF OF DELIVERY', verifyUrl: d.verifyUrl, verifyLabel: 'Check this proof-of-delivery document online', evidenceUrl: d.viewUrl, issuedOn: p.receivedAt }))
   return s.save()
 }

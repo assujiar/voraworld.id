@@ -2,7 +2,8 @@ import { PDFDocument } from 'pdf-lib'
 import { ActionError } from '../errors'
 import type { Lang } from '../../content/document-types'
 import { fraction, placeSeal, SEAL_MARGIN, sealDims, sealedPages, sealMarkOptions } from '../../content/seal-layout'
-import { layoutMark } from '../../content/trust-mark'
+import { layoutSignature } from '../../content/verification-blocks'
+import type { SignatureType } from '../../content/verification-blocks'
 import { embedMarkFonts, PageView, paintMark } from './trust-mark'
 
 /**
@@ -10,18 +11,18 @@ import { embedMarkFonts, PageView, paintMark } from './trust-mark'
  * it (or in the corner chosen), whatever the rotation or crop box of the page. It is the same mark the editor shows (content/trust-mark.ts), the same placement
  * (content/seal-layout.ts), and a link as well as a QR code to the document's verification page, which shows the SHA-256 of the file.
  *
- * Two kinds of mark, never mixed:
- *   corporate  (no `signer`)  VORA registered the file and vouches that it did (it names the company and the document number, not a person).
- *   personal   (`signer`)     an authorised individual signed it in VORA (the signing ceremony; see trust/signing.ts), and the mark names them and the signing event.
+ * Two uses of the same component: VORA's own registration of a file (no `signer`: it names the company as the issuer) and a person's signing (`signer`: it names them).
  */
 export interface SealOptions {
+  /** Type 1 for a regular VORA document that is signed; Type 2 for a third-party document or an agreement (it also carries the verification link). The policy decides: content/trust-policy.ts. */
+  type: SignatureType
   verificationUrl: string; lang: Lang
-  /** The document number (corporate mark) or the signing reference (personal). */
-  reference: string
-  purpose: string; pages: string; corner: string; size: string
+  /** The number of the document (the first row). */
+  number: string
+  pages: string; corner: string; size: string
   /** The page chosen when `pages` is `one`, and where the mark was dropped when `corner` is `custom` (0 to 1 from the top left). */
   pageNumber?: string; posX?: string; posY?: string
-  /** Shown as it is, already in Jakarta time. */
+  /** When it was registered or signed, shown as it is, already in Jakarta time. Absent in a preview. */
   issuedAt?: string
   signer?: { name: string; position: string }
   /** A preview shows where the mark will go and is marked as a preview; it is never stored. */
@@ -39,8 +40,8 @@ export async function sealPdf(source: Uint8Array, o: SealOptions): Promise<{ byt
   }
   const total = doc.getPageCount()
   if (total < 1 || total > MAX_SEAL_PAGES) throw new ActionError(`The PDF must have 1 to ${MAX_SEAL_PAGES} pages`)
-  const input = { lang: o.lang, url: o.verificationUrl, purpose: o.purpose, size: o.size, reference: o.reference, signer: o.signer, signedAt: o.issuedAt, preview: o.preview }
-  const layout = layoutMark(sealMarkOptions(input))
+  const input = { type: o.type, lang: o.lang, url: o.verificationUrl, size: o.size, number: o.number, signer: o.signer, registeredAt: o.issuedAt, preview: o.preview }
+  const layout = layoutSignature(sealMarkOptions(input))
   const dims = sealDims(input)
   const fonts = await embedMarkFonts(doc)
   let indexes: number[]

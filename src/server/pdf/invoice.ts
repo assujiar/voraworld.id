@@ -1,6 +1,6 @@
 import { money } from '../money'
 import { daysBetween } from '../dates'
-import { BAND_H, H, INK, PALE, RED, SLATE, W, WHITE, PdfLayoutError, Sheet, withoutCurrency } from './kit'
+import { BAND_H, H, INK, PALE, RED, SLATE, TAGLINE, W, WHITE, PdfLayoutError, Sheet, withoutCurrency } from './kit'
 import type { InvoiceData, Issuer, LineData } from './types'
 
 /**
@@ -58,18 +58,15 @@ async function compose(d: InvoiceData, issuer: Issuer, verificationUrl: string, 
     const payment = d.outstandingMinor === 0 ? 'OFFICIALLY PAID' : paidPct > 0 ? 'PARTIALLY PAID' : 'AWAITING PAYMENT'
     const issuance = d.status === 'void' ? 'VOID' : d.status === 'draft' ? 'DRAFT' : 'ISSUED'
     s.right(R, H - 87, `${issuance} / ${payment}`, 7.0, '#E8B3AA', true)
-    // Repeated verification footer on every page.
-    s.footer(83, L, R)
-    const mark = s.verificationMark({ url: verificationUrl, lang: 'en', right: R, bottom: 7.5 })
-    const column = mark.left - 12 - L
-    s.text(L, 72, 'VORA | DIGITAL DOCUMENT VERIFICATION', 7.6, INK, true)
-    s.text(L, 63, 'Scan the QR, or click this link, to check document status with VORA:', 6.2, SLATE)
-    s.linkLines(L, 54, verificationUrl, column, 5.9, INK)
-    // An invoice is a payment request. Proof of payment is only the receipt issued after cleared funds.
-    s.text(L, 43, 'PAYMENT REQUEST - NOT PROOF OF PAYMENT', 6.9, RED, true)
-    s.text(L, 34, 'Proof of payment is the official VORA receipt, issued only', 6.2, SLATE)
-    s.text(L, 26, 'after Finance confirms cleared funds.', 6.2, SLATE)
-    s.text(L, 14, `${issuer.email}  |  PAGE ${String(pageNo).padStart(2, '0')} OF ${String(total).padStart(2, '0')}`, 6.8, SLATE)
+    // Footer Type 3 on every page: the verification address, the QR code and the VORA stamp, with the invoice's own notes.
+    s.pageEdge()
+    s.verificationFooter({
+      left: L, right: R, top: 80, bottom: 9, url: verificationUrl, number: d.number, issuedOn: d.issuedAt, issuer: { address: issuer.address, taxId: issuer.taxId, email: issuer.email }, tagline: TAGLINE,
+      heading: 'VORA | DIGITAL DOCUMENT VERIFICATION', instruction: 'Scan the QR, or click this link, to check document status with VORA:',
+      // An invoice is a payment request. Proof of payment is only the receipt issued after cleared funds.
+      notes: ['PAYMENT REQUEST - NOT PROOF OF PAYMENT', 'Proof of payment is the official VORA receipt, issued only after Finance confirms cleared funds.'], emphasiseFirst: true,
+      pageLine: `DOCUMENT  |  PAGE ${String(pageNo).padStart(2, '0')} OF ${String(total).padStart(2, '0')}`,
+    })
   }
 
   const partiesAndMetadata = (): number => {
