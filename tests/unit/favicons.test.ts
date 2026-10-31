@@ -41,7 +41,7 @@ describe('the favicon set', () => {
       expect([img.w, img.h], name).toEqual([size, size])
       expect(at(img, 0, 0)[3], `${name} corner is transparent`).toBe(0)
       const mid = at(img, Math.round(size * 0.07), Math.round(size / 2))                                          // on the badge, in the padding left of the wordmark
-      mid.slice(0, 3).forEach((c, k) => expect(Math.abs(c - NAVY[k]), `${name} badge is Midnight Navy`).toBeLessThanOrEqual(3)); expect(mid[3]).toBe(255)
+      mid.slice(0, 3).forEach((c, k) => expect(Math.abs(c - NAVY[k]), `${name} badge is Midnight Navy (a little lighter is the faint edge)`).toBeLessThanOrEqual(name === 'favicon-32.png' ? 30 : 3)); expect(mid[3]).toBe(255)
     }
     for (const [name, size] of [['apple-touch-icon.png', 180], ['icon-maskable-512.png', 512]] as const) {
       const img = await px(name)
@@ -62,6 +62,13 @@ describe('the favicon set', () => {
     expect(left).toBeLessThanOrEqual(56)
   })
 
+  it('draws the letters bolder at 32 px than the large icon scaled down to 32 px, so that they stay clear in a tab', async () => {
+    const ink = async (buf: Buffer) => { const { data } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); let n = 0; for (let i = 0; i < data.length; i += 4) n += data[i] / 255; return n }
+    const small = await ink(readFileSync(pub('favicon-32.png')))
+    const scaled = await ink(await sharp(pub('icon-512.png')).resize(32, 32, { kernel: 'lanczos3' }).png().toBuffer())
+    expect(small / scaled, 'the 32 px icon holds more white').toBeGreaterThan(1.08)
+  })
+
   it('keeps every file small', () => {
     const limits: Record<string, number> = { 'favicon-32.png': 1500, 'icon-192.png': 6000, 'icon-512.png': 12000, 'icon-maskable-512.png': 6000, 'apple-touch-icon.png': 5000, 'site.webmanifest': 1000 }
     for (const [name, max] of Object.entries(limits)) expect(statSync(pub(name)).size, name).toBeLessThan(max)
@@ -80,8 +87,8 @@ describe('the favicon set', () => {
 
   it('is what the three layouts point at: .ico, SVG, the 192 px badge and the iOS square, with the manifest', () => {
     const urls = (ICONS.icon as Array<{ url: string }>).map((i) => i.url)
-    expect(urls).toEqual(expect.arrayContaining(['/favicon.ico?v=4', '/favicon.svg?v=4', '/icon-192.png?v=4']))
-    expect((ICONS.apple as Array<{ url: string }>)[0].url).toBe('/apple-touch-icon.png?v=4'); expect(MANIFEST).toBe('/site.webmanifest')
+    expect(urls).toEqual(expect.arrayContaining(['/favicon.ico?v=5', '/favicon.svg?v=5', '/icon-192.png?v=5']))
+    expect((ICONS.apple as Array<{ url: string }>)[0].url).toBe('/apple-touch-icon.png?v=5'); expect(MANIFEST).toBe('/site.webmanifest')
     for (const layout of ['src/app/(site)/[locale]/layout.tsx', 'src/app/(docs)/layout.tsx', 'src/app/(admin)/layout.tsx']) {
       const s = readFileSync(layout, 'utf8')
       expect(s, layout).toContain('icons: ICONS'); expect(s, layout).toContain('manifest: MANIFEST'); expect(s, layout).not.toContain('vora-a-icon-primary')
