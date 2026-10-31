@@ -66,7 +66,6 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
         </section>
 
         <section className="vf-surface vf-ident" aria-label="Document">
-          <Watermark layer="front" id="f1" />
           <dl>
             <div><dt><Bi en="Document" id={model.labelId} /></dt><dd>{model.label}</dd></div>
             <div><dt><Bi en="Reference" id="Nomor" /></dt><dd className="vf-mono">{model.reference}</dd></div>
@@ -80,7 +79,6 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
 
         <div className="vf-findings">
           <section className="vf-surface" aria-labelledby="vf-h-record">
-            <Watermark layer="front" id="f2" />
             <h2 id="vf-h-record">1 · <Bi en="Record" id="Catatan" /></h2>
             <p className="vf-fact"><span aria-hidden="true">✓</span><span className="vf-fact-text"><Bi en="Verification record found" id="Catatan verifikasi ditemukan" /></span></p>
             <p>{model.policy.confirms.en}<br /><span className="vf-id">{model.policy.confirms.id}</span></p>
@@ -88,7 +86,6 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
           </section>
 
           <section className="vf-surface" aria-labelledby="vf-h-issuance">
-            <Watermark layer="front" id="f3" />
             <h2 id="vf-h-issuance">2 · <Bi en="Issuance" id="Penerbitan" /></h2>
             <p className={`vf-fact vf-${issuance.tone}`}><span aria-hidden="true">{issuance.tone === 'ok' ? '✓' : issuance.tone === 'bad' ? '✕' : '–'}</span><span className="vf-fact-text"><Bi en={issuance.en} id={issuance.id} /></span></p>
             <p className="vf-small">{issuance.detail.en}<br /><span className="vf-id">{issuance.detail.id}</span></p>
@@ -97,7 +94,6 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
           </section>
 
           <section className="vf-surface" aria-labelledby="vf-h-signing">
-            <Watermark layer="front" id="f4" />
             <h2 id="vf-h-signing">3 · <Bi en="Signing" id="Penandatanganan" /></h2>
             {model.signing === 'not_applicable' ? <p className="vf-fact vf-neutral"><span aria-hidden="true">–</span><span className="vf-fact-text"><Bi en="Not signed by a person: this kind of document is issued and verified" id="Tidak ditandatangani perorangan: jenis dokumen ini diterbitkan dan diverifikasi" /></span></p> : null}
             {model.signing === 'none_yet' ? <p className="vf-fact vf-neutral"><span aria-hidden="true">–</span><span className="vf-fact-text"><Bi en="No personal signature recorded" id="Tidak ada tanda tangan pribadi yang tercatat" /></span></p> : null}
@@ -120,7 +116,6 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
 
           {live && model.live.length ? (
             <section className="vf-surface" aria-labelledby="vf-h-status">
-              <Watermark layer="front" id="f5" />
               <h2 id="vf-h-status">4 · <Bi en="Current status" id="Status terkini" /></h2>
               {model.live.map((l) => <p key={l.label.en}><span className="vf-small">{l.label.en} <span className="vf-id">| {l.label.id}</span></span><br /><strong>{l.value}</strong></p>)}
               <p className="vf-small">Read live from VORA's records now. It is never printed into the issued file. <span className="vf-id">Dibaca langsung dari catatan VORA saat ini; tidak pernah dicetak ke dalam berkas yang diterbitkan.</span></p>
@@ -128,7 +123,6 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
           ) : null}
 
           <section className="vf-surface vf-wide" aria-labelledby="vf-h-file">
-            <Watermark layer="front" id="f6" />
             <h2 id="vf-h-file">{live && model.live.length ? 5 : 4} · <Bi en="File integrity" id="Keutuhan berkas" /></h2>
             {model.artifacts.length ? (
               <div className="vf-hashes">
@@ -148,6 +142,8 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
           <p className="vf-small"><a className="vf-link" href={`/verify/${token}/evidence`}>Evidence summary (JSON) <span className="vf-id">| Ringkasan bukti</span></a></p>
         </footer>
       </div>
+      {/* One faint layer in front of everything, anchored to the page like the one behind it, so that the two share a phase and neither is cut at a card's edge. */}
+      <Watermark layer="front" id="f" />
     </main>
   )
 }

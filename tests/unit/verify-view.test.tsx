@@ -110,7 +110,7 @@ describe('what the page says', () => {
   it('puts the repeating watermark behind the information, hidden from assistive technology, and nothing in the way of a click', () => {
     const h = html()
     expect((h.match(/data-watermark="back"/g) ?? []).length).toBe(1)
-    expect((h.match(/data-watermark="front"/g) ?? []).length).toBeGreaterThanOrEqual(3)
+    expect((h.match(/data-watermark="front"/g) ?? []).length).toBe(1)                                // one layer in front, for the whole page (a layer per card would be cut at its edges)
     expect((h.match(/<svg class="vf-wm [^"]*" aria-hidden="true" focusable="false"/g) ?? []).length).toBe((h.match(/class="vf-wm /g) ?? []).length)
     expect(h).toContain('patternTransform="rotate(-24)"')
     expect(h).toContain('PT SATU ARAH INTERNATIONAL')

@@ -76,6 +76,8 @@ test('the watermark repeats, in the corporate red at a low opacity, behind the p
   }
   const back = info.find((i) => i.layer === 'back')!, front = info.find((i) => i.layer === 'front')!
   expect(front.opacity).toBeLessThan(back.opacity)
+  // One layer behind and one in front, both anchored to the page itself: a layer inside a card would be cut at the card's edge and out of phase with the other.
+  expect(await page.evaluate(() => ({ back: document.querySelectorAll('main > svg.vf-wm-back').length, front: document.querySelectorAll('main > svg.vf-wm-front').length, nested: document.querySelectorAll('section svg.vf-wm, .vf-surface svg.vf-wm').length }))).toEqual({ back: 1, front: 1, nested: 0 })
   // The pattern is one tile repeated by the browser (patternUnits userSpaceOnUse), so it has no seams and never clips a stamp at the page's edge by construction.
   expect(await page.evaluate(() => document.querySelectorAll('pattern').length)).toBeGreaterThanOrEqual(2)
 })

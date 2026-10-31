@@ -86,7 +86,7 @@
 .vf-banner p{margin:.35rem 0;font-size:.9375rem;line-height:1.5}
 .vf-banner p .vf-id{font-size:.875rem}
 
-.vf-surface{margin-top:14px;padding:18px 20px;border:1px solid #e1e5e7;border-top:1px solid #e1e5e7;border-radius:14px;background:rgba(255,255,255,.82)}
+.vf-surface{margin-top:14px;padding:18px 20px;border:1px solid #e1e5e7;border-top:1px solid #e1e5e7;border-radius:14px;background:transparent;overflow:visible}
 .vf-surface h2{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #eceff0;font-size:.78rem}
 .vf-surface h2 .vf-id{font-weight:500;letter-spacing:.08em}
 .vf-surface p{font-size:.9375rem;line-height:1.5}
@@ -149,3 +149,9 @@
   .vf-check input[type=file]{display:none}
 }
 .vf-result:empty{min-height:0;margin:0}
+
+/* The watermark runs unbroken behind and in front of the whole page: nothing opaque cuts it, so no card or banner shows a seam. */
+.vf-banner{background:rgba(247,247,244,.6)}
+.vf-bad{background:rgba(251,241,239,.7)}.vf-wait{background:rgba(251,247,233,.7)}.vf-warn{background:rgba(255,246,236,.7)}
+.vf-check input[type=file]{background:rgba(247,247,244,.5)}
+.vf-result:not(:empty){background:rgba(244,246,247,.8)}
