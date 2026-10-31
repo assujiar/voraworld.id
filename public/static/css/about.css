@@ -11,7 +11,6 @@
 .ab-btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:inherit;font-weight:600;text-decoration:none;cursor:pointer;transition:background .2s,color .2s,transform .2s}
 .ab-btn:hover{transform:translateY(-1px)}
 .ab-btn--solid{background:#B43E31;border-color:#B43E31;color:#fff}.ab-btn--solid:hover{background:#9E3428}
-.ab-trust .ab-btn{color:#101720}.ab-trust .ab-btn:hover{background:#101720;color:#fff}
 .ab-hint{margin:8px 0 0;text-align:center;font-size:.8125rem;letter-spacing:.06em;color:#9AA7B2}
 .ab-hint__touch{display:none}
 @media (hover:none){.ab-hint__fine{display:none}.ab-hint__touch{display:inline}}
@@ -89,14 +88,13 @@
 .ab-chips li{padding:7px 14px;border:1px solid #CBD2D6;border-radius:99px;background:#fff;font-size:.85rem;font-weight:600}
 @media (max-width:860px){.ab-build{grid-template-columns:1fr}}
 
-/* 6 · verification */
-.ab-trust{background:#fff}
-.ab-trust__grid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:clamp(20px,4vw,64px);align-items:center}
-.ab-who{margin:30px 0 8px;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#64717C}
-.ab-facts{display:grid;gap:10px;margin:0}.ab-facts div{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:12px;padding-top:10px;border-top:1px solid #E1E5E7}
+/* 6 · the company behind the brand */
+.ab-company{background:#fff}
+.ab-company__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,80px);align-items:center}
+.ab-facts{display:grid;gap:12px;margin:0}.ab-facts div{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:12px;padding-top:12px;border-top:1px solid #E1E5E7}
 .ab-facts dt{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64717C}.ab-facts dd{margin:0;overflow-wrap:anywhere}
-.ab-verify{margin:0;display:grid;gap:14px}.ab-verify figcaption{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:14px;font-size:.85rem;color:#64717C}
-@media (max-width:860px){.ab-trust__grid{grid-template-columns:1fr}.ab-verify{order:-1}}
+.ab-note{margin:22px 0 0;max-width:none;padding-top:14px;border-top:1px solid #E1E5E7;font-size:.9rem;line-height:1.55;color:#64717C}
+@media (max-width:860px){.ab-company__grid{grid-template-columns:1fr}}
 
 /* 7 · the field of marks, and the line to remember */
 .ab-field{position:relative;min-height:clamp(440px,74svh,680px);display:grid;place-items:center;overflow:hidden;background:#101720;color:#fff;touch-action:pan-y}
@@ -108,20 +106,11 @@
 
 @media (prefers-reduced-motion:reduce){.ab-hint:not(.ab-hint--static){display:none}.ab-btn,.ab-problem,.ab-step{transition:none}.ab-story__text span{transition:none}}
 
-/* the record that answers the scan: real text */
-.ab-record{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;padding:16px 18px;border:1px solid #DCE0E1;border-radius:14px;background:#fff;opacity:.35;transform:translateY(6px);transition:opacity .45s,transform .45s,border-color .45s,box-shadow .45s}
-.ab-record[data-found=true]{opacity:1;transform:none;border-color:#BFD9CB;box-shadow:0 12px 30px rgba(16,23,32,.1)}
-.ab-record__tick{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#E6EAEC;color:#fff;font-weight:700;transition:background .45s}
-.ab-record[data-found=true] .ab-record__tick{background:#276650}
-.ab-record strong{display:block;min-height:1.4em;margin-bottom:6px;font-size:1rem}
-.ab-record dl{display:grid;gap:4px;margin:0}.ab-record dl div{display:grid;grid-template-columns:7.5rem minmax(0,1fr);gap:10px;font-size:.88rem}
-.ab-record dt{color:#64717C}.ab-record dd{margin:0;font-weight:600}
-
 /* blocks that settle into place when scrolled to */
 .ab-reveal.is-armed{opacity:0;translate:0 26px}
 .ab-reveal.is-in{opacity:1;translate:0 0;transition:opacity .8s cubic-bezier(.2,.8,.2,1),translate .8s cubic-bezier(.2,.8,.2,1)}
 
 /* a calm join between a light section and a dark one */
-.ab-founder+.ab-capabilities,.ab-how+.ab-trust{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
-@media (prefers-reduced-motion:reduce){.ab-reveal.is-armed,.ab-reveal.is-in{opacity:1;translate:none;transition:none}.ab-record{transition:none}}
-.ab-how,.ab-trust{scroll-margin-top:76px}
+.ab-founder+.ab-capabilities,.ab-how+.ab-company{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+@media (prefers-reduced-motion:reduce){.ab-reveal.is-armed,.ab-reveal.is-in{opacity:1;translate:none;transition:none}}
+.ab-how,.ab-company{scroll-margin-top:76px}

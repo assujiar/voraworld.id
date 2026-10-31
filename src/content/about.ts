@@ -11,7 +11,7 @@ export const pick = (b: Bi, locale: Locale) => b[locale]
 
 export const ABOUT = {
   eyebrow: { en: 'About VORA', id: 'Tentang VORA' },
-  cta: { quote: { en: 'Request a quote', id: 'Minta penawaran' }, how: { en: 'See how we work', id: 'Lihat cara kerja kami' } },
+  cta: { quote: { en: 'Request a quote', id: 'Minta penawaran' } },
   hint: { hero: { en: 'Click VORA to reveal our line.', id: 'Klik VORA untuk melihat semboyan kami.' }, hintTouch: { en: 'Tap VORA to reveal our line.', id: 'Ketuk VORA untuk melihat semboyan kami.' } },
   manifesto: {
     label: { en: 'How VORA works', id: 'Cara kerja VORA' },
@@ -34,8 +34,8 @@ export const FOUNDER = {
     id: 'Selama itu, masalah yang sama muncul lagi dan lagi, dari satu pengiriman ke pengiriman berikutnya. Sebagian besar tidak ada hubungannya dengan truk atau kapal. Masalahnya ada di sekitar barang: siapa menyepakati apa, dokumen mana menyebut apa, dan siapa yang harus bergerak berikutnya.',
   },
   choose: {
-    en: 'VORA is the founder’s answer to four of them. Select a problem to see what we do about it.',
-    id: 'VORA adalah jawaban founder untuk empat di antaranya. Pilih satu masalah untuk melihat apa yang kami lakukan.',
+    en: 'VORA is the founder’s answer to six of them. Select a problem to see what we do about it.',
+    id: 'VORA adalah jawaban founder untuk enam di antaranya. Pilih satu masalah untuk melihat apa yang kami lakukan.',
   },
   problemLabel: { en: 'What went wrong', id: 'Yang bermasalah' },
   answerLabel: { en: 'What VORA does', id: 'Yang kami lakukan' },
@@ -51,17 +51,6 @@ export const FOUNDER = {
       },
     },
     {
-      title: { en: 'Documents', id: 'Dokumen' },
-      problem: {
-        en: 'The invoice, the packing list and the transport document described the same cargo in different words.',
-        id: 'Invoice, packing list, dan dokumen angkutan menguraikan barang yang sama dengan kata yang berbeda-beda.',
-      },
-      answer: {
-        en: 'We ask for the goods in plain words, with the HS code, at the start. Every document VORA issues carries a QR code that opens its public verification page.',
-        id: 'Sejak awal kami minta uraian barang dalam bahasa sehari-hari, lengkap dengan kode HS. Setiap dokumen dari VORA memuat kode QR yang membuka halaman verifikasinya.',
-      },
-    },
-    {
       title: { en: 'Handoffs', id: 'Serah terima' },
       problem: {
         en: 'The forwarder, the broker, the trucker and the warehouse each did their part, and the shipment still stalled between them.',
@@ -70,6 +59,22 @@ export const FOUNDER = {
       answer: {
         en: 'Responsibilities and milestones are lined up before the move starts, and each step has a named party behind it.',
         id: 'Sebelum pengiriman dimulai, kami selaraskan tanggung jawab dan tahapannya, dan setiap langkah punya penanggung jawab yang jelas.',
+      },
+    },
+    {
+      title: { en: 'Updates', id: 'Kabar perkembangan' },
+      problem: { en: 'Updates came late, or only after someone chased for them.', id: 'Kabar perkembangan datang terlambat, atau baru datang setelah ditanya.' },
+      answer: {
+        en: 'Milestones and the way we communicate are agreed before the move starts, so you hear from us at the points we named.',
+        id: 'Tahapan dan cara berkomunikasi kami sepakati sebelum pengiriman mulai, sehingga kabar datang pada titik yang sudah ditentukan.',
+      },
+    },
+    {
+      title: { en: 'Customs', id: 'Kepabeanan' },
+      problem: { en: 'Permit and customs requirements turned up late, when the cargo was already moving.', id: 'Syarat izin dan kepabeanan baru muncul belakangan, ketika barang sudah berjalan.' },
+      answer: {
+        en: 'Documents, permits and restrictions are reviewed in the validate step, and the ones that apply are confirmed before we commit.',
+        id: 'Dokumen, izin, dan pembatasan barang kami tinjau di langkah validasi, dan yang berlaku kami pastikan sebelum kami menyanggupi.',
       },
     },
     {
@@ -83,10 +88,21 @@ export const FOUNDER = {
         id: 'Kapabilitas dan jangkauan kami pastikan untuk setiap permintaan. Kalau ada yang tidak bisa kami kerjakan, kami katakan sejak awal.',
       },
     },
+    {
+      title: { en: 'Paperwork', id: 'Dokumen' },
+      problem: {
+        en: 'The invoice, the packing list and the transport document described the same cargo in different words.',
+        id: 'Invoice, packing list, dan dokumen angkutan menguraikan barang yang sama dengan kata yang berbeda-beda.',
+      },
+      answer: {
+        en: 'We ask for the goods in plain words, with the HS code, at the start, so that the paperwork describes one cargo.',
+        id: 'Sejak awal kami minta uraian barang dalam bahasa sehari-hari, lengkap dengan kode HS, supaya semua dokumen menguraikan satu barang yang sama.',
+      },
+    },
   ],
   after: {
-    en: 'The three steps we follow, understand, validate and coordinate, are these four problems turned into a way of working.',
-    id: 'Tiga langkah kerja kami (pahami, validasi, koordinasikan) lahir dari keempat masalah ini.',
+    en: 'The three steps we follow, understand, validate and coordinate, are these problems turned into a way of working.',
+    id: 'Tiga langkah kerja kami (pahami, validasi, koordinasikan) lahir dari masalah-masalah ini.',
   },
   byline: { en: 'Founder, VORA', id: 'Founder VORA' },
 }
@@ -115,27 +131,16 @@ export const COMMITMENTS = {
   ],
 }
 
-export const TRUST = {
-  label: { en: 'Paperwork', id: 'Dokumen' },
-  title: { en: 'Paperwork you can check.', id: 'Dokumen yang bisa Anda cek.' },
+export const COMPANY = {
+  label: { en: 'Who is behind VORA', id: 'Siapa di balik VORA' },
+  title: { en: 'The company behind the brand.', id: 'Perusahaan di balik brand ini.' },
   body: {
-    en: 'Quotations, invoices, delivery notes and payment receipts from VORA carry a QR code and a link. Scan it to see the record of that document and its current status.',
-    id: 'Penawaran, invoice, surat jalan, dan tanda terima pembayaran dari VORA memuat kode QR dan tautan. Pindai untuk melihat catatan dokumen itu dan statusnya saat ini.',
+    en: 'VORA is operated by PT Satu Arah International in Jakarta. Send us the cargo, the route and the date, and we reply with what we can confirm.',
+    id: 'VORA dijalankan oleh PT Satu Arah International di Jakarta. Kirimkan barang, rute, dan tanggalnya, dan kami jawab dengan apa yang bisa kami pastikan.',
   },
-  body2: {
-    en: 'You can also check a PDF you hold against the record. The check runs in your browser and the file is not uploaded.',
-    id: 'PDF yang Anda pegang juga bisa dicocokkan dengan catatan itu. Pencocokan berjalan di browser Anda, dan berkasnya tidak diunggah.',
-  },
-  scan: { en: 'Scan the QR code', id: 'Pindai kode QR' },
-  caption: { en: 'Illustration. A real document opens its own record.', id: 'Ilustrasi. Dokumen asli akan membuka catatannya sendiri.' },
-  who: { en: 'Who is behind VORA', id: 'Siapa di balik VORA' },
-  record: {
-    title: { en: 'Issuance record found', id: 'Catatan penerbitan ditemukan' },
-    issuer: { en: 'Issuer', id: 'Penerbit' },
-    status: { en: 'Status', id: 'Status' },
-    issued: { en: 'Issued', id: 'Diterbitkan' },
-    check: { en: 'Where to check', id: 'Tempat memeriksa' },
-    page: { en: 'Public record page', id: 'Halaman catatan publik' },
+  note: {
+    en: 'Our quotations, invoices, delivery notes and payment receipts carry a QR code. Scan it to see the record of that document.',
+    id: 'Penawaran, invoice, surat jalan, dan tanda terima pembayaran kami memuat kode QR. Pindai untuk melihat catatan dokumen itu.',
   },
 }
 

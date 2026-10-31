@@ -5,10 +5,9 @@ import { Reveal } from '@/components/about/Reveal'
 import { HeroStage } from '@/components/about/HeroStage'
 import { MarkField } from '@/components/about/MarkField'
 import { RoutesStory } from '@/components/about/RoutesStory'
-import { VerifyDemo } from '@/components/about/VerifyDemo'
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
-import { ABOUT, CAPABILITIES, COMMITMENTS, FOUNDER, MEMORY, TRUST, pick } from '@/content/about'
+import { ABOUT, CAPABILITIES, COMMITMENTS, COMPANY, FOUNDER, MEMORY, pick } from '@/content/about'
 import { makeT, seoDescription, seoTitles, serviceGroups, siteText } from '@/content'
 import { localeOf, type LocaleParams } from '@/lib/page'
 import { pageMetadata } from '@/lib/metadata'
@@ -38,16 +37,12 @@ export default async function About({ params }: LocaleParams) {
   const items = FOUNDER.items.map((i) => ({ title: pick(i.title, locale), problem: pick(i.problem, locale), answer: pick(i.answer, locale) }))
   return (
     <>
-      <link rel="stylesheet" href="/static/css/about.css?v=5" precedence="default" />
+      <link rel="stylesheet" href="/static/css/about.css?v=6" precedence="default" />
       <HeroStage hint={pick(ABOUT.hint.hero, locale)} hintTouch={pick(ABOUT.hint.hintTouch, locale)}>
         <div className="ab-wrap ab-hero__copy">
           <p className="ab-eyebrow">{pick(ABOUT.eyebrow, locale)}</p>
           <h1 className="ab-hero__title">{text.about_title}</h1>
           <p className="ab-lead">{text.about_body}</p>
-          <p className="ab-actions">
-            <a className="ab-btn ab-btn--solid" href={`/${locale}/request-quote`}>{pick(ABOUT.cta.quote, locale)}</a>
-            <a className="ab-btn ab-btn--ghost" href="#how">{pick(ABOUT.cta.how, locale)}</a>
-          </p>
         </div>
       </HeroStage>
 
@@ -91,17 +86,17 @@ export default async function About({ params }: LocaleParams) {
         </div>
       </section>
 
-      <section className="ab-section ab-trust" id="paperwork">
-        <div className="ab-wrap ab-trust__grid">
+      <section className="ab-section ab-company" id="company">
+        <div className="ab-wrap ab-company__grid">
           <Reveal>
-            <p className="ab-eyebrow">{pick(TRUST.label, locale)}</p>
-            <h2 className="ab-h">{pick(TRUST.title, locale)}</h2>
-            <p className="ab-lead">{pick(TRUST.body, locale)}</p>
-            <p>{pick(TRUST.body2, locale)}</p>
-            <h3 className="ab-who">{pick(TRUST.who, locale)}</h3>
-            <dl className="ab-facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+            <p className="ab-eyebrow">{pick(COMPANY.label, locale)}</p>
+            <h2 className="ab-h">{pick(COMPANY.title, locale)}</h2>
+            <p className="ab-lead">{pick(COMPANY.body, locale)}</p>
           </Reveal>
-          <VerifyDemo scan={pick(TRUST.scan, locale)} caption={pick(TRUST.caption, locale)} record={{ title: pick(TRUST.record.title, locale), rows: [[pick(TRUST.record.issuer, locale), facts[0][1]], [pick(TRUST.record.status, locale), pick(TRUST.record.issued, locale)], [pick(TRUST.record.check, locale), pick(TRUST.record.page, locale)]] }} />
+          <Reveal delay={120}>
+            <dl className="ab-facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+            <p className="ab-note">{pick(COMPANY.note, locale)}</p>
+          </Reveal>
         </div>
       </section>
 
