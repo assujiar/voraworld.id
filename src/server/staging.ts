@@ -12,11 +12,22 @@ const KEEP_MS = 60 * 60 * 1000
  * form with the returned token in place of the file; the action receives an ordinary File again (see `takeStaged`). Files that were never used by a
  * form are removed after an hour. A token names the account that made it and is useless to anyone else.
  */
+/**
+ * The type the private documents bucket accepts for these bytes. A staged file is only ever a PDF or a photo, and the bucket allows exactly those types: storing it
+ * as application/octet-stream is refused by Supabase Storage, so the upload would fail before it reached the form. A file that is none of them is stored as a PDF
+ * all the same: the action that finally uses it checks what it really is and refuses it with its own message.
+ */
+export function stagedType(bytes: Uint8Array): 'application/pdf' | 'image/png' | 'image/jpeg' {
+  if (bytes.length > 3 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png'
+  if (bytes.length > 2 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg'
+  return 'application/pdf'
+}
+
 export async function stageUpload(userId: number, bytes: Uint8Array): Promise<string> {
   if (!bytes.length) throw new ActionError('The file is empty')
   if (bytes.length > maxUploadBytes()) throw new ActionError(`The file exceeds the ${Math.floor(maxUploadBytes() / 1048576)} MB limit`, 413)
   const token = `${userId}_${randomBytes(24).toString('base64url')}`
-  await putObject('documents', `${FOLDER}/${token}`, bytes, 'application/octet-stream')
+  await putObject('documents', `${FOLDER}/${token}`, bytes, stagedType(bytes))
   void purgeStaged()                                                       // best effort, never delays or fails the upload
   return token
 }
