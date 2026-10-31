@@ -42,7 +42,7 @@ export interface PrepaymentData {
 /** A general document (letter, statement, certificate...): what was typed, plus the invoices and bank accounts a billing letter lists. */
 export interface GeneralDocData {
   number: string; kind: string; language: 'id' | 'en'; status: string; documentDate: string
-  /** When it was issued, already in Jakarta time ("31 Okt 2026 11:42 WIB"); absent for a draft. */
+  /** The day it was issued, on the Jakarta calendar ("2026-10-31"); absent for a draft. */
   issuedAt?: string
   /** Issued with the company's own (universal) signature in the room for the signature, instead of leaving it for a personal signature. */
   companySignature?: boolean

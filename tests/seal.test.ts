@@ -89,7 +89,7 @@ describe('QR seal on a PDF issued by somebody else', () => {
     const id = await seal(await thirdParty(), { purpose: 'approved' }, 'en')
     await setDocumentStatus(actor, id, 'issue', BASE)
     const t = squash((await pdfPages(await renderDocumentPdf('document', id, BASE))).join(' '))
-    for (const w of ['Document no.', 'Registered', 'Name', 'Position', 'PT Satu Arah International', 'Document issuer', 'WIB']) expect(t).toContain(w)
+    for (const w of ['Document no.', 'Registered', 'Name', 'Position', 'PT Satu Arah International', 'Document issuer']) expect(t).toContain(w)
     const [token] = (await sql`select token from document_verification_tokens where kind = 'document' and document_id = ${id}`).map((r) => r.token as string)
     expect(t.replace(/\s/g, '')).toContain(`${BASE}/verify/${token}`.replace(/\s/g, ''))               // the whole address, in the box
     expect(t).not.toContain('Siti Rahma'); expect(t).not.toContain('Direktur')         // the intended signatory is a note: nobody has signed, so nobody is named

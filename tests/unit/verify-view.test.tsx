@@ -106,6 +106,7 @@ describe('what the page says', () => {
   it('names the signer, the position, the purpose and the non-certified method, from the records', () => {
     const h = html(deriveView(raw({ signings: [{ ref: 'VORA-SIG-1', purpose: 'approved', signerName: 'Siti Rahma', signerPosition: 'Direktur', signedAt: '2026-11-02T03:00:00.000Z', version: 2, method: 'webauthn' }] })))
     for (const w of ['Siti Rahma', 'Direktur', 'Approved by', 'VORA-SIG-1', 'Signing evidence available', 'Electronically signed within VORA']) expect(h, w).toContain(w)
+    expect(h).toContain('02 Nov 2026'); expect(h).not.toContain('02 Nov 2026, 10:00')                  // the day, not the time of day, for when it was signed
   })
   it('puts the repeating watermark behind the information, hidden from assistive technology, and nothing in the way of a click', () => {
     const h = html()

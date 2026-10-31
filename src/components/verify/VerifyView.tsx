@@ -32,6 +32,8 @@ const ISSUANCE: Record<IssuanceFinding, { en: string; id: string; tone: 'ok' | '
   not_issued: { en: 'Not issued', id: 'Belum diterbitkan', tone: 'neutral', detail: { en: 'There is nothing to attest yet.', id: 'Belum ada yang diatestasi.' } },
 }
 
+/** The day, on the Jakarta calendar: what the page shows for when a file was issued or signed (the exact time is in the evidence summary). */
+const day = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso))
 const when = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)) + ' WIB'
 
 export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyModel; token: string; origin: string; viewedAt: Date }) {
@@ -89,7 +91,7 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
             <h2 id="vf-h-issuance">2 · <Bi en="Issuance" id="Penerbitan" /></h2>
             <p className={`vf-fact vf-${issuance.tone}`}><span aria-hidden="true">{issuance.tone === 'ok' ? '✓' : issuance.tone === 'bad' ? '✕' : '–'}</span><span className="vf-fact-text"><Bi en={issuance.en} id={issuance.id} /></span></p>
             <p className="vf-small">{issuance.detail.en}<br /><span className="vf-id">{issuance.detail.id}</span></p>
-            {model.artifacts.map((a) => a.keyId ? <p key={a.version} className="vf-small vf-mono">v{a.version} · {a.role} · key {a.keyId} · {when(a.issuedAt)}</p> : null)}
+            {model.artifacts.map((a) => a.keyId ? <p key={a.version} className="vf-small vf-mono">v{a.version} · {a.role} · key {a.keyId} · {day(a.issuedAt)}</p> : null)}
             {model.chain ? <p className="vf-small"><span aria-hidden="true">{model.chain.ok ? '✓' : '✕'}</span> {model.chain.ok ? `Evidence history intact (${model.chain.events} events)` : 'Evidence history failed its check'} <span className="vf-id">| {model.chain.ok ? `Riwayat bukti utuh (${model.chain.events} peristiwa)` : 'Riwayat bukti gagal diperiksa'}</span></p> : null}
           </section>
 
@@ -102,7 +104,7 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
             {model.signings.map((s) => (
               <p key={s.ref} className="vf-sign">
                 <strong>{s.signerName}</strong>, {s.signerPosition}<br />
-                <span className="vf-small">{PURPOSE_LABELS.en[s.purpose as keyof typeof PURPOSE_LABELS.en] ?? s.purpose} · {when(s.signedAt)} · version {s.version} · <span className="vf-mono">{s.ref}</span><br />
+                <span className="vf-small">{PURPOSE_LABELS.en[s.purpose as keyof typeof PURPOSE_LABELS.en] ?? s.purpose} · {day(s.signedAt)} · version {s.version} · <span className="vf-mono">{s.ref}</span><br />
                 {METHOD_LABEL.vora_electronic.en}. Signer authenticated with a passkey after explicit consent to this exact file. <span className="vf-id">{METHOD_LABEL.vora_electronic.id}.</span></span>
               </p>
             ))}

@@ -18,6 +18,11 @@ export function businessDateTime(d: Date): string {
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`
 }
 
+/** "2026-10-29" for a moment in time, read off the Jakarta clock: the day a document was issued or signed, as the stamps and pages show it (the exact time stays in the evidence record). */
+export function businessDay(d: Date): string {
+  return businessDateTime(d).slice(0, 10)
+}
+
 export function isIsoDay(value: string): boolean {
   const m = ISO_DAY.exec(value)
   if (!m) return false
