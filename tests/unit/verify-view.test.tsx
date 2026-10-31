@@ -98,14 +98,14 @@ describe('what the page says', () => {
   })
   it('states what an attestation is, and carries no "not a signature" disclaimers', () => {
     const h = html()
-    expect(h).toContain('not a PSrE-certified electronic seal')
+    expect(h).not.toMatch(/PSrE|tersertifikasi|non-certified/i)
     expect(h).not.toMatch(/not a (personal )?signature|bukan tanda tangan/i)
     for (const kind of ['letter', 'certificate', 'nda', 'statement', 'authorization']) expect(html(deriveView(raw({ documentKind: kind }))), kind).not.toMatch(/not a (personal |certified )?(electronic )?signature|bukan tanda tangan/i)
     for (const kind of ['quotation', 'pod', 'delivery', 'prepayment'] as const) expect(html(deriveView(raw({ kind, documentKind: undefined }))), kind).not.toMatch(/not a (personal |certified )?(electronic )?signature|not the customer's signature|bukan tanda tangan/i)
   })
   it('names the signer, the position, the purpose and the non-certified method, from the records', () => {
     const h = html(deriveView(raw({ signings: [{ ref: 'VORA-SIG-1', purpose: 'approved', signerName: 'Siti Rahma', signerPosition: 'Direktur', signedAt: '2026-11-02T03:00:00.000Z', version: 2, method: 'webauthn' }] })))
-    for (const w of ['Siti Rahma', 'Direktur', 'Approved by', 'VORA-SIG-1', 'Signing evidence available', 'non-certified']) expect(h, w).toContain(w)
+    for (const w of ['Siti Rahma', 'Direktur', 'Approved by', 'VORA-SIG-1', 'Signing evidence available', 'Electronically signed within VORA']) expect(h, w).toContain(w)
   })
   it('puts the repeating watermark behind the information, hidden from assistive technology, and nothing in the way of a click', () => {
     const h = html()

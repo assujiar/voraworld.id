@@ -255,7 +255,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     const panel = page.locator('.admin-panel:has(> h4:has-text("Pre-payment receipt"))')
     await expect(panel).toContainText(/PPR-VORA-C[0-9A-F]{10}-\d{6}-\d{5}/)
     await expect(panel).toContainText('Menunggu E-Meterai'); await expect(panel).toContainText('needs a manual e-meterai')
-    await panel.locator('a[href^="/admin/prepayment-receipts/"]:not([href$="/pdf"])').click()
+    await panel.locator('a[href^="/admin/prepayment-receipts/"]:not([href*="/pdf"])').click()
     await page.waitForURL(/\/admin\/prepayment-receipts\/\d+$/)
     prepaymentId = page.url().match(/prepayment-receipts\/(\d+)/)![1]
     const draft = await page.request.get(`/admin/prepayment-receipts/${prepaymentId}/pdf`)

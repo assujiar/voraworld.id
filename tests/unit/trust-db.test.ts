@@ -73,6 +73,7 @@ describe.skipIf(!available)('document trust: the database', () => {
     await denied('service_role', (tx) => tx`insert into document_artifacts (kind, document_id, version, role, storage_key, sha256, byte_size) values ('document', ${id}, 1, 'issued', 'x', ${sha('1')}, 1)`)
     await denied('service_role', (tx) => tx`update document_artifacts set pages = 3`)
     await denied('service_role', (tx) => tx`delete from signing_events`)
+    await denied('service_role', (tx) => tx`delete from signer_profiles`)
     await denied('service_role', (tx) => tx`delete from signer_authorities`)
     await denied('service_role', (tx) => tx`update signer_authorities set scope = ${['*']}`)
     // The same role can still issue, through the function (which runs with the owner's rights, for exactly this).
@@ -168,6 +169,30 @@ describe.skipIf(!available)('document trust: the database', () => {
       await sql`update signer_authorities set revoked_at = now(), revoked_by = ${admin2}, revoke_reason = 'left the company' where id = ${id}`
       await refused(sql`update signer_authorities set revoke_reason = 'edited' where id = ${id}`, /cannot be edited/)
       expect((await sql`select trust_signer_authorized(${profile}, 'certificate') as ok`)[0].ok).toBe(false)
+    })
+
+    it('removes a signer profile without deleting anything: authority ends, passkeys are revoked, the history stays', async () => {
+      const db = await freshDatabase()
+      try {
+        const [{ id: boss }] = await db.sql`insert into users (email, role) values ('boss@example.invalid', 'admin') returning id`
+        const [{ id: other }] = await db.sql`insert into users (email, role) values ('other@example.invalid', 'admin') returning id`
+        const [{ id: p }] = await db.sql`insert into signer_profiles (user_id, display_name, position) values (${other}, 'Budi Santoso', 'Manajer') returning id`
+        await db.sql`select trust_authority_grant(${boss}, ${p}, ${['letter']}, null, 'basis')`
+        await db.sql`insert into signer_credentials (profile_id, credential_id, public_key) values (${p}, 'cred-x', 'pk')`
+        await refused(db.sql`select trust_profile_remove(${boss}, ${p}, 'no')`, /at least 5 characters/)
+        await refused(db.sql`select trust_profile_remove(${boss}, ${p + 99}, 'left the company')`, /not found/)
+        await db.sql`select trust_profile_remove(${boss}, ${p}, 'left the company')`
+        expect((await db.sql`select status from signer_profiles where id = ${p}`)[0].status).toBe('removed')
+        expect((await db.sql`select trust_signer_authorized(${p}, 'letter') as ok`)[0].ok).toBe(false)
+        const [grant] = await db.sql`select revoked_by, revoke_reason from signer_authorities where profile_id = ${p}`
+        expect(grant.revoked_by).toBe(boss); expect(grant.revoke_reason).toContain('left the company')       // the grant stays, ended
+        expect((await db.sql`select revoked_at from signer_credentials where profile_id = ${p}`)[0].revoked_at).not.toBeNull()
+        expect((await db.sql`select count(*)::int as n from audit_logs where verb = 'remove' and object_type = 'signer_profile' and object_id = ${p}`)[0].n).toBe(1)
+        await refused(db.sql`select trust_profile_remove(${boss}, ${p}, 'again please')`, /already removed/)
+        // The Data API role may call the function (and no other public role may), but still cannot delete the row itself.
+        const priv = async (role: string) => (await db.sql`select has_function_privilege(${role}, 'trust_profile_remove(integer,integer,text)', 'execute') as ok`)[0].ok
+        expect(await priv('service_role')).toBe(true); expect(await priv('anon')).toBe(false); expect(await priv('authenticated')).toBe(false)
+      } finally { await db.drop() }
     })
 
     it('uses a challenge once, and only before it expires, for the right signer and purpose', async () => {

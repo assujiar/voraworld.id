@@ -1,6 +1,8 @@
-import { cancelSigningRequestAction, createSignerProfileAction, grantAuthorityAction, revokeAuthorityAction, revokePasskeyAction } from '@/actions/signing'
+import { cancelSigningRequestAction, createSignerProfileAction, grantAuthorityAction, removeSignerProfileAction, revokeAuthorityAction, revokePasskeyAction } from '@/actions/signing'
 import { AdminPage, fmt, type Notices } from '@/components/admin/AdminPage'
 import { PasskeyRegister } from '@/components/admin/PasskeyRegister'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 import { DOCUMENT_TYPES } from '@/content/document-types'
 import { currentUser } from '@/server/auth/guard'
 import { many } from '@/server/data'
@@ -14,8 +16,10 @@ export default async function Signers({ searchParams }: { searchParams: Promise<
     many('signer_authorities', (q) => q.order('id')), many('signer_credentials', (q) => q.is('revoked_at', null).order('id'), 'id,profile_id,label,device_type,created_at,last_used_at'),
     many('signing_requests', (q) => q.eq('status', 'pending').gt('expires_at', new Date().toISOString()).order('id', { ascending: false })),
   ])
-  const mine = profiles.find((p) => p.userId === me?.id)
-  const withProfile = new Set(profiles.map((p) => p.userId))
+  const removed = profiles.filter((p) => p.status === 'removed')
+  const live = profiles.filter((p) => p.status !== 'removed')
+  const mine = live.find((p) => p.userId === me?.id)
+  const withProfile = new Set(live.map((p) => p.userId))
   return (
     <AdminPage heading="Signers" sp={await searchParams}>
       <div className="admin-panel">
@@ -32,11 +36,17 @@ export default async function Signers({ searchParams }: { searchParams: Promise<
       <div className="admin-panel">
         <h4>Signer profiles</h4>
         <table><thead><tr><th>Name and position</th><th>Account</th><th>State</th><th>Authority</th><th>Passkeys</th></tr></thead><tbody>
-          {profiles.map((p) => {
+          {live.map((p) => {
             const mineAuth = authorities.filter((a) => a.profileId === p.id)
             return (
               <tr key={p.id as number}>
-                <td>{p.displayName as string}<br /><small className="muted">{p.position as string}</small></td>
+                <td>{p.displayName as string}<br /><small className="muted">{p.position as string}</small>
+                  <PendingForm action={removeSignerProfileAction} className="mini" style={{ marginTop: 8 }}>
+                    <input type="hidden" name="profile_id" value={p.id as number} />
+                    <input name="reason" placeholder="Reason for removing" required minLength={5} maxLength={300} aria-label={`Reason for removing ${p.displayName as string}`} style={{ width: '100%', maxWidth: 220 }} />{' '}
+                    <AsyncButton className="button-outline" busy="Menghapus profil…" confirm={{ title: `Remove ${p.displayName as string}?`, body: 'Their authority ends, their passkeys are revoked and what waits for their signature is cancelled. What they signed stays on record. They can be given a profile again later.', action: 'Remove', danger: true }}>Remove signer</AsyncButton>
+                  </PendingForm>
+                </td>
                 <td>{users.find((u) => u.id === p.userId)?.email as string}</td>
                 <td>{p.status as string}</td>
                 <td>
@@ -62,6 +72,13 @@ export default async function Signers({ searchParams }: { searchParams: Promise<
             )
           })}
         </tbody></table>
+        {removed.length ? (
+          <details style={{ margin: '14px 0' }}>
+            <summary className="mini" style={{ cursor: 'pointer' }}>Removed signers ({removed.length})</summary>
+            <ul className="mini">{removed.map((p) => <li key={p.id as number}>{p.displayName as string}, {p.position as string} · {users.find((u) => u.id === p.userId)?.email as string} · removed {fmt(p.updatedAt as Date)}</li>)}</ul>
+            <p className="mini muted">Their signatures stay on record. Creating a profile for the same account again reuses it, with no authority until it is granted again.</p>
+          </details>
+        ) : null}
         <h4>New signer profile</h4>
         <form action={createSignerProfileAction}>
           <select name="user_id" required>{users.filter((u) => u.authUserId && !withProfile.has(u.id)).map((u) => <option key={u.id as number} value={u.id as number}>{u.email as string}</option>)}</select>{' '}

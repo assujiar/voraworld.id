@@ -4,6 +4,7 @@ import { b64url, sha256Hex } from '../crypto'
 import { many, one, rpc, insert, update } from '../data'
 import { businessDateTime } from '../dates'
 import { documentType } from '../../content/document-types'
+import { fileName } from '../../content/file-names'
 import { PURPOSE_LABELS, SIGNING_PURPOSES, signingEligibility, trustPolicy, type SigningPurpose } from '../../content/trust-policy'
 import { ActionError } from '../errors'
 import type { SessionUser } from '../auth/guard'
@@ -43,10 +44,27 @@ export async function createProfile(actor: SessionUser, userId: number, displayN
   if (name.length < 3 || name.length > 160 || pos.length < 2 || pos.length > 160) throw new ActionError('Write the signer\'s full name and position')
   const user = await one('users', (q) => q.eq('id', userId), 'id,active,auth_user_id')
   if (!user || !user.active || !user.authUserId) throw new ActionError('The signer must be an active user with a Supabase Auth account', 422)
-  if (await profileOfUser(userId)) throw new ActionError('This user already has a signer profile', 409)
-  const [row] = await insert('signer_profiles', { user_id: userId, display_name: name, position: pos })
+  const existing = await profileOfUser(userId)
+  if (existing && existing.status !== 'removed') throw new ActionError('This user already has a signer profile', 409)
+  // A removed profile is reused, so that what it signed stays attached to the same person; it holds no authority and no passkey until they are given again.
+  const [row] = existing
+    ? await update('signer_profiles', { display_name: name, position: pos, status: 'pending', updated_at: new Date() }, (q) => q.eq('id', existing.id as number).eq('status', 'removed'))
+    : await insert('signer_profiles', { user_id: userId, display_name: name, position: pos })
   await rpc('vr_audit', { p_actor: actor.id, p_verb: 'create', p_type: 'signer_profile', p_id: row.id as number, p_summary: name })
   return row.id as number
+}
+
+/**
+ * Removes a signer profile: its authority ends, its passkeys are revoked, what waited for its signature is cancelled, and it no longer appears. The profile row and
+ * everything it signed stay (they are evidence): "removed" is a status, never a deletion. Done by the database in one step (migration 0030).
+ */
+export async function removeProfile(actor: SessionUser, profileId: number, reason: string): Promise<void> {
+  if (reason.trim().length < 5) throw new ActionError('Give a reason of at least 5 characters')
+  try { await rpc('trust_profile_remove', { p_actor: actor.id, p_profile: profileId, p_reason: reason.trim().slice(0, 300) }) } catch (e) {
+    const text = `${(e as Error).message ?? ''} ${(e as { code?: string }).code ?? ''}`
+    if (/could not find the function|PGRST202|42883/i.test(text)) throw new ActionError('Removing a signer needs migration 0030 (migrations/0030_signer_profile_removal.sql): run it in the Supabase SQL editor first', 409)
+    throw e
+  }
 }
 
 export async function grantAuthority(actor: SessionUser, profileId: number, scope: string[], validUntil: Date | null, note: string): Promise<number> {
@@ -267,5 +285,6 @@ export async function ceremonyFile(user: SessionUser, requestId: number): Promis
   const { request } = await requestForSigner(user, requestId)
   const source = (await artifactsOf(request.kind, request.documentId)).find((a) => a.id === request.sourceArtifactId)
   if (!source) throw new ActionError('Not found', 404)
-  return { bytes: await readArtifact(source), filename: `${request.ref}-v${source.version}.pdf` }
+  const doc = await docFacts(request.kind, request.documentId)
+  return { bytes: await readArtifact(source), filename: fileName(doc.number, `v${source.version}`) }
 }

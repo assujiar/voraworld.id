@@ -15,8 +15,8 @@ export function CopyButtons({ url, reference }: { url: string; reference: string
   }
   return (
     <div className="vf-actions">
-      <button type="button" className="vf-btn" onClick={() => void copy('url')}>Copy verification link <span className="vf-id">| Salin tautan</span></button>
-      <button type="button" className="vf-btn" onClick={() => void copy('ref')}>Copy document reference <span className="vf-id">| Salin nomor</span></button>
+      <button type="button" className="vf-btn" onClick={() => void copy('url')}>Copy verification link <span className="vf-id" lang="id"><span className="vf-sep">| </span>Salin tautan</span></button>
+      <button type="button" className="vf-btn" onClick={() => void copy('ref')}>Copy document reference <span className="vf-id" lang="id"><span className="vf-sep">| </span>Salin nomor</span></button>
       <span role="status" aria-live="polite" className="vf-copied">{done}</span>
     </div>
   )

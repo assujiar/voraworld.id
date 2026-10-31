@@ -19,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
       findings: { issuance: model.issuance, signing: model.signing, assurance: model.assurance, executed: model.executed, evidenceHistory: model.chain },
       files: model.artifacts.map((a) => ({ version: a.version, role: a.role, sha256: a.sha256, recordedAt: a.issuedAt, attestation: a.attested, attestationKeyId: a.keyId })),
       originalFileSha256: model.source?.originalSha256 ?? null,
-      signings: model.signings.map((s) => ({ reference: s.ref, signer: s.signerName, position: s.signerPosition, purpose: s.purpose, signedAt: s.signedAt, version: s.version, method: 'electronic signature, non-certified, passkey-authenticated' })),
+      signings: model.signings.map((s) => ({ reference: s.ref, signer: s.signerName, position: s.signerPosition, purpose: s.purpose, signedAt: s.signedAt, version: s.version, method: 'electronic signature, passkey-authenticated' })),
       parties: model.parties.map((p) => ({ role: p.role, name: p.name, required: p.required, fulfilled: p.fulfilled, method: p.method })),
       notice: 'A screenshot is not independent verification evidence. Check the document on the official verification page. This summary is a record of what VORA holds.',
     }

@@ -27,7 +27,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
         <link rel="preload" href="/static/fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="stylesheet" href="/static/css/site.css" />
         <link rel="stylesheet" href="/static/css/vora.css?v=11" />
-        <link rel="stylesheet" href="/static/css/feedback.css?v=4" />
+        <link rel="stylesheet" href="/static/css/feedback.css?v=6" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body className="v-body">

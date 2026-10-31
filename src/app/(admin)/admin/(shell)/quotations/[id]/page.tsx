@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { quotationStatusAction, requestApprovalAction, reviewApprovalAction } from '@/actions/finance'
 import { VerificationPanel } from '@/components/admin/VerificationPanel'
+import { fileHref } from '@/content/file-names'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { many, one } from '@/server/data'
 import { APPROVAL_LABEL, DELIVERY_LABEL, INVOICE_LABEL, QUOTATION_LABEL, label } from '@/server/finance/labels'
@@ -48,7 +49,7 @@ export default async function QuotationDetail({ params, searchParams }: { params
         <div className="inline-actions">
           {q.status === 'draft' ? <PendingForm action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue">Issue quotation</AsyncButton></PendingForm> : null}
           {q.status !== 'void' && (q.customerId || !['validated'].includes(q.status as string)) ? <PendingForm action={quotationStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
-          <a className="button-outline" href={`/admin/quotations/${id}/pdf`} target="_blank" rel="noopener">View PDF ↗</a>
+          <a className="button-outline" href={fileHref(`/admin/quotations/${id}/pdf`, q.number as string)} target="_blank" rel="noopener">View PDF ↗</a>
         </div>
       </div>
       {['issued', 'awaiting_approval', 'rejected'].includes(q.status as string) ? (

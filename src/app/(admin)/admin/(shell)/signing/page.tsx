@@ -1,6 +1,8 @@
-import { uploadAndSignAction } from '@/actions/signing'
+import { discardSigningAction, uploadAndSignAction } from '@/actions/signing'
 import { AdminPage, fmt, type Notices } from '@/components/admin/AdminPage'
 import { PasskeyRegister } from '@/components/admin/PasskeyRegister'
+import { AsyncButton } from '@/components/feedback/AsyncButton'
+import { PendingForm } from '@/components/feedback/scope'
 import { PURPOSE_LABELS, SIGNING_PURPOSES } from '@/content/trust-policy'
 import { currentUser } from '@/server/auth/guard'
 import { many } from '@/server/data'
@@ -13,7 +15,8 @@ import { many } from '@/server/data'
 export default async function Signing({ searchParams }: { searchParams: Promise<Notices> }) {
   const me = await currentUser()
   const sp = await searchParams
-  const mine = (await many('signer_profiles', (q) => q.eq('user_id', me?.id ?? 0)))[0]
+  const found = (await many('signer_profiles', (q) => q.eq('user_id', me?.id ?? 0)))[0]
+  const mine = found && found.status !== 'removed' ? found : undefined
   if (!mine) {
     return (
       <AdminPage heading="Verification & Signing" sp={sp}>
@@ -39,6 +42,8 @@ export default async function Signing({ searchParams }: { searchParams: Promise<
   const mayUpload = scopes.includes('*') || scopes.includes('seal')
   const number = (kind: string, id: number) => (kind === 'document' ? (docs.find((d) => d.id === id)?.number as string | undefined) : undefined) ?? `${kind} #${id}`
   const link = (kind: string, id: number) => (kind === 'document' ? `/admin/documents/${id}` : '/admin/signing')
+  const asked = requests.filter((r) => r.createdBy !== me?.id)
+  const started = requests.filter((r) => r.createdBy === me?.id)
   const purpose = (p: unknown) => PURPOSE_LABELS.en[p as (typeof SIGNING_PURPOSES)[number]] ?? String(p)
   return (
     <AdminPage heading="Verification & Signing" sp={sp}>
@@ -55,9 +60,9 @@ export default async function Signing({ searchParams }: { searchParams: Promise<
       </div>
       <div className="admin-panel">
         <h4>Documents you can sign</h4>
-        {requests.length ? (
+        {asked.length ? (
           <table><thead><tr><th>Document</th><th>Purpose</th><th>Asked</th><th>Expires</th><th /></tr></thead><tbody>
-            {requests.map((r) => (
+            {asked.map((r) => (
               <tr key={r.id as number}>
                 <td><a href={link(r.kind as string, r.documentId as number)}>{number(r.kind as string, r.documentId as number)}</a><br /><small className="muted">{r.ref as string}</small></td>
                 <td>{purpose(r.purpose)}</td><td>{fmt(r.createdAt as Date)}</td><td>{fmt(r.expiresAt as Date)}</td>
@@ -67,19 +72,39 @@ export default async function Signing({ searchParams }: { searchParams: Promise<
           </tbody></table>
         ) : <p className="mini muted">Nobody has asked you to sign a document. A document appears here only when somebody asked you to sign it.</p>}
       </div>
+      {started.length ? (
+        <div className="admin-panel">
+          <h4>Started by you, not finished</h4>
+          <p className="mini muted">Signings you began yourself and did not complete. Continue one to place your mark and sign, or drop it: nothing was signed, and a document you uploaded only to sign it is withdrawn.</p>
+          <table><thead><tr><th>Document</th><th>Started</th><th /></tr></thead><tbody>
+            {started.map((r) => (
+              <tr key={r.id as number}>
+                <td><a href={link(r.kind as string, r.documentId as number)}>{number(r.kind as string, r.documentId as number)}</a><br /><small className="muted">{r.ref as string}</small></td>
+                <td>{fmt(r.createdAt as Date)}</td>
+                <td>
+                  <div className="inline-actions">
+                    <a className="button" href={`/admin/signing/${r.id}`}>Continue</a>
+                    <PendingForm action={discardSigningAction}><input type="hidden" name="request_id" value={r.id as number} /><AsyncButton className="button-outline" busy="Membatalkan…" confirm={{ title: 'Drop this signing?', body: 'Nothing was signed. A document you uploaded only to sign it is withdrawn.', action: 'Drop it', danger: true }}>Drop</AsyncButton></PendingForm>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody></table>
+        </div>
+      ) : null}
       {ready && mayUpload ? (
         <div className="admin-panel">
           <h4>Sign a third party&apos;s document</h4>
           <p className="mini muted">Upload a PDF that somebody else issued and sign it yourself: nobody has to ask you. The file is kept as it arrived, then you place your mark on the pages, confirm and sign with your passkey. The mark carries your name and position, with the document&apos;s verification link and QR code.</p>
-          <form action={uploadAndSignAction}>
-            <label>PDF to sign <input type="file" name="source_pdf" accept="application/pdf,.pdf" required /></label>
-            <span className="mini muted">A readable PDF without a password and without a digital signature of its own.</span>
-            <label>Title or kind of the document <input name="source_title" required maxLength={160} placeholder="For example: Cooperation agreement with PT Mitra" /></label>
-            <label>Issued by (the other party) <input name="source_issuer" required maxLength={160} /></label>
-            <label>Number of the original document (optional) <input name="source_reference" maxLength={100} /></label>
-            <label>Language of the verification page <select name="language" defaultValue="id"><option value="id">Bahasa Indonesia</option><option value="en">English</option></select></label>
-            <button className="button">Upload and continue to sign</button>
-          </form>
+          <PendingForm action={uploadAndSignAction} className="admin-form">
+            <div className="field"><label htmlFor="sign-pdf">PDF to sign</label><input id="sign-pdf" type="file" name="source_pdf" accept="application/pdf,.pdf" required />
+              <span className="mini muted">A readable PDF without a password and without a digital signature of its own.</span></div>
+            <div className="field"><label htmlFor="sign-title">Title or kind of the document</label><input id="sign-title" name="source_title" required maxLength={160} placeholder="For example: Cooperation agreement with PT Mitra" /></div>
+            <div className="field"><label htmlFor="sign-issuer">Issued by (the other party)</label><input id="sign-issuer" name="source_issuer" required maxLength={160} /></div>
+            <div className="field"><label htmlFor="sign-ref">Number of the original document (optional)</label><input id="sign-ref" name="source_reference" maxLength={100} /></div>
+            <div className="field"><label htmlFor="sign-lang">Language of the verification page</label><select id="sign-lang" name="language" defaultValue="id"><option value="id">Bahasa Indonesia</option><option value="en">English</option></select></div>
+            <AsyncButton className="button" busy="Menyiapkan dokumen untuk ditandatangani…">Upload and continue to sign</AsyncButton>
+          </PendingForm>
         </div>
       ) : ready ? <div className="admin-panel"><p className="mini muted">To sign a third party&apos;s document yourself, another administrator must grant you authority for it (&quot;seal&quot;, or all) on <a href="/admin/signers">Signers</a>.</p></div> : null}
       <div className="admin-panel">

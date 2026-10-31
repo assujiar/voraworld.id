@@ -1,3 +1,4 @@
+import { fileHref } from '@/content/file-names'
 import { AdminPage, ListLoad, day, type Notices } from '@/components/admin/AdminPage'
 import { many, withRelated } from '@/server/data'
 import { money } from '@/server/money'
@@ -31,7 +32,7 @@ async function ReceiptRows() {
               <td><a href={`/admin/invoices/${r.invoiceId}`}>{r.invoiceNumber as string}</a></td>
               <td>{money(r.amountMinor as number, r.currency as string)}</td><td>{day(r.createdAt as Date)}</td>
               <td><span className="status">{label(RECEIPT_LABEL, r.status)}</span></td>
-              <td>{r.status === 'void' ? '—' : <a href={`/admin/receipts/${r.id}/pdf`}>PDF</a>}</td>
+              <td>{r.status === 'void' ? '—' : <a href={fileHref(`/admin/receipts/${r.id}/pdf`, r.number as string)}>PDF</a>}</td>
             </tr>
           )) : <tr><td colSpan={6}>No receipts yet.</td></tr>}
         </tbody></table>
@@ -49,7 +50,7 @@ async function PrepaymentRows() {
               <td><a href={`/admin/invoices/${r.invoiceId}`}>{r.invoiceNumber as string}</a></td>
               <td>{money(r.amountMinor as number, r.currency as string)}</td><td>{day(r.createdAt as Date)}</td>
               <td><span className="status">{label(RECEIPT_LABEL, r.status)}</span>{r.stampRequired && r.status === 'pending_stamp' ? ' · e-meterai' : ''}</td>
-              <td>{r.status === 'void' ? '—' : <a href={`/admin/prepayment-receipts/${r.id}/pdf`}>PDF</a>}</td>
+              <td>{r.status === 'void' ? '—' : <a href={fileHref(`/admin/prepayment-receipts/${r.id}/pdf`, r.number as string)}>PDF</a>}</td>
             </tr>
           )) : <tr><td colSpan={6}>No pre-payment receipts yet.</td></tr>}
         </tbody></table>

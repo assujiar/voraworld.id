@@ -36,6 +36,17 @@ const config: NextConfig = {
   reactStrictMode: true,
   // Uploads are capped by MAX_UPLOAD_BYTES in the app (and by Vercel's 4.5 MB request limit).
   experimental: { serverActions: { bodySizeLimit: '10mb' } },
+  // A download link ends in the file's own name (see content/file-names.ts): the same route answers, the browser keeps the name it sees.
+  async rewrites() {
+    return [
+      { source: '/admin/:kind(documents|invoices|quotations|receipts|prepayment-receipts|deliveries)/:id/pdf/:name', destination: '/admin/:kind/:id/pdf' },
+      { source: '/admin/deliveries/:id/pod-pdf/:name', destination: '/admin/deliveries/:id/pod-pdf' },
+      { source: '/admin/documents/:id/source/:name', destination: '/admin/documents/:id/source' },
+      { source: '/admin/documents/:id/artifact/:version/:name', destination: '/admin/documents/:id/artifact/:version' },
+      { source: '/admin/signing/:id/file/:name', destination: '/admin/signing/:id/file' },
+      { source: '/admin/quotation-approvals/:id/file/:name', destination: '/admin/quotation-approvals/:id/file' },
+    ]
+  },
   async redirects() {
     return [{ source: '/', destination: '/en', permanent: false }]
   },

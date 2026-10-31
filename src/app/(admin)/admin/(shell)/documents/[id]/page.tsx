@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { documentStatusAction } from '@/actions/documents'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
+import { fileHref } from '@/content/file-names'
 import { documentType, LANGUAGE_NAMES, longDate, type Lang } from '@/content/document-types'
 import { many, one, withRelated } from '@/server/data'
 import { signingEligibility, trustPolicy } from '@/content/trust-policy'
@@ -64,7 +65,7 @@ export default async function DocumentDetail({ params, searchParams }: { params:
             <p className="mini">Original: {stored.source.name} · {stored.source.pages} page{stored.source.pages > 1 ? 's' : ''} · {(stored.source.bytes / 1024).toFixed(0)} KB<br />
               <span title="SHA-256 recorded when the file arrived">SHA-256 {stored.source.sha256}</span></p>
             {stored.seal ? <p className="mini">Sealed file: {stored.seal.pagesSealed} page{stored.seal.pagesSealed > 1 ? 's' : ''} carry the seal · made {fmt(new Date(stored.seal.sealedAt))}<br /><span title="SHA-256 of the sealed file; the verification page shows the same">SHA-256 {stored.seal.sha256}</span></p> : <p className="mini muted">Not sealed yet. The preview shows where the seal will go; issuing makes the sealed file and fixes its fingerprint.</p>}
-            <a className="button-outline" href={`/admin/documents/${id}/source`} target="_blank" rel="noopener">Download the original ↗</a>
+            <a className="button-outline" href={fileHref(`/admin/documents/${id}/source`, doc.number as string, stored.values.source_title, 'original')} target="_blank" rel="noopener">Download the original ↗</a>
           </div>
         ) : null}
         {stored.invoices?.length ? (
@@ -76,7 +77,7 @@ export default async function DocumentDetail({ params, searchParams }: { params:
         <div className="inline-actions">
           {status === 'draft' ? <a className="button-outline" href={`/admin/documents/${id}/edit`}>Edit draft</a> : null}
           {status === 'draft' && !choose ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button" name="action" value="issue" busy={type.family === 'seal' ? 'Membubuhkan segel QR pada PDF…' : undefined}>Issue document</AsyncButton></PendingForm> : null}
-          <a className="button-outline" href={`/admin/documents/${id}/pdf`} target="_blank" rel="noopener">{type.family === 'seal' ? (status === 'issued' ? 'Download the sealed PDF' : status === 'draft' ? 'Preview the seal (PDF)' : 'Sealed file withdrawn') : status === 'issued' ? 'Download PDF' : 'Download PDF (marked ' + status + ')'} ↗</a>
+          <a className="button-outline" href={fileHref(`/admin/documents/${id}/pdf`, doc.number as string, doc.subject as string)} target="_blank" rel="noopener">{type.family === 'seal' ? (status === 'issued' ? 'Download the sealed PDF' : status === 'draft' ? 'Preview the seal (PDF)' : 'Sealed file withdrawn') : status === 'issued' ? 'Download PDF' : 'Download PDF (marked ' + status + ')'} ↗</a>
           {status !== 'void' ? <PendingForm action={documentStatusAction}><input type="hidden" name="record" value={id} /><Back to={here} /><AsyncButton className="button-outline" name="action" value="void">Void</AsyncButton></PendingForm> : null}
         </div>
         {choose ? (

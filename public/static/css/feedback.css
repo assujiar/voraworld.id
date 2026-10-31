@@ -130,3 +130,23 @@ button.is-busy[disabled]{opacity:1}
 .tpl-editor iframe{width:100%;height:340px;border:1px solid var(--line,#dce0e1);border-radius:6px;background:#fff}
 .tpl-preview__skeleton{height:340px;border-radius:6px}
 @media (max-width:900px){.tpl-editor{grid-template-columns:minmax(0,1fr)}}
+
+/* The signing ceremony: one confirmation per row, a checkbox of one size, the Indonesian text under the English in plain type. */
+.consent{display:flex;gap:12px;align-items:flex-start;margin:0;padding:10px 0;font-weight:400;border-top:1px solid var(--line,#dce0e1)}
+.consent:first-of-type{border-top:0}
+.consent input[type=checkbox]{flex:none;width:20px;height:20px;min-height:0;margin:2px 0 0;padding:0;accent-color:#b43e31}
+.consent>span{min-width:0;line-height:1.45}
+.consent-id{display:block;margin-top:2px;font-size:.82rem;color:var(--muted,#64717c);text-transform:none;letter-spacing:0;font-weight:400}
+/* A form of stacked fields in a panel. */
+.admin-form{display:grid;gap:14px;max-width:560px}
+.admin-form .field{margin:0}
+.admin-form .field>label{display:block;margin-bottom:5px}
+.admin-form .field input:not([type=checkbox]):not([type=radio]),.admin-form .field select{width:100%;box-sizing:border-box}
+.admin-form .field .mini{display:block;margin-top:5px}
+.admin-form .button{justify-self:start}
+/* The placer's controls: compact, in groups that wrap, never a wall of large buttons on a phone. */
+.seal-pager{gap:8px}
+.seal-pager .button-outline{min-height:34px;padding:2px 12px;font-size:.8rem}
+.seal-toolbar{gap:6px}
+.seal-toolbar .button-outline{min-height:34px;min-width:34px;padding:2px 10px;font-size:.8rem}
+.seal-toolbar label{font-size:.8rem;display:inline-flex;align-items:center;gap:6px;margin:0 6px}

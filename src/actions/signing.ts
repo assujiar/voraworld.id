@@ -1,10 +1,10 @@
 'use server'
 import { ActionError, adminRun } from '@/server/action'
 import { int, str } from '@/server/http'
-import { cancelRequest, createProfile, grantAuthority, requestSigning, revokeAuthority, revokePasskey, signNow } from '@/server/trust/signing'
+import { cancelRequest, createProfile, grantAuthority, removeProfile, requestSigning, revokeAuthority, revokePasskey, signNow } from '@/server/trust/signing'
 import { isTrustKind } from '@/content/trust-policy'
 import { publicBaseUrl } from '@/server/env'
-import { uploadAndSign } from '@/server/trust/upload-sign'
+import { discardOwnSigning, uploadAndSign } from '@/server/trust/upload-sign'
 
 /**
  * Who may sign, and the requests to sign. These are administrator actions; the SIGNING itself is not an action of an administrator: it is done by the signer, in their own
@@ -14,6 +14,13 @@ export async function createSignerProfileAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
     await createProfile(user, int(form, 'user_id'), str(form, 'display_name', 160), str(form, 'position', 160))
     return { to: '/admin/signers', notice: 'Signer profile created. It carries no authority until another administrator grants it.' }
+  })
+}
+
+export async function removeSignerProfileAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    await removeProfile(user, int(form, 'profile_id'), str(form, 'reason', 300))
+    return { to: '/admin/signers', notice: 'Signer removed. Its authority and passkeys ended; what it signed stays on record.' }
   })
 }
 
@@ -67,6 +74,14 @@ export async function uploadAndSignAction(form: FormData) {
     if (!(file instanceof File) || !file.size) throw new ActionError('Choose the PDF to sign')
     const id = await uploadAndSign(user, { file, title: str(form, 'source_title', 160), issuer: str(form, 'source_issuer', 160), reference: str(form, 'source_reference', 100), language: str(form, 'language', 2), baseUrl: publicBaseUrl() })
     return { to: `/admin/signing/${id}` }
+  })
+}
+
+/** A signer drops a signing they started themselves and did not finish. */
+export async function discardSigningAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    await discardOwnSigning(user, int(form, 'request_id'))
+    return { to: '/admin/signing', notice: 'Dropped. Nothing was signed.' }
   })
 }
 

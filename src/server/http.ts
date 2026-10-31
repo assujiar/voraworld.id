@@ -40,11 +40,15 @@ export async function fileBytes(form: FormData, key: string, maxBytes: number): 
   return new Uint8Array(await v.arrayBuffer())
 }
 
-/** A private PDF download: never cached, never sniffed, and the file name is a VORA document number (no user input). */
+/**
+ * A private PDF download: never cached, never sniffed. The file name is the document's number (and title); it is sent twice, as plain ASCII for old clients and in full
+ * (RFC 5987) for the others, with path characters and quotes removed.
+ */
 export function pdfResponse(bytes: Uint8Array, filename: string, disposition: 'inline' | 'attachment' = 'inline'): Response {
+  const clean = filename.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim() || 'document.pdf'
   return new Response(Buffer.from(bytes), {
     headers: {
-      'content-type': 'application/pdf', 'content-disposition': `${disposition}; filename="${filename.replace(/[^A-Za-z0-9._-]/g, '_')}"`,
+      'content-type': 'application/pdf', 'content-disposition': `${disposition}; filename="${clean.replace(/[^A-Za-z0-9._ -]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(clean).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)}`,
       'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer',
     },
   })
