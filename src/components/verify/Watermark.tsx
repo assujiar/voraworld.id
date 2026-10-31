@@ -9,12 +9,14 @@ import { lockup, RED } from '@/content/trust-mark'
  *
  * A WATERMARK IS A DETERRENT, NOT PROOF. It does not stop a screenshot from being edited and it establishes nothing: the findings on the page and the file check do.
  */
-const LOCK_W = 100
+const LOCK_W = 84
 const LOCK_H = LOCK_W * 0.684                       // the lockup is 118 wide and 80.7 high, whatever its size
-/** One cell holds one stamp with a narrow margin; a tile is two cells across and two down, the second stamp in the opposite corner, so the pattern is close and staggered. */
-const CELL_W = 116, CELL_H = 82
+const ICON_W = 38                                    // the icon above the web address
+/** One cell holds one stamp with a narrow margin. A row alternates the VORA stamp and the web address; the next row is shifted by half a cell and starts with the other one. */
+const CELL_W = 96, CELL_H = 66
 const TILE_W = CELL_W * 2, TILE_H = CELL_H * 2
 const ROTATE = -24
+const ADDRESS = 'voraworld.id'
 
 function Art({ art, x, y, w, h }: { art: Art; x: number; y: number; w: number; h: number }) {
   const [vx, vy, vw, vh] = art.viewBox
@@ -37,15 +39,39 @@ function Stamp({ x, y }: { x: number; y: number }) {
   )
 }
 
+/** The web address as a stamp of the same kind: the icon, a red rule, the address, one red, no box. */
+function Site({ x, y }: { x: number; y: number }) {
+  const [, , vw, vh] = ICON_ART.viewBox
+  const ih = (ICON_W * vh) / vw
+  return (
+    <g fill={RED}>
+      <Art art={ICON_ART} x={x + (LOCK_W - ICON_W) / 2} y={y} w={ICON_W} h={ih} />
+      <rect x={x} y={y + ih + 5} width={LOCK_W} height={1.1} />
+      <text x={x} y={y + ih + 5 + 1.1 + 11} fontFamily="Helvetica, Arial, sans-serif" fontWeight={700} fontSize={11} textLength={LOCK_W} lengthAdjust="spacing">{ADDRESS}</text>
+    </g>
+  )
+}
+const SITE_H = (ICON_W * 0.5629) + 5 + 1.1 + 11      // the icon's own proportions (68.44 x 38.53), then the rule and the line of text
+
+/** A stamp or the address, drawn twice (once a tile to the left) when it runs over the tile's right edge, so that the pattern has no gap there. */
+function Cell({ kind, col, row }: { kind: 'vora' | 'site'; col: number; row: number }) {
+  const h = kind === 'vora' ? LOCK_H : SITE_H
+  const x = col * CELL_W + (CELL_W - LOCK_W) / 2, y = row * CELL_H + (CELL_H - h) / 2
+  const draw = (dx: number) => (kind === 'vora' ? <Stamp x={x + dx} y={y} /> : <Site x={x + dx} y={y} />)
+  return <>{draw(0)}{x + LOCK_W > TILE_W ? draw(-TILE_W) : null}</>
+}
+
 export function Watermark({ layer, id }: { layer: 'back' | 'front'; id: string }) {
   const pid = `vf-wm-${id}`
   return (
     <svg className={`vf-wm vf-wm-${layer}`} aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" data-watermark={layer}>
       <defs>
-        {/* Two stamps per tile, the second shifted half a tile across and down: a staggered pattern that repeats exactly. */}
+        {/* Four cells to a tile, the second row shifted by half a cell: VORA, address / address, VORA, repeating exactly in both directions. */}
         <pattern id={pid} width={TILE_W} height={TILE_H} patternUnits="userSpaceOnUse" patternTransform={`rotate(${ROTATE})`}>
-          <Stamp x={(CELL_W - LOCK_W) / 2} y={(CELL_H - LOCK_H) / 2} />
-          <Stamp x={CELL_W + (CELL_W - LOCK_W) / 2} y={CELL_H + (CELL_H - LOCK_H) / 2} />
+          <Cell kind="vora" col={0} row={0} />
+          <Cell kind="site" col={1} row={0} />
+          <Cell kind="site" col={0.5} row={1} />
+          <Cell kind="vora" col={1.5} row={1} />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill={`url(#${pid})`} />
