@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { quotationStatusAction, requestApprovalAction, reviewApprovalAction } from '@/actions/finance'
+import { VerificationPanel } from '@/components/admin/VerificationPanel'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { many, one } from '@/server/data'
 import { APPROVAL_LABEL, DELIVERY_LABEL, INVOICE_LABEL, QUOTATION_LABEL, label } from '@/server/finance/labels'
@@ -96,6 +97,7 @@ export default async function QuotationDetail({ params, searchParams }: { params
           </tbody></table>
         </div>
       ) : null}
+      <VerificationPanel kind="quotation" id={id} />
     </AdminPage>
   )
 }

@@ -135,6 +135,26 @@ export async function requestSigning(actor: SessionUser, i: RequestInput): Promi
   return { id: row.id as number, ref }
 }
 
+/**
+ * A signer signs without anybody asking them to: this makes the request for themselves (the same request, with the same checks, that an administrator could have made, so the
+ * ceremony and its evidence are identical) and returns it, so that the caller can take them straight to it. An open request that already exists is reused. Nobody can use it to
+ * sign for someone else: the signer is always the session's own profile, and the profile must hold current authority and a passkey.
+ */
+export async function signNow(user: SessionUser, i: { kind: DocumentKind; documentId: number; purpose: string; legalReviewNote?: string; partyRole?: string }): Promise<number> {
+  const profile = await profileOfUser(user.id)
+  if (!profile || profile.status !== 'active') throw new ActionError('You are not a signer: an administrator sets up your signer profile and your authority on the Signers page', 403)
+  if (!(await credentialsOf(profile.id)).length) throw new ActionError('Register a passkey first (Documents, Verification & Signing): it is how you prove that you are the one signing', 409)
+  try {
+    return (await requestSigning(user, { ...i, signerProfileId: profile.id })).id
+  } catch (e) {
+    if (e instanceof ActionError && e.status === 409 && /already an open signing request/.test(e.message)) {
+      const open = await one('signing_requests', (q) => q.eq('kind', i.kind).eq('document_id', i.documentId).eq('signer_profile_id', profile.id).eq('status', 'pending').gt('expires_at', new Date().toISOString()), 'id')
+      if (open) return open.id as number
+    }
+    throw e
+  }
+}
+
 export async function cancelRequest(actor: SessionUser, requestId: number, reason: string): Promise<void> {
   const done = await update('signing_requests', { status: 'cancelled', completed_at: new Date() }, (q) => q.eq('id', requestId).eq('status', 'pending'))
   if (!done.length) throw new ActionError('That request is not open', 409)

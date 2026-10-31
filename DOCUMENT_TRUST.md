@@ -115,3 +115,12 @@ The policy encodes this reading, which a lawyer must confirm before launch (the 
 4. `PUBLIC_BASE_URL` must be the final `https://voraworld.id` (it is the passkey RP origin and what is printed in every QR code). Passkeys are tied to the host: changing the domain invalidates them.
 5. The private `documents` bucket must allow `application/pdf` (it already does for stamped receipts).
 6. After deploy: issue a test letter; open its verification page; check the stamp scans; register a passkey as a signer; have another administrator grant authority; request, sign, and verify the signed version and the evidence export.
+
+## Where everything is in the admin
+
+* **Documents → Verification & Signing** (`/admin/signing`): the signer's own workspace. It shows whether the signed-in person is ready (profile, authority, passkey), what waits for their signature, the issued documents they hold authority for, and what they signed. **Sign** there (or **Sign this document** on a document's own page) makes the request for the signer and goes straight to the signing page: nobody has to ask first. The signer is always the session's own profile, which must hold current authority and a passkey. An administrator can still ask somebody else to sign from a document's page.
+* **Documents → Signers** (`/admin/signers`): setting up who may sign (profiles, authority, passkeys).
+* **A general document's page**: the Verification and signing panel (archive, evidence export, signing, parties).
+* **Invoice, quotation, receipt, pre-payment receipt and delivery note pages**: a Verification panel with the public verification address, and the archive and evidence export where the kind is archived.
+* **Overview**: a "Waiting for your signature" count for a signer.
+

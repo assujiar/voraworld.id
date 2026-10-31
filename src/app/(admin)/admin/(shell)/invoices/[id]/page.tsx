@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { cancelPaymentAction, confirmPaymentAction, ensurePrepaymentAction, invoiceStatusAction, sendInvoiceAction } from '@/actions/finance'
+import { VerificationPanel } from '@/components/admin/VerificationPanel'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { MailHistory } from '@/components/admin/MailHistory'
 import { RecordPaymentForm } from '@/components/admin/RecordPaymentForm'
@@ -109,6 +110,7 @@ export default async function InvoiceDetail({ params, searchParams }: { params: 
         </tbody></table>
       </div>
       <MailHistory lines={emails} />
+      <VerificationPanel kind="invoice" id={id} />
     </AdminPage>
   )
 }

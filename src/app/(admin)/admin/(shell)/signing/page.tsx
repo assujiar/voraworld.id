@@ -1,4 +1,4 @@
-import { requestSigningAction } from '@/actions/signing'
+import { signNowAction } from '@/actions/signing'
 import { AdminPage, fmt, type Notices } from '@/components/admin/AdminPage'
 import { PasskeyRegister } from '@/components/admin/PasskeyRegister'
 import { documentType } from '@/content/document-types'
@@ -75,12 +75,12 @@ export default async function Signing({ searchParams }: { searchParams: Promise<
               </tr>
             ))}
           </tbody></table>
-        ) : <p className="mini muted">Nothing is waiting. An administrator asks for your signature from a document's page, or you can ask for it yourself below.</p>}
+        ) : <p className="mini muted">Nothing is waiting. Nothing was asked of you. You can sign any document below yourself, or from the document's own page.</p>}
       </div>
       {ready ? (
         <div className="admin-panel">
           <h4>Documents you can sign</h4>
-          <p className="mini muted">Issued documents of the kinds you hold authority for. Asking creates a request for you to sign; you then open it above and sign with your passkey.</p>
+          <p className="mini muted">Issued documents of the kinds you hold authority for. Press Sign: you go straight to the signing page and sign with your passkey. Nobody has to ask you first.</p>
           {candidates.length ? (
             <table><thead><tr><th>Document</th><th>Type</th><th /></tr></thead><tbody>
               {candidates.map((d) => {
@@ -90,11 +90,11 @@ export default async function Signing({ searchParams }: { searchParams: Promise<
                     <td><a href={`/admin/documents/${d.id}`}>{d.number as string}</a></td>
                     <td>{documentType(d.kind as string)?.label.en ?? String(d.kind)}</td>
                     <td>
-                      <form action={requestSigningAction}>
-                        <input type="hidden" name="kind" value="document" /><input type="hidden" name="document_id" value={d.id as number} /><input type="hidden" name="signer_profile_id" value={mine.id as number} /><input type="hidden" name="back" value="/admin/signing" />
+                      <form action={signNowAction}>
+                        <input type="hidden" name="kind" value="document" /><input type="hidden" name="document_id" value={d.id as number} /><input type="hidden" name="back" value="/admin/signing" />
                         <select name="purpose" aria-label="Purpose">{SIGNING_PURPOSES.map((s) => <option key={s} value={s}>{PURPOSE_LABELS.en[s]}</option>)}</select>{' '}
                         {review.ok && review.needsLegalReview ? <><input name="legal_review_note" placeholder="Legal review: who reviewed it, what was decided" required minLength={10} style={{ width: 240 }} />{' '}</> : null}
-                        <button className="button-outline">Ask to sign</button>
+                        <button className="button">Sign</button>
                       </form>
                     </td>
                   </tr>

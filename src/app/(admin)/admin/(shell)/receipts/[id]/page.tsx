@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { resendReceiptAction, uploadStampAction, voidReceiptAction } from '@/actions/finance'
+import { VerificationPanel } from '@/components/admin/VerificationPanel'
 import { AdminPage, Back, fmt, type Notices } from '@/components/admin/AdminPage'
 import { MailHistory } from '@/components/admin/MailHistory'
 import { one, withRelated } from '@/server/data'
@@ -58,6 +59,7 @@ export default async function ReceiptDetail({ params, searchParams }: { params: 
         </div>
       </div>
       <MailHistory lines={emails} />
+      <VerificationPanel kind="receipt" id={id} />
     </AdminPage>
   )
 }

@@ -1,5 +1,7 @@
 import { AdminPage, type Notices } from '@/components/admin/AdminPage'
+import { currentUser } from '@/server/auth/guard'
 import { count, many } from '@/server/data'
+import { profileOfUser } from '@/server/trust/signing'
 import { INVOICE_LABEL, LEAD_LABEL, label } from '@/server/finance/labels'
 import { money } from '@/server/money'
 import { setupChecklist } from '@/server/setup-check'
@@ -21,6 +23,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     many('leads', (f) => f.order('id', { ascending: false }), 'id,name,type,status', 8),
     many('invoices', (f) => f.order('id', { ascending: false }), 'id,number,status,outstanding_minor,currency', 8),
   ])
+  const me = await currentUser()
+  const signer = me ? await profileOfUser(me.id) : undefined
+  const waitingForMe = signer ? await count('signing_requests', (f) => f.eq('signer_profile_id', signer.id).eq('status', 'pending').gt('expires_at', new Date().toISOString())) : 0
   const attention: Array<{ n: number; label: string; href: string; hint: string }> = [
     { n: newLeads, label: 'New leads', href: '/admin/leads?status=new', hint: 'Not contacted yet' },
     { n: toValidate, label: 'Quotations to validate', href: '/admin/quotations?status=customer_approved', hint: 'The customer has signed; check the signature and stamp' },
@@ -30,6 +35,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     { n: awaitingStamp + awaitingPrepaymentStamp, label: 'Receipts awaiting e-meterai', href: '/admin/receipts', hint: 'Held back until the stamped file is stored' },
     { n: mailFailed, label: 'Emails that failed', href: '/admin/mail', hint: 'Check the delivery log and retry' },
   ]
+  if (signer) attention.unshift({ n: waitingForMe, label: 'Waiting for your signature', href: '/admin/signing', hint: 'Open Verification & Signing to sign' })
   return (
     <AdminPage heading="Overview" sp={sp}>
       <details className="admin-panel" open={todo.some((k) => k.level === 'launch')}>

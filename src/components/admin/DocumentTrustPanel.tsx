@@ -1,4 +1,4 @@
-import { cancelSigningRequestAction, fulfilPartyAction, requestSigningAction, trackPartiesAction } from '@/actions/signing'
+import { cancelSigningRequestAction, fulfilPartyAction, requestSigningAction, signNowAction, trackPartiesAction } from '@/actions/signing'
 import { fmt } from '@/components/admin/AdminPage'
 import { SIGNING_PURPOSES, PURPOSE_LABELS, signingEligibility, trustPolicy } from '@/content/trust-policy'
 import { METHOD_LABEL } from '@/content/verify-labels'
@@ -52,10 +52,21 @@ export async function DocumentTrustPanel({ id, documentKind, status, number }: {
             </li>))}</ul>
         </div>
       ) : policy.multiParty ? <form action={trackPartiesAction}><input type="hidden" name="document_id" value={id} /><button className="button-outline">Track the parties of this agreement</button></form> : null}
+      {status === 'issued' && eligible.ok && artifacts.length && mine ? (
+        <form action={signNowAction} style={{ marginTop: 10 }}>
+          <input type="hidden" name="kind" value="document" /><input type="hidden" name="document_id" value={id} />
+          <strong className="mini">Sign {number} yourself</strong><br />
+          <select name="purpose" aria-label="Purpose" defaultValue="signed">{SIGNING_PURPOSES.map((s) => <option key={s} value={s}>{PURPOSE_LABELS.en[s]}</option>)}</select>{' '}
+          {parties.length ? <select name="party_role" aria-label="Party">{parties.map((p) => <option key={p.id as number} value={p.role as string}>{p.name as string}</option>)}</select> : null}
+          {eligible.needsLegalReview ? <><br /><textarea name="legal_review_note" rows={2} placeholder="Legal review: who reviewed this document and what was decided (required for this kind of document)" required minLength={10} style={{ width: '100%', maxWidth: 520 }} /></> : null}
+          <br /><button className="button">Sign this document</button>
+          <p className="mini muted">You sign as {mine.displayName as string}, {mine.position as string}, with your own passkey. You need current authority for this kind of document: nobody has to ask you first.</p>
+        </form>
+      ) : null}
       {status === 'issued' && eligible.ok && artifacts.length ? (
         <form action={requestSigningAction} style={{ marginTop: 10 }}>
           <input type="hidden" name="kind" value="document" /><input type="hidden" name="document_id" value={id} /><input type="hidden" name="back" value={here} />
-          <strong className="mini">Ask for a signature on {number}</strong><br />
+          <strong className="mini">{mine ? 'Ask somebody else to sign' : 'Ask for a signature on'} {number}</strong><br />
           <select name="signer_profile_id" required aria-label="Signer"><option value="">Signer...</option>{profiles.map((p) => <option key={p.id as number} value={p.id as number}>{p.displayName as string}, {p.position as string}</option>)}</select>{' '}
           <select name="purpose" aria-label="Purpose">{SIGNING_PURPOSES.map((s) => <option key={s} value={s}>{PURPOSE_LABELS.en[s]}</option>)}</select>{' '}
           {parties.length ? <select name="party_role" aria-label="Party">{parties.map((p) => <option key={p.id as number} value={p.role as string}>{p.name as string}</option>)}</select> : null}

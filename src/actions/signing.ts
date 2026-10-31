@@ -1,7 +1,7 @@
 'use server'
 import { ActionError, adminRun } from '@/server/action'
 import { int, str } from '@/server/http'
-import { cancelRequest, createProfile, grantAuthority, requestSigning, revokeAuthority, revokePasskey } from '@/server/trust/signing'
+import { cancelRequest, createProfile, grantAuthority, requestSigning, revokeAuthority, revokePasskey, signNow } from '@/server/trust/signing'
 import { isTrustKind } from '@/content/trust-policy'
 
 /**
@@ -45,6 +45,16 @@ export async function requestSigningAction(form: FormData) {
     const documentId = int(form, 'document_id')
     const made = await requestSigning(user, { kind, documentId, signerProfileId: int(form, 'signer_profile_id'), purpose: str(form, 'purpose', 20), partyRole: str(form, 'party_role', 30) || 'vora', legalReviewNote: str(form, 'legal_review_note', 500) })
     return { to: str(form, 'back', 200).startsWith('/admin/') ? str(form, 'back', 200) : '/admin', notice: `Signing requested (${made.ref}). The signer completes it from their own account.` }
+  })
+}
+
+/** A signer signs a document themselves: the request is made for them and they are taken straight to the signing page (nobody has to ask them first). */
+export async function signNowAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    const kind = str(form, 'kind', 20)
+    if (!isTrustKind(kind)) throw new ActionError('Unknown document kind')
+    const id = await signNow(user, { kind, documentId: int(form, 'document_id'), purpose: str(form, 'purpose', 20) || 'signed', partyRole: str(form, 'party_role', 30) || 'vora', legalReviewNote: str(form, 'legal_review_note', 500) })
+    return { to: `/admin/signing/${id}` }
   })
 }
 
