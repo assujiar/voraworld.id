@@ -22,7 +22,7 @@
 
 .vf-banner{display:flex;gap:18px;align-items:flex-start;margin:26px 0 8px;padding:20px 22px;border-left:6px solid #101720;background:rgba(247,247,244,.92)}
 .vf-banner h1{margin:0 0 6px;font-size:clamp(1.25rem,4.6vw,1.9rem);line-height:1.15;letter-spacing:-.01em}
-.vf-banner h1 .vf-id{font-size:.7em;letter-spacing:0}
+.vf-banner h1 .vf-id{display:inline-block;font-size:.7em;letter-spacing:0}
 .vf-banner p{margin:.3rem 0}
 .vf-mark{flex:none;display:grid;place-items:center;width:40px;height:40px;border:2px solid currentColor;border-radius:50%;font-weight:700;font-size:1.1rem}
 .vf-info{border-left-color:#101720}.vf-info .vf-mark{color:#101720}
@@ -38,7 +38,8 @@
 .vf-ident dt{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64717c}
 .vf-ident dd{margin:2px 0 0;font-size:1.05rem;font-weight:600;overflow-wrap:anywhere}
 .vf-findings{display:grid;grid-template-columns:1fr;gap:0 40px}
-.vf-fact{display:flex;gap:8px;font-weight:600}
+.vf-fact{display:block;padding-left:1.5em;text-indent:-1.5em;font-weight:600}
+.vf-fact>span[aria-hidden]{display:inline-block;width:1.5em;text-indent:0}
 .vf-ok{color:#1f5a45}.vf-neutral{color:#3b4753}
 .vf-fact.vf-bad,.vf-fact.vf-warn{background:none;color:#8f2f25}
 .vf-sign{padding:8px 0;border-top:1px dotted #dce0e1}

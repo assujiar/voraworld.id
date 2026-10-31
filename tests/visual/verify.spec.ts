@@ -2,7 +2,7 @@ import { buildSync } from 'esbuild'
 import { createServer, type Server } from 'node:http'
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { extname, join, resolve } from 'node:path'
+import { dirname, extname, join, resolve } from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 
 /**
@@ -12,14 +12,21 @@ import { expect, test, type Page } from '@playwright/test'
  */
 const ROOT = resolve(__dirname, '..', '..')
 const WIDTHS: Array<[number, number]> = [[320, 700], [360, 800], [375, 812], [390, 844], [430, 932], [844, 390], [768, 1024], [1024, 768], [1280, 800], [1440, 900]]
-let server: Server, base = '', pages: Record<string, string> = {}
+let server: Server, base = '', pages: Record<string, string> = {}, models: Record<string, unknown> = {}, clientJs = ''
 
 test.beforeAll(async () => {
   const out = join(mkdtempSync(join(tmpdir(), 'vora-visual-')), 'fixtures.cjs')
   buildSync({ entryPoints: [join(ROOT, 'tests/visual/fixtures-entry.tsx')], bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', outfile: out, alias: { '@': join(ROOT, 'src') }, logLevel: 'silent' })
-  pages = (require(out) as { fixtures: () => Record<string, string> }).fixtures()
+  const mod = require(out) as { fixtures: () => Record<string, string>; models: () => Record<string, unknown> }
+  pages = mod.fixtures(); models = mod.models()
+  const client = join(dirname(out), 'client.js')
+  buildSync({ entryPoints: [join(ROOT, 'tests/visual/client-entry.tsx')], bundle: true, platform: 'browser', format: 'iife', jsx: 'automatic', outfile: client, alias: { '@': join(ROOT, 'src') }, logLevel: 'silent', define: { 'process.env.NODE_ENV': '"production"' } })
+  clientJs = readFileSync(client, 'utf8')
   server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x')
+    const live = /^\/live\/([a-z]+)$/.exec(url.pathname)
+    if (live && models[live[1]]) { res.setHeader('content-type', 'text/html; charset=utf-8'); return void res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/static/css/verify.css"></head><body><div id="root"></div><script>window.__MODEL__=${JSON.stringify(models[live[1]])}</script><script src="/client.js"></script></body></html>`) }
+    if (url.pathname === '/client.js') { res.setHeader('content-type', 'text/javascript'); return void res.end(clientJs) }
     const m = /^\/page\/([a-z]+)$/.exec(url.pathname)
     if (m && pages[m[1]]) { res.setHeader('content-type', 'text/html; charset=utf-8'); return void res.end(pages[m[1]]) }
     const file = join(ROOT, 'public', url.pathname)
@@ -75,14 +82,19 @@ test('the watermark repeats, in the corporate red at a low opacity, behind the p
 
 test('controls above the watermark work: a click reaches the button, text can be selected, a file can be chosen', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base })
-  await page.goto(`${base}/page/valid`)
+  await page.goto(`${base}/live/valid`)
   await page.getByRole('button', { name: /Copy verification link/ }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'copied' })).toBeVisible()
+  await expect(page.getByText('Verification link copied | Tautan verifikasi disalin')).toBeVisible()
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('https://voraworld.id/verify/AbCdEfGhIjKlMnOpQrStUvWxYz0123456789')
   await page.getByRole('button', { name: /Copy document reference/ }).click()
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('LTR-VORA-C001-202611-00001')
   // The element under the centre of every control and of the status text is never the watermark.
-  const blocked = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('button, input, a, h1')].filter((e) => { const r = e.getBoundingClientRect(); if (!r.width) return false; const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !(top && (e === top || e.contains(top))) }).map((e) => e.tagName))
+  const blocked = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('button, input, a, h1')].filter((e) => {
+    e.scrollIntoView({ block: 'center' })
+    const r = e.getBoundingClientRect(); if (!r.width) return false
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+    return !(top && (e === top || e.contains(top) || top.contains(e)))
+  }).map((e) => `${e.tagName}.${e.className}`))
   expect(blocked).toEqual([])
   // Selecting the status text copies it.
   await page.locator('h1').selectText()
@@ -92,11 +104,15 @@ test('controls above the watermark work: a click reaches the button, text can be
 test('the file check runs in the browser, uploads nothing, and tells a match from a mismatch', async ({ page }) => {
   const requests: string[] = []
   page.on('request', (r) => { if (r.method() !== 'GET') requests.push(`${r.method()} ${r.url()}`) })
-  await page.goto(`${base}/page/valid`)
-  // The page is static here (no hydration), so the check is exercised through the same function in the browser.
-  const digest = await page.evaluate(async () => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('x')); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') })
-  expect(digest).toBe('2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881')
-  expect(requests).toEqual([])
+  await page.goto(`${base}/live/valid`)
+  const input = page.locator('#file-check')
+  await input.setInputFiles({ name: 'x.pdf', mimeType: 'application/pdf', buffer: Buffer.from('x') })
+  await expect(page.locator('.vf-result')).toContainText('does not match the registered document')
+  await expect(page.locator('.vf-result')).toContainText('tidak cocok')
+  expect(requests).toEqual([])                                                                                   // nothing was sent anywhere
+  await page.goto(`${base}/live/legacy`)
+  await page.locator('#file-check').setInputFiles({ name: 'x.pdf', mimeType: 'application/pdf', buffer: Buffer.from('x') })
+  await expect(page.locator('.vf-result')).toContainText('cannot currently be verified')                      // no recorded file: it says so instead of guessing
 })
 
 test('status is visible without relying on colour, and a revoked or superseded page shows no live status or holder', async ({ page }) => {
@@ -106,7 +122,7 @@ test('status is visible without relying on colour, and a revoked or superseded p
     expect(await page.locator('.vf-mark').textContent()).toMatch(/[●✕◐!]/)
   }
   await page.goto(`${base}/page/revoked`)
-  await expect(page.getByText('Current status')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: /Current status/ })).toHaveCount(0)
   await page.goto(`${base}/page/notfound`)
   await expect(page.locator('svg.vf-wm')).toHaveCount(0)
   await expect(page.locator('h1')).toContainText('NO VERIFICATION RECORD FOUND')

@@ -19,6 +19,8 @@ const raw = (over: Partial<RawVerification> = {}): RawVerification => ({
 const view = (r: RawVerification) => renderToStaticMarkup(<VerifyView model={deriveView(r)} token="AbCdEfGhIjKlMnOpQrStUvWxYz0123456789" origin="https://voraworld.id" viewedAt={new Date('2026-10-31T04:42:00Z')} />)
 const page = (body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/static/css/site.css"><link rel="stylesheet" href="/static/css/feedback.css"><link rel="stylesheet" href="/static/css/verify.css"></head><body>${body}</body></html>`
 
+export function models(): Record<string, unknown> { return { valid: deriveView(raw()), legacy: deriveView(raw({ artifacts: [], signings: [], createdAt: new Date('2026-01-01'), chain: null })) } }
+
 export function fixtures(): Record<string, string> {
   const parties = [{ role: 'vora', name: 'PT Satu Arah International', required: true, fulfilled: true, method: 'vora_electronic' }, { role: 'counterparty', name: 'PT Mitra Dagang Contoh', required: true, fulfilled: false, method: null }]
   return {

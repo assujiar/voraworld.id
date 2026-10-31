@@ -1,7 +1,8 @@
 import { CopyButtons } from '@/components/verify/CopyButtons'
 import { Watermark } from '@/components/verify/Watermark'
 import { FileCheck, type Recorded } from '@/components/site/FileCheck'
-import { METHOD_LABEL, type Banner, type IssuanceFinding, type VerifyModel } from '@/server/trust/verification-view'
+import { METHOD_LABEL } from '@/content/verify-labels'
+import type { Banner, IssuanceFinding, VerifyModel } from '@/server/trust/verification-view'
 import { PURPOSE_LABELS } from '@/content/trust-policy'
 
 /** The official domain, a constant: nothing a visitor or a request supplies is ever shown as the domain of VORA's verification. */

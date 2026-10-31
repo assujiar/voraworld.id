@@ -41,13 +41,7 @@ export interface VerifyModel {
   revokedReason: string
 }
 
-export const METHOD_LABEL: Record<string, { en: string; id: string }> = {
-  vora_electronic: { en: 'Electronically signed within VORA (non-certified)', id: 'Ditandatangani elektronik di dalam VORA (tidak tersertifikasi)' },
-  external_pdf_uploaded: { en: 'Externally signed PDF uploaded (not independently validated)', id: 'PDF bertanda tangan eksternal diunggah (tidak divalidasi secara independen)' },
-  wet_ink_uploaded: { en: 'Wet-ink signed document uploaded', id: 'Dokumen tanda tangan basah diunggah' },
-  manually_validated: { en: 'Evidence validated manually by VORA', id: 'Bukti divalidasi manual oleh VORA' },
-  external_certified_verified: { en: 'External certified signature, independently verified', id: 'Tanda tangan tersertifikasi eksternal, diverifikasi independen' },
-}
+export { METHOD_LABEL } from '../../content/verify-labels'
 
 export interface RawVerification {
   kind: TrustKind; documentKind?: string; number: string; issuedOn: string; status: string
