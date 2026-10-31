@@ -11,7 +11,7 @@ import { readSealed, readSource, type StoredFields } from '../documents/general'
 import { sealPdf } from './seal'
 import { trustedPdf } from '../trust/serve'
 import { trustPolicy } from '../../content/trust-policy'
-import { businessDay } from '../dates'
+import { businessStamp } from '../dates'
 import { renderCertificate } from './certificate'
 import { renderGeneral } from './general'
 import { renderInvoice } from './invoice'
@@ -185,7 +185,7 @@ async function generalPdf(id: number, baseUrl: string): Promise<Uint8Array> {
   const rows = invoices.length ? acceptedAccounts(await many('invoice_bank_instructions', (q) => q.in('invoice_id', invoices.map((i) => i.id)), 'bank_name,account_number,account_holder,currency,swift_code,position')) : []
   const data: GeneralDocData = {
     number: doc.number as string, kind: type.key, language: doc.language as 'id' | 'en', status: doc.status as string, documentDate: String(doc.documentDate),
-    issuedAt: doc.issuedAt ? businessDay(doc.issuedAt as Date) : undefined, companySignature: stored.signature === 'company', signatureBackground: stored.signatureBackground === true,
+    issuedAt: doc.issuedAt ? businessStamp(doc.issuedAt as Date) : undefined, companySignature: stored.signature === 'company', signatureBackground: stored.signatureBackground === true,
     values: stored.values ?? {}, invoices, articles: stored.articles ?? [],
     banks: rows.map((b): BankLine => ({ bankName: b.bankName as string, accountNumber: b.accountNumber as string, accountHolder: b.accountHolder as string, currency: b.currency as string, swiftCode: String(b.swiftCode ?? ''), position: Number(b.position) })),
   }

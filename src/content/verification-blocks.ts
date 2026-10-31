@@ -125,7 +125,13 @@ export function layoutSignature(o: SignatureOptions): MarkLayout {
   const vw = right - VALUE_X
   const SIZE = 6.4
   // A long value (a document number) is wrapped onto a second line rather than shrunk until it cannot be read; one size for every value.
-  const wrapped = values.map((v) => (monoWidth(printable(v), SIZE) <= vw ? [printable(v)] : wrapMono(v, vw, SIZE).slice(0, 2)))
+  // The registration time breaks between the day and the time ("2026-10-31" / "15:24:37 WIB"), not in front of the zone alone.
+  const wrapped = values.map((v, i) => {
+    const text = printable(v)
+    if (monoWidth(text, SIZE) <= vw) return [text]
+    const day = i === 1 ? /^(\d{4}-\d{2}-\d{2}) (.+)$/.exec(text) : null
+    return day && monoWidth(day[2], SIZE) <= vw ? [day[1], day[2]] : wrapMono(v, vw, SIZE).slice(0, 2)
+  })
   values.forEach((_, i) => {
     const cy = mid + (i - 1.5) * ROW_PITCH
     items.push({ t: 'glyph', name: glyphs[i], x: x0, y: cy - 5, size: 10, color: RED })

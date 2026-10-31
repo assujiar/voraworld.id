@@ -10,7 +10,7 @@ import { inspectSourcePdf } from '../finance/pdf-inspect'
 import { sealPdf } from '../pdf/seal'
 import { trustPolicy } from '../../content/trust-policy'
 import { getObject, putObject, removeObject } from '../storage'
-import { businessDay } from '../dates'
+import { businessStamp } from '../dates'
 import { getVerification } from '../verification'
 
 /**
@@ -234,7 +234,7 @@ export async function setDocumentStatus(actorId: number, id: number, action: str
       const sealedAt = new Date()
       const made = await sealPdf(await readSource(stored.source), {
         type: trustPolicy('document', type.key).signature, verificationUrl: `${baseUrl.replace(/\/+$/, '')}/verify/${verification.token}`, number: doc.number as string, lang: p.lang, pages: p.fields.values.pages,
-        corner: p.fields.values.corner, size: p.fields.values.size, pageNumber: p.fields.values.page_number, posX: p.fields.values.pos_x, posY: p.fields.values.pos_y, background: p.fields.values.background === 'yes', issuedAt: businessDay(sealedAt),
+        corner: p.fields.values.corner, size: p.fields.values.size, pageNumber: p.fields.values.page_number, posX: p.fields.values.pos_x, posY: p.fields.values.pos_y, background: p.fields.values.background === 'yes', issuedAt: businessStamp(sealedAt),
       })
       sealedKey = `seal/${randomUUID()}-sealed.pdf`
       await putObject('documents', sealedKey, made.bytes, 'application/pdf')

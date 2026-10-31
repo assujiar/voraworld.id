@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto'
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server'
 import { b64url, sha256Hex } from '../crypto'
 import { many, one, rpc, insert, update } from '../data'
-import { businessDay } from '../dates'
+import { businessStamp } from '../dates'
 import { documentType } from '../../content/document-types'
 import { fileName } from '../../content/file-names'
 import { PURPOSE_LABELS, SIGNING_PURPOSES, signingEligibility, trustPolicy, type SigningPurpose } from '../../content/trust-policy'
@@ -254,7 +254,7 @@ export async function finishSigning(user: SessionUser, requestId: number, respon
   const p = payload.placement
   const made = await sealPdf(bytes, {
     type: trustPolicy(request.kind, doc.documentKind).signature, verificationUrl: `${relyingParty().origin}/verify/${verification.token}`, number: doc.number, lang: doc.language, pages: p.pages, corner: p.corner, size: p.size,
-    pageNumber: p.page_number ? String(p.page_number) : undefined, posX: p.pos_x ?? undefined, posY: p.pos_y ?? undefined, background: p.background === true, issuedAt: businessDay(signedAt), signer: { name: payload.signer.name, position: payload.signer.position },
+    pageNumber: p.page_number ? String(p.page_number) : undefined, posX: p.pos_x ?? undefined, posY: p.pos_y ?? undefined, background: p.background === true, issuedAt: businessStamp(signedAt), signer: { name: payload.signer.name, position: payload.signer.position },
   })
   const prepared = await prepareSignedArtifact({
     kind: request.kind, documentId: request.documentId, number: doc.number, documentType: doc.documentKind ?? request.kind, bytes: made.bytes, pages: null, sourceSha256: source.sourceSha256,
