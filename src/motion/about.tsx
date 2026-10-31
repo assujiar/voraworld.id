@@ -64,38 +64,54 @@ export const AboutHero: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; r
   )
 }
 
-/* ------------------------------------------------------------------------------------------------ 2 · routes: drawn by the scroll */
-export const ROUTES = { w: 1200, h: 800, frames: 300 }
-const HUB = { x: 600, y: 400 }
-const ROUTE_D = [
-  'M 600 400 C 650 250, 790 150, 1010 110',
-  'M 600 400 C 760 400, 930 360, 1120 420',
-  'M 600 400 C 700 520, 840 640, 980 700',
-  'M 600 400 C 480 520, 360 640, 210 690',
-  'M 600 400 C 450 330, 300 210, 120 150',
-]
-export const AboutRoutes: React.FC = () => {
+/* ------------------------------------------------------------------------------------------------ 2 · story: one shipment route, built to match the three sentences beside it */
+export const ROUTES = { w: 800, h: 880, frames: 300 }
+const STOPS = [{ x: 220, y: 110 }, { x: 580, y: 270 }, { x: 220, y: 430 }, { x: 580, y: 590 }]
+const END = { x: 380, y: 760 }
+const ROUTE_D = 'M 220 110 C 220 190, 580 190, 580 270 C 580 350, 220 350, 220 430 C 220 510, 580 510, 580 590 C 580 670, 380 670, 380 760'
+export interface StoryLabels { stops: string[]; scope: string; confirmed: string }
+/**
+ * "Capabilities and coverage are confirmed for each inquiry. The scope is written down. Every step has a name next to it." drawn in that order by the scroll:
+ * the route is drawn and its end is confirmed; the scope is marked as a corridor around it; each step gets the name of the party responsible.
+ */
+export const AboutStory: React.FC<{ labels?: StoryLabels }> = ({ labels = { stops: ['Forwarder', 'Broker', 'Trucker', 'Warehouse'], scope: 'Scope', confirmed: 'Confirmed' } }) => {
   const frame = useCurrentFrame()
   const p = frame / (ROUTES.frames - 1)
+  const drawn = interpolate(p, [0.02, 0.3], [0, 1], { ...clamp, easing: ease })
+  const ev = evolvePath(drawn, ROUTE_D), len = getLength(ROUTE_D)
+  const confirmed = interpolate(p, [0.3, 0.38], [0, 1], clamp)
+  const corridor = interpolate(p, [0.4, 0.55], [0, 1], clamp)
+  const lap = Math.max(0, (p - 0.3) / 0.7)
+  const car = getPointAtLength(ROUTE_D, len * Math.min(1, lap * 1.6 % 1.0001)) ?? END
   return (
     <AbsoluteFill>
-      <svg viewBox={`0 0 ${ROUTES.w} ${ROUTES.h}`} width="100%" height="100%" style={{ display: 'block' }}>
-        {ROUTE_D.map((d, i) => {
-          const drawn = interpolate(p, [0.34 + i * 0.08, 0.34 + i * 0.08 + 0.3], [0, 1], { ...clamp, easing: ease })
-          const ev = evolvePath(drawn, d), len = getLength(d), end = getPointAtLength(d, len) ?? HUB
-          const lap = (((p * 5 + i * 0.37) % 1) + 1) % 1
-          const car = getPointAtLength(d, len * lap) ?? HUB
+      <svg viewBox={`0 0 ${ROUTES.w} ${ROUTES.h}`} width="100%" height="100%" style={{ display: 'block', overflow: 'visible' }}>
+        <path d={ROUTE_D} fill="none" stroke={RED} strokeOpacity={0.1 * corridor} strokeWidth={96} strokeLinecap="round" />
+        <text x={400} y={34} textAnchor="middle" fontSize={26} fontWeight={700} letterSpacing={5} fill={RED} fontFamily="inherit" opacity={corridor} style={{ translate: `0px ${(1 - corridor) * 10}px` }}>{labels.scope.toUpperCase()}</text>
+        <path d={ROUTE_D} fill="none" stroke={RED} strokeWidth={5} strokeLinecap="round" strokeDasharray={ev.strokeDasharray} strokeDashoffset={ev.strokeDashoffset} />
+        {STOPS.map((n, i) => {
+          const at = 0.62 + i * 0.085
+          const tag = ramp(p, at, at + 0.08)
+          const left = n.x < 400
+          const w = labels.stops[i].length * 17 + 44
+          const reached = interpolate(drawn, [i / 4, i / 4 + 0.08], [0, 1], clamp)
           return (
-            <g key={d}>
-              <path d={d} fill="none" stroke={RED} strokeWidth={3} strokeLinecap="round" strokeDasharray={ev.strokeDasharray} strokeDashoffset={ev.strokeDashoffset} opacity={0.85} />
-              <circle cx={end.x} cy={end.y} r={11 * drawn} fill={INK} stroke={PAPER} strokeWidth={4} />
-              {drawn > 0.98 ? <circle cx={car.x} cy={car.y} r={6} fill={RED} stroke="#fff" strokeWidth={2.5} /> : null}
+            <g key={i}>
+              <circle cx={n.x} cy={n.y} r={13 * reached} fill={INK} stroke={PAPER} strokeWidth={5} />
+              <g opacity={tag} style={{ translate: `${(left ? 1 : -1) * (1 - tag) * 22}px 0px` }}>
+                <line x1={n.x + (left ? 22 : -22)} y1={n.y} x2={n.x + (left ? 44 : -44)} y2={n.y} stroke={INK} strokeWidth={2.5} />
+                <rect x={left ? n.x + 44 : n.x - 44 - w} y={n.y - 26} width={w} height={52} rx={26} fill="#fff" stroke="#CBD2D6" strokeWidth={2} />
+                <text x={(left ? n.x + 44 : n.x - 44 - w) + w / 2} y={n.y + 9} textAnchor="middle" fontSize={26} fontWeight={600} fill={INK} fontFamily="inherit">{labels.stops[i]}</text>
+              </g>
             </g>
           )
         })}
-        <svg x={HUB.x - 130} y={HUB.y - 80} width={260} height={(260 * 590) / 1048} viewBox={MARK.vb.join(' ')} style={{ overflow: 'visible' }}>
-          <MarkBuild id="routes" left={ramp(p, 0.0, 0.22)} right={ramp(p, 0.2, 0.42)} wedge={interpolate(p, [0.4, 0.52], [0, 1], clamp)} />
-        </svg>
+        <g opacity={confirmed} style={{ transformBox: 'fill-box', transformOrigin: '50% 50%', scale: 0.5 + 0.5 * confirmed }}>
+          <circle cx={END.x} cy={END.y} r={34} fill="#276650" stroke={PAPER} strokeWidth={6} />
+          <path d={`M ${END.x - 15} ${END.y} L ${END.x - 4} ${END.y + 11} L ${END.x + 17} ${END.y - 12}`} fill="none" stroke="#fff" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" />
+          <text x={END.x} y={END.y + 78} textAnchor="middle" fontSize={26} fontWeight={700} letterSpacing={3} fill="#276650" fontFamily="inherit">{labels.confirmed.toUpperCase()}</text>
+        </g>
+        {p > 0.7 ? <circle cx={car.x} cy={car.y} r={8} fill={RED} stroke="#fff" strokeWidth={3} opacity={interpolate(p, [0.7, 0.76], [0, 1], clamp)} /> : null}
       </svg>
     </AbsoluteFill>
   )
@@ -222,45 +238,56 @@ export const AboutField: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; 
   )
 }
 
-/* ------------------------------------------------------------------------------------------------ 7 · gaps: four routes with a break in them, closed one by one */
-export const GAPS = { w: 1200, h: 720, frames: 36000, gap: [540, 660] as const, x0: 100, x1: 1100, top: 70, bottom: 650 }
-const rowY = (i: number, n: number) => (n <= 1 ? 360 : GAPS.top + (i * (GAPS.bottom - GAPS.top)) / (n - 1))
-/** `resolvedAt[i]` is the frame at which row i was closed (-1: still open); `focus` is the row the visitor is looking at. */
-export const AboutGaps: React.FC<{ resolvedAt?: number[]; focus?: number; still?: boolean }> = ({ resolvedAt = [-1, -1, -1, -1, -1, -1], focus = -1, still = false }) => {
+/* ------------------------------------------------------------------------------------------------ 7 · rail: one shipment path, broken where a problem sits, closed by VORA's mark */
+export const RAIL = { w: 64, frames: 36000 }
+/**
+ * Drawn in pixels beside the list of problems (the Player is as tall as the list). Every problem is a point on one path: open, it is a broken red ring with "!" and the path is
+ * dashed around it; chosen, VORA's mark closes it and the path around it becomes solid. When every problem is closed the whole path is unbroken and one carrier runs along it.
+ * `ys` are the vertical centres of the list items, `resolvedAt[i]` the frame at which item i was closed (-1: open), `focus` the item being read.
+ */
+export const AboutRail: React.FC<{ ys?: number[]; height?: number; resolvedAt?: number[]; focus?: number; still?: boolean }> = ({ ys = [], height = 400, resolvedAt = [], focus = -1, still = false }) => {
   const frame = useCurrentFrame()
+  const X = 32
+  const n = ys.length
+  const done = (i: number) => (still ? true : (resolvedAt[i] ?? -1) >= 0)
+  const all = n > 0 && ys.every((_, i) => done(i))
+  const enter = ramp(frame, 0, 40)
+  const top = 0, bottom = height
+  const mid = (i: number) => (i < 0 ? top : i >= n - 1 ? bottom : (ys[i] + ys[i + 1]) / 2)
+  const lap = (frame % 110) / 110
   return (
     <AbsoluteFill>
-      <svg viewBox={`0 0 ${GAPS.w} ${GAPS.h}`} width="100%" height="100%" style={{ display: 'block', overflow: 'visible' }}>
-        {resolvedAt.map((_, i) => {
-          const y = rowY(i, resolvedAt.length)
-          const drawn = ramp(frame, 4 + i * 10, 52 + i * 10)
-          const at = still ? -1 : resolvedAt[i] ?? -1
-          const closed = still ? 0 : at >= 0 ? ramp(frame - at, 0, 22) : 0
-          const age = at >= 0 ? frame - at : -1
-          const dim = focus < 0 || focus === i ? 1 : 0.45
-          const left = GAPS.x0 + (GAPS.gap[0] - GAPS.x0) * drawn, right = GAPS.gap[1] + (GAPS.x1 - GAPS.gap[1]) * drawn
-          const lap = ((frame / 80 + i * 0.23) % 1 + 1) % 1
-          const cx = GAPS.x0 + (GAPS.x1 - GAPS.x0) * lap
-          const mid = (GAPS.gap[0] + GAPS.gap[1]) / 2
-          const warn = 0.5 + 0.5 * Math.sin(frame / 7 + i)
+      <svg viewBox={`0 0 ${RAIL.w} ${Math.max(1, height)}`} width="100%" height="100%" style={{ display: 'block', overflow: 'visible' }}>
+        <line x1={X} y1={top} x2={X} y2={top + (bottom - top) * enter} stroke="#CBD2D6" strokeWidth={3} strokeDasharray="3 9" strokeLinecap="round" />
+        {ys.map((y, i) => {
+          const closed = done(i)
+          const age = closed && !still ? frame - (resolvedAt[i] ?? 0) : 999
+          const grow = closed ? (age >= 999 ? 1 : ramp(age, 0, 18)) : 0
+          const a = mid(i - 1), b = mid(i)
+          const here = focus === i
+          const k = (30 / MARK.width)
           return (
-            <g key={i} opacity={dim} style={{ transition: 'none' }}>
-              <circle cx={GAPS.x0} cy={y} r={11 * drawn} fill={INK} stroke={PAPER} strokeWidth={4} />
-              <circle cx={GAPS.x1} cy={y} r={11 * ramp(frame, 40 + i * 10, 56 + i * 10)} fill={INK} stroke={PAPER} strokeWidth={4} />
-              <line x1={GAPS.x0} y1={y} x2={left} y2={y} stroke={closed > 0 ? RED : SLATE} strokeWidth={4} strokeLinecap="round" />
-              <line x1={GAPS.gap[1]} y1={y} x2={right} y2={y} stroke={closed > 0 ? RED : SLATE} strokeWidth={4} strokeLinecap="round" />
-              <line x1={GAPS.gap[0]} y1={y} x2={GAPS.gap[0] + (GAPS.gap[1] - GAPS.gap[0]) * closed} y2={y} stroke={RED} strokeWidth={4} strokeLinecap="round" />
-              {closed < 1 && drawn > 0.9 ? (
-                <g opacity={(1 - closed) * (0.55 + 0.45 * warn)}>
-                  <circle cx={mid} cy={y} r={22} fill="none" stroke={RED} strokeWidth={2.5} strokeDasharray="5 6" />
-                  <text x={mid} y={y + 8} textAnchor="middle" fontSize={26} fontWeight={800} fill={RED} fontFamily="inherit">!</text>
+            <g key={i}>
+              {closed ? <line x1={X} y1={a + (y - a) * (1 - grow)} x2={X} y2={y + (b - y) * grow} stroke={RED} strokeWidth={4} strokeLinecap="round" /> : null}
+              {!closed ? (
+                <g style={{ opacity: ramp(frame, 8 + i * 6, 24 + i * 6) }}>
+                  <circle cx={X} cy={y} r={15} fill="#fff" stroke={RED} strokeWidth={3} strokeDasharray="4 4" />
+                  <text x={X} y={y + 6} textAnchor="middle" fontSize={17} fontWeight={800} fill={RED} fontFamily="inherit">!</text>
+                  {here ? <circle cx={X} cy={y} r={22} fill="none" stroke={RED} strokeOpacity={0.45} strokeWidth={2} /> : null}
                 </g>
-              ) : null}
-              {age >= 0 && age < 40 ? <circle cx={mid} cy={y} r={20 + age * 5} fill="none" stroke={RED} strokeWidth={interpolate(age, [0, 40], [6, 0.5])} opacity={1 - age / 40} /> : null}
-              {closed >= 1 ? <circle cx={cx} cy={y} r={7} fill={RED} stroke="#fff" strokeWidth={3} /> : null}
+              ) : (
+                <g style={{ transformBox: 'fill-box', transformOrigin: '50% 50%', scale: 0.4 + 0.6 * grow, opacity: grow }}>
+                  <circle cx={X} cy={y} r={22} fill="#fff" stroke={RED} strokeWidth={3} />
+                  <g transform={`translate(${X} ${y}) scale(${k * 0.78}) translate(${-MARK.apexX} ${-(MARK.top + MARK.base) / 2})`}>
+                    <path d={MARK_ART.ink.d} fill={INK} /><path d={MARK_ART.red.d} fill={RED} />
+                  </g>
+                </g>
+              )}
+              {age >= 0 && age < 36 ? <circle cx={X} cy={y} r={20 + age * 0.9} fill="none" stroke={RED} strokeWidth={interpolate(age, [0, 36], [4, 0.5])} opacity={1 - age / 36} /> : null}
             </g>
           )
         })}
+        {all ? <circle cx={X} cy={top + (bottom - top) * lap} r={6} fill={RED} stroke="#fff" strokeWidth={2.5} /> : null}
       </svg>
     </AbsoluteFill>
   )

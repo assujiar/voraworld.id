@@ -37,7 +37,7 @@ export default async function About({ params }: LocaleParams) {
   const items = FOUNDER.items.map((i) => ({ title: pick(i.title, locale), problem: pick(i.problem, locale), answer: pick(i.answer, locale) }))
   return (
     <>
-      <link rel="stylesheet" href="/static/css/about.css?v=6" precedence="default" />
+      <link rel="stylesheet" href="/static/css/about.css?v=7" precedence="default" />
       <HeroStage hint={pick(ABOUT.hint.hero, locale)} hintTouch={pick(ABOUT.hint.hintTouch, locale)}>
         <div className="ab-wrap ab-hero__copy">
           <p className="ab-eyebrow">{pick(ABOUT.eyebrow, locale)}</p>
@@ -46,7 +46,7 @@ export default async function About({ params }: LocaleParams) {
         </div>
       </HeroStage>
 
-      <RoutesStory label={pick(ABOUT.manifesto.label, locale)} text={pick(ABOUT.manifesto.words, locale)} />
+      <RoutesStory label={pick(ABOUT.manifesto.label, locale)} text={pick(ABOUT.manifesto.words, locale)} labels={{ stops: ABOUT.manifesto.stops[locale], scope: pick(ABOUT.manifesto.scope, locale), confirmed: pick(ABOUT.manifesto.confirmed, locale) }} />
 
       <section className="ab-section ab-founder" id="founder">
         <div className="ab-wrap">
@@ -59,7 +59,7 @@ export default async function About({ params }: LocaleParams) {
             </div>
             <p className="ab-choose">{pick(FOUNDER.choose, locale)}</p>
           </Reveal>
-          <Founder items={items} labels={{ problem: pick(FOUNDER.problemLabel, locale), answer: pick(FOUNDER.answerLabel, locale), open: pick(FOUNDER.open, locale), closed: pick(FOUNDER.closed, locale) }} />
+          <Founder items={items} labels={{ problem: pick(FOUNDER.problemLabel, locale), answer: pick(FOUNDER.answerLabel, locale), open: pick(FOUNDER.open, locale), closed: pick(FOUNDER.closed, locale), progress: pick(FOUNDER.progress, locale), complete: pick(FOUNDER.complete, locale) }} />
           <p className="ab-after">{pick(FOUNDER.after, locale)}</p>
           <p className="ab-byline">{pick(FOUNDER.byline, locale)}</p>
         </div>

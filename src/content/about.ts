@@ -15,6 +15,10 @@ export const ABOUT = {
   hint: { hero: { en: 'Click VORA to reveal our line.', id: 'Klik VORA untuk melihat semboyan kami.' }, hintTouch: { en: 'Tap VORA to reveal our line.', id: 'Ketuk VORA untuk melihat semboyan kami.' } },
   manifesto: {
     label: { en: 'How VORA works', id: 'Cara kerja VORA' },
+    // The parties on the route drawn beside the statement: the same ones named in the founder's problems. Industry words stay as they are in both languages.
+    stops: { en: ['Forwarder', 'Broker', 'Trucker', 'Warehouse'], id: ['Forwarder', 'Broker', 'Pengangkut', 'Gudang'] },
+    scope: { en: 'Scope', id: 'Cakupan' },
+    confirmed: { en: 'Confirmed', id: 'Dipastikan' },
     words: {
       en: 'Capabilities and coverage are confirmed for each inquiry. The scope is written down. Every step has a name next to it.',
       id: 'Kami memastikan kapabilitas dan jangkauan untuk setiap permintaan. Cakupan pekerjaan dituliskan. Setiap langkah ada penanggung jawabnya.',
@@ -40,6 +44,8 @@ export const FOUNDER = {
   problemLabel: { en: 'What went wrong', id: 'Yang bermasalah' },
   answerLabel: { en: 'What VORA does', id: 'Yang kami lakukan' },
   closed: { en: 'Closed', id: 'Teratasi' },
+  progress: { en: '{n} of {total} closed', id: '{n} dari {total} teratasi' },
+  complete: { en: 'No gaps left. That is the plan we make before the cargo moves.', id: 'Tidak ada lagi yang terputus. Itulah rencana yang kami susun sebelum barang bergerak.' },
   open: { en: 'Open', id: 'Terbuka' },
   items: [
     {
