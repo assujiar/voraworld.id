@@ -65,9 +65,9 @@ const [, , ww, wh] = WORDMARK_ART.viewBox
 export const ICON_ASPECT = ih / iw
 export const WORDMARK_ASPECT = wh / ww
 
-const WORDS: Record<Lang, { verify: string; ref: string; preview: string; signedAt: string; pendingTime: string; eventRef: string; nonCertified: string; scan: string; documentRef: string; registered: string; notPersonal: string }> = {
-  id: { verify: 'Periksa keaslian dokumen', ref: 'Ref', preview: 'PRATINJAU', signedAt: 'Ditandatangani', pendingTime: 'Waktu ditetapkan saat penandatanganan', eventRef: 'Peristiwa tanda tangan', nonCertified: 'Tanda tangan elektronik tidak tersertifikasi', scan: 'Pindai untuk memeriksa', documentRef: 'Nomor dokumen', registered: 'Didaftarkan', notPersonal: 'Penanda VORA, bukan tanda tangan elektronik pribadi' },
-  en: { verify: 'Verify document authenticity', ref: 'Ref', preview: 'PREVIEW', signedAt: 'Signed', pendingTime: 'Time is set when the document is signed', eventRef: 'Signing event', nonCertified: 'Non-certified electronic signature', scan: 'Scan to verify', documentRef: 'Document no.', registered: 'Registered', notPersonal: 'VORA mark, not a personal electronic signature' },
+const WORDS: Record<Lang, { verify: string; ref: string; preview: string; signedAt: string; pendingTime: string; eventRef: string; nonCertified: string; scan: string; documentRef: string; registered: string }> = {
+  id: { verify: 'Periksa keaslian dokumen', ref: 'Ref', preview: 'PRATINJAU', signedAt: 'Ditandatangani', pendingTime: 'Waktu ditetapkan saat penandatanganan', eventRef: 'Peristiwa tanda tangan', nonCertified: 'Tanda tangan elektronik tidak tersertifikasi', scan: 'Pindai untuk memeriksa', documentRef: 'Nomor dokumen', registered: 'Didaftarkan' },
+  en: { verify: 'Verify document authenticity', ref: 'Ref', preview: 'PREVIEW', signedAt: 'Signed', pendingTime: 'Time is set when the document is signed', eventRef: 'Signing event', nonCertified: 'Non-certified electronic signature', scan: 'Scan to verify', documentRef: 'Document no.', registered: 'Registered' },
 }
 export const markWords = (lang: Lang) => WORDS[lang]
 
@@ -200,7 +200,8 @@ export function layoutMark(o: MarkOptions): MarkLayout {
       rows.push([`${personal ? words.eventRef : words.documentRef}: ${s.eventRef}`, 6, false, SLATE])
       // A preview, and a mark that has no time yet, carry no time: it is never invented. The row is there either way, so the box is the same size.
       rows.push([!o.preview && s.signedAt ? `${personal ? words.signedAt : words.registered}: ${s.signedAt}` : words.pendingTime, 6, false, SLATE])
-      rows.push([personal ? words.nonCertified : words.notPersonal, 5.6, false, SLATE])
+      // A personal signing says what kind of signature it is. VORA's own corporate mark carries no such line: what it is and is not is stated on the verification page.
+      if (personal) rows.push([words.nonCertified, 5.6, false, SLATE])
     } else rows.push([words.nonCertified, 5.6, false, SLATE])
     height += 7
     for (const [text, size, bold, color] of rows) {

@@ -5,5 +5,6 @@ import { defineConfig } from 'vitest/config'
 // policy, canonical payloads, attestation signatures, placement geometry, verification view). The suites in tests/*.test.ts need Postgres and Docker (`npm test`).
 export default defineConfig({
   resolve: { alias: { '@': resolve(__dirname, 'src') } },
-  test: { environment: 'node', include: ['tests/unit/**/*.test.ts'], testTimeout: 60_000, pool: 'forks', env: { NODE_ENV: 'test', APP_ENV: 'test', PUBLIC_BASE_URL: 'http://testserver' } },
+  esbuild: { jsx: 'automatic' },
+  test: { environment: 'node', include: ['tests/unit/**/*.test.{ts,tsx}'], testTimeout: 60_000, pool: 'forks', env: { NODE_ENV: 'test', APP_ENV: 'test', PUBLIC_BASE_URL: 'http://testserver' } },
 })

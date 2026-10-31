@@ -122,7 +122,7 @@ describe('layout', () => {
     // A preview and the final mark take exactly the same space, so a placement confirmed on the preview is the placement of the signed file.
     expect(layoutMark(opts({ variant: 'signing', signing, preview: true })).height).toBeCloseTo(layoutMark(opts({ variant: 'signing', signing })).height, 6)
     const corporate = t(layoutMark(opts({ variant: 'signing', signing: { ...signing, personal: false, name: 'PT Satu Arah International', position: '', eventRef: 'SEL-1' } })))
-    expect(corporate).toContain('VORA mark, not a personal electronic signature')
+    expect(corporate).not.toMatch(/personal electronic signature|tanda tangan elektronik pribadi/i)     // no disclaimer line on the corporate mark: the verification page says it
     expect(corporate).toContain('Document no.: SEL-1')
     expect(corporate).not.toMatch(/Non-certified electronic signature/)
     expect(t(layoutMark(opts({ variant: 'signing', lang: 'id', signing })))).toContain('Tanda tangan elektronik tidak tersertifikasi')
