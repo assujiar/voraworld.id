@@ -8,7 +8,7 @@ import { PURPOSE_LABELS } from '@/content/trust-policy'
 /** The official domain, a constant: nothing a visitor or a request supplies is ever shown as the domain of VORA's verification. */
 export const OFFICIAL_DOMAIN = 'voraworld.id'
 
-const Bi = ({ en, id }: { en: React.ReactNode; id: React.ReactNode }) => <>{en} <span className="vf-id" lang="id">| {id}</span></>
+const Bi = ({ en, id }: { en: React.ReactNode; id: React.ReactNode }) => <>{en} <span className="vf-id" lang="id"><span className="vf-sep">| </span>{id}</span></>
 
 const BANNERS: Record<Banner, { en: string; id: string; tone: 'info' | 'bad' | 'wait' | 'warn'; mark: string; note: { en: string; id: string } }> = {
   record_found: { en: 'ISSUANCE RECORD FOUND', id: 'CATATAN PENERBITAN DITEMUKAN', tone: 'info', mark: '●', note: { en: 'This is a record check. Read the separate findings below: a found record does not by itself show that a file in your hands is unmodified, or that anybody signed it.', id: 'Ini pemeriksaan catatan. Baca temuan terpisah di bawah: catatan yang ditemukan tidak dengan sendirinya menunjukkan bahwa berkas di tangan Anda tidak diubah, atau bahwa seseorang telah menandatanganinya.' } },
@@ -58,7 +58,7 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
         <section className={`vf-banner vf-${b.tone}`} aria-labelledby="vf-status">
           <span className="vf-mark" aria-hidden="true">{b.mark}</span>
           <div>
-            <h1 id="vf-status">{b.en} <span className="vf-id">| {b.id}</span></h1>
+            <h1 id="vf-status">{b.en} <span className="vf-id" lang="id"><span className="vf-sep">| </span>{b.id}</span></h1>
             <p>{b.note.en}<br /><span className="vf-id">{b.note.id}</span></p>
             {model.revokedReason && !live ? <p className="vf-small">Reason: {model.revokedReason}</p> : null}
             {model.supersededBy ? <p><a className="vf-link" href={`/verify/${model.supersededBy.token}`}>See the document that replaces this one <span className="vf-id">| Lihat dokumen penggantinya</span></a></p> : null}
@@ -82,7 +82,7 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
           <section className="vf-surface" aria-labelledby="vf-h-record">
             <Watermark layer="front" id="f2" />
             <h2 id="vf-h-record">1 · <Bi en="Record" id="Catatan" /></h2>
-            <p className="vf-fact"><span aria-hidden="true">✓</span> <Bi en="Verification record found" id="Catatan verifikasi ditemukan" /></p>
+            <p className="vf-fact"><span aria-hidden="true">✓</span><span className="vf-fact-text"><Bi en="Verification record found" id="Catatan verifikasi ditemukan" /></span></p>
             <p>{model.policy.confirms.en}<br /><span className="vf-id">{model.policy.confirms.id}</span></p>
             <p className="vf-small">{model.policy.doesNotConfirm.en}<br /><span className="vf-id">{model.policy.doesNotConfirm.id}</span></p>
           </section>
@@ -90,7 +90,7 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
           <section className="vf-surface" aria-labelledby="vf-h-issuance">
             <Watermark layer="front" id="f3" />
             <h2 id="vf-h-issuance">2 · <Bi en="Issuance" id="Penerbitan" /></h2>
-            <p className={`vf-fact vf-${issuance.tone}`}><span aria-hidden="true">{issuance.tone === 'ok' ? '✓' : issuance.tone === 'bad' ? '✕' : '–'}</span> <Bi en={issuance.en} id={issuance.id} /></p>
+            <p className={`vf-fact vf-${issuance.tone}`}><span aria-hidden="true">{issuance.tone === 'ok' ? '✓' : issuance.tone === 'bad' ? '✕' : '–'}</span><span className="vf-fact-text"><Bi en={issuance.en} id={issuance.id} /></span></p>
             <p className="vf-small">{issuance.detail.en}<br /><span className="vf-id">{issuance.detail.id}</span></p>
             {model.artifacts.map((a) => a.keyId ? <p key={a.version} className="vf-small vf-mono">v{a.version} · {a.role} · key {a.keyId} · {when(a.issuedAt)}</p> : null)}
             {model.chain ? <p className="vf-small"><span aria-hidden="true">{model.chain.ok ? '✓' : '✕'}</span> {model.chain.ok ? `Evidence history intact (${model.chain.events} events)` : 'Evidence history failed its check'} <span className="vf-id">| {model.chain.ok ? `Riwayat bukti utuh (${model.chain.events} peristiwa)` : 'Riwayat bukti gagal diperiksa'}</span></p> : null}
@@ -99,10 +99,10 @@ export function VerifyView({ model, token, origin, viewedAt }: { model: VerifyMo
           <section className="vf-surface" aria-labelledby="vf-h-signing">
             <Watermark layer="front" id="f4" />
             <h2 id="vf-h-signing">3 · <Bi en="Signing" id="Penandatanganan" /></h2>
-            {model.signing === 'not_applicable' ? <p className="vf-fact vf-neutral"><span aria-hidden="true">–</span> <Bi en="Not signed by a person: this kind of document is issued and verified" id="Tidak ditandatangani perorangan: jenis dokumen ini diterbitkan dan diverifikasi" /></p> : null}
-            {model.signing === 'none_yet' ? <p className="vf-fact vf-neutral"><span aria-hidden="true">–</span> <Bi en="No personal signature recorded" id="Tidak ada tanda tangan pribadi yang tercatat" /></p> : null}
-            {model.signing === 'incomplete' ? <p className="vf-fact vf-warn"><span aria-hidden="true">!</span> <Bi en="Signing evidence incomplete: a signing is still open" id="Bukti penandatanganan belum lengkap: penandatanganan masih terbuka" /></p> : null}
-            {model.signings.length ? <p className="vf-fact vf-ok"><span aria-hidden="true">✓</span> <Bi en="Signing evidence available" id="Bukti penandatanganan tersedia" /></p> : null}
+            {model.signing === 'not_applicable' ? <p className="vf-fact vf-neutral"><span aria-hidden="true">–</span><span className="vf-fact-text"><Bi en="Not signed by a person: this kind of document is issued and verified" id="Tidak ditandatangani perorangan: jenis dokumen ini diterbitkan dan diverifikasi" /></span></p> : null}
+            {model.signing === 'none_yet' ? <p className="vf-fact vf-neutral"><span aria-hidden="true">–</span><span className="vf-fact-text"><Bi en="No personal signature recorded" id="Tidak ada tanda tangan pribadi yang tercatat" /></span></p> : null}
+            {model.signing === 'incomplete' ? <p className="vf-fact vf-warn"><span aria-hidden="true">!</span><span className="vf-fact-text"><Bi en="Signing evidence incomplete: a signing is still open" id="Bukti penandatanganan belum lengkap: penandatanganan masih terbuka" /></span></p> : null}
+            {model.signings.length ? <p className="vf-fact vf-ok"><span aria-hidden="true">✓</span><span className="vf-fact-text"><Bi en="Signing evidence available" id="Bukti penandatanganan tersedia" /></span></p> : null}
             {model.signings.map((s) => (
               <p key={s.ref} className="vf-sign">
                 <strong>{s.signerName}</strong>, {s.signerPosition}<br />

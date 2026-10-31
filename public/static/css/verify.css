@@ -75,3 +75,77 @@
   .vf-banner{background:#fff;break-inside:avoid}.vf-surface{break-inside:avoid}
   .vf-hash{word-break:break-all}
 }
+
+/* ---- Refinement: cards, one hierarchy, two languages that stack instead of running on, controls that look like VORA's. ---- */
+.vf-sep{display:inline}
+.vf-head{padding-bottom:16px}
+.vf-banner{margin:22px 0 14px;padding:22px 24px;border-radius:0 14px 14px 0;gap:16px}
+.vf-banner h1{margin:0 0 8px;font-size:clamp(1.3rem,5vw,2rem);line-height:1.12}
+.vf-banner h1 .vf-id{display:block;margin-top:4px;font-size:.58em;font-weight:500;letter-spacing:.01em}
+.vf-banner h1 .vf-sep{display:none}
+.vf-banner p{margin:.35rem 0;font-size:.9375rem;line-height:1.5}
+.vf-banner p .vf-id{font-size:.875rem}
+
+.vf-surface{margin-top:14px;padding:18px 20px;border:1px solid #e1e5e7;border-top:1px solid #e1e5e7;border-radius:14px;background:rgba(255,255,255,.82)}
+.vf-surface h2{margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #eceff0;font-size:.78rem}
+.vf-surface h2 .vf-id{font-weight:500;letter-spacing:.08em}
+.vf-surface p{font-size:.9375rem;line-height:1.5}
+.vf-surface p .vf-id{font-size:.875rem}
+.vf-small{font-size:.8125rem}
+.vf-findings{gap:0 16px}
+
+.vf-ident{margin-top:0;padding:18px 20px 16px}
+.vf-ident dl{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px 24px}
+.vf-ident dt{font-size:.68rem}
+.vf-ident dt .vf-id{font-weight:500}
+.vf-ident dd{margin:3px 0 0;font-size:1rem}
+
+/* A finding: its mark in a small disc, its words beside it, the Indonesian under the English. */
+.vf-fact{display:grid;grid-template-columns:1.6rem 1fr;gap:10px;align-items:start;padding-left:0;text-indent:0;margin:.2rem 0 .7rem;line-height:1.35}
+.vf-fact>span[aria-hidden]{display:inline-grid;place-items:center;width:1.6rem;height:1.6rem;margin:0;border-radius:50%;font-size:.8rem;font-weight:700;text-indent:0;background:#eef1f2;color:#3b4753}
+.vf-fact.vf-ok>span[aria-hidden]{background:#e3f1ea;color:#1f5a45}
+.vf-fact.vf-warn>span[aria-hidden]{background:#fbeede;color:#8f2f25}
+.vf-fact.vf-bad>span[aria-hidden]{background:#fbe6e2;color:#8f2f25}
+.vf-fact-text{min-width:0}
+.vf-fact-text .vf-id{display:block;margin-top:1px;font-size:.8125rem;font-weight:400}
+.vf-fact-text .vf-sep{display:none}
+
+.vf-sign{padding:10px 0;border-top:1px solid #eceff0}
+.vf-sign:first-of-type{border-top:0}
+
+/* Actions: two equal buttons, the Indonesian under the English. */
+.vf-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:16px}
+.vf-btn{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-height:48px;padding:9px 14px;border-radius:10px;border-color:#cfd5d9;text-align:left;font-weight:600;line-height:1.25}
+.vf-btn:hover{border-color:#101720}
+.vf-btn .vf-id{font-size:.75rem;font-weight:400}
+.vf-btn .vf-sep{display:none}
+
+/* The file check: a dashed area, a button in VORA's colours, the answer beneath. */
+.vf-check{margin-top:16px;padding:14px 0 0;border-top:1px solid #eceff0}
+.vf-check h3,.vf-check strong{font-size:1rem}
+.vf-check input[type=file]{display:block;box-sizing:border-box;width:100%;max-width:100%;min-height:0;margin:10px 0;padding:14px;border:1.5px dashed #b8c0c5;border-radius:12px;background:rgba(247,247,244,.8);font:inherit;font-size:.875rem;color:#3b4753;cursor:pointer}
+.vf-check input[type=file]:hover{border-color:#101720}
+.vf-check input[type=file]::file-selector-button{margin-right:12px;padding:8px 14px;border:1px solid #101720;border-radius:8px;background:#101720;color:#fff;font:inherit;font-size:.8125rem;font-weight:600;cursor:pointer}
+.vf-result{margin-top:10px;min-height:1.4em}
+.vf-result:not(:empty){padding:10px 12px;border-radius:10px;background:#f4f6f7}
+.vf-result[data-tone=ok]{background:#e3f1ea}.vf-result[data-tone=bad]{background:#fbe6e2}.vf-result[data-tone=warn]{background:#fbf3d9}
+
+.vf-foot{margin-top:22px;padding:16px 4px 0;border-top:1px solid #dce0e1;font-size:.8125rem;line-height:1.5}
+.vf-foot p{margin:.45rem 0}
+.vf-foot .vf-id{font-size:.8125rem}
+
+@media(max-width:480px){
+  .vf-inner{padding:20px 14px 44px}
+  .vf-banner{padding:16px 16px;gap:12px}
+  .vf-surface{padding:16px 15px;border-radius:12px}
+  .vf-ident dl{grid-template-columns:1fr 1fr}
+  .vf-ident dl>div:first-child,.vf-ident dl>div:nth-child(2){grid-column:1/-1}
+  .vf-actions{grid-template-columns:1fr 1fr}
+  .vf-btn{padding:9px 11px;font-size:.8125rem}
+}
+@media print{
+  .vf-actions{display:none}
+  .vf-surface{border-color:#cfd5d9;background:#fff}
+  .vf-check input[type=file]{display:none}
+}
+.vf-result:empty{min-height:0;margin:0}

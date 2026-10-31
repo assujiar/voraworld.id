@@ -24,7 +24,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     many('invoices', (f) => f.order('id', { ascending: false }), 'id,number,status,outstanding_minor,currency', 8),
   ])
   const me = await currentUser()
-  const signer = me ? await profileOfUser(me.id) : undefined
+  const profile = me ? await profileOfUser(me.id) : undefined
+  const signer = profile && profile.status !== 'removed' ? profile : undefined
   const waitingForMe = signer ? await count('signing_requests', (f) => f.eq('signer_profile_id', signer.id).eq('status', 'pending').neq('created_by', me?.id ?? 0).gt('expires_at', new Date().toISOString())) : 0
   const attention: Array<{ n: number; label: string; href: string; hint: string }> = [
     { n: newLeads, label: 'New leads', href: '/admin/leads?status=new', hint: 'Not contacted yet' },

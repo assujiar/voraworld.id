@@ -15,7 +15,8 @@ import { many } from '@/server/data'
 export default async function Signing({ searchParams }: { searchParams: Promise<Notices> }) {
   const me = await currentUser()
   const sp = await searchParams
-  const mine = (await many('signer_profiles', (q) => q.eq('user_id', me?.id ?? 0)))[0]
+  const found = (await many('signer_profiles', (q) => q.eq('user_id', me?.id ?? 0)))[0]
+  const mine = found && found.status !== 'removed' ? found : undefined
   if (!mine) {
     return (
       <AdminPage heading="Verification & Signing" sp={sp}>

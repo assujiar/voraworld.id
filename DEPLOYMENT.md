@@ -91,3 +91,5 @@ Open `/en` in a private window (no Vercel login), then sign in at `/admin/login`
 | Login says "Invalid login details" for a good password | step 3.2 was not run (`promote_admin`), or the account is not confirmed |
 | Reset email link opens an error | step 2, Redirect URLs |
 | Document QR codes point at another host | `PUBLIC_BASE_URL` is set to something else; clear it |
+
+Removing a signer needs `migrations/0030_signer_profile_removal.sql` (additive; run it in the Supabase SQL editor like 0029). Until it is applied, the Remove button answers that the migration is missing; nothing else depends on it.

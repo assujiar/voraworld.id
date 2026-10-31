@@ -1,7 +1,7 @@
 'use server'
 import { ActionError, adminRun } from '@/server/action'
 import { int, str } from '@/server/http'
-import { cancelRequest, createProfile, grantAuthority, requestSigning, revokeAuthority, revokePasskey, signNow } from '@/server/trust/signing'
+import { cancelRequest, createProfile, grantAuthority, removeProfile, requestSigning, revokeAuthority, revokePasskey, signNow } from '@/server/trust/signing'
 import { isTrustKind } from '@/content/trust-policy'
 import { publicBaseUrl } from '@/server/env'
 import { discardOwnSigning, uploadAndSign } from '@/server/trust/upload-sign'
@@ -14,6 +14,13 @@ export async function createSignerProfileAction(form: FormData) {
   return adminRun(form, async ({ user }) => {
     await createProfile(user, int(form, 'user_id'), str(form, 'display_name', 160), str(form, 'position', 160))
     return { to: '/admin/signers', notice: 'Signer profile created. It carries no authority until another administrator grants it.' }
+  })
+}
+
+export async function removeSignerProfileAction(form: FormData) {
+  return adminRun(form, async ({ user }) => {
+    await removeProfile(user, int(form, 'profile_id'), str(form, 'reason', 300))
+    return { to: '/admin/signers', notice: 'Signer removed. Its authority and passkeys ended; what it signed stays on record.' }
   })
 }
 
