@@ -150,40 +150,42 @@ test('print: the back watermark stays (as content, not a background), the front 
 })
 
 test.describe('moving between pages shows that something is loading', () => {
-  test('pressing a link to another page starts the bar and marks the link; a download, a new tab, the same page or another site does not', async ({ page }) => {
+  const idle = (page: Page) => expect(page.locator('html')).not.toHaveAttribute('data-navigating', '')
+  test('pressing a link to another page starts the bar and the label and marks the link; a download, a new tab, the same page or another site does not', async ({ page }) => {
     await page.route('https://example.invalid/**', (r) => r.abort())
     await page.goto(`${base}/nav`)
-    const bar = page.getByTestId('nav-progress')
-    await expect(bar).toHaveClass(/is-idle/)
+    await idle(page)
     for (const id of ['same', 'hash']) {
       await page.evaluate((i) => document.getElementById(i)!.addEventListener('click', (e) => e.preventDefault()), id)     // press it without leaving the test page
       await page.locator(`#${id}`).click()
-      await expect(bar, id).toHaveClass(/is-idle/); expect(await page.locator(`#${id}[data-nav-pending]`).count(), id).toBe(0)
+      await idle(page); expect(await page.locator(`#${id}[data-nav-pending]`).count(), id).toBe(0)
     }
     // A download and a new tab have no page to wait for: no bar, but the press is acknowledged for a moment, and the mark goes away by itself.
     await page.evaluate(() => document.getElementById('pdf')!.addEventListener('click', (e) => e.preventDefault()))
     await page.locator('#pdf').click()
-    await expect(page.locator('#pdf')).toHaveAttribute('data-nav-pending', ''); await expect(bar).toHaveClass(/is-idle/)
+    await expect(page.locator('#pdf')).toHaveAttribute('data-nav-pending', ''); await idle(page)
     await expect(page.locator('#pdf')).not.toHaveAttribute('data-nav-pending', '', { timeout: 4000 })
     const popup = page.waitForEvent('popup'); await page.locator('#blank').click()
-    await expect(page.locator('#blank')).toHaveAttribute('data-nav-pending', ''); await expect(bar).toHaveClass(/is-idle/); await (await popup).close()
-    // While the next page is still on its way, the old one is on screen: note what it shows 250 ms after the press (the test cannot ask a page that is being replaced).
+    await expect(page.locator('#blank')).toHaveAttribute('data-nav-pending', ''); await idle(page); await (await popup).close()
+    // While the next page is still on its way, the old one is on screen: note what it shows after the press (the test cannot ask a page that is being replaced).
     await page.evaluate(() => document.getElementById('page')!.addEventListener('click', () => setTimeout(() => sessionStorage.setItem('seen', JSON.stringify({
-      bar: document.querySelector('[data-testid=nav-progress]')!.className, opacity: getComputedStyle(document.querySelector('[data-testid=nav-progress]')!).opacity, pending: document.getElementById('page')!.hasAttribute('data-nav-pending'),
-    })), 250)))
+      navigating: document.documentElement.hasAttribute('data-navigating'),
+      barOpacity: getComputedStyle(document.querySelector('[data-testid=nav-progress]')!).opacity, barHeight: getComputedStyle(document.querySelector('[data-testid=nav-progress]')!).height,
+      chip: getComputedStyle(document.querySelector('[data-testid=nav-chip]')!).display, chipText: document.querySelector('[data-testid=nav-chip]')!.textContent, pending: document.getElementById('page')!.hasAttribute('data-nav-pending'),
+    })), 450)))
     await page.locator('#page').click({ noWaitAfter: true })
     await page.waitForURL(/\/slow$/)
     await expect(page.locator('p')).toHaveText('arrived')
-    const seen = JSON.parse(await page.evaluate(() => sessionStorage.getItem('seen') ?? '{}')) as { bar?: string; opacity?: string; pending?: boolean }
-    expect(seen.bar).toContain('is-loading'); expect(seen.opacity).toBe('1'); expect(seen.pending).toBe(true)
+    const seen = JSON.parse(await page.evaluate(() => sessionStorage.getItem('seen') ?? '{}')) as Record<string, unknown>
+    expect(seen).toMatchObject({ navigating: true, barOpacity: '1', barHeight: '4px', chip: 'flex', pending: true }); expect(String(seen.chipText)).toMatch(/Memuat halaman|Loading/)
   })
-  test('the bar ends when the page is shown again from the browser\'s memory, and nothing stays pending', async ({ page }) => {
+  test('the bar and the label end when the page is shown again from the browser\'s memory, and nothing stays pending', async ({ page }) => {
     await page.goto(`${base}/nav`)
     await page.evaluate(() => document.getElementById('page')!.addEventListener('click', (e) => e.preventDefault()))
     await page.locator('#page').click()
-    await expect(page.getByTestId('nav-progress')).toHaveClass(/is-loading/)
+    await expect(page.locator('html')).toHaveAttribute('data-navigating', '')
     await page.evaluate(() => window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true })))
-    await expect(page.getByTestId('nav-progress')).toHaveClass(/is-(done|idle)/)
+    await idle(page)
     await expect(page.locator('#page[data-nav-pending]')).toHaveCount(0)
   })
 })

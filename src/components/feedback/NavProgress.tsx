@@ -17,6 +17,7 @@ export function NavProgress() {
   const pathname = usePathname()
   const search = useSearchParams()?.toString() ?? ''
   const [phase, setPhase] = useState<'idle' | 'loading' | 'done'>('idle')
+  const [label, setLabel] = useState('Memuat halaman…')
   const loading = useRef(false)
   const pendingLink = useRef<Element | null>(null)
   const timers = useRef<number[]>([])
@@ -26,8 +27,8 @@ export function NavProgress() {
     clearTimers()
     loading.current = false
     pendingLink.current?.removeAttribute('data-nav-pending'); pendingLink.current = null
-    setPhase('done')
-    timers.current.push(window.setTimeout(() => setPhase('idle'), 450))
+    document.documentElement.removeAttribute('data-navigating')
+    setPhase('idle')
   }, [])
 
   // The address is in place: the page has arrived (a client-side transition).
@@ -37,6 +38,8 @@ export function NavProgress() {
     clearTimers()
     pendingLink.current?.removeAttribute('data-nav-pending')
     pendingLink.current = control; control.setAttribute('data-nav-pending', '')
+    // Straight on the page, not through a render: the stylesheet draws the bar and the label from this attribute, so it shows at the next frame whatever React is doing.
+    document.documentElement.setAttribute('data-navigating', '')
     loading.current = true
     setPhase('loading')
     timers.current.push(window.setTimeout(finish, GIVE_UP_MS))
@@ -47,6 +50,9 @@ export function NavProgress() {
     control.setAttribute('data-nav-pending', '')
     window.setTimeout(() => { if (pendingLink.current !== control) control.removeAttribute('data-nav-pending') }, ACK_MS)
   }
+
+  // The label is in the language of the page: English on the English site, Indonesian everywhere else (the portal and the documents).
+  useEffect(() => { setLabel(document.documentElement.lang === 'en' && !location.pathname.startsWith('/admin') && !/^\/(verify|pod|quotation-approval)\//.test(location.pathname) ? 'Loading…' : 'Memuat halaman…') }, [pathname])
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -68,7 +74,7 @@ export function NavProgress() {
       start((e.submitter as Element | null) ?? form)
     }
     // Coming back to a page kept by the browser (the back button): nothing is loading any more.
-    const onShow = (e: PageTransitionEvent) => { if (e.persisted) { if (loading.current) finish(); else setPhase('idle') } }
+    const onShow = (e: PageTransitionEvent) => { if (e.persisted) { document.documentElement.removeAttribute('data-navigating'); if (loading.current) finish(); else setPhase('idle') } }
     document.addEventListener('click', onClick, true)
     document.addEventListener('submit', onSubmit, true)
     window.addEventListener('pageshow', onShow)
@@ -77,8 +83,9 @@ export function NavProgress() {
 
   return (
     <>
-      <div className={`nav-progress is-${phase}`} aria-hidden="true" data-testid="nav-progress" />
-      <span className="sr-only" role="status" aria-live="polite">{phase === 'loading' ? 'Memuat halaman…' : ''}</span>
+      <div className="nav-progress" aria-hidden="true" data-testid="nav-progress" />
+      <div className="nav-chip" aria-hidden="true" data-testid="nav-chip"><span className="spin" /><span>{label}</span></div>
+      <span className="sr-only" role="status" aria-live="polite">{phase === 'loading' ? label : ''}</span>
     </>
   )
 }
