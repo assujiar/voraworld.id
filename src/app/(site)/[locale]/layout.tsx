@@ -4,10 +4,8 @@ import { Suspense } from 'react'
 import { ICONS, MANIFEST } from '@/lib/favicons'
 import { NavProgress } from '@/components/feedback/NavProgress'
 import { Header } from '@/components/site/Header'
-import { Footer } from '@/components/site/Footer'
+import { OrganizationData, SiteFooter, SiteHeader } from '@/components/site/Chrome'
 import { isLocale, makeT } from '@/content'
-import { jsonLd } from '@/lib/metadata'
-import { absoluteUrl, getNav, getSettings } from '@/server/site'
 
 // Content is editable in the admin, so pages are rendered per request.
 export const dynamic = 'force-dynamic'
@@ -19,11 +17,6 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   const { locale } = await params
   if (!isLocale(locale)) notFound()
   const t = makeT(locale)
-  const [nav, settings] = await Promise.all([getNav(locale), getSettings()])
-  // Organisation data comes only from administrator-entered settings: nothing is invented.
-  const organization: Record<string, unknown> = { '@context': 'https://schema.org', '@type': 'Organization', name: 'VORA', legalName: settings.legal_name || 'PT Satu Arah International', url: absoluteUrl('') }
-  if (settings.email) organization.email = settings.email
-  if (settings.address) organization.address = { '@type': 'PostalAddress', streetAddress: settings.address }
   return (
     <html lang={locale}>
       <head>
@@ -31,14 +24,15 @@ export default async function LocaleLayout({ children, params }: { children: Rea
         <link rel="stylesheet" href="/static/css/site.css" />
         <link rel="stylesheet" href="/static/css/vora.css?v=12" />
         <link rel="stylesheet" href="/static/css/feedback.css?v=12" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body className="v-body">
         <Suspense fallback={null}><NavProgress /></Suspense>
         <a className="v-skip" href="#main">{t('Skip to content', 'Langsung ke konten')}</a>
-        <Header locale={locale} nav={nav} />
+        {/* The frame is sent at once; what needs the database streams in behind it (see components/site/Chrome.tsx). Until the menu is there the header shows the brand without it. */}
+        <Suspense fallback={<Header locale={locale} nav={[]} />}><SiteHeader locale={locale} /></Suspense>
         <main id="main">{children}</main>
-        <Footer locale={locale} settings={settings} />
+        <Suspense fallback={null}><SiteFooter locale={locale} /></Suspense>
+        <Suspense fallback={null}><OrganizationData /></Suspense>
       </body>
     </html>
   )
