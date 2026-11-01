@@ -44,6 +44,16 @@ const inv = async (id: number) => (await sql`select * from invoices where id = $
 const pay = (invoiceId: number, amount: string, o: Partial<Parameters<typeof recordPayment>[2]> = {}) =>
   recordPayment(actor, invoiceId, { amount, date: '', method: 'bank transfer', reference: 'TRX-1', receivingBankId: null, ...o })
 const confirm = (paymentId: number, bankId: number | null = null) => confirmPayment(actor, paymentId, { fundsCleared: true, receivingBankId: bankId }, BASE)
+/**
+ * A receipt that is waiting for its e-meterai. Receipts are no longer made that way (a confirmed payment is issued at once), but the ones made before that still exist and still have to
+ * be stamped and released, so the tests of that path start from one: confirm, then put the receipt back to how it was and take back the email that was queued with it.
+ */
+const confirmAsLegacyPending = async (paymentId: number, bankId: number | null = null) => {
+  const r = await confirm(paymentId, bankId)
+  await sql`update receipts set status = 'pending_stamp', stamp_required = true where id = ${r.receiptId}`
+  await sql`delete from email_jobs where event = 'receipt_customer' and attachment_id = ${r.receiptId}`
+  return { ...r, stampRequired: true }
+}
 const rejects = async (p: Promise<unknown>, message: RegExp | string, status?: number) => {
   const e = await p.then(() => null, (x: Error & { status?: number }) => x)
   expect(e, 'expected a refusal').not.toBeNull()
@@ -317,10 +327,21 @@ describe('e-meterai rules', () => {
     expect(requiresStamp('IDR', 5_000_000)).toBe(false); expect(requiresStamp('IDR', 5_000_001)).toBe(true)
     expect(requiresStamp('USD', 1)).toBe(true); expect(requiresStamp('EUR', 100)).toBe(true)
   })
-  it('withhold the receipt and its email until a validated stamped PDF is uploaded', async () => {
+  it('no longer apply to the receipt of a confirmed payment: it is issued at once, whatever the amount or the currency', async () => {
+    await smtp(); await rule('payment_confirmed'); await rule('receipt_customer')
+    const c = await customer(); const b = await bank({ accountNumber: 'NOSTAMP0001' }); const id = await issued(c)
+    const total = (await inv(id)).totalMinor as number
+    const r = await confirm(await pay(id, String(total), { receivingBankId: b }))
+    expect(total).toBeGreaterThan(5_000_000)
+    expect(r.stampRequired).toBe(false)
+    expect((await sql`select status, stamp_required from receipts where id = ${r.receiptId}`)[0]).toMatchObject({ status: 'issued', stampRequired: false })
+    expect(await inv(id)).toMatchObject({ status: 'paid', outstandingMinor: 0 })                       // paid, not waiting for anything
+    expect((await sql`select event from email_jobs order by id`).map((j) => j.event)).toEqual(['payment_confirmed', 'receipt_customer'])
+  })
+  it('withhold a receipt made before that, and its email, until a validated stamped PDF is uploaded', async () => {
     await smtp(); await rule('payment_confirmed'); await rule('receipt_customer')
     const c = await customer(); const b = await bank({ accountNumber: 'STAMP000001' }); const id = await issued(c)
-    const r = await confirm(await pay(id, '6000000', { receivingBankId: b }))
+    const r = await confirmAsLegacyPending(await pay(id, '6000000', { receivingBankId: b }))
     expect(r.stampRequired).toBe(true)
     const [rc] = await sql`select * from receipts where id = ${r.receiptId}`
     expect(rc).toMatchObject({ status: 'pending_stamp', stampRequired: true, stampStorageKey: null })
@@ -357,18 +378,19 @@ describe('e-meterai rules', () => {
     files.set(done.stampStorageKey as string, Buffer.concat([files.get(done.stampStorageKey as string)!, Buffer.from('tampered')]))
     await rejects(readStampedReceipt(done as never), 'integrity check', 409)
   })
-  it('apply to every foreign-currency receipt', async () => {
+  it('do not apply to a foreign-currency receipt either', async () => {
     const c = await customer({ currency: 'USD' }); const b = await bank({ currency: 'USD', accountNumber: 'USDSTAMP001' })
     const id = await issued(c, { items: 'Freight | 1 | 100 | job', taxPercent: '0', withholdingPercent: '0', bankAccountIds: [b] })
     const r = await confirm(await pay(id, '10', { receivingBankId: b }))
-    expect(r.stampRequired).toBe(true)
+    expect(r.stampRequired).toBe(false)
+    expect((await sql`select status from receipts where id = ${r.receiptId}`)[0].status).toBe('issued')
   })
 })
 
 describe('uploaded PDFs that are not PDFs', () => {
   it('are refused with a message, never with a crash: every kind of garbage, for receipts and for quotations', async () => {
     const c = await customer(); const b = await bank({ accountNumber: 'GARB0000001' }); const id = await issued(c)
-    const r = await confirm(await pay(id, '6000000', { receivingBankId: b }))
+    const r = await confirmAsLegacyPending(await pay(id, '6000000', { receivingBankId: b }))
     const approvalQuote = await quoteFor(c, { validUntil: '2999-01-01' }); await setQuotationStatus(actor, approvalQuote, 'issue')
     await smtp(); await rule('quotation_approval_request'); await requestApproval(actor, approvalQuote, BASE)
     const [job] = await sql`select html from email_jobs where event = 'quotation_approval_request'`
@@ -501,15 +523,18 @@ describe('customer quotation approval', () => {
     await rejects(submit({ signerName: 'Al' }), 'are required')
     await rejects(submit({ signerTitle: '' }), 'are required')
     await rejects(submit({ file: null }), 'are required')
-    await rejects(submit({ file: await makePdf(['some other document']) }), 'exact VORA quotation number')
     await rejects(submit({ file: await makePdf([number], { openActionScript: true }) }), 'Active or executable')
     await rejects(submit({ token: 'z'.repeat(60) }), 'not valid', 404)
     expect((await sql`select status from quotation_approvals`)[0].status).toBe('pending')
 
-    await submit()
+    // The file need not be the one VORA sent, nor carry its number: the usual upload is a scan of the printed letter, signed and stamped by hand. It only has to be a readable PDF.
+    const scanned = await makePdf(['some other document'])
+    expect(scanned.length).not.toBe(signed.length)
+    await submit({ file: scanned })
     const [sub] = await sql`select * from quotation_approvals`
     expect(sub).toMatchObject({ status: 'submitted', signerName: 'Siti Rahma', signerTitle: 'Finance Director' })
-    expect(sub.signedPdfSha256).toBe(await sha256Hex(signed))
+    expect(sub.signedPdfSha256).toBe(await sha256Hex(scanned))
+    expect(sub.signedPdfSha256).not.toBe(await sha256Hex(signed))
     // The upload makes the quotation APPROVED BY THE CUSTOMER, which is not VORA's validation, and tells the administrator.
     expect((await sql`select status, customer_approved_at, validated_at from quotations where id = ${id}`)[0]).toMatchObject({ status: 'customer_approved', validatedAt: null })
     expect((await sql`select customer_approved_at from quotations where id = ${id}`)[0].customerApprovedAt).toBeInstanceOf(Date)
@@ -585,7 +610,7 @@ describe('sent emails carry real attachments only after the PDF renderers exist'
     setSender(null); await sql`delete from email_jobs`
     await smtp(); await rule('receipt_customer')
     const c = await customer(); const b = await bank({ accountNumber: 'ATTACH00001' }); const id = await issued(c)
-    const r = await confirm(await pay(id, '6000000', { receivingBankId: b }))        // pending e-meterai
+    const r = await confirmAsLegacyPending(await pay(id, '6000000', { receivingBankId: b }))        // waiting for an e-meterai (made before the rule changed)
     await sql`insert into email_jobs (event, recipient, subject, html, attachment_kind, attachment_id, status, attempts) values ('receipt_customer', 'x@example.invalid', 's', 'h', 'receipt', ${r.receiptId}, 'queued', 0)`
     let sent = 0
     setSender(async () => { sent++ })

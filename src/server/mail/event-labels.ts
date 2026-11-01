@@ -10,7 +10,7 @@ export const EVENT_LABEL: Record<string, { name: string; when: string }> = {
   invoice_customer: { name: 'Invoice dan Pre-Payment Receipt ke customer', when: 'Saat admin menekan Kirim Invoice & Pre-Payment Receipt: satu email, dua PDF' },
   prepayment_receipt_customer: { name: 'Pre-Payment Receipt saja ke customer', when: 'Saat admin mengirim Pre-Payment Receipt terpisah' },
   payment_confirmed: { name: 'Pembayaran dikonfirmasi (ke customer)', when: 'Setelah admin menekan Konfirmasi Dana Diterima' },
-  receipt_customer: { name: 'Official Payment Receipt ke customer', when: 'Setelah Receipt dirilis (dan e-meterai terpasang jika diperlukan)' },
+  receipt_customer: { name: 'Official Payment Receipt ke customer', when: 'Setelah pembayaran dikonfirmasi dan Receipt diterbitkan (tanpa e-meterai)' },
   delivery_received_customer: { name: 'Bukti pengiriman ke penerima', when: 'Setelah sopir mencatat serah terima' },
   delivery_received_admin: { name: 'Pengiriman diterima (ke admin)', when: 'Setelah sopir mencatat serah terima' },
 }

@@ -70,6 +70,7 @@ async function inspect(bytes: Uint8Array, rules: Rules): Promise<string> {
   }
   if (pages < 1 || pages > rules.maxPages) throw new ActionError(`PDF must be readable, unencrypted and 1-${rules.maxPages} pages`)
   if (refused) throw new ActionError(refused)
+  // The text is read even when no number is asked for: it proves that the file can be opened and read. A scan has no text, which is fine; a damaged file fails here.
   let text: string
   try {
     text = squash(await textOf(bytes))
@@ -84,9 +85,14 @@ async function inspect(bytes: Uint8Array, rules: Rules): Promise<string> {
 export const inspectStampedReceipt = (bytes: Uint8Array, receiptNumber: string, invoiceNumber: string) =>
   inspect(bytes, { maxPages: 12, numbers: [receiptNumber, invoiceNumber], missingNumber: 'Stamped PDF must retain VORA receipt and related invoice numbers' })
 
-/** Customer-signed quotation: 1-15 pages, showing the exact quotation number. Returns its SHA-256. */
-export const inspectSignedQuotation = (bytes: Uint8Array, quotationNumber: string) =>
-  inspect(bytes, { maxPages: 15, numbers: [quotationNumber], missingNumber: 'The signed file must include the exact VORA quotation number', sizeMessage: `Upload a PDF not exceeding ${megabytes()} MB` })
+/**
+ * What the customer uploads for a quotation: 1-15 pages, a readable PDF without active content. It is NOT required to be the file VORA sent, and it is not searched for the quotation number:
+ * the usual file is a scan of the printed letter, signed and stamped by hand, which is a picture with no text in it and whose bytes can never equal the original. Whether it is the right
+ * document, and whether the signature and stamp are real, is what VORA's manual review decides; the upload is tied to the quotation by the private link it came through.
+ * Returns its SHA-256.
+ */
+export const inspectSignedQuotation = (bytes: Uint8Array) =>
+  inspect(bytes, { maxPages: 15, numbers: [], missingNumber: '', sizeMessage: `Upload a PDF not exceeding ${megabytes()} MB` })
 
 
 const BYTE_RANGE = PDFName.of('ByteRange')

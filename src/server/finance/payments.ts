@@ -4,7 +4,6 @@ import { ActionError } from '../errors'
 import { enqueue } from '../mail/outbox'
 import { money, units } from '../money'
 import { bestEffort } from './notify'
-import { requiresStamp } from './pdf-inspect'
 import { moneyErrors } from './parse'
 
 export interface PaymentInput { amount: string; date: string; method: string; reference: string; receivingBankId: number | null }
@@ -41,17 +40,18 @@ interface Confirmed {
 }
 
 /**
- * Finance confirms that the funds are credited. ONE database function (`payment_confirm`) does it in a single transaction, under row locks
+ * Finance confirms that the funds are credited. The receipt is released at once (it never waits for an e-meterai). ONE database function (`payment_confirm`) does it in a single transaction, under row locks
  * (invoice first, then payment, the same order everywhere): the payment becomes recorded, the invoice balance and status are recomputed, the
  * receipt and its verification link are created. Concurrent confirmations of the same payment: exactly one succeeds. The customer emails are
  * queued afterwards, and a mail problem never undoes the accounting.
  */
 export async function confirmPayment(actorId: number, paymentId: number, input: { fundsCleared: boolean; receivingBankId: number | null }, baseUrl: string): Promise<Confirmation> {
   if (!input.fundsCleared) throw new ActionError('Confirm that the funds are credited to the bank account before a receipt is issued')
-  const p = await one('payments', (q) => q.eq('id', paymentId), 'invoice_id,amount_minor')
+  const p = await one('payments', (q) => q.eq('id', paymentId), 'id')
   if (!p) throw new ActionError('Payment not found', 404)
-  const inv = await one('invoices', (q) => q.eq('id', p.invoiceId as number), 'currency')
-  const needsStamp = requiresStamp(inv!.currency as string, p.amountMinor as number)
+  // The official receipt that follows a confirmed payment needs no e-meterai, whatever the amount or currency: it is issued at once and the invoice status follows the payment (paid,
+  // or partially paid). The e-meterai rule stays with the pre-payment receipt, which is the document that bills the customer.
+  const needsStamp = false
   const r = await rpc<Confirmed>('payment_confirm', { p_actor: actorId, p_payment: paymentId, p_bank: input.receivingBankId, p_stamp_required: needsStamp })
 
   const email = r.customer.email

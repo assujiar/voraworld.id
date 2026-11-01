@@ -168,7 +168,7 @@ export async function submitApproval(input: SubmissionInput): Promise<void> {
   if (item.status !== 'pending' || (item.expiresAt as Date).getTime() < Date.now() || !q || q.status !== 'awaiting_approval') {
     throw new ActionError('This approval request has expired or was already used', 410)
   }
-  const digest = await inspectSignedQuotation(input.file, q.number as string)
+  const digest = await inspectSignedQuotation(input.file)
   let submitted: { approval_id: number; quotation_id: number; number: string; signer_name: string; signer_title: string; customer_id: number | null }
   const key = `quotation-approvals/${item.id}/${randomBytes(22).toString('base64url')}.pdf`
   await putObject('documents', key, input.file, 'application/pdf')

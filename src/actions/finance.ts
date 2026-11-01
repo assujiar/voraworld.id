@@ -145,8 +145,9 @@ export async function confirmPaymentAction(form: FormData) {
     const result = await confirmPayment(user.id, int(form, 'record'), { fundsCleared: form.get('funds_cleared') === 'yes', receivingBankId: int(form, 'receiving_bank_id') || null }, publicBaseUrl())
     sendSoon()
     return {
-      to: result.stampRequired ? `/admin/receipts/${result.receiptId}` : `/admin/invoices/${result.invoiceId}`,
-      notice: result.stampRequired ? 'Funds confirmed. This receipt needs a manual e-meterai before it is released' : 'Funds confirmed: invoice recalculated, receipt issued, customer emails queued',
+      // The receipt is issued at once (no e-meterai is asked of it), so Finance goes back to the invoice, whose status has followed the payment.
+      to: `/admin/invoices/${result.invoiceId}`,
+      notice: 'Funds confirmed: invoice recalculated, receipt issued, customer emails queued',
     }
   })
 }

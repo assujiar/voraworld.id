@@ -9,7 +9,7 @@ export const INVOICE_LABEL: Record<string, string> = { draft: 'Draft', issued: '
 export const PAYMENT_LABEL: Record<string, string> = { pending_confirmation: 'Menunggu Konfirmasi Pembayaran', recorded: 'Dana diterima (terkonfirmasi)', cancelled: 'Cancelled', void: 'Void' }
 export const LEAD_LABEL: Record<string, string> = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', quotation_sent: 'Quotation sent', negotiation: 'Negotiation', won: 'Won', lost: 'Lost', archived: 'Archived' }
 export const PRIORITY_LABEL: Record<string, string> = { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' }
-/** Official and pre-payment receipts. A receipt that needs an e-meterai is held back until the stamped file is stored. */
+/** Official and pre-payment receipts. A pre-payment receipt that needs an e-meterai is held back until the stamped file is stored. (An official receipt no longer needs one; `pending_stamp` remains for the ones made before that.) */
 export const RECEIPT_LABEL: Record<string, string> = { draft: 'Draft', pending_stamp: 'Menunggu E-Meterai', issued: 'Issued', void: 'Void' }
 export const DOCUMENT_LABEL: Record<string, string> = { draft: 'Draft', issued: 'Issued', void: 'Void' }
 export const PUBLISH_LABEL: Record<string, string> = { draft: 'Draft', published: 'Published', archived: 'Archived' }

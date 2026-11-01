@@ -8,7 +8,7 @@ export default async function Receipts({ searchParams }: { searchParams: Promise
   return (
     <AdminPage heading="Receipts" sp={await searchParams}>
       <div className="admin-panel">
-        <p className="note">A receipt exists only after Finance confirmed cleared funds. Receipts above IDR 5,000,000, or in any foreign currency, wait for a manually applied e-meterai.</p>
+        <p className="note">A receipt exists only after Finance confirmed cleared funds, and it is issued at once: it needs no e-meterai, whatever the amount or the currency. (Receipts made earlier that still show "Menunggu E-Meterai" are released the way they always were: upload the stamped PDF.)</p>
         <ListLoad filters={[]} what="receipts" columns={6}><ReceiptRows /></ListLoad>
       </div>
       <div className="admin-panel">
