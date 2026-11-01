@@ -147,7 +147,7 @@ describe('the full money flow through the form actions', () => {
     expect((await sql`select status from payments`)[0].status).toBe('cancelled')
   })
 
-  it('walks a receipt that needs an e-meterai from confirmation to release', async () => {
+  it('issues the receipt at once, whatever the amount, and walks one made before that from e-meterai to release', async () => {
     await smtp('receipt_customer')
     const cid = await customer()
     await act(createBankAction, { bank_name: 'Bank Contoh', account_number: '1234567890', account_holder: 'PT Satu Arah International', currency: 'IDR' }, as())
@@ -158,9 +158,14 @@ describe('the full money flow through the form actions', () => {
     await act(recordPaymentAction, { record: String(invoiceId), amount: '6000000', method: 'bank transfer', receiving_bank_id: String(bankId) }, as())
     const [{ id: paymentId }] = await sql`select id from payments`
     const confirmed = await act(confirmPaymentAction, { record: String(paymentId), funds_cleared: 'yes' }, as())
-    const receiptId = Number(/receipts\/(\d+)/.exec(confirmed.redirect!)![1])           // sent to the receipt page, where the stamp is uploaded
-    expect(confirmed.redirect).toContain('needs%20a%20manual%20e-meterai')
-    await settle(); expect(sent).toHaveLength(0)                                          // nothing is emailed yet
+    expect(confirmed.redirect).toContain(`/admin/invoices/${invoiceId}`)                  // back to the invoice: the receipt needs nothing more
+    expect(confirmed.redirect).toContain('receipt%20issued')
+    const [{ id: receiptId }] = await sql`select id from receipts`
+    expect((await sql`select status, stamp_required from receipts where id = ${receiptId}`)[0]).toMatchObject({ status: 'issued', stampRequired: false })
+    await settle(); expect(sent.length).toBeGreaterThan(0)                                // and the customer already has it
+    // A receipt made before the rule changed is still waiting for its e-meterai: put this one back as those were, and the stamp path works as it did.
+    await sql`update receipts set status = 'pending_stamp', stamp_required = true where id = ${receiptId}`
+    await sql`delete from email_jobs`; sent.length = 0
     const [r] = await sql`select r.number as rn, i.number as inum from receipts r join invoices i on i.id = r.invoice_id`
     const good = await makePdf([r.rn as string, r.inum as string])
 

@@ -175,16 +175,12 @@ async function fromQuotationToReceipt(customerId: number, leadId: number | null,
   const r1 = await payAndReceive(inv, first)
   const receipts: Array<{ number: string; amountMinor: number; stampRequired: boolean }> = []
   for (const [r, amount] of [[r1, first], [await payAndReceive(inv, rest), rest]] as const) {
-    const needsStamp = Number(amount) > 5_000_000
-    expect(r.stampRequired).toBe(needsStamp)
-    expect(r.receipt.status).toBe(needsStamp ? 'pending_stamp' : 'issued')
+    // The official receipt of a confirmed payment needs no e-meterai, however large: it is issued and emailed at once. (The pre-payment receipt, which bills the customer, still does.)
+    expect(r.stampRequired).toBe(false)
+    expect(r.receipt.status).toBe('issued')
     const queuedEarly = (await sql`select id from email_jobs where event = 'receipt_customer' and dedupe_key = ${'receipt-send-' + r.receipt.id}`).length
-    expect(queuedEarly).toBe(needsStamp ? 0 : 1)                                           // an unfinished (unstamped) receipt is never emailed as final
-    if (needsStamp) {
-      await uploadReceiptStamp(actor, r.receipt.id as number, { providerReference: 'PERURI-RCP-' + amount, reviewed: true, file: await makePdf([r.receipt.number as string, inum.number as string, 'e-meterai']) }, BASE)
-      expect((await sql`select status from receipts where id = ${r.receipt.id as number}`)[0].status).toBe('issued')
-    }
-    receipts.push({ number: r.receipt.number as string, amountMinor: Number(amount) * 1, stampRequired: needsStamp })
+    expect(queuedEarly).toBe(1)
+    receipts.push({ number: r.receipt.number as string, amountMinor: Number(amount) * 1, stampRequired: false })
   }
   expect((await sql`select status, outstanding_minor from invoices where id = ${inv}`)[0]).toMatchObject({ status: 'paid', outstandingMinor: 0 })
   expect(await sql`select id from receipts where invoice_id = ${inv}`).toHaveLength(2)
@@ -371,14 +367,16 @@ describe('safeguards', () => {
     expect(await sql`select id from receipts where invoice_id = ${inv}`).toHaveLength(1)
   })
 
-  it('does not send an official receipt that is still waiting for its e-meterai', async () => {
+  it('does not send a receipt made before the rule changed that is still waiting for its e-meterai', async () => {
     const customerId = await saveCustomer(actor, null, company('PT Stamp'))
     const q = await quotation(customerId, [{ description: 'Freight', quantity: '1', unit: 'shipment', price: '8000000' }]); await validate(q)
     const d = await delivered(customerId, q)
     const inv = await createInvoice(actor, invoiceOf(customerId, q, [d], [{ description: 'Freight', quantity: '1', unit: 'shipment', price: '8000000' }]))
     await setInvoiceStatus(actor, inv, 'issue')
     const { receipt } = await payAndReceive(inv, '8000000')
-    expect(receipt.status).toBe('pending_stamp')
+    expect(receipt.status).toBe('issued')                                                  // receipts are issued at once now; put this one back as the older ones were
+    await sql`update receipts set status = 'pending_stamp', stamp_required = true where id = ${receipt.id as number}`
+    await sql`delete from email_jobs where event = 'receipt_customer'`
     await rejects(resendReceipt(actor, receipt.id as number, BASE), /waiting for its e-meterai/, 409)
     expect(await sql`select id from email_jobs where event = 'receipt_customer'`).toHaveLength(0)
     sent.length = 0

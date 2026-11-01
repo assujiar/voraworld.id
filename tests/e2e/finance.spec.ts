@@ -135,7 +135,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await cp.setInputFiles('input[name=signed_pdf]', { name: 'wrong.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4'.padEnd(400, ' ')) })
     await cp.check('input[name=ack]')
     await cp.click('button:has-text("Submit for VORA review")')
-    await expect(cp.locator('.alert[role=alert]')).toContainText(/exact VORA quotation number|damaged|PDF/)
+    await expect(cp.locator('.alert[role=alert]')).toContainText(/damaged|PDF/)
     await cp.setInputFiles('input[name=signed_pdf]', { name: 'signed.pdf', mimeType: 'application/pdf', buffer: Buffer.from(await quotePdf.body()) })
     await cp.fill('input[name=signer_name]', 'Siti Rahma')
     await cp.fill('input[name=signer_title]', 'Finance Director')
@@ -284,7 +284,7 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     expect(await scalar("select string_agg(a.kind, ',' order by a.position) from email_job_attachments a join email_jobs j on j.id = a.job_id where j.event = 'invoice_customer'")).toBe('invoice,prepayment')
   })
 
-  await test.step('cleared funds above IDR 5,000,000 lead to a receipt that waits for its e-meterai', async () => {
+  await test.step('cleared funds above IDR 5,000,000 lead to a receipt that is issued at once, with no e-meterai', async () => {
     await page.goto(`/admin/invoices/${invoiceId}`)
     const confirm = page.locator('form:has(input[name=funds_cleared])')
     await confirm.locator('button:not(.confirm-yes):has-text("Konfirmasi Dana Diterima")').click()               // the checkbox is `required`: the browser blocks it
@@ -294,34 +294,21 @@ test('Path B: customer, quotation, validation, delivery, invoice, payment and re
     await expect(page.locator('dialog[open]')).toContainText('Konfirmasi dana sudah diterima?')       // the question comes first; nothing has been confirmed yet
     expect(await scalar('select status from payments order by id limit 1')).toBe('pending_confirmation')
     await confirmAsked(page)
-    await page.waitForURL(/\/admin\/receipts\/\d+/)
-    await expect(notice()).toContainText('needs a manual e-meterai')
-    receiptId = page.url().match(/receipts\/(\d+)/)![1]
-    await expect(page.locator('body')).toContainText('Menunggu E-Meterai')
-    expect(await scalar("select count(*) from email_jobs where event = 'receipt_customer'")).toBe('0')    // no receipt email before the receipt is released
+    await page.waitForURL(new RegExp(`/admin/invoices/${invoiceId}`))                                  // back to the invoice: the receipt needs nothing more
+    await expect(notice()).toContainText('receipt issued')
+    receiptId = await scalar('select id from receipts order by id limit 1')
+    expect(await scalar(`select status from receipts where id=${receiptId}`)).toBe('issued')
+    expect(await scalar(`select stamp_required from receipts where id=${receiptId}`)).toBe('false')
+    expect(await scalar("select count(*) from email_jobs where event = 'receipt_customer'")).toBe('1')    // the customer already has it
   })
 
-  await test.step('the stamped PDF is checked, stored privately and released; the receipt email is queued once and can be sent again', async () => {
-    const draft = await page.request.get(`/admin/receipts/${receiptId}/pdf`)
-    expect(draft.status()).toBe(200)
-    const bytes = await draft.body()
-    expect(bytes.subarray(0, 5).toString()).toBe('%PDF-')
-    await page.fill('input[name=stamp_provider_reference]', 'PERURI-BROWSER-01')
-    await page.setInputFiles('input[name=stamped_pdf]', { name: 'x.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 not really a pdf'.padEnd(400)) })
-    await page.check('input[name=approved]')
-    await page.click('button:has-text("Save final stamped receipt")')
-    await expect(page.locator('.alert[role=alert]')).toContainText(/Only PDF documents|Invalid or damaged|must retain/)   // a fake PDF is refused
-    await page.setInputFiles('input[name=stamped_pdf]', { name: 'stamped.pdf', mimeType: 'application/pdf', buffer: bytes })
-    await page.check('input[name=approved]')
-    await page.fill('input[name=stamp_provider_reference]', 'PERURI-BROWSER-01')
-    await page.click('button:has-text("Save final stamped receipt")')
-    await expect(page.locator('.alert:has-text("Stamped receipt stored")')).toBeVisible()
-    expect(await scalar(`select status from receipts where id=${receiptId}`)).toBe('issued')
-    await expect(page.locator('body')).toContainText(/sha256|SHA-256/)
-    const released = await page.request.get(`/admin/receipts/${receiptId}/pdf`)
-    expect(Buffer.from(await released.body()).equals(Buffer.from(bytes))).toBe(true)         // the released file is exactly the stored stamped file
+  await test.step('the receipt is a real PDF, and the email can be sent again', async () => {
+    await page.goto(`/admin/receipts/${receiptId}`)
+    await expect(page.locator('body')).not.toContainText('Menunggu E-Meterai')
+    const file = await page.request.get(`/admin/receipts/${receiptId}/pdf`)
+    expect(file.status()).toBe(200)
+    expect((await file.body()).subarray(0, 5).toString()).toBe('%PDF-')
     const receiptNumber = await scalar(`select number from receipts where id=${receiptId}`)
-    expect(await scalar("select count(*) from email_jobs where event = 'receipt_customer'")).toBe('1')
     expect(await scalar("select subject from email_jobs where event = 'receipt_customer'")).toBe(`VORA | Payment Receipt ${receiptNumber}`)
     await page.click('button:has-text("Send the receipt to the customer again")')
     await expect(notice()).toContainText('queued again')
