@@ -1,0 +1,99 @@
+﻿type,id,path,page_key,transparent,source
+object,vora-warehouse-cargo-scanner,/vora-visual/objects/vora-warehouse-cargo-scanner.png,,True,ASET_WEB_VORA (1).png
+object,vora-customer-support-headset-legacy,/vora-visual/objects/vora-customer-support-headset-legacy.webp,,True,ASET_WEB_VORA (1).webp
+object,vora-warehouse-racking,/vora-visual/objects/vora-warehouse-racking.png,,True,ASET_WEB_VORA (12).png
+object,vora-global-orbit-globe,/vora-visual/objects/vora-global-orbit-globe.png,,True,ASET_WEB_VORA (13).png
+object,vora-compliance-shield,/vora-visual/objects/vora-compliance-shield.png,,True,ASET_WEB_VORA (14).png
+object,vora-growth-chart,/vora-visual/objects/vora-growth-chart.png,,True,ASET_WEB_VORA (15).png
+object,vora-global-network-globe,/vora-visual/objects/vora-global-network-globe.png,,True,ASET_WEB_VORA (2).png
+object,vora-cloud-infrastructure-legacy,/vora-visual/objects/vora-cloud-infrastructure-legacy.webp,,True,ASET_WEB_VORA (2).webp
+object,vora-delivery-van,/vora-visual/objects/vora-delivery-van.png,,True,ASET_WEB_VORA (3).png
+object,vora-direction-arrow-legacy,/vora-visual/objects/vora-direction-arrow-legacy.webp,,True,ASET_WEB_VORA (3).webp
+object,vora-container-handler,/vora-visual/objects/vora-container-handler.png,,True,ASET_WEB_VORA (4).png
+object,vora-document-stack-legacy,/vora-visual/objects/vora-document-stack-legacy.webp,,True,ASET_WEB_VORA (4).webp
+object,vora-calendar-milestone,/vora-visual/objects/vora-calendar-milestone.png,,True,ASET_WEB_VORA (42).png
+object,vora-document-folder,/vora-visual/objects/vora-document-folder.png,,True,ASET_WEB_VORA (43).png
+object,vora-project-heavy-transformer,/vora-visual/objects/vora-project-heavy-transformer.png,,True,ASET_WEB_VORA (44).png
+object,vora-reefer-container,/vora-visual/objects/vora-reefer-container.png,,True,ASET_WEB_VORA (45).png
+object,vora-wooden-export-crate,/vora-visual/objects/vora-wooden-export-crate.png,,True,ASET_WEB_VORA (46).png
+object,vora-air-freight-pallet,/vora-visual/objects/vora-air-freight-pallet.png,,True,ASET_WEB_VORA (47).png
+object,vora-project-cargo-assortment,/vora-visual/objects/vora-project-cargo-assortment.png,,True,ASET_WEB_VORA (48).png
+object,vora-speed-stopwatch,/vora-visual/objects/vora-speed-stopwatch.png,,True,ASET_WEB_VORA (49).png
+object,vora-warehouse-loading-bay,/vora-visual/objects/vora-warehouse-loading-bay.png,,True,ASET_WEB_VORA (5).png
+object,vora-performance-chart-legacy,/vora-visual/objects/vora-performance-chart-legacy.webp,,True,ASET_WEB_VORA (5).webp
+object,vora-route-milestone-marker,/vora-visual/objects/vora-route-milestone-marker.png,,True,ASET_WEB_VORA (50).png
+object,vora-live-tracking-interface,/vora-visual/objects/vora-live-tracking-interface.png,,True,ASET_WEB_VORA (51).png
+object,vora-shipment-tracking-console,/vora-visual/objects/vora-shipment-tracking-console.png,,True,ASET_WEB_VORA (52).png
+object,vora-global-cargo-network,/vora-visual/objects/vora-global-cargo-network.png,,True,ASET_WEB_VORA (53).png
+object,vora-operational-control-dashboard,/vora-visual/objects/vora-operational-control-dashboard.png,,True,ASET_WEB_VORA (54).png
+object,vora-warehouse-forklift,/vora-visual/objects/vora-warehouse-forklift.png,,True,ASET_WEB_VORA (55).png
+object,vora-warehouse-door,/vora-visual/objects/vora-warehouse-door.png,,True,ASET_WEB_VORA (56).png
+object,vora-heavy-lift-container,/vora-visual/objects/vora-heavy-lift-container.png,,True,ASET_WEB_VORA (57).png
+object,vora-parcel-scanner,/vora-visual/objects/vora-parcel-scanner.png,,True,ASET_WEB_VORA (6).png
+object,vora-shipment-tracking-phone,/vora-visual/objects/vora-shipment-tracking-phone.png,,True,ASET_WEB_VORA (58).png
+object,vora-multimodal-air-ocean,/vora-visual/objects/vora-multimodal-air-ocean.png,,True,ASET_WEB_VORA (59).png
+object,vora-customs-compliance-scroll,/vora-visual/objects/vora-customs-compliance-scroll.png,,True,ASET_WEB_VORA (60).png
+object,vora-connected-route-map,/vora-visual/objects/vora-connected-route-map.png,,True,ASET_WEB_VORA (61).png
+object,vora-consolidated-cartons,/vora-visual/objects/vora-consolidated-cartons.png,,True,ASET_WEB_VORA (62).png
+object,vora-warehouse-forklift-cartons,/vora-visual/objects/vora-warehouse-forklift-cartons.png,,True,ASET_WEB_VORA (63).png
+object,vora-logistics-warehouse-building,/vora-visual/objects/vora-logistics-warehouse-building.png,,True,ASET_WEB_VORA (64).png
+object,vora-shipping-container-stack,/vora-visual/objects/vora-shipping-container-stack.png,,True,ASET_WEB_VORA (65).png
+object,vora-road-freight-truck,/vora-visual/objects/vora-road-freight-truck.png,,True,ASET_WEB_VORA (66).png
+object,vora-ocean-container-vessel,/vora-visual/objects/vora-ocean-container-vessel.png,,True,ASET_WEB_VORA (67).png
+object,vora-freight-aircraft,/vora-visual/objects/vora-freight-aircraft.png,,True,ASET_WEB_VORA (68).png
+object,vora-location-pin,/vora-visual/objects/vora-location-pin.png,,True,ASET_WEB_VORA (69).png
+hero_scene,vora-scene-home,/vora-visual/scenes/vora-scene-home.webp,home,True,"vora-multimodal-air-ocean,vora-global-orbit-globe"
+hero_scene,vora-scene-about,/vora-visual/scenes/vora-scene-about.webp,about,True,vora-global-cargo-network
+hero_scene,vora-scene-services,/vora-visual/scenes/vora-scene-services.webp,services,True,"vora-freight-aircraft,vora-logistics-warehouse-building,vora-road-freight-truck"
+hero_scene,vora-scene-freight,/vora-visual/scenes/vora-scene-freight.webp,freight,True,"vora-ocean-container-vessel,vora-freight-aircraft"
+hero_scene,vora-scene-air-import,/vora-visual/scenes/vora-scene-air-import.webp,air-import,True,"vora-freight-aircraft,vora-air-freight-pallet"
+hero_scene,vora-scene-sea-import,/vora-visual/scenes/vora-scene-sea-import.webp,sea-import,True,"vora-ocean-container-vessel,vora-shipping-container-stack"
+hero_scene,vora-scene-air-export,/vora-visual/scenes/vora-scene-air-export.webp,air-export,True,"vora-freight-aircraft,vora-wooden-export-crate"
+hero_scene,vora-scene-sea-export,/vora-visual/scenes/vora-scene-sea-export.webp,sea-export,True,"vora-container-handler,vora-shipping-container-stack"
+hero_scene,vora-scene-customs,/vora-visual/scenes/vora-scene-customs.webp,customs,True,"vora-customs-compliance-scroll,vora-document-folder"
+hero_scene,vora-scene-warehouse,/vora-visual/scenes/vora-scene-warehouse.webp,warehouse,True,"vora-logistics-warehouse-building,vora-warehouse-forklift-cartons"
+hero_scene,vora-scene-domestic,/vora-visual/scenes/vora-scene-domestic.webp,domestic,True,"vora-road-freight-truck,vora-location-pin"
+hero_scene,vora-scene-ftl,/vora-visual/scenes/vora-scene-ftl.webp,ftl,True,vora-road-freight-truck
+hero_scene,vora-scene-ltl,/vora-visual/scenes/vora-scene-ltl.webp,ltl,True,"vora-warehouse-forklift-cartons,vora-consolidated-cartons"
+hero_scene,vora-scene-fcl,/vora-visual/scenes/vora-scene-fcl.webp,fcl,True,vora-shipping-container-stack
+hero_scene,vora-scene-lcl,/vora-visual/scenes/vora-scene-lcl.webp,lcl,True,"vora-shipping-container-stack,vora-consolidated-cartons"
+hero_scene,vora-scene-domestic-air,/vora-visual/scenes/vora-scene-domestic-air.webp,domestic-air,True,"vora-freight-aircraft,vora-air-freight-pallet"
+hero_scene,vora-scene-project,/vora-visual/scenes/vora-scene-project.webp,project,True,"vora-project-heavy-transformer,vora-heavy-lift-container"
+hero_scene,vora-scene-solutions,/vora-visual/scenes/vora-scene-solutions.webp,solutions,True,"vora-reefer-container,vora-logistics-warehouse-building,vora-air-freight-pallet"
+hero_scene,vora-scene-network,/vora-visual/scenes/vora-scene-network.webp,network,True,vora-global-cargo-network
+hero_scene,vora-scene-insights,/vora-visual/scenes/vora-scene-insights.webp,insights,True,"vora-operational-control-dashboard,vora-growth-chart"
+hero_scene,vora-scene-faq,/vora-visual/scenes/vora-scene-faq.webp,faq,True,"vora-compliance-shield,vora-document-folder"
+hero_scene,vora-scene-contact,/vora-visual/scenes/vora-scene-contact.webp,contact,True,"vora-live-tracking-interface,vora-location-pin"
+hero_scene,vora-scene-rfq,/vora-visual/scenes/vora-scene-rfq.webp,rfq,True,"vora-shipment-tracking-console,vora-consolidated-cartons"
+hero_scene,vora-scene-admin,/vora-visual/scenes/vora-scene-admin.webp,admin,True,vora-operational-control-dashboard
+hero_scene,vora-scene-privacy,/vora-visual/scenes/vora-scene-privacy.webp,privacy,True,"vora-compliance-shield,vora-document-folder"
+hero_scene,vora-scene-terms,/vora-visual/scenes/vora-scene-terms.webp,terms,True,"vora-document-folder,vora-customs-compliance-scroll"
+background,editorial-ivory-wave,/vora-visual/backgrounds/editorial-ivory-wave.svg,,True,original vector graphic
+background,ivory-architectural-shelves,/vora-visual/backgrounds/ivory-architectural-shelves.svg,,True,original vector graphic
+background,navy-constellation,/vora-visual/backgrounds/navy-constellation.svg,,True,original vector graphic
+background,paper-cut-diagonal,/vora-visual/backgrounds/paper-cut-diagonal.svg,,True,original vector graphic
+background,port-midnight,/vora-visual/backgrounds/port-midnight.svg,,True,original vector graphic
+background,red-velocity-cut,/vora-visual/backgrounds/red-velocity-cut.svg,,True,original vector graphic
+background,technical-route-field,/vora-visual/backgrounds/technical-route-field.svg,,True,original vector graphic
+background,white-orbit-sweep,/vora-visual/backgrounds/white-orbit-sweep.svg,,True,original vector graphic
+graphic,architectural-grid,/vora-visual/graphics/architectural-grid.svg,,True,original vector graphic
+graphic,clay-deep-recess,/vora-visual/graphics/clay-deep-recess.svg,,True,original vector graphic
+graphic,clay-display-pill,/vora-visual/graphics/clay-display-pill.svg,,True,original vector graphic
+graphic,clay-elevated-tile,/vora-visual/graphics/clay-elevated-tile.svg,,True,original vector graphic
+graphic,clay-hex-slab,/vora-visual/graphics/clay-hex-slab.svg,,True,original vector graphic
+graphic,clay-pedestal-oval,/vora-visual/graphics/clay-pedestal-oval.svg,,True,original vector graphic
+graphic,clay-raised-capsule,/vora-visual/graphics/clay-raised-capsule.svg,,True,original vector graphic
+graphic,clay-tray-recessed,/vora-visual/graphics/clay-tray-recessed.svg,,True,original vector graphic
+graphic,industrial-red-ribbon,/vora-visual/graphics/industrial-red-ribbon.svg,,True,original vector graphic
+graphic,ink-edged-ribbon,/vora-visual/graphics/ink-edged-ribbon.svg,,True,original vector graphic
+graphic,red-arch-window,/vora-visual/graphics/red-arch-window.svg,,True,original vector graphic
+graphic,red-rail-perspective,/vora-visual/graphics/red-rail-perspective.svg,,True,original vector graphic
+graphic,route-orbit-oval,/vora-visual/graphics/route-orbit-oval.svg,,True,original vector graphic
+graphic,route-waypoint-network,/vora-visual/graphics/route-waypoint-network.svg,,True,original vector graphic
+graphic,sculpted-corner-wave,/vora-visual/graphics/sculpted-corner-wave.svg,,True,original vector graphic
+graphic,soft-halo,/vora-visual/graphics/soft-halo.svg,,True,original vector graphic
+ui_surface,clay-recessed-widget,/vora-visual/ui/clay-recessed-widget.svg,,True,original vector graphic
+ui_surface,dark-floating-panel,/vora-visual/ui/dark-floating-panel.svg,,True,original vector graphic
+ui_surface,navy-white-segment-tray,/vora-visual/ui/navy-white-segment-tray.svg,,True,original vector graphic
+ui_surface,neumorphic-input-surface,/vora-visual/ui/neumorphic-input-surface.svg,,True,original vector graphic
+ui_surface,raised-clay-button,/vora-visual/ui/raised-clay-button.svg,,True,original vector graphic

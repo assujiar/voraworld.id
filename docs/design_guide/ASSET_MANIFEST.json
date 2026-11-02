@@ -1,0 +1,1141 @@
+{
+  "version": "1.0",
+  "created": "2026-11-02",
+  "brand": {
+    "name": "VORA",
+    "legal_entity": "PT Satu Arah International",
+    "colors": {
+      "navy": "#101720",
+      "red": "#B43E31",
+      "paper": "#F7F7F4"
+    },
+    "original_brand_assets_must_not_be_redrawn": true
+  },
+  "objects": [
+    {
+      "id": "vora-warehouse-cargo-scanner",
+      "subject": "warehouse-cargo-scanner",
+      "original_filename": "ASET_WEB_VORA (1).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-warehouse-cargo-scanner.png",
+      "width": 670,
+      "height": 398,
+      "alpha": true
+    },
+    {
+      "id": "vora-customer-support-headset-legacy",
+      "subject": "customer-support-headset",
+      "original_filename": "ASET_WEB_VORA (1).webp",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-customer-support-headset-legacy.webp",
+      "width": 512,
+      "height": 512,
+      "alpha": true
+    },
+    {
+      "id": "vora-warehouse-racking",
+      "subject": "warehouse-racking",
+      "original_filename": "ASET_WEB_VORA (12).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-warehouse-racking.png",
+      "width": 515,
+      "height": 562,
+      "alpha": true
+    },
+    {
+      "id": "vora-global-orbit-globe",
+      "subject": "global-orbit-globe",
+      "original_filename": "ASET_WEB_VORA (13).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-global-orbit-globe.png",
+      "width": 614,
+      "height": 570,
+      "alpha": true
+    },
+    {
+      "id": "vora-compliance-shield",
+      "subject": "compliance-shield",
+      "original_filename": "ASET_WEB_VORA (14).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-compliance-shield.png",
+      "width": 579,
+      "height": 567,
+      "alpha": true
+    },
+    {
+      "id": "vora-growth-chart",
+      "subject": "growth-chart",
+      "original_filename": "ASET_WEB_VORA (15).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-growth-chart.png",
+      "width": 511,
+      "height": 592,
+      "alpha": true
+    },
+    {
+      "id": "vora-global-network-globe",
+      "subject": "global-network-globe",
+      "original_filename": "ASET_WEB_VORA (2).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-global-network-globe.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-cloud-infrastructure-legacy",
+      "subject": "cloud-infrastructure",
+      "original_filename": "ASET_WEB_VORA (2).webp",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-cloud-infrastructure-legacy.webp",
+      "width": 512,
+      "height": 512,
+      "alpha": true
+    },
+    {
+      "id": "vora-delivery-van",
+      "subject": "delivery-van",
+      "original_filename": "ASET_WEB_VORA (3).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-delivery-van.png",
+      "width": 935,
+      "height": 725,
+      "alpha": true
+    },
+    {
+      "id": "vora-direction-arrow-legacy",
+      "subject": "direction-arrow",
+      "original_filename": "ASET_WEB_VORA (3).webp",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-direction-arrow-legacy.webp",
+      "width": 512,
+      "height": 512,
+      "alpha": true
+    },
+    {
+      "id": "vora-container-handler",
+      "subject": "container-handler",
+      "original_filename": "ASET_WEB_VORA (4).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-container-handler.png",
+      "width": 1199,
+      "height": 725,
+      "alpha": true
+    },
+    {
+      "id": "vora-document-stack-legacy",
+      "subject": "document-stack",
+      "original_filename": "ASET_WEB_VORA (4).webp",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-document-stack-legacy.webp",
+      "width": 512,
+      "height": 512,
+      "alpha": true
+    },
+    {
+      "id": "vora-calendar-milestone",
+      "subject": "calendar-milestone",
+      "original_filename": "ASET_WEB_VORA (42).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-calendar-milestone.png",
+      "width": 617,
+      "height": 581,
+      "alpha": true
+    },
+    {
+      "id": "vora-document-folder",
+      "subject": "document-folder",
+      "original_filename": "ASET_WEB_VORA (43).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-document-folder.png",
+      "width": 635,
+      "height": 566,
+      "alpha": true
+    },
+    {
+      "id": "vora-project-heavy-transformer",
+      "subject": "project-heavy-transformer",
+      "original_filename": "ASET_WEB_VORA (44).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-project-heavy-transformer.png",
+      "width": 827,
+      "height": 418,
+      "alpha": true
+    },
+    {
+      "id": "vora-reefer-container",
+      "subject": "reefer-container",
+      "original_filename": "ASET_WEB_VORA (45).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-reefer-container.png",
+      "width": 519,
+      "height": 435,
+      "alpha": true
+    },
+    {
+      "id": "vora-wooden-export-crate",
+      "subject": "wooden-export-crate",
+      "original_filename": "ASET_WEB_VORA (46).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-wooden-export-crate.png",
+      "width": 470,
+      "height": 481,
+      "alpha": true
+    },
+    {
+      "id": "vora-air-freight-pallet",
+      "subject": "air-freight-pallet",
+      "original_filename": "ASET_WEB_VORA (47).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-air-freight-pallet.png",
+      "width": 528,
+      "height": 452,
+      "alpha": true
+    },
+    {
+      "id": "vora-project-cargo-assortment",
+      "subject": "project-cargo-assortment",
+      "original_filename": "ASET_WEB_VORA (48).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-project-cargo-assortment.png",
+      "width": 1536,
+      "height": 1024,
+      "alpha": true
+    },
+    {
+      "id": "vora-speed-stopwatch",
+      "subject": "speed-stopwatch",
+      "original_filename": "ASET_WEB_VORA (49).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-speed-stopwatch.png",
+      "width": 1374,
+      "height": 1145,
+      "alpha": true
+    },
+    {
+      "id": "vora-warehouse-loading-bay",
+      "subject": "warehouse-loading-bay",
+      "original_filename": "ASET_WEB_VORA (5).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-warehouse-loading-bay.png",
+      "width": 498,
+      "height": 493,
+      "alpha": true
+    },
+    {
+      "id": "vora-performance-chart-legacy",
+      "subject": "performance-chart",
+      "original_filename": "ASET_WEB_VORA (5).webp",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-performance-chart-legacy.webp",
+      "width": 512,
+      "height": 512,
+      "alpha": true
+    },
+    {
+      "id": "vora-route-milestone-marker",
+      "subject": "route-milestone-marker",
+      "original_filename": "ASET_WEB_VORA (50).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-route-milestone-marker.png",
+      "width": 1374,
+      "height": 1145,
+      "alpha": true
+    },
+    {
+      "id": "vora-live-tracking-interface",
+      "subject": "live-tracking-interface",
+      "original_filename": "ASET_WEB_VORA (51).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-live-tracking-interface.png",
+      "width": 1374,
+      "height": 1145,
+      "alpha": true
+    },
+    {
+      "id": "vora-shipment-tracking-console",
+      "subject": "shipment-tracking-console",
+      "original_filename": "ASET_WEB_VORA (52).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-shipment-tracking-console.png",
+      "width": 1374,
+      "height": 1145,
+      "alpha": true
+    },
+    {
+      "id": "vora-global-cargo-network",
+      "subject": "global-cargo-network",
+      "original_filename": "ASET_WEB_VORA (53).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-global-cargo-network.png",
+      "width": 1374,
+      "height": 1145,
+      "alpha": true
+    },
+    {
+      "id": "vora-operational-control-dashboard",
+      "subject": "operational-control-dashboard",
+      "original_filename": "ASET_WEB_VORA (54).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-operational-control-dashboard.png",
+      "width": 1374,
+      "height": 1145,
+      "alpha": true
+    },
+    {
+      "id": "vora-warehouse-forklift",
+      "subject": "warehouse-forklift",
+      "original_filename": "ASET_WEB_VORA (55).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-warehouse-forklift.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-warehouse-door",
+      "subject": "warehouse-door",
+      "original_filename": "ASET_WEB_VORA (56).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-warehouse-door.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-heavy-lift-container",
+      "subject": "heavy-lift-container",
+      "original_filename": "ASET_WEB_VORA (57).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-heavy-lift-container.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-parcel-scanner",
+      "subject": "parcel-scanner",
+      "original_filename": "ASET_WEB_VORA (6).png",
+      "source_zip": "ASET_WEB_VORA_1.zip",
+      "path": "/vora-visual/objects/vora-parcel-scanner.png",
+      "width": 607,
+      "height": 421,
+      "alpha": true
+    },
+    {
+      "id": "vora-shipment-tracking-phone",
+      "subject": "shipment-tracking-phone",
+      "original_filename": "ASET_WEB_VORA (58).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-shipment-tracking-phone.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-multimodal-air-ocean",
+      "subject": "multimodal-air-ocean",
+      "original_filename": "ASET_WEB_VORA (59).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-multimodal-air-ocean.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-customs-compliance-scroll",
+      "subject": "customs-compliance-scroll",
+      "original_filename": "ASET_WEB_VORA (60).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-customs-compliance-scroll.png",
+      "width": 1284,
+      "height": 1225,
+      "alpha": true
+    },
+    {
+      "id": "vora-connected-route-map",
+      "subject": "connected-route-map",
+      "original_filename": "ASET_WEB_VORA (61).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-connected-route-map.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-consolidated-cartons",
+      "subject": "consolidated-cartons",
+      "original_filename": "ASET_WEB_VORA (62).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-consolidated-cartons.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-warehouse-forklift-cartons",
+      "subject": "warehouse-forklift-cartons",
+      "original_filename": "ASET_WEB_VORA (63).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-warehouse-forklift-cartons.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-logistics-warehouse-building",
+      "subject": "logistics-warehouse-building",
+      "original_filename": "ASET_WEB_VORA (64).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-logistics-warehouse-building.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-shipping-container-stack",
+      "subject": "shipping-container-stack",
+      "original_filename": "ASET_WEB_VORA (65).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-shipping-container-stack.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-road-freight-truck",
+      "subject": "road-freight-truck",
+      "original_filename": "ASET_WEB_VORA (66).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-road-freight-truck.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-ocean-container-vessel",
+      "subject": "ocean-container-vessel",
+      "original_filename": "ASET_WEB_VORA (67).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-ocean-container-vessel.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-freight-aircraft",
+      "subject": "freight-aircraft",
+      "original_filename": "ASET_WEB_VORA (68).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-freight-aircraft.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    {
+      "id": "vora-location-pin",
+      "subject": "location-pin",
+      "original_filename": "ASET_WEB_VORA (69).png",
+      "source_zip": "ASET_WEB_VORA_2.zip",
+      "path": "/vora-visual/objects/vora-location-pin.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    }
+  ],
+  "scenes": [
+    {
+      "id": "vora-scene-home",
+      "page_key": "home",
+      "character": "flagship",
+      "stage_style": "red",
+      "object_ids": [
+        "vora-multimodal-air-ocean",
+        "vora-global-orbit-globe"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-home.png",
+      "webp": "/vora-visual/scenes/vora-scene-home.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-about",
+      "page_key": "about",
+      "character": "manifesto",
+      "stage_style": "orbit",
+      "object_ids": [
+        "vora-global-cargo-network"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-about.png",
+      "webp": "/vora-visual/scenes/vora-scene-about.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-services",
+      "page_key": "services",
+      "character": "directory",
+      "stage_style": "steps",
+      "object_ids": [
+        "vora-freight-aircraft",
+        "vora-logistics-warehouse-building",
+        "vora-road-freight-truck"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-services.png",
+      "webp": "/vora-visual/scenes/vora-scene-services.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-freight",
+      "page_key": "freight",
+      "character": "freight",
+      "stage_style": "freight",
+      "object_ids": [
+        "vora-ocean-container-vessel",
+        "vora-freight-aircraft"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-freight.png",
+      "webp": "/vora-visual/scenes/vora-scene-freight.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-air-import",
+      "page_key": "air-import",
+      "character": "inbound-air",
+      "stage_style": "runway",
+      "object_ids": [
+        "vora-freight-aircraft",
+        "vora-air-freight-pallet"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-air-import.png",
+      "webp": "/vora-visual/scenes/vora-scene-air-import.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-sea-import",
+      "page_key": "sea-import",
+      "character": "inbound-sea",
+      "stage_style": "navy",
+      "object_ids": [
+        "vora-ocean-container-vessel",
+        "vora-shipping-container-stack"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-sea-import.png",
+      "webp": "/vora-visual/scenes/vora-scene-sea-import.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-air-export",
+      "page_key": "air-export",
+      "character": "outbound-air",
+      "stage_style": "orbit",
+      "object_ids": [
+        "vora-freight-aircraft",
+        "vora-wooden-export-crate"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-air-export.png",
+      "webp": "/vora-visual/scenes/vora-scene-air-export.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-sea-export",
+      "page_key": "sea-export",
+      "character": "outbound-sea",
+      "stage_style": "dock",
+      "object_ids": [
+        "vora-container-handler",
+        "vora-shipping-container-stack"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-sea-export.png",
+      "webp": "/vora-visual/scenes/vora-scene-sea-export.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-customs",
+      "page_key": "customs",
+      "character": "border",
+      "stage_style": "compliance",
+      "object_ids": [
+        "vora-customs-compliance-scroll",
+        "vora-document-folder"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-customs.png",
+      "webp": "/vora-visual/scenes/vora-scene-customs.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-warehouse",
+      "page_key": "warehouse",
+      "character": "inventory",
+      "stage_style": "dock",
+      "object_ids": [
+        "vora-logistics-warehouse-building",
+        "vora-warehouse-forklift-cartons"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-warehouse.png",
+      "webp": "/vora-visual/scenes/vora-scene-warehouse.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-domestic",
+      "page_key": "domestic",
+      "character": "domestic",
+      "stage_style": "runway",
+      "object_ids": [
+        "vora-road-freight-truck",
+        "vora-location-pin"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-domestic.png",
+      "webp": "/vora-visual/scenes/vora-scene-domestic.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-ftl",
+      "page_key": "ftl",
+      "character": "dedicated",
+      "stage_style": "runway",
+      "object_ids": [
+        "vora-road-freight-truck"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-ftl.png",
+      "webp": "/vora-visual/scenes/vora-scene-ftl.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-ltl",
+      "page_key": "ltl",
+      "character": "consolidation",
+      "stage_style": "steps",
+      "object_ids": [
+        "vora-warehouse-forklift-cartons",
+        "vora-consolidated-cartons"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-ltl.png",
+      "webp": "/vora-visual/scenes/vora-scene-ltl.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-fcl",
+      "page_key": "fcl",
+      "character": "container",
+      "stage_style": "slab",
+      "object_ids": [
+        "vora-shipping-container-stack"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-fcl.png",
+      "webp": "/vora-visual/scenes/vora-scene-fcl.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-lcl",
+      "page_key": "lcl",
+      "character": "shared-container",
+      "stage_style": "shelf",
+      "object_ids": [
+        "vora-shipping-container-stack",
+        "vora-consolidated-cartons"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-lcl.png",
+      "webp": "/vora-visual/scenes/vora-scene-lcl.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-domestic-air",
+      "page_key": "domestic-air",
+      "character": "speed",
+      "stage_style": "runway",
+      "object_ids": [
+        "vora-freight-aircraft",
+        "vora-air-freight-pallet"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-domestic-air.png",
+      "webp": "/vora-visual/scenes/vora-scene-domestic-air.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-project",
+      "page_key": "project",
+      "character": "engineering",
+      "stage_style": "heavy",
+      "object_ids": [
+        "vora-project-heavy-transformer",
+        "vora-heavy-lift-container"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-project.png",
+      "webp": "/vora-visual/scenes/vora-scene-project.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-solutions",
+      "page_key": "solutions",
+      "character": "industry",
+      "stage_style": "steps",
+      "object_ids": [
+        "vora-reefer-container",
+        "vora-logistics-warehouse-building",
+        "vora-air-freight-pallet"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-solutions.png",
+      "webp": "/vora-visual/scenes/vora-scene-solutions.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-network",
+      "page_key": "network",
+      "character": "routes",
+      "stage_style": "orbit",
+      "object_ids": [
+        "vora-global-cargo-network"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-network.png",
+      "webp": "/vora-visual/scenes/vora-scene-network.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-insights",
+      "page_key": "insights",
+      "character": "intelligence",
+      "stage_style": "navy",
+      "object_ids": [
+        "vora-operational-control-dashboard",
+        "vora-growth-chart"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-insights.png",
+      "webp": "/vora-visual/scenes/vora-scene-insights.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-faq",
+      "page_key": "faq",
+      "character": "knowledge",
+      "stage_style": "tray",
+      "object_ids": [
+        "vora-compliance-shield",
+        "vora-document-folder"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-faq.png",
+      "webp": "/vora-visual/scenes/vora-scene-faq.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-contact",
+      "page_key": "contact",
+      "character": "reach",
+      "stage_style": "path",
+      "object_ids": [
+        "vora-live-tracking-interface",
+        "vora-location-pin"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-contact.png",
+      "webp": "/vora-visual/scenes/vora-scene-contact.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-rfq",
+      "page_key": "rfq",
+      "character": "quote",
+      "stage_style": "tray",
+      "object_ids": [
+        "vora-shipment-tracking-console",
+        "vora-consolidated-cartons"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-rfq.png",
+      "webp": "/vora-visual/scenes/vora-scene-rfq.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-admin",
+      "page_key": "admin",
+      "character": "portal",
+      "stage_style": "navy",
+      "object_ids": [
+        "vora-operational-control-dashboard"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-admin.png",
+      "webp": "/vora-visual/scenes/vora-scene-admin.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-privacy",
+      "page_key": "privacy",
+      "character": "safeguard",
+      "stage_style": "inset",
+      "object_ids": [
+        "vora-compliance-shield",
+        "vora-document-folder"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-privacy.png",
+      "webp": "/vora-visual/scenes/vora-scene-privacy.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    },
+    {
+      "id": "vora-scene-terms",
+      "page_key": "terms",
+      "character": "documentation",
+      "stage_style": "slab",
+      "object_ids": [
+        "vora-document-folder",
+        "vora-customs-compliance-scroll"
+      ],
+      "png": "/vora-visual/scenes/vora-scene-terms.png",
+      "webp": "/vora-visual/scenes/vora-scene-terms.webp",
+      "width": 1480,
+      "height": 1000,
+      "transparent": true,
+      "recommended_slot": "hero art / editorial stage, responsive image"
+    }
+  ],
+  "backgrounds": [
+    {
+      "id": "editorial-ivory-wave",
+      "path": "/vora-visual/backgrounds/editorial-ivory-wave.svg"
+    },
+    {
+      "id": "ivory-architectural-shelves",
+      "path": "/vora-visual/backgrounds/ivory-architectural-shelves.svg"
+    },
+    {
+      "id": "navy-constellation",
+      "path": "/vora-visual/backgrounds/navy-constellation.svg"
+    },
+    {
+      "id": "paper-cut-diagonal",
+      "path": "/vora-visual/backgrounds/paper-cut-diagonal.svg"
+    },
+    {
+      "id": "port-midnight",
+      "path": "/vora-visual/backgrounds/port-midnight.svg"
+    },
+    {
+      "id": "red-velocity-cut",
+      "path": "/vora-visual/backgrounds/red-velocity-cut.svg"
+    },
+    {
+      "id": "technical-route-field",
+      "path": "/vora-visual/backgrounds/technical-route-field.svg"
+    },
+    {
+      "id": "white-orbit-sweep",
+      "path": "/vora-visual/backgrounds/white-orbit-sweep.svg"
+    }
+  ],
+  "graphics": [
+    {
+      "id": "architectural-grid",
+      "path": "/vora-visual/graphics/architectural-grid.svg"
+    },
+    {
+      "id": "clay-deep-recess",
+      "path": "/vora-visual/graphics/clay-deep-recess.svg"
+    },
+    {
+      "id": "clay-display-pill",
+      "path": "/vora-visual/graphics/clay-display-pill.svg"
+    },
+    {
+      "id": "clay-elevated-tile",
+      "path": "/vora-visual/graphics/clay-elevated-tile.svg"
+    },
+    {
+      "id": "clay-hex-slab",
+      "path": "/vora-visual/graphics/clay-hex-slab.svg"
+    },
+    {
+      "id": "clay-pedestal-oval",
+      "path": "/vora-visual/graphics/clay-pedestal-oval.svg"
+    },
+    {
+      "id": "clay-raised-capsule",
+      "path": "/vora-visual/graphics/clay-raised-capsule.svg"
+    },
+    {
+      "id": "clay-tray-recessed",
+      "path": "/vora-visual/graphics/clay-tray-recessed.svg"
+    },
+    {
+      "id": "industrial-red-ribbon",
+      "path": "/vora-visual/graphics/industrial-red-ribbon.svg"
+    },
+    {
+      "id": "ink-edged-ribbon",
+      "path": "/vora-visual/graphics/ink-edged-ribbon.svg"
+    },
+    {
+      "id": "red-arch-window",
+      "path": "/vora-visual/graphics/red-arch-window.svg"
+    },
+    {
+      "id": "red-rail-perspective",
+      "path": "/vora-visual/graphics/red-rail-perspective.svg"
+    },
+    {
+      "id": "route-orbit-oval",
+      "path": "/vora-visual/graphics/route-orbit-oval.svg"
+    },
+    {
+      "id": "route-waypoint-network",
+      "path": "/vora-visual/graphics/route-waypoint-network.svg"
+    },
+    {
+      "id": "sculpted-corner-wave",
+      "path": "/vora-visual/graphics/sculpted-corner-wave.svg"
+    },
+    {
+      "id": "soft-halo",
+      "path": "/vora-visual/graphics/soft-halo.svg"
+    }
+  ],
+  "ui_surfaces": [
+    {
+      "id": "clay-recessed-widget",
+      "path": "/vora-visual/ui/clay-recessed-widget.svg"
+    },
+    {
+      "id": "dark-floating-panel",
+      "path": "/vora-visual/ui/dark-floating-panel.svg"
+    },
+    {
+      "id": "navy-white-segment-tray",
+      "path": "/vora-visual/ui/navy-white-segment-tray.svg"
+    },
+    {
+      "id": "neumorphic-input-surface",
+      "path": "/vora-visual/ui/neumorphic-input-surface.svg"
+    },
+    {
+      "id": "raised-clay-button",
+      "path": "/vora-visual/ui/raised-clay-button.svg"
+    }
+  ],
+  "pages": [
+    {
+      "route": "/",
+      "key": "home",
+      "title": "Home",
+      "hero": "/vora-visual/scenes/vora-scene-home.webp"
+    },
+    {
+      "route": "/about",
+      "key": "about",
+      "title": "About",
+      "hero": "/vora-visual/scenes/vora-scene-about.webp"
+    },
+    {
+      "route": "/services",
+      "key": "services",
+      "title": "All Services",
+      "hero": "/vora-visual/scenes/vora-scene-services.webp"
+    },
+    {
+      "route": "/services/international-freight-forwarding",
+      "key": "freight",
+      "title": "International Freight Forwarding",
+      "hero": "/vora-visual/scenes/vora-scene-freight.webp"
+    },
+    {
+      "route": "/services/international-freight-forwarding/air-import",
+      "key": "air-import",
+      "title": "Air Import",
+      "hero": "/vora-visual/scenes/vora-scene-air-import.webp"
+    },
+    {
+      "route": "/services/international-freight-forwarding/sea-import",
+      "key": "sea-import",
+      "title": "Sea Import",
+      "hero": "/vora-visual/scenes/vora-scene-sea-import.webp"
+    },
+    {
+      "route": "/services/international-freight-forwarding/air-export",
+      "key": "air-export",
+      "title": "Air Export",
+      "hero": "/vora-visual/scenes/vora-scene-air-export.webp"
+    },
+    {
+      "route": "/services/international-freight-forwarding/sea-export",
+      "key": "sea-export",
+      "title": "Sea Export",
+      "hero": "/vora-visual/scenes/vora-scene-sea-export.webp"
+    },
+    {
+      "route": "/services/customs-brokerage",
+      "key": "customs",
+      "title": "Customs Brokerage",
+      "hero": "/vora-visual/scenes/vora-scene-customs.webp"
+    },
+    {
+      "route": "/services/3pl-warehousing",
+      "key": "warehouse",
+      "title": "3PL & Warehousing",
+      "hero": "/vora-visual/scenes/vora-scene-warehouse.webp"
+    },
+    {
+      "route": "/services/domestic-distribution",
+      "key": "domestic",
+      "title": "Domestic Distribution",
+      "hero": "/vora-visual/scenes/vora-scene-domestic.webp"
+    },
+    {
+      "route": "/services/domestic-distribution/ftl",
+      "key": "ftl",
+      "title": "FTL / Full Truckload",
+      "hero": "/vora-visual/scenes/vora-scene-ftl.webp"
+    },
+    {
+      "route": "/services/domestic-distribution/ltl",
+      "key": "ltl",
+      "title": "LTL / Less Than Truckload",
+      "hero": "/vora-visual/scenes/vora-scene-ltl.webp"
+    },
+    {
+      "route": "/services/domestic-distribution/fcl",
+      "key": "fcl",
+      "title": "FCL / Full Container Load",
+      "hero": "/vora-visual/scenes/vora-scene-fcl.webp"
+    },
+    {
+      "route": "/services/domestic-distribution/lcl",
+      "key": "lcl",
+      "title": "LCL / Less Than Container Load",
+      "hero": "/vora-visual/scenes/vora-scene-lcl.webp"
+    },
+    {
+      "route": "/services/domestic-distribution/air-freight",
+      "key": "domestic-air",
+      "title": "Domestic Air Freight",
+      "hero": "/vora-visual/scenes/vora-scene-domestic-air.webp"
+    },
+    {
+      "route": "/services/project-cargo",
+      "key": "project",
+      "title": "Project Cargo",
+      "hero": "/vora-visual/scenes/vora-scene-project.webp"
+    },
+    {
+      "route": "/solutions",
+      "key": "solutions",
+      "title": "Solutions",
+      "hero": "/vora-visual/scenes/vora-scene-solutions.webp"
+    },
+    {
+      "route": "/network",
+      "key": "network",
+      "title": "Network",
+      "hero": "/vora-visual/scenes/vora-scene-network.webp"
+    },
+    {
+      "route": "/insights",
+      "key": "insights",
+      "title": "Insights",
+      "hero": "/vora-visual/scenes/vora-scene-insights.webp"
+    },
+    {
+      "route": "/faq",
+      "key": "faq",
+      "title": "FAQ",
+      "hero": "/vora-visual/scenes/vora-scene-faq.webp"
+    },
+    {
+      "route": "/contact",
+      "key": "contact",
+      "title": "Contact",
+      "hero": "/vora-visual/scenes/vora-scene-contact.webp"
+    },
+    {
+      "route": "/request-quote",
+      "key": "rfq",
+      "title": "Request a Quote",
+      "hero": "/vora-visual/scenes/vora-scene-rfq.webp"
+    },
+    {
+      "route": "/admin",
+      "key": "admin",
+      "title": "Admin Portal (supplementary)",
+      "hero": "/vora-visual/scenes/vora-scene-admin.webp"
+    },
+    {
+      "route": "/privacy",
+      "key": "privacy",
+      "title": "Privacy (footer)",
+      "hero": "/vora-visual/scenes/vora-scene-privacy.webp"
+    },
+    {
+      "route": "/terms",
+      "key": "terms",
+      "title": "Terms (footer)",
+      "hero": "/vora-visual/scenes/vora-scene-terms.webp"
+    }
+  ]
+}
