@@ -14,18 +14,25 @@ export function HeroStage({ hint, hintTouch, children }: { hint: string; hintTou
   const box = useRef<HTMLElement>(null)
   const [pt, setPt] = useState({ x: 0, y: 0 })
   const [pulses, setPulses] = useState<Pulse[]>([])
+  const content = useRef<HTMLDivElement>(null)
   const [h, setH] = useState(HERO.h)
+  const [top, setTop] = useState(560)
   const [revealAt, setRevealAt] = useState<number | null>(null)
   const reduced = useReducedMotion()
   useEffect(() => {
     const el = box.current
     if (!el || typeof ResizeObserver === 'undefined') return
-    const measure = () => { const r = el.getBoundingClientRect(); if (r.width) setH(Math.max(480, Math.round((HERO.w * r.height) / r.width))) }
+    const measure = () => {
+      const r = el.getBoundingClientRect(); if (!r.width) return
+      setH(Math.max(480, Math.round((HERO.w * r.height) / r.width)))
+      const c = content.current?.getBoundingClientRect()
+      if (c) setTop(Math.round(((c.bottom - r.top) * HERO.w) / r.width))      // where the copy ends, in the composition's units: the logo goes below it
+    }
     measure()
-    const watch = new ResizeObserver(measure); watch.observe(el)
+    const watch = new ResizeObserver(measure); watch.observe(el); if (content.current) watch.observe(content.current)
     return () => watch.disconnect()
   }, [])
-  const logo = heroLogo(HERO.w, h)
+  const logo = heroLogo(HERO.w, h, top)
   const rel = (e: React.PointerEvent) => { const r = box.current!.getBoundingClientRect(); return { fx: (e.clientX - r.left) / r.width, fy: (e.clientY - r.top) / r.height } }
   return (
     <section
@@ -35,10 +42,10 @@ export function HeroStage({ hint, hintTouch, children }: { hint: string; hintTou
       onPointerDown={(e) => { if (reduced) return; const { fx, fy } = rel(e); const f = api.current?.getCurrentFrame() ?? 0; setPulses((all) => [...all.slice(-5), { x: fx * HERO.w, y: fy * h, f }]) }}
     >
       <Stage
-        component={AboutHero as never} w={HERO.w} h={h} frames={HERO.frames} stillFrame={HERO.settled} apiRef={api} inputProps={{ px: pt.x, py: pt.y, pulses, revealAt }} className="ab-hero__stage" style={{ aspectRatio: 'auto' }}
+        component={AboutHero as never} w={HERO.w} h={h} frames={HERO.frames} stillFrame={HERO.settled} apiRef={api} inputProps={{ px: pt.x, py: pt.y, pulses, revealAt, top }} className="ab-hero__stage" style={{ aspectRatio: 'auto' }}
         fallback={<img src="/static/assets/vora-reverse.svg" alt="" className="ab-fallback ab-fallback--logo" width={640} height={138} />}
       />
-      <div className="ab-hero__content">{children}</div>
+      <div ref={content} className="ab-hero__content">{children}</div>
       {/* The logo is also a real button: reachable by keyboard, and pressing it reveals the line under the logo. */}
       <button
         type="button" className="ab-hero__reveal" aria-label={hint} aria-expanded={revealAt !== null || reduced}

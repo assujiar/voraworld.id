@@ -17,13 +17,26 @@ const ringsOf = (pulses: Pulse[], frame: number, life = 50) =>
 /* ------------------------------------------------------------------------------------------------ 1 · hero: the logo arrives, then answers the pointer */
 export const HERO = { w: 1600, h: 900, frames: 36000, settled: 120 }
 /** Where the logo sits in a hero box of W x H units: 62% of the width on a wide box, 84% on a tall one (a phone), a little below the middle so that the copy above stays clear. */
-export const heroLogo = (W: number, H: number) => {
-  const w = H / W > 1.05 ? W * 0.84 : W * 0.62, h = (w * 384) / 1780
-  const cy = H > W ? H * 0.74 : Math.max(H * 0.7, 560 + h / 2)
+/**
+ * Where the logo sits in the hero, in the composition's own units (it is always 1600 wide). `top` is where the copy above it ends (the page measures it, because the copy is a fixed
+ * number of screen pixels while these units shrink as the window widens). The logo takes the room that is left under the copy: it is shrunk when the window is wide and short, and it keeps
+ * clear of the bottom edge, where the line that appears when it is pressed (and the hint) have to fit. Before, the room was assumed, and a wide, short window cut the logo off at the bottom.
+ */
+export const heroLogo = (W: number, H: number, top = 560) => {
+  const tall = H / W > 1.05
+  const line = tall ? 0.04 : 0.026                                    // the size of the line under the logo, as a share of the logo's width (see AboutHero)
+  const below = (lw: number) => lw * line * 4.6 + 20                 // what the line, once revealed, and the hint need under the logo
+  const ratio = 384 / 1780
+  let w = tall ? W * 0.84 : W * 0.62
+  const room = H - top - 24
+  if (w * ratio + below(w) > room) w = Math.max(W * 0.3, (room - 20) / (ratio + line * 4.6))
+  const h = w * ratio
+  const cyMin = top + 12 + h / 2, cyMax = H - below(w) - h / 2
+  const cy = Math.max(cyMin, Math.min(tall ? H * 0.74 : H * 0.7, cyMax))
   return { x: (W - w) / 2, y: cy - h / 2, w, h, cy }
 }
 export const TAGLINE = 'BRINGING THE WORLD WITHIN REACH.'
-export const AboutHero: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; revealAt?: number | null; still?: boolean }> = ({ px = 0, py = 0, pulses = [], revealAt = null, still = false }) => {
+export const AboutHero: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; revealAt?: number | null; still?: boolean; top?: number }> = ({ px = 0, py = 0, pulses = [], revealAt = null, still = false, top = 560 }) => {
   const frame = useCurrentFrame()
   const { width: W, height: H } = useVideoConfig()
   const mx = still ? 0 : px, my = still ? 0 : py
@@ -34,7 +47,7 @@ export const AboutHero: React.FC<{ px?: number; py?: number; pulses?: Pulse[]; r
   const breathe = 1 + settled * 0.04 * Math.sin(((frame - 84) / 30) * (W2PI / 1.9)) + flash * 0.16
   const glint = frame < 130 ? -1 : ((frame - 130) % 240) / 240
   const rings = still ? [] : ringsOf(pulses, frame)
-  const { w: lw, h: lh, cy } = heroLogo(W, H)
+  const { w: lw, h: lh, cy } = heroLogo(W, H, top)
   // The line under the logo arrives when the visitor presses the logo (a visitor who asked for less motion has it from the start).
   const reveal = still ? 1 : revealAt == null ? 0 : ramp(frame - revealAt, 0, 34)
   const tall = H / W > 1.05, fs = tall ? lw * 0.04 : lw * 0.026
