@@ -71,11 +71,16 @@ describe('QR verification page', () => {
     expect((await page(seed.tokens.certificate)).html).not.toContain('Rina Wijaya')            // nobody is named before the certificate is issued
     await db`update documents set status = 'issued' where id = ${seed.ids.certificates}`
   })
-  it('follows a revoked link to VOID and answers 404 for anything unknown', async () => {
+  it('follows a revoked link to VOID and answers an unknown link with a plain "no record" result (200, never indexed)', async () => {
     await db`update document_verification_tokens set revoked = true where token = ${seed.tokens.receipt}`
     expect((await page(seed.tokens.receipt)).html).toContain('REVOKED')
     await db`update document_verification_tokens set revoked = false where token = ${seed.tokens.receipt}`
-    for (const t of ['nope', 'x'.repeat(200), '..%2f..%2fetc', seed.tokens.invoice.slice(0, -1) + (seed.tokens.invoice.endsWith('A') ? 'B' : 'A')]) expect((await anon.get(`/verify/${t}`)).status, t).toBe(404)
+    for (const t of ['nope', 'x'.repeat(200), '..%2f..%2fetc', seed.tokens.invoice.slice(0, -1) + (seed.tokens.invoice.endsWith('A') ? 'B' : 'A')]) {
+      // The page is streamed behind the logo loader, so its status is sent before it is known that the link matches nothing: the answer is a result page, not a 404.
+      const r = await anon.get(`/verify/${t}`)
+      expect(r.status, t).toBe(200)
+      expect(await r.text(), t).toContain('NO VERIFICATION RECORD FOUND')
+    }
   })
 })
 
@@ -140,11 +145,12 @@ describe('customer quotation approval link', () => {
     expect((await anon.get(`/quotation-approval/${seed.tokens.approval}/pdf`)).status).toBe(410)
     await db`update quotation_approvals set expires_at = now() + interval '7 days', status = 'submitted'`
   })
-  it('answers 404 for a wrong link, and for a voided quotation', async () => {
-    for (const t of ['x'.repeat(60), 'short', '%2e%2e%2fadmin']) expect((await anon.get(`/quotation-approval/${t}`)).status, t).toBe(404)
+  it('answers a wrong link, and a voided quotation, with a plain "link not found" result (200, never indexed); the file download is still a 404', async () => {
+    const notFound = async (path: string) => { const r = await anon.get(path); expect(r.status, path).toBe(200); expect(await r.text(), path).toContain('DOCUMENT LINK NOT FOUND') }
+    for (const t of ['x'.repeat(60), 'short', '%2e%2e%2fadmin']) await notFound(`/quotation-approval/${t}`)
     expect((await anon.get(`/quotation-approval/${'y'.repeat(60)}/pdf`)).status).toBe(404)
     await db`update quotations set status = 'void' where id = ${seed.ids.quotations}`
-    expect((await anon.get(`/quotation-approval/${seed.tokens.approval}`)).status).toBe(404)
+    await notFound(`/quotation-approval/${seed.tokens.approval}`)
     await db`update quotations set status = 'awaiting_approval' where id = ${seed.ids.quotations}`
   })
 })
