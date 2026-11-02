@@ -1,0 +1,12 @@
+.vora-hero-art { position: relative; isolation: isolate; width: 100%; min-width: 0; aspect-ratio: 1.48 / 1; display:grid;place-items:center; }
+.vora-hero-art__ambient { position:absolute;inset:12%;z-index:-1;pointer-events:none;border-radius:52% 48% 55% 45%;background:radial-gradient(ellipse at 48% 53%,rgba(255,255,255,.8),rgba(209,213,210,.23) 52%,transparent 75%);filter:blur(23px); }
+.vora-hero-art__visual { display:block;width:100%;height:auto;object-fit:contain;filter:drop-shadow(0 18px 25px rgba(16,23,32,.07)); }
+.vora-layered-art { position:relative;isolation:isolate;aspect-ratio:1.48/1;min-width:0; }
+.vora-layered-art__stage { position:absolute;width:100%;height:100%;object-fit:contain;inset:0;z-index:0;pointer-events:none; }
+.vora-layered-art__object { position:absolute;inset:2% 7% 10% 7%;width:86%;height:88%;object-fit:contain;z-index:1;filter:drop-shadow(10px 18px 16px rgba(16,23,32,.1)); }
+.vora-clay-raised {background:linear-gradient(145deg,#fff 0%,#e7eae5 98%);border:1px solid rgba(255,255,255,.84);box-shadow:inset 0 2px 2px rgba(255,255,255,.86),inset 0 -2px 3px rgba(16,23,32,.08),12px 17px 32px rgba(16,23,32,.14),-8px -9px 24px rgba(255,255,255,.9);border-radius:24px;}
+.vora-clay-recessed {background:#edf0eb;box-shadow:inset 7px 8px 15px rgba(16,23,32,.13),inset -8px -8px 16px white;border:1px solid rgba(16,23,32,.08);border-radius:21px;}
+.vora-action-primary {min-height:48px;color:#fff;background:linear-gradient(155deg,#d05244,#a12c23);border:1px solid #933129;border-radius:14px;box-shadow:inset 0 2px 1px rgba(255,255,255,.24),inset 0 -2px 2px rgba(55,5,3,.25),0 12px 18px rgba(180,62,49,.20);}
+.vora-action-primary:focus-visible,.vora-art-route:focus-visible{outline:3px solid #B43E31;outline-offset:4px;}
+@media(max-width:720px){.vora-hero-art,.vora-layered-art{aspect-ratio:1.17 / 1;}.vora-hero-art__visual{max-height:460px;}.vora-layered-art__object{inset:5% 1% 11%;width:98%;height:84%;}}
+@media(prefers-reduced-motion:reduce){.vora-hero-art,.vora-layered-art,.vora-hero-art__visual{animation:none!important;transition:none!important;}}
