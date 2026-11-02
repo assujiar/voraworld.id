@@ -24,8 +24,11 @@
 .ab-hero__stage{position:absolute;inset:0;pointer-events:none}
 .ab-hero__content{position:relative;z-index:1;padding:clamp(40px,7vh,88px) 0 0;pointer-events:none}
 .ab-hero__content a{pointer-events:auto}
-.ab-hero__title{max-width:15ch;margin:0 0 20px;font-size:clamp(2.4rem,5.6vw,4.8rem);font-weight:600;letter-spacing:-.05em;line-height:1.02;text-wrap:balance}
-.ab-hero .ab-lead{max-width:56ch;color:#C9D0D4}
+.ab-hero__copy{text-align:center}
+.ab-hero .ab-hero__copy>.ab-hero__title{margin-bottom:clamp(16px,2.2vh,26px)}
+.ab-hero .ab-hero__copy>*{margin-inline:auto}                 /* above .v-body p and h1, which set their own margins and widths */
+.ab-hero__title{max-width:17ch;margin:0 auto 20px;font-size:clamp(2.4rem,5.6vw,4.8rem);font-weight:600;letter-spacing:-.05em;line-height:1.02;text-wrap:balance}
+.ab-hero .ab-lead{max-width:56ch;margin-inline:auto;color:#C9D0D4}
 .ab-hero .ab-hint--hero{position:absolute;z-index:1;left:0;right:0;bottom:clamp(14px,3vh,28px);max-width:none;margin:0;padding:0 var(--page-x,24px);text-align:center;pointer-events:none}
 .ab-fallback--logo{max-width:60%}
 .ab-hero__reveal{position:absolute;z-index:1;padding:0;border:0;border-radius:18px;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}

@@ -37,7 +37,7 @@ export default async function About({ params }: LocaleParams) {
   const items = FOUNDER.items.map((i) => ({ title: pick(i.title, locale), problem: pick(i.problem, locale), answer: pick(i.answer, locale) }))
   return (
     <>
-      <link rel="stylesheet" href="/static/css/about.css?v=7" precedence="default" />
+      <link rel="stylesheet" href="/static/css/about.css?v=10" precedence="default" />
       <HeroStage hint={pick(ABOUT.hint.hero, locale)} hintTouch={pick(ABOUT.hint.hintTouch, locale)}>
         <div className="ab-wrap ab-hero__copy">
           <p className="ab-eyebrow">{pick(ABOUT.eyebrow, locale)}</p>
