@@ -9,7 +9,7 @@ export interface ServiceExtras { needsTitle: string; needs: string[]; flowTitle?
 export const serviceExtras: Record<string, Record<Locale, ServiceExtras>> = {
   'international-freight-forwarding': {
     en: { needsTitle: 'What a quotation needs from you', needs: ['What the cargo is, with weight, dimensions and packing', 'Origin and destination, and whether it is an import or an export', 'The Incoterm and any trade terms already agreed with the other party', 'The dates the cargo is ready and the date it must arrive', 'The commercial invoice and packing list, if they exist yet'] },
-    id: { needsTitle: 'Yang kami butuhkan untuk membuat penawaran', needs: ['Jenis barang, beserta berat, dimensi, dan kemasannya', 'Asal dan tujuan, serta apakah ini impor atau ekspor', 'Incoterm dan ketentuan dagang yang sudah disepakati dengan pihak lawan', 'Tanggal barang siap dan tanggal barang harus tiba', 'Commercial invoice dan packing list, bila sudah ada'] },
+    id: { needsTitle: 'Yang kami butuhkan untuk membuat penawaran', needs: ['Jenis barang, beserta berat, dimensi, dan kemasannya', 'Asal dan tujuan, serta apakah ini impor atau ekspor', 'Incoterm dan ketentuan dagang yang sudah disepakati dengan pihak lainnya', 'Tanggal barang siap dan tanggal barang harus tiba', 'Commercial invoice dan packing list, bila sudah ada'] },
   },
   'customs-brokerage': {
     en: { needsTitle: 'What we check before filing', needs: ['Commercial invoice, packing list and the transport document (bill of lading or air waybill)', 'The HS classification of each item, and whether it is already agreed', 'Permits, licences or import restrictions that apply to the goods', 'Who the importer or exporter of record is, with the tax identity', 'The value, currency and Incoterm declared on the documents'] },
@@ -31,7 +31,7 @@ export const serviceExtras: Record<string, Record<Locale, ServiceExtras>> = {
   },
   'domestic-distribution': {
     en: { needsTitle: 'What we need to choose the mode', needs: ['Pickup and delivery addresses, with the contact at each', 'Dimensions, weight and packing of the cargo', 'The window in which the cargo must be picked up and delivered', 'Loading and unloading limits at both ends (dock, forklift, access hours)', 'Whether proof of delivery must reach you on the same day'] },
-    id: { needsTitle: 'Yang kami butuhkan untuk memilih moda', needs: ['Alamat pengambilan dan pengantaran, beserta kontak di setiap lokasi', 'Dimensi, berat, dan kemasan barang', 'Rentang waktu barang harus diambil dan diantar', 'Batasan bongkar muat di kedua ujung (dock, forklift, jam akses)', 'Apakah bukti serah terima harus sampai pada hari yang sama'] },
+    id: { needsTitle: 'Yang kami butuhkan untuk memilih moda', needs: ['Alamat pengambilan dan pengantaran, beserta kontak di setiap lokasi', 'Dimensi, berat, dan kemasan barang', 'Rentang waktu barang harus diambil dan diantar', 'Batasan bongkar muat di asal maupun tujuan (dock, forklift, jam akses)', 'Apakah bukti serah terima harus sampai pada hari yang sama'] },
   },
   'project-cargo': {
     en: { needsTitle: 'What we need to assess a movement', needs: ['Drawings with the weight, centre of gravity and lifting points', 'Overall length, width and height, packed and unpacked', 'The route constraints you already know of (bridges, roads, port or airport limits)', 'Site access and lifting equipment at origin and at destination', 'The schedule, and the earliest and latest dates the movement can happen'] },

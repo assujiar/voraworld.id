@@ -85,13 +85,13 @@ describe('secrets and addresses', () => {
 describe('SMTP settings', () => {
   it('validate input, keep a blank password and never store it in plain text', async () => {
     await saveMailConfig({ host: 'SMTP.Example.Invalid', username: 'u', password: 'secret-pw', enabled: true, adminEmail: 'ops@example.invalid' })
-    let conf = (await getMailConfig(sql))!
+    let conf = (await getMailConfig())!
     expect(conf).toMatchObject({ host: 'smtp.example.invalid', port: 587, security: 'starttls', enabled: true })
     expect(conf.encryptedPassword).not.toContain('secret-pw')
     expect(decryptSecret(conf.encryptedPassword!)).toBe('secret-pw')
     const before = conf.encryptedPassword
     await saveMailConfig({ host: 'smtp.example.invalid', username: 'u', password: '', enabled: true })
-    conf = (await getMailConfig(sql))!
+    conf = (await getMailConfig())!
     expect(conf.encryptedPassword).toBe(before)
     await expect(saveMailConfig({ host: 'bad host!' })).rejects.toThrow('Invalid SMTP hostname')
     await expect(saveMailConfig({ host: 'a.co', port: 70000 })).rejects.toThrow('Invalid SMTP port')

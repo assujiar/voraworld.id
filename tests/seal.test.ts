@@ -79,7 +79,7 @@ describe('QR seal on a PDF issued by somebody else', () => {
       expect(out).toHaveLength(3)
       out.forEach((t, i) => {
         expect(squash(t)).toContain(`Original certificate page ${i + 1}`)
-        expect(squash(t).includes('Nomor dokumen'), `page ${i + 1} with pages=${pages}`).toBe(sealedOn.includes(i + 1))
+        expect(squash(t).includes('Nomor dokumen'), `page ${i + 1} with pages=${pages}`).toBe((sealedOn as readonly number[]).includes(i + 1))
       })
       expect((await fields(id)).seal!.pagesSealed).toBe(sealedOn.length)
     }

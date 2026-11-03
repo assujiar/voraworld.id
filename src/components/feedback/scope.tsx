@@ -1,5 +1,5 @@
 'use client'
-import { createContext, startTransition, useActionState, useCallback, useContext, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
+import { createContext, startTransition, useActionState, useCallback, useContext, useState, useEffect, useRef, type CSSProperties, type FormEvent, type ReactNode } from 'react'
 
 /**
  * Where a form stands, for the buttons inside it. The source is the form's own action state (`useActionState`), because `useFormStatus` stayed
@@ -112,16 +112,28 @@ export const CONNECTION_LOST = 'Koneksi terputus sebelum ada jawaban dari server
  * A form that runs a Server Action and tells its buttons while the request is in flight. It is a plain form otherwise: the action decides where to
  * go next (success or refusal both redirect with a notice), so nothing here claims a result.
  */
-export function PendingForm({ action, children, className, style, id }: { action: Run; children: ReactNode; className?: string; style?: CSSProperties; id?: string }) {
+export function PendingForm({ action, children, className, style, id, connectionLost = CONNECTION_LOST, preserveValues = false }: { action: Run; children: ReactNode; className?: string; style?: CSSProperties; id?: string; connectionLost?: string; preserveValues?: boolean }) {
+  const formRef = useRef<HTMLFormElement>(null)
+  const retained = useRef<Record<string, string | string[]>>({})
   const [failure, run, pending] = useActionState(async (_previous: string | null, form: FormData) => {
-    try { await action(form); return null } catch (e) { if (isRedirect(e)) throw e; return CONNECTION_LOST }
+    try { await action(form); return null } catch (e) { if (isRedirect(e)) throw e; return connectionLost }
   }, null as string | null)
   const [submitter, track] = useSubmitter()
   const staged = useStagedUpload(run)
   const busy = pending || Boolean(staged.upload)
+  useEffect(() => {
+    if (!preserveValues || !failure || busy || !formRef.current) return
+    const form = formRef.current
+    for (const [name, value] of Object.entries(retained.current)) {
+      const field = form.elements.namedItem(name)
+      if (field instanceof HTMLInputElement && field.type === 'checkbox') field.checked = (Array.isArray(value) ? value : [value]).includes(field.value)
+      else if (typeof value === 'string' && (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) && !['hidden','password','file'].includes(field.type)) field.value = value
+    }
+    form.dispatchEvent(new Event('vora:draft-restored', { bubbles: true }))
+  }, [preserveValues, failure, busy])
   return (
     <FormScope.Provider value={{ pending: busy, submitter, upload: staged.upload }}>
-      <form action={run} onSubmit={(e) => staged.onSubmit(e, track)} className={className} style={style} id={id} aria-busy={busy || undefined}>
+      <form ref={formRef} action={run} onSubmit={(e) => { if (preserveValues) retained.current = typedFrom(new FormData(e.currentTarget)); staged.onSubmit(e, track) }} className={className} style={style} id={id} aria-busy={busy || undefined}>
         {(failure && !busy) || staged.failure ? <div className="alert" role="alert">{staged.failure ?? failure}</div> : null}
         {children}
       </form>

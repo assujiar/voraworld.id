@@ -22,7 +22,7 @@ describe('the About copy', () => {
     expect(FOUNDER.items).toHaveLength(6)
     for (const item of FOUNDER.items) for (const part of [item.title, item.problem, item.answer]) { expect(part.en.length).toBeGreaterThanOrEqual(4); expect(part.id.length).toBeGreaterThanOrEqual(4) }
     const joined = all.map(([, t]) => t).join(' ')
-    expect(joined).toContain('more than ten years'); expect(joined).toContain('lebih dari sepuluh tahun')
+    expect(joined).not.toMatch(/more than ten years|lebih dari sepuluh tahun/)
     expect(joined).not.toMatch(/\b\d{2,}\s*(%|\+|years|tahun|clients|klien|countries|negara)/i)                 // no invented statistic
   })
   it('keeps paperwork and verification a small part of the story, not its selling point', () => {

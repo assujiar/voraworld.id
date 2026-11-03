@@ -23,3 +23,29 @@
   max-width: none;
   margin: 0;
 }
+
+/* Portal refinement, isolated from public art direction and exported documents. */
+@font-face{font-family:'Archivo Variable';font-style:normal;font-display:swap;font-weight:100 900;src:url(/static/fonts/archivo-latin-wdth.woff2) format('woff2-variations')}
+.admin-body{font-family:'Archivo Variable',system-ui,sans-serif;background:#f2f3ee;color:#101720}
+.admin-body .admin-top{padding-bottom:22px;border-bottom:1px solid #dce0d6;margin-bottom:26px;align-items:center}
+.admin-body .admin-top h1{font-size:clamp(1.8rem,3vw,2.7rem);letter-spacing:-.035em;font-weight:670;line-height:1.1;margin:0}
+.admin-body .form-panel{background:#fcfcf8;border:1px solid #dce0d6;border-radius:12px;box-shadow:0 5px 14px -12px #10172050}
+.admin-body .field input:not([type=checkbox]):not([type=radio]),.admin-body .field select,.admin-body .field textarea{background:#f3f4ee;border-color:#ccd2c8;border-radius:6px;box-shadow:inset 2px 3px 5px #10172008;min-height:44px}
+.admin-body .field{min-width:0}.admin-body .field label{font-weight:580;font-size:.85rem;letter-spacing:0;text-transform:none}
+.admin-body .button{border-radius:7px;background:linear-gradient(180deg,#26323d,#101720);box-shadow:inset 0 1px 0 #ffffff22,0 4px 7px -5px #10172080;min-height:44px}
+.admin-body .admin-sidebar{background:linear-gradient(165deg,#202c37,#101720);border-right:1px solid #303e47}
+.admin-body .admin-sidebar a:focus-visible{outline-color:#f2c4bb}
+.admin-body th{text-transform:none;letter-spacing:0;font-size:.78rem;color:#52616a}
+.admin-body td{font-size:.87rem;line-height:1.5}
+.admin-body .alert{border-left:3px solid #b43e31;border-radius:5px;background:#fffdf6}
+.admin-login{min-height:100svh;display:grid;grid-template-columns:1fr 1fr}
+.admin-login__identity{padding:clamp(30px,5vw,80px);background:linear-gradient(135deg,#26323c,#101720 75%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;gap:50px}
+.admin-login__identity>a img{width:170px;height:auto;display:block}
+.admin-login__identity .eyebrow{color:#efbaaf;letter-spacing:.13em;font:500 .7rem ui-monospace,monospace}
+.admin-login__identity .admin-login__headline{font-size:clamp(2.5rem,4.3vw,4.6rem);line-height:1.04;font-weight:650;max-width:10ch;letter-spacing:-.04em}
+.admin-login__identity p{max-width:40ch;color:#c5cfd4}
+.admin-login__form{padding:40px;display:grid;place-items:center;background:radial-gradient(ellipse at top left,#fff,#eeefe8)}
+.admin-login__form .form-panel{width:min(100%,460px);padding:36px;background:linear-gradient(140deg,#fafbf5,#eeefe7);border:1px solid #fff;box-shadow:12px 14px 30px -22px #10172055,-7px -7px 24px #fff}
+.admin-login__form h1{font-size:2rem;line-height:1.1;font-weight:650;letter-spacing:-.035em;max-width:15ch;margin-bottom:18px}
+.admin-login__form .eyebrow{font:500 .68rem ui-monospace,monospace;letter-spacing:.1em}
+@media(max-width:700px){.admin-login{grid-template-columns:1fr}.admin-login__identity{padding:28px;gap:24px}.admin-login__identity>a img{width:140px}.admin-login__identity>div{display:none}.admin-login__identity>.mini{margin:0}.admin-login__form{padding:28px 20px;align-items:start}.admin-login__form .form-panel{padding:28px 22px}.admin-body .admin-top{flex-wrap:wrap;gap:16px}.admin-body .admin-main{min-width:0}}

@@ -1,3 +1,5 @@
+> **2 November 2026 redesign:** the uploaded repository remains the baseline. Current changes, reproducible checks and unverified production workflows are documented in [docs/REDESIGN_IMPLEMENTATION_REPORT.md](docs/REDESIGN_IMPLEMENTATION_REPORT.md) and [docs/QA_RESULTS.md](docs/QA_RESULTS.md). Historical test claims below describe earlier work, not fresh production validation. No deployment or live migration is part of this release.
+
 # VORA | Corporate website, CMS and business portal
 
 Bilingual (English first, Indonesian) corporate website for **VORA / PT Satu Arah International**, with an admin portal for content, leads, customers and finance documents. One **Next.js 15 (App Router) / React 19 / TypeScript** application: the public pages, the admin portal and the backend (server actions and route handlers) live in the same codebase. It runs on **Vercel with Supabase (PostgreSQL + Storage)**, and locally on any PostgreSQL 16.
@@ -93,8 +95,31 @@ The home page hero draws its route lines with Remotion (`remotion`, `@remotion/p
 
 ## Brand and interaction rules
 
-The site keeps the standard browser cursor (no custom cursors, pointer trails or pointer-driven tilt); motion respects `prefers-reduced-motion`. Logos, the A-icon watermark and design tokens are the supplied brand files in `public/static/assets/` and must not be redrawn. `ASSET_MANIFEST.csv` records which illustration sources were selected; the original full-size PNGs are no longer in the tree, only the optimised WebP files the site uses. The PNGs remain in Git history (commit `2e1122b`).
+The site keeps the standard browser cursor (no custom cursors, pointer trails or pointer-driven tilt); motion respects `prefers-reduced-motion`. Logos, the A-icon watermark and design tokens are the supplied brand files in `public/static/assets/` and must not be redrawn. The 43 original illustrations remain in `docs/design_guide/ASET_WEB_VORA_1.zip` and `ASET_WEB_VORA_2.zip`. Their optimised WebP files are in `public/vora-visual/objects/`. Twelve additional owner-approved transparent PNG masters are preserved byte-for-byte in `public/assets/illustrations/`; the shared Next.js image component supplies responsive optimized images without replacing those masters. `docs/ASSET_USAGE_MANIFEST.json` maps both collections to their actual public-page placements and identifies assets retained outside the active UI. Service hero art is defined in `src/content/service-design.ts`, and the separate Home, About and service-directory selections are in `src/content/service-art.ts`.
+
+The illustration update gives Air Export, LTL and LCL distinct operational subjects, moves the multimodal composition to Home, and uses context-specific art for customs, manufacturing, fulfillment, engineering, network handovers, quotation comparison and RFQ preparation. The Home document workflow preserves its complete horizontal composition. Larger informational illustrations offer links to the original PNG for closer reading. Figures and values printed in the supplied artwork are examples, not live shipment data, selling rates or booking commitments. English and Indonesian use the same physical assets. The surrounding design, real inquiry forms, operational source, dependency manifests and deployment configuration are preserved.
 
 ## Approved public company details
 
 PT Satu Arah International · `info@voraworld.id` · Gedung Nucira, Jl. Letjen M.T. Haryono Kav. 27, Tebet, Jakarta Selatan, DKI Jakarta 12810. No telephone or WhatsApp number is shown, and no public page links to the admin portal. The details are editable in Admin → Site Settings.
+
+
+### Automatic motion refinement
+
+The existing layouts and illustration allocation are preserved. Public motion runs automatically, pauses off screen and in background tabs, and respects `prefers-reduced-motion`. Hero entrances wait for image loading and decoding. The existing page-loading and navigation transitions are unchanged.
+
+Only logo studies 01 (Signature Trace), 02 (Red Origin), 04 (Editorial Reveal), and 06 (Quiet Signal) from the supplied [VORA Motion Studies](https://vora-motion-studies-ari.as-sujiar.chatgpt.site/) are adapted. Header: 04; footer: 01; About mark: 02 followed by the quiet 06 orbit. Content motion is separate, using the original Home route composition and contextual GSAP/Motion choreography. Playback is independent of clicks, pointer movement and scroll progress; visibility only pauses and resumes it. Canonical SVG paths and transparent PNG masters remain unchanged.
+
+### Public interaction refinement
+
+The public site now includes a guided service chooser, comparison of all published service groups and modes, a glossary, everyday-language search, section navigation, sample document PDFs, and native English/Indonesian form guidance. Inquiry drafts stay in sessionStorage in the current tab for up to four hours, survive language changes and refused submissions, and clear on successful submission or Clear draft. Hidden fields and privacy consent are never stored. A service explicitly selected in a URL takes precedence over a previous draft.
+
+Email notifications continue through the existing lead/outbox flow; no second receipt or email sender was added. Public pending buttons and page-loading transitions retain their original flow. Automatic logo and illustration motion remains separate from functional hover, press, focus and disclosure feedback; the operating system reduced-motion preference is respected.
+
+`npm run build:document-samples` regenerates the six clearly labelled public examples under `public/samples`. They contain placeholders and no customer records, signatures, verification tokens or real delivery status.
+
+Contact and RFQ require the visitor's mobile number. The original server validation and lead payload are preserved, including the phone value used by the existing customer/PIC and quotation flow. The tab-local draft also retains this field when switching languages. No database migration is needed for this restoration.
+
+The Contact and RFQ office action opens Google Maps directions to the configured address; Maps chooses the visitor's starting location when available. The email action opens their email app. Both actions use icons with localized pointer and keyboard tooltips; Escape dismisses the tooltip. The footer groups the official animated wordmark and a gently moving tagline without the former decorative divider; reduced-motion preferences keep the tagline still. The brand tagline stays in English in both language versions, and the footer copyright starts at 2023. Inquiry controls use equal columns and consistent control heights, with full-width standalone fields and one column on small screens.
+
+Privacy and Terms preserve the CMS bodies (`privacy`, `terms`, `privacy_id`, `terms_id`). Missing or visually empty CMS text falls back to the owner's complete English policy and its corresponding native Indonesian translation, both effective 30 October 2026. Privacy has 11 sections and Terms has 14. The policy's effective date is independent of the footer's copyright year. Update both language fields together when changing policy content. No database migration or runtime translation service is added.

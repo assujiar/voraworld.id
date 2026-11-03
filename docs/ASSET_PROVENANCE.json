@@ -1,0 +1,936 @@
+{
+  "extracted_entries": 155,
+  "unique_hashes": 83,
+  "entries": [
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (50).png",
+      "sha256": "1d2930f580bcf360df3c33fe251fcf0415e8b6e4748cd9b2550bc4989f39061c",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (44).png",
+      "sha256": "ec52510d1a7697fa48c8ab0af92b1a337d6b1d331228d9d4d3ad905e9e69942a",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (56).png",
+      "sha256": "4a98b972bdd44587e2b31841b81c8018ff219e894665d00597a080cbdf21ae2b",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (3).png",
+      "sha256": "639e6c6d1dca093d03b602f0d354eedd6571b81660152fe9af933f3ae4feb80f",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (14).png",
+      "sha256": "0eebf8f0a3d6c1e6bc8f3d36b64d53a01d0e2495ae36d18bb28a4661697cdf14",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (4).png",
+      "sha256": "ebd138cfbe4f50aba4b5ae10708b44586a56b1fa8dd337b439c0f757ce947993",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (43).png",
+      "sha256": "53c313d37ac0c452f760d0d827468fa1bf79c71fdbba5de9f3de4f1927bf43bb",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (47).png",
+      "sha256": "1a1f4e0e107ddc3ff9943120d2f16420e8919c554a8a5e76bbbfd891e0caf755",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (54).png",
+      "sha256": "18350272389b5d5c19ef898a84f0dead7fb4af5f1fa8199a258750e037b07987",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (51).png",
+      "sha256": "c824ca4c81d4e4dcc57c6ba889caac3f797c84610291c0dfa3bbb3f6d131ad7f",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (4).webp",
+      "sha256": "751e99919ba19f3557515a59b5fda1ad73f95549517f24172122d616dfe4b1a1",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (57).png",
+      "sha256": "f446f5ea1096354b7eeb8d3ece00387f0077bcd1795cddfb298a7ddbea776c67",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (6).png",
+      "sha256": "5f19cf8c3fa7b325254112aa80565bcd951b7566645fc884a465eecbbcc3356a",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (42).png",
+      "sha256": "60ab8f8bc0297c7f9c9b891116ef5e03812c47b06276af5599452fbcc365acc0",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (3).webp",
+      "sha256": "b6ed8c2142a98c2a2ce1b8b2e795a5ef30f05f3d570bebfdb6399abdaf4d7184",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (13).png",
+      "sha256": "2c34c363becff22cbedc736007238a9fb4a7c8e2dcbe3dff998fbbf37ee5d5fa",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (45).png",
+      "sha256": "cc379d50658e45702b7b770d93e5245e3062cf9cf4f115341e360548ec3d2d78",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (1).png",
+      "sha256": "e5d65f2f02b11a7eac3f41b3310cc4a746f19acc55638410f9a3214a23a08fff",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (1).webp",
+      "sha256": "6cf08a0748eeb55992cc45fec8ebeda5a350c9334eac78ac7538a630bef4178e",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (2).webp",
+      "sha256": "9dd25afd6dc04f5e437d01e6e984a9ce4d013c45e732390a20cc5a2661f84c72",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (49).png",
+      "sha256": "a46298ee3401587de666ffcb8661ee2166f47fd8aecee7d1e007ed4a95e6c574",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (5).png",
+      "sha256": "be074d410dbddcd8f33964544f8ec0d9f16e044a28decfbce441009993acf034",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (12).png",
+      "sha256": "d26cb91796761ce453dafb2028aee23cb5921fad243be7cd31545d0c4a5b6316",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (46).png",
+      "sha256": "0398f82d08b21a6ba634d75d35a7245d74eb782a3b70414687f1c5642aecdbc2",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (15).png",
+      "sha256": "3f0c293ce9f8a2de97875c80f1e45aa5e8ace5edbebfbf9a938e6bbbd532fedd",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (5).webp",
+      "sha256": "32a938f5c8c2ceb50930c9cdea7279d2addff3e0c1b4246cd6ebeb2a75b485e7",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (48).png",
+      "sha256": "62205472ee48f58ad9f406eebddd57f7af5db26813f001cca0fdc0e85f404295",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (53).png",
+      "sha256": "0d90200d94b8ee886bcf52e148e9c09b997fe7a410b794f724916b5e4811f47d",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (52).png",
+      "sha256": "eca16b0b4c73ed0119aeef451f09af5f85e3a6c4b5b5ecd621f1b9221915080f",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (55).png",
+      "sha256": "6cb2b70d469f2504442196a53edc07c8650dfa403b5d0a5aec80676267cb5f08",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+      "filename": "ASET_WEB_VORA (2).png",
+      "sha256": "43f95ceb0e261a908cb294aca7d9f76f030c3eec0c2b97567569bfee0072cb71",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (67).png",
+      "sha256": "c4e1b91590ace1486e746f50b1b19fef47bc32728674c5b6e666c7b5194e0308",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (66).png",
+      "sha256": "31545ca9970096a208299f40a1e4b605b09b81d2b261fda77a0fa0555a5e7403",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (59).png",
+      "sha256": "027e0b3381d8ae4264b92b80e60ee55591f34f5c43b2105dbedd29914a5c445b",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (63).png",
+      "sha256": "1f54ceeecd81716ec78b3a9616b27533dfbd1fb463a9f238acb73e40dfc25137",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (61).png",
+      "sha256": "ec0a92e3d30c7ec8835cc81376dd7a0b622740df380c19498b27a89305a948a5",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (62).png",
+      "sha256": "e019d6807f341723559e8c8dc3bce2687b9648f80afce9bfa8272c17462abad5",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (64).png",
+      "sha256": "21ec1911169eb2a06144a0a855b15fa46456f8102ce56852c681a2f144324aea",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (68).png",
+      "sha256": "aa85f959b3b5a3e54d62d9a70cfbb8bf615e3f8d2a56a06570c9ea10b05b4ee5",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (58).png",
+      "sha256": "ba3a2694724a6607ac1056e4ff609417b14fbfdcb53b2be18bdedab6b0edb7a2",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (69).png",
+      "sha256": "c8d0b66de3e5571fe98ec0ec35a5f827bddf879da35beb18a43e49093121f2a4",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (60).png",
+      "sha256": "2bd0d2d2f710ac0d94f86ad333aba39d91e23f9d51d5e9f9f5e37462f3ea869b",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+      "filename": "ASET_WEB_VORA (65).png",
+      "sha256": "934aa4ac6b3721da4a7214c04039ee838797b7296651a44edad2915e8df1fe8a",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/backgrounds.zip",
+      "filename": "backgrounds/navy-constellation.svg",
+      "sha256": "9dd0c7ee202469df008b9f7a54d34d106516155d0aed915cdc8f3e8d2ef6ed18",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/backgrounds.zip",
+      "filename": "backgrounds/technical-route-field.svg",
+      "sha256": "dea6b15297a55a04297f4dd1f6ab25cc527d2bde88d010513173f3edd461dd57",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/backgrounds.zip",
+      "filename": "backgrounds/white-orbit-sweep.svg",
+      "sha256": "bcc5cb4e7326d942eed4f7e22f667f736689cceccae9b448d53463789a68f769",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/backgrounds.zip",
+      "filename": "backgrounds/ivory-architectural-shelves.svg",
+      "sha256": "e414442ca19a271919500379a81234fbe748fb44bcd6dd8173a51b2764649bda",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/backgrounds.zip",
+      "filename": "backgrounds/paper-cut-diagonal.svg",
+      "sha256": "04af080566abb4a0ff458a792ff492dac02ae7ed390e572f997c19d0228baf61",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/backgrounds.zip",
+      "filename": "backgrounds/port-midnight.svg",
+      "sha256": "55d6b27ee488112090082e0ad93851a40c8372a99bd0aca2f29026767a6d91e6",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/backgrounds.zip",
+      "filename": "backgrounds/red-velocity-cut.svg",
+      "sha256": "d1b8be0f4807aeabdd80b8bc3e7c20548e225498fb5e7b4d9a60d3f0918db7d2",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/backgrounds.zip",
+      "filename": "backgrounds/editorial-ivory-wave.svg",
+      "sha256": "c3829a2863734259457d994836cc21d581310c1cd098acedf15a8b4651acccf5",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/architectural-grid.svg",
+      "sha256": "76f0522a85e823c2b39c9bb9461567521f51301281a1060884dcbceb138320c5",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/route-waypoint-network.svg",
+      "sha256": "932c53de160e72fd1f4c2a1510ba72b05736cc20f40b649e3222d0b06370e1c2",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/clay-hex-slab.svg",
+      "sha256": "5119a07a21f4ae747fb9ef68d46fcc3fe3cf1203beb6f7e002393681426c19b2",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/clay-tray-recessed.svg",
+      "sha256": "ddfdec45f368350c14badf7405a4e451ed6ec49dd1e0a600d0838499790164d0",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/clay-display-pill.svg",
+      "sha256": "5ec0d6409dfba4d80ee9e5f9ba7deaf63496d02ab10cb69fb28416954dbaf0f8",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/clay-elevated-tile.svg",
+      "sha256": "3337e1370f1fc7654310e4b6f8d2fb71e42e134f5b188eb70619a8d4076e192f",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/red-arch-window.svg",
+      "sha256": "282c7e899c6ee8a79c6cfd485d5438c86d3978f7526b80410b1668195a07df39",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/sculpted-corner-wave.svg",
+      "sha256": "f9a55024863e4b638c2f6a9ccf927c30253dcc22f18fd681401b8def475319b0",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/ink-edged-ribbon.svg",
+      "sha256": "5b632eaef4f0fa24fdcd14af2f56e39e689dec356f21561d42e404a672f78b1f",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/soft-halo.svg",
+      "sha256": "9dfa3e1ba9fc544778c7adf02e76a649dc4f4a4b7cb560a847c7e99e409666ed",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/clay-deep-recess.svg",
+      "sha256": "02b6ab05e8ad9c730426a73765bc55b24750c11ff42beab7f2d685aeb0473b28",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/clay-raised-capsule.svg",
+      "sha256": "05952194e1ee1b519d044ac8f64d6ef4b0cbefd7c80ca1ee3e280c880e77419c",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/clay-pedestal-oval.svg",
+      "sha256": "760382e950cfed5e1616f54efd237d2adb253f342a38472c7a79d72a470a465e",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/route-orbit-oval.svg",
+      "sha256": "ba97f05720546ac6362556fa029b3f72d621647d7dee439c47526c63ceb45bef",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/industrial-red-ribbon.svg",
+      "sha256": "52c92f621fd6cbcdc35559fa3961c27d80559fbccaed7f866d0cf3335c88eaee",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/graphics.zip",
+      "filename": "graphics/red-rail-perspective.svg",
+      "sha256": "e2c24553bb74813d28e85e12cf423f85ea86f3dedcbba6b1f31ffa63ed89aa71",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ui.zip",
+      "filename": "ui/clay-recessed-widget.svg",
+      "sha256": "c8ed18781eb371c0c29fe1b78788932ad573f09be7976fdfd17c518bf6fd485d",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ui.zip",
+      "filename": "ui/navy-white-segment-tray.svg",
+      "sha256": "cd19cef3a98272fa811dd7e189ac82704c2ae1ff5f5406b264aeacc1e143aece",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ui.zip",
+      "filename": "ui/dark-floating-panel.svg",
+      "sha256": "3cdc4e36b29eff5e63ff29965dd039e1eb9c9960285a230b570d26b6acae5c56",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ui.zip",
+      "filename": "ui/neumorphic-input-surface.svg",
+      "sha256": "dbe828a1125b10ec6ca72ed9375828bbb0e11bfbca3f892829be58c15851ebcf",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/ui.zip",
+      "filename": "ui/raised-clay-button.svg",
+      "sha256": "b67b93aca759fd285b22dd945054caf67df6ed3418214e5a460465e2a430bc45",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-forklift.png",
+      "sha256": "6cb2b70d469f2504442196a53edc07c8650dfa403b5d0a5aec80676267cb5f08",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (55).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-forklift - Copy.png",
+      "sha256": "6cb2b70d469f2504442196a53edc07c8650dfa403b5d0a5aec80676267cb5f08",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (55).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-forklift - Copy.webp",
+      "sha256": "b7f4e87fa5dd89da0210df101e33163b0d613da319c4ec8b046405fc0f704bf3",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-forklift-cartons - Copy.png",
+      "sha256": "1f54ceeecd81716ec78b3a9616b27533dfbd1fb463a9f238acb73e40dfc25137",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (63).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-forklift.webp",
+      "sha256": "b7f4e87fa5dd89da0210df101e33163b0d613da319c4ec8b046405fc0f704bf3",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-forklift - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipment-tracking-phone - Copy.webp",
+      "sha256": "c4531c83cd3402401edc4769e08765adb119d2baf26372b44eca290eeea633fd",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipping-container-stack - Copy.webp",
+      "sha256": "c29fbc9be4f023cabf5562845ffa4e80f2d27ee4d674c622845af255ecdbc906",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-racking.png",
+      "sha256": "d26cb91796761ce453dafb2028aee23cb5921fad243be7cd31545d0c4a5b6316",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (12).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-racking - Copy.png",
+      "sha256": "d26cb91796761ce453dafb2028aee23cb5921fad243be7cd31545d0c4a5b6316",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (12).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-wooden-export-crate.webp",
+      "sha256": "179d1eb61a03162501ef918708d9617515c7d0041baaec1d61851aa31ab18bf3",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-wooden-export-crate - Copy.webp",
+      "sha256": "179d1eb61a03162501ef918708d9617515c7d0041baaec1d61851aa31ab18bf3",
+      "duplicate_of": "vora_web_visual_object_1/vora-wooden-export-crate.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-door.webp",
+      "sha256": "ecaafb1a8f3891892967a5194fee67ab80de49514c970b99ac3c55a8743cf03e",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-door - Copy.png",
+      "sha256": "4a98b972bdd44587e2b31841b81c8018ff219e894665d00597a080cbdf21ae2b",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (56).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipment-tracking-phone - Copy.png",
+      "sha256": "ba3a2694724a6607ac1056e4ff609417b14fbfdcb53b2be18bdedab6b0edb7a2",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (58).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipment-tracking-console.png",
+      "sha256": "eca16b0b4c73ed0119aeef451f09af5f85e3a6c4b5b5ecd621f1b9221915080f",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (52).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipping-container-stack - Copy.png",
+      "sha256": "934aa4ac6b3721da4a7214c04039ee838797b7296651a44edad2915e8df1fe8a",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (65).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-speed-stopwatch.png",
+      "sha256": "a46298ee3401587de666ffcb8661ee2166f47fd8aecee7d1e007ed4a95e6c574",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (49).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipping-container-stack.png",
+      "sha256": "934aa4ac6b3721da4a7214c04039ee838797b7296651a44edad2915e8df1fe8a",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (65).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipment-tracking-console - Copy.webp",
+      "sha256": "903fb44951ace67edfb0bf48c0986ee153d38b1eff8470bc9c7731576e5f11aa",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-forklift-cartons.webp",
+      "sha256": "a8ff0b00f5ed068f7eed6b70ca91d665e98b5f0a6071f2d6834e233314c6d317",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-door - Copy.webp",
+      "sha256": "ecaafb1a8f3891892967a5194fee67ab80de49514c970b99ac3c55a8743cf03e",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-door.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-loading-bay - Copy.png",
+      "sha256": "be074d410dbddcd8f33964544f8ec0d9f16e044a28decfbce441009993acf034",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (5).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipment-tracking-phone.png",
+      "sha256": "ba3a2694724a6607ac1056e4ff609417b14fbfdcb53b2be18bdedab6b0edb7a2",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (58).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-wooden-export-crate - Copy.png",
+      "sha256": "0398f82d08b21a6ba634d75d35a7245d74eb782a3b70414687f1c5642aecdbc2",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (46).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-forklift-cartons - Copy.webp",
+      "sha256": "a8ff0b00f5ed068f7eed6b70ca91d665e98b5f0a6071f2d6834e233314c6d317",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-forklift-cartons.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipment-tracking-phone.webp",
+      "sha256": "c4531c83cd3402401edc4769e08765adb119d2baf26372b44eca290eeea633fd",
+      "duplicate_of": "vora_web_visual_object_1/vora-shipment-tracking-phone - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-cargo-scanner.webp",
+      "sha256": "22a035d0331d57d2e5e8a5dd20cf6ba76f80cf9263801054098098fb9df0cc47",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-racking - Copy.webp",
+      "sha256": "1e65b1c2a67127c84ed5788fbe45d1596025a6b97be309b5b38cce36b649f45e",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-loading-bay.png",
+      "sha256": "be074d410dbddcd8f33964544f8ec0d9f16e044a28decfbce441009993acf034",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (5).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipping-container-stack.webp",
+      "sha256": "c29fbc9be4f023cabf5562845ffa4e80f2d27ee4d674c622845af255ecdbc906",
+      "duplicate_of": "vora_web_visual_object_1/vora-shipping-container-stack - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-forklift-cartons.png",
+      "sha256": "1f54ceeecd81716ec78b3a9616b27533dfbd1fb463a9f238acb73e40dfc25137",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (63).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-wooden-export-crate.png",
+      "sha256": "0398f82d08b21a6ba634d75d35a7245d74eb782a3b70414687f1c5642aecdbc2",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (46).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-speed-stopwatch.webp",
+      "sha256": "dc6b817193dbe0dcbdaf15583102c25c85cb10239fe8a06aead3070839b01d23",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-cargo-scanner - Copy.webp",
+      "sha256": "22a035d0331d57d2e5e8a5dd20cf6ba76f80cf9263801054098098fb9df0cc47",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-cargo-scanner.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-shipment-tracking-console.webp",
+      "sha256": "903fb44951ace67edfb0bf48c0986ee153d38b1eff8470bc9c7731576e5f11aa",
+      "duplicate_of": "vora_web_visual_object_1/vora-shipment-tracking-console - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-loading-bay - Copy.webp",
+      "sha256": "8d4e3e31af193edc51368d257fd786e13ae93e893ad0ff8f77575e6860fe45f3",
+      "duplicate_of": null
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-speed-stopwatch - Copy.webp",
+      "sha256": "dc6b817193dbe0dcbdaf15583102c25c85cb10239fe8a06aead3070839b01d23",
+      "duplicate_of": "vora_web_visual_object_1/vora-speed-stopwatch.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-racking.webp",
+      "sha256": "1e65b1c2a67127c84ed5788fbe45d1596025a6b97be309b5b38cce36b649f45e",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-racking - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-speed-stopwatch - Copy.png",
+      "sha256": "a46298ee3401587de666ffcb8661ee2166f47fd8aecee7d1e007ed4a95e6c574",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (49).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-door.png",
+      "sha256": "4a98b972bdd44587e2b31841b81c8018ff219e894665d00597a080cbdf21ae2b",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (56).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-loading-bay.webp",
+      "sha256": "8d4e3e31af193edc51368d257fd786e13ae93e893ad0ff8f77575e6860fe45f3",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-loading-bay - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-cargo-scanner.png",
+      "sha256": "e5d65f2f02b11a7eac3f41b3310cc4a746f19acc55638410f9a3214a23a08fff",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (1).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_1.zip",
+      "filename": "vora-warehouse-cargo-scanner - Copy.png",
+      "sha256": "e5d65f2f02b11a7eac3f41b3310cc4a746f19acc55638410f9a3214a23a08fff",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (1).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-forklift.png",
+      "sha256": "6cb2b70d469f2504442196a53edc07c8650dfa403b5d0a5aec80676267cb5f08",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (55).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-forklift - Copy.png",
+      "sha256": "6cb2b70d469f2504442196a53edc07c8650dfa403b5d0a5aec80676267cb5f08",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (55).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-forklift - Copy.webp",
+      "sha256": "b7f4e87fa5dd89da0210df101e33163b0d613da319c4ec8b046405fc0f704bf3",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-forklift - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-forklift-cartons - Copy.png",
+      "sha256": "1f54ceeecd81716ec78b3a9616b27533dfbd1fb463a9f238acb73e40dfc25137",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (63).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-forklift.webp",
+      "sha256": "b7f4e87fa5dd89da0210df101e33163b0d613da319c4ec8b046405fc0f704bf3",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-forklift - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-shipment-tracking-phone - Copy.webp",
+      "sha256": "c4531c83cd3402401edc4769e08765adb119d2baf26372b44eca290eeea633fd",
+      "duplicate_of": "vora_web_visual_object_1/vora-shipment-tracking-phone - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-shipping-container-stack - Copy.webp",
+      "sha256": "c29fbc9be4f023cabf5562845ffa4e80f2d27ee4d674c622845af255ecdbc906",
+      "duplicate_of": "vora_web_visual_object_1/vora-shipping-container-stack - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-racking.png",
+      "sha256": "d26cb91796761ce453dafb2028aee23cb5921fad243be7cd31545d0c4a5b6316",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (12).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-racking - Copy.png",
+      "sha256": "d26cb91796761ce453dafb2028aee23cb5921fad243be7cd31545d0c4a5b6316",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (12).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-wooden-export-crate.webp",
+      "sha256": "179d1eb61a03162501ef918708d9617515c7d0041baaec1d61851aa31ab18bf3",
+      "duplicate_of": "vora_web_visual_object_1/vora-wooden-export-crate.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-wooden-export-crate - Copy.webp",
+      "sha256": "179d1eb61a03162501ef918708d9617515c7d0041baaec1d61851aa31ab18bf3",
+      "duplicate_of": "vora_web_visual_object_1/vora-wooden-export-crate.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-door.webp",
+      "sha256": "ecaafb1a8f3891892967a5194fee67ab80de49514c970b99ac3c55a8743cf03e",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-door.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-door - Copy.png",
+      "sha256": "4a98b972bdd44587e2b31841b81c8018ff219e894665d00597a080cbdf21ae2b",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (56).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-shipment-tracking-phone - Copy.png",
+      "sha256": "ba3a2694724a6607ac1056e4ff609417b14fbfdcb53b2be18bdedab6b0edb7a2",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (58).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-shipping-container-stack - Copy.png",
+      "sha256": "934aa4ac6b3721da4a7214c04039ee838797b7296651a44edad2915e8df1fe8a",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (65).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-speed-stopwatch.png",
+      "sha256": "a46298ee3401587de666ffcb8661ee2166f47fd8aecee7d1e007ed4a95e6c574",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (49).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-shipping-container-stack.png",
+      "sha256": "934aa4ac6b3721da4a7214c04039ee838797b7296651a44edad2915e8df1fe8a",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (65).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-forklift-cartons.webp",
+      "sha256": "a8ff0b00f5ed068f7eed6b70ca91d665e98b5f0a6071f2d6834e233314c6d317",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-forklift-cartons.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-door - Copy.webp",
+      "sha256": "ecaafb1a8f3891892967a5194fee67ab80de49514c970b99ac3c55a8743cf03e",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-door.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-loading-bay - Copy.png",
+      "sha256": "be074d410dbddcd8f33964544f8ec0d9f16e044a28decfbce441009993acf034",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (5).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-shipment-tracking-phone.png",
+      "sha256": "ba3a2694724a6607ac1056e4ff609417b14fbfdcb53b2be18bdedab6b0edb7a2",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (58).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-wooden-export-crate - Copy.png",
+      "sha256": "0398f82d08b21a6ba634d75d35a7245d74eb782a3b70414687f1c5642aecdbc2",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (46).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-forklift-cartons - Copy.webp",
+      "sha256": "a8ff0b00f5ed068f7eed6b70ca91d665e98b5f0a6071f2d6834e233314c6d317",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-forklift-cartons.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-shipment-tracking-phone.webp",
+      "sha256": "c4531c83cd3402401edc4769e08765adb119d2baf26372b44eca290eeea633fd",
+      "duplicate_of": "vora_web_visual_object_1/vora-shipment-tracking-phone - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-cargo-scanner.webp",
+      "sha256": "22a035d0331d57d2e5e8a5dd20cf6ba76f80cf9263801054098098fb9df0cc47",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-cargo-scanner.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-racking - Copy.webp",
+      "sha256": "1e65b1c2a67127c84ed5788fbe45d1596025a6b97be309b5b38cce36b649f45e",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-racking - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-loading-bay.png",
+      "sha256": "be074d410dbddcd8f33964544f8ec0d9f16e044a28decfbce441009993acf034",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (5).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-shipping-container-stack.webp",
+      "sha256": "c29fbc9be4f023cabf5562845ffa4e80f2d27ee4d674c622845af255ecdbc906",
+      "duplicate_of": "vora_web_visual_object_1/vora-shipping-container-stack - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-forklift-cartons.png",
+      "sha256": "1f54ceeecd81716ec78b3a9616b27533dfbd1fb463a9f238acb73e40dfc25137",
+      "duplicate_of": "ASET_WEB_VORA_2/ASET_WEB_VORA (63).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-wooden-export-crate.png",
+      "sha256": "0398f82d08b21a6ba634d75d35a7245d74eb782a3b70414687f1c5642aecdbc2",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (46).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-speed-stopwatch.webp",
+      "sha256": "dc6b817193dbe0dcbdaf15583102c25c85cb10239fe8a06aead3070839b01d23",
+      "duplicate_of": "vora_web_visual_object_1/vora-speed-stopwatch.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-cargo-scanner - Copy.webp",
+      "sha256": "22a035d0331d57d2e5e8a5dd20cf6ba76f80cf9263801054098098fb9df0cc47",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-cargo-scanner.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-loading-bay - Copy.webp",
+      "sha256": "8d4e3e31af193edc51368d257fd786e13ae93e893ad0ff8f77575e6860fe45f3",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-loading-bay - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-speed-stopwatch - Copy.webp",
+      "sha256": "dc6b817193dbe0dcbdaf15583102c25c85cb10239fe8a06aead3070839b01d23",
+      "duplicate_of": "vora_web_visual_object_1/vora-speed-stopwatch.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-racking.webp",
+      "sha256": "1e65b1c2a67127c84ed5788fbe45d1596025a6b97be309b5b38cce36b649f45e",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-racking - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-speed-stopwatch - Copy.png",
+      "sha256": "a46298ee3401587de666ffcb8661ee2166f47fd8aecee7d1e007ed4a95e6c574",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (49).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-door.png",
+      "sha256": "4a98b972bdd44587e2b31841b81c8018ff219e894665d00597a080cbdf21ae2b",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (56).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-loading-bay.webp",
+      "sha256": "8d4e3e31af193edc51368d257fd786e13ae93e893ad0ff8f77575e6860fe45f3",
+      "duplicate_of": "vora_web_visual_object_1/vora-warehouse-loading-bay - Copy.webp"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-cargo-scanner.png",
+      "sha256": "e5d65f2f02b11a7eac3f41b3310cc4a746f19acc55638410f9a3214a23a08fff",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (1).png"
+    },
+    {
+      "archive": "docs/design_guide/vora_web_visual_object_2.zip",
+      "filename": "vora-warehouse-cargo-scanner - Copy.png",
+      "sha256": "e5d65f2f02b11a7eac3f41b3310cc4a746f19acc55638410f9a3214a23a08fff",
+      "duplicate_of": "ASET_WEB_VORA_1/ASET_WEB_VORA (1).png"
+    }
+  ]
+}

@@ -17,9 +17,10 @@ export async function seedFinance(): Promise<Seed> {
   const { sql } = await import('../helpers/db')
   const { createBank } = await import('@/server/finance/banks')
   const { saveCustomer } = await import('@/server/finance/customers')
-  const { createInvoice, setInvoiceStatus } = await import('@/server/finance/invoices')
+  const { setInvoiceStatus } = await import('@/server/finance/invoices')
+  const { createInvoice, createQuotation } = await import('../helpers/commercial')
   const { confirmPayment, recordPayment } = await import('@/server/finance/payments')
-  const { createQuotation, setQuotationStatus, submitApproval } = await import('@/server/finance/quotations')
+  const { setQuotationStatus, submitApproval } = await import('@/server/finance/quotations')
   const { makePdf } = await import('../helpers/pdf')
   const { createDocument, setDocumentStatus } = await import('@/server/documents/general')
 

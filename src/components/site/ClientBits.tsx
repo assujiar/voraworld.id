@@ -17,7 +17,8 @@ export function LangSwitch({ locale, named = false, modes = [] }: { locale: 'en'
   useEffect(() => {
     let next = `/${other}${rest}`
     if (/^\/request-quote\/?$/.test(rest)) {
-      const mode = new URLSearchParams(window.location.search).get('mode') ?? ''
+      const field = document.getElementById('rfq-mode') as HTMLSelectElement | null
+      const mode = field?.value || new URLSearchParams(window.location.search).get('mode') || ''
       if (mode && modes.includes(mode)) next += `?mode=${encodeURIComponent(mode)}`
     }
     if (/^\/insights\/[^/]+/.test(rest)) {
@@ -27,6 +28,11 @@ export function LangSwitch({ locale, named = false, modes = [] }: { locale: 'en'
       try { if (alt) { const u = new URL(alt); if (u.pathname.startsWith(`/${other}/insights/`)) next = u.pathname } } catch { /* keep the list */ }
     }
     setHref(next)
+    if (/^\/request-quote\/?$/.test(rest)) {
+      const sync = () => { const mode = (document.getElementById('rfq-mode') as HTMLSelectElement | null)?.value ?? ''; setHref(`/${other}${rest}${modes.includes(mode) ? '?mode=' + encodeURIComponent(mode) : ''}`) }
+      document.addEventListener('change', sync); document.addEventListener('vora:draft-restored', sync);document.addEventListener('vora:draft-clear',sync)
+      return () => { document.removeEventListener('change',sync);document.removeEventListener('vora:draft-restored',sync);document.removeEventListener('vora:draft-clear',sync) }
+    }
   }, [pathname, rest, other, modes])
   return (
     <a className={named ? 'v-lang v-lang--named' : 'v-lang'} href={href} hrefLang={other} lang={other} aria-label={locale === 'en' ? 'Ganti ke Bahasa Indonesia' : 'Switch to English'}>

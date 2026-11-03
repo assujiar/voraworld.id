@@ -1,3 +1,6 @@
+import { IllustrationFigure } from '@/components/atelier/IllustrationFigure'
+import { ObjectArt } from '@/components/atelier/ObjectArt'
+import { pageDescriptions } from '@/content/page-seo'
 import { CustomSections } from '@/components/site/CustomSections'
 import { InsightCards } from '@/components/site/InsightCards'
 import { makeT, seoTitles, seoDescription, siteText } from '@/content'
@@ -12,7 +15,7 @@ type P = LocaleParams & { searchParams: Promise<{ q?: string; page?: string; top
 
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await localeOf(params)
-  return pageMetadata({ locale, path: '/insights', title: seoTitles[locale].insights, description: seoDescription[locale] })
+  return pageMetadata({ locale, path: '/insights', title: seoTitles[locale].insights, description: pageDescriptions[locale].insights })
 }
 
 const int = (v: string | undefined, min: number, max: number) => { const n = Number.parseInt(v ?? '', 10); return Number.isFinite(n) && n >= min && n <= max ? n : null }
@@ -31,11 +34,16 @@ export default async function Insights({ params, searchParams }: P) {
   const hasArchive = articles.some((a) => parseArchiveTags(a.tags).year)
   const keep = (n: number) => { const u = new URLSearchParams(); if (q) u.set('q', q); if (topic) u.set('topic', topic); if (year) u.set('year', String(year)); if (quarter) u.set('quarter', String(quarter)); u.set('page', String(n)); return `?${u}` }
   return (
-    <>
-      <section className="v-page v-page--insights">
+    <div className="hybrid-preserved hybrid-insights">
+      <section className="a-cover a-cover--insights">
         <div className="v-wrap">
-          <h1>{siteText[locale].insights_title}</h1>
-          <p className="v-lead">{t('Reference notes on quotations, documents, handover and cargo preparation, written for people who arrange shipments.', 'Catatan rujukan tentang penawaran, dokumen, serah terima, dan persiapan kargo, ditulis untuk orang yang mengatur pengiriman.')}</p>
+          <p className="a-label">INSIGHTS / FIELD NOTES</p><h1>{t('The details worth knowing before you ship.', 'Detail yang perlu dipahami sebelum mengirim.')}</h1>
+          <p className="a-intro">{t('Reference notes on quotations, documents, handover and cargo preparation, written for people who arrange shipments.', 'Catatan rujukan tentang penawaran, dokumen, serah terima, dan persiapan kargo, ditulis untuk orang yang mengatur pengiriman.')}</p>
+          <div className="x-journal-note"><div><span className="a-label">FIELD REFERENCE / 01</span><h2>{t('Before the booking. Before the handover.','Sebelum booking. Sebelum serah terima.')}</h2><p>{t('Packing, documentation and scope decisions that are worth resolving before cargo moves.','Keputusan tentang kemasan, dokumen, dan cakupan yang perlu diselesaikan sebelum barang bergerak.')}</p><a className="v-link" href={`/${locale}/faq`}>{t('Read the practical questions','Baca pertanyaan praktis')} →</a></div><ObjectArt asset="schedule" priority/></div>
+          <aside className="a-note-signals" aria-label={t('Quotation and timing inputs', 'Dasar penawaran dan jadwal')}>
+            <div className="a-note-comparison"><IllustrationFigure asset="n09-quotation-comparison" locale={locale} sizes="(max-width: 600px) 86vw, 280px" caption={t('Example quotations for comparing scope.', 'Contoh penawaran untuk membandingkan cakupan.')} /><div><h3>{t('Compare the same scope.', 'Bandingkan cakupan yang sama.')}</h3><p>{t('Check handling, local charges and exclusions alongside the freight rate.', 'Periksa handling, biaya lokal, dan pengecualian bersama tarif angkutnya.')}</p></div></div>
+            <div><ObjectArt asset="stopwatch" sizes="96px" /><div><h3>{t('Work back from the cut-off.', 'Susun jadwal mundur dari cut-off.')}</h3><p>{t('Allow time for packing, documents and the receiving window.', 'Sisihkan waktu untuk kemasan, dokumen, dan jadwal penerimaan.')}</p></div></div>
+          </aside>
           {total > 0 || filtered ? (
             <form method="get" className="v-archivefilter" role="search" aria-label={t('Search and filter articles', 'Cari dan saring artikel')}>
               <div className="v-field"><label htmlFor="ar-q">{t('Search', 'Cari')}</label><input id="ar-q" name="q" type="search" defaultValue={q} autoComplete="off" /></div>
@@ -70,7 +78,7 @@ export default async function Insights({ params, searchParams }: P) {
           <p className="v-muted v-notes__lead">{t('Longer articles are in preparation. These notes cover the questions that come up most often when a shipment is arranged.', 'Artikel yang lebih panjang sedang disiapkan. Catatan ini menjawab pertanyaan yang paling sering muncul saat pengiriman diatur.')}</p>
           <div className="v-notes">
             {workingNotes.map((n) => (
-              <section key={n.id} className="v-notes__item"><h3 className="v-h3">{n.title[locale]}</h3><ul className="v-checks">{n.items[locale].map((i) => <li key={i}>{i}</li>)}</ul></section>
+              <section key={n.id} className="v-notes__item" id={`note-${n.id}`}><h3 className="v-h3">{n.title[locale]}</h3><ul className="v-checks">{n.items[locale].map((i) => <li key={i}>{i}</li>)}</ul></section>
             ))}
           </div>
           <p className="v-notes__more"><a className="v-link" href={`/${locale}/faq`}>{t('Read the frequently asked questions', 'Baca pertanyaan yang sering diajukan')}</a></p>
@@ -79,8 +87,8 @@ export default async function Insights({ params, searchParams }: P) {
       <CustomSections locale={locale} sections={custom?.sections} />
       <section className="v-section v-section--tight"><div className="v-wrap v-articlecta">
         <p>{t('Planning a shipment? Send the route and the cargo and we will confirm the arrangement for that inquiry.', 'Merencanakan pengiriman? Kirim rute dan barangnya, kami akan mengonfirmasi pilihan layanannya.')}</p>
-        <a className="v-btn" href={`/${locale}/request-quote`}>{t('Request a quote', 'Minta penawaran')}</a>
+        <a className="v-btn a-inline-art" href={`/${locale}/request-quote`}><ObjectArt asset="next-step" sizes="32px" />{t('Request a quote', 'Minta penawaran')}</a>
       </div></section>
-    </>
+    </div>
   )
 }

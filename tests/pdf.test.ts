@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { sql } from './helpers/db'
@@ -274,7 +275,7 @@ describe('quotation PDFs', () => {
     expect(squash((await pdfPages(pdf)).join(' ')).replace(/\s/g, '')).toContain(verify)         // and it is readable on paper, too
 
     const [{ approvalId }] = await sql`select nextval(pg_get_serial_sequence('quotation_approvals', 'id'))::int as approval_id`
-    const secret = await approvalSecret(sql)
+    const secret = await approvalSecret()
     const upload = `${BASE}/quotation-approval/${approvalToken(secret, approvalId)}`
     await sql`insert into quotation_approvals (id, quotation_id, token_hash, expires_at, status) values (${approvalId}, ${id}, ${await sha256Hex(approvalToken(secret, approvalId))}, now() + interval '7 days', 'pending')`
     await sql`update quotations set status = 'awaiting_approval' where id = ${id}`

@@ -175,8 +175,8 @@ nav a[data-nav-pending]::after,.admin-sidebar a[data-nav-pending]::after{content
 @keyframes vl-wipe-y{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 .vl-ink{transform-box:fill-box;transform-origin:50% 100%;animation:vl-rise .9s ease-out both}
 @keyframes vl-rise{from{opacity:0;transform:translateY(6%)}to{opacity:1;transform:none}}
-.vl-red{transform-box:fill-box;transform-origin:50% 100%;animation:vl-ignite .55s .7s cubic-bezier(.3,1.6,.5,1) both,vl-breathe 1.9s 1.5s ease-in-out infinite}
-@keyframes vl-ignite{from{opacity:0;transform:scale(.15)}to{opacity:1;transform:scale(1)}}
+.vl-red{transform-box:fill-box;transform-origin:50% 100%;animation:vl-ignite .55s .7s ease-out both}
+@keyframes vl-ignite{from{opacity:0}to{opacity:1}}
 @keyframes vl-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 .vl-shine{transform-box:fill-box;opacity:0;animation:vl-shine 2.8s 1.7s ease-in-out infinite}
 @keyframes vl-shine{0%{opacity:1;transform:translateX(-130%) skewX(-18deg)}55%,100%{opacity:1;transform:translateX(560%) skewX(-18deg)}}

@@ -7,7 +7,7 @@ export const workingNotes: Array<{ id: string; title: Record<Locale, string>; it
     title: { en: 'A shipment brief that can be quoted', id: 'Brief pengiriman yang bisa dihitung' },
     items: {
       en: ['Goods in plain words, with the packing: cartons, pallets, crates or loose.', 'Gross weight in kg and the size of each package in cm.', 'Origin and destination, and the access at both ends.', 'The date the cargo is ready and the agreed trade term.', 'What the quotation should cover, and what stays with another party.'],
-      id: ['Barang dalam bahasa sederhana, beserta kemasannya: karton, pallet, peti, atau curah.', 'Berat kotor dalam kg dan ukuran tiap kemasan dalam cm.', 'Asal dan tujuan, serta kondisi akses di kedua ujung.', 'Tanggal barang siap dan term perdagangan yang disepakati.', 'Apa yang perlu tercakup dalam penawaran, dan apa yang tetap di pihak lain.'],
+      id: ['Barang dalam bahasa sederhana, beserta kemasannya: karton, pallet, peti, atau curah.', 'Berat kotor dalam kg dan ukuran tiap kemasan dalam cm.', 'Asal dan tujuan, serta kondisi akses di asal maupun tujuan.', 'Tanggal barang siap dan trade terms yang disepakati.', 'Apa yang perlu tercakup dalam penawaran, dan apa yang tetap di pihak lain.'],
     },
   },
   {
@@ -23,7 +23,7 @@ export const workingNotes: Array<{ id: string; title: Record<Locale, string>; it
     title: { en: 'Questions to settle before a handover', id: 'Hal yang disepakati sebelum serah terima' },
     items: {
       en: ['Who loads, who unloads and who checks the count.', 'Which condition the goods are accepted in, and how an exception is recorded.', 'Who signs for the receiver and what identification they show.', 'Which photographs are taken at pickup and at delivery.', 'Whom to call when the window is missed.'],
-      id: ['Siapa yang memuat, siapa yang membongkar, dan siapa yang memeriksa jumlah.', 'Dalam kondisi apa barang diterima, dan bagaimana pengecualian dicatat.', 'Siapa yang menandatangani atas nama penerima dan identitas apa yang ditunjukkan.', 'Foto apa saja yang diambil saat penjemputan dan pengantaran.', 'Siapa yang dihubungi bila jendela waktu terlewat.'],
+      id: ['Siapa yang memuat, siapa yang membongkar, dan siapa yang memeriksa jumlah.', 'Dalam kondisi apa barang diterima, dan bagaimana pengecualian dicatat.', 'Siapa yang menandatangani atas nama penerima dan identitas apa yang ditunjukkan.', 'Foto apa saja yang diambil saat penjemputan dan pengantaran.', 'Siapa yang dihubungi bila jadwal penerimaan terlewat.'],
     },
   },
 ]

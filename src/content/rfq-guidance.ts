@@ -11,7 +11,7 @@ export const rfqGuidance: Record<string, Record<Locale, string[]>> = {
   },
   'international-freight-forwarding': {
     en: ['Air or ocean, import or export, and the Incoterm agreed with the other party if there is one.', 'For ocean: FCL (container type and quantity) or LCL (cbm and kg).', 'For air: gross weight and package dimensions, because the charge follows the greater of actual and volumetric weight.', 'Whether the quotation should cover origin pickup, destination delivery and customs coordination, or only the main leg.'],
-    id: ['Udara atau laut, impor atau ekspor, dan Incoterm yang disepakati dengan pihak lawan bila ada.', 'Untuk laut: FCL (tipe dan jumlah kontainer) atau LCL (cbm dan kg).', 'Untuk udara: berat kotor dan dimensi kemasan, karena biaya mengikuti yang lebih besar antara berat aktual dan berat volumetrik.', 'Apakah quotation perlu mencakup penjemputan di asal, pengantaran di tujuan, dan koordinasi kepabeanan, atau hanya pengiriman utama.'],
+    id: ['Udara atau laut, impor atau ekspor, dan Incoterm yang disepakati dengan pihak lainnya bila ada.', 'Untuk laut: FCL (tipe dan jumlah kontainer) atau LCL (cbm dan kg).', 'Untuk udara: berat kotor dan dimensi kemasan, karena biaya mengikuti yang lebih besar antara berat aktual dan berat volumetrik.', 'Apakah quotation perlu mencakup penjemputan di asal, pengantaran di tujuan, dan koordinasi kepabeanan, atau hanya pengiriman utama.'],
   },
   'customs-brokerage': {
     en: ['Import or export, and the port or airport of entry or exit.', 'The goods in plain words, plus the HS code you were given, marked as supplier-suggested or already confirmed.', 'Which documents you already have: commercial invoice, packing list, transport document, certificates or permits.', 'Any earlier question from the authorities about this product.'],
@@ -23,11 +23,11 @@ export const rfqGuidance: Record<string, Record<Locale, string[]>> = {
   },
   'domestic-distribution': {
     en: ['Pickup and delivery addresses at city level, and the access at each (dock, ramp, size limits for vehicles).', 'FTL: the vehicle body you need. LTL: number of pallets or cartons and their size. FCL or LCL: container type or cbm.', 'The pickup window and the delivery window you need, and who loads and unloads.', 'Whether a signed proof of delivery is required and who signs it.'],
-    id: ['Alamat penjemputan dan pengantaran sampai tingkat kota, dan kondisi akses di tiap lokasi (dock, ramp, batas ukuran kendaraan).', 'FTL: jenis bak kendaraan. LTL: jumlah pallet atau karton dan ukurannya. FCL atau LCL: tipe kontainer atau cbm.', 'Jendela waktu penjemputan dan pengantaran, serta siapa yang memuat dan membongkar.', 'Apakah bukti serah terima bertanda tangan diperlukan dan siapa yang menandatangani.'],
+    id: ['Alamat penjemputan dan pengantaran sampai tingkat kota, dan kondisi akses di setiap lokasi (dock, ramp, batas ukuran kendaraan).', 'FTL: jenis bak kendaraan. LTL: jumlah pallet atau karton dan ukurannya. FCL atau LCL: tipe kontainer atau cbm.', 'Jadwal pickup dan delivery, serta siapa yang memuat dan membongkar.', 'Apakah bukti serah terima bertanda tangan diperlukan dan siapa yang menandatangani.'],
   },
   'project-cargo': {
     en: ['Overall length, width, height and the mass of each piece, with the drawing or datasheet attached if you have it (send it by email after the inquiry).', 'Centre of gravity and lifting or lashing points as shown on the drawing.', 'The route constraints you already know: site access, ground bearing limits, height or width limits.', 'The date window and the party responsible for lifting at each end.'],
-    id: ['Panjang, lebar, tinggi, dan massa tiap unit, dengan gambar teknis atau datasheet bila ada (kirim lewat email setelah permintaan ini).', 'Titik berat serta titik angkat atau pengikatan sesuai gambar.', 'Kendala rute yang sudah diketahui: akses lokasi, batas daya dukung tanah, batas tinggi atau lebar.', 'Jendela waktu dan pihak yang bertanggung jawab atas pengangkatan di masing-masing ujung.'],
+    id: ['Panjang, lebar, tinggi, dan massa tiap unit, dengan gambar teknis atau datasheet bila ada (kirim lewat email setelah permintaan ini).', 'Titik berat serta titik angkat atau pengikatan sesuai gambar.', 'Kendala rute yang sudah diketahui: akses lokasi, batas daya dukung tanah, batas tinggi atau lebar.', 'Rentang jadwal dan pihak yang bertanggung jawab atas pengangkatan di masing-masing ujung.'],
   },
 }
 

@@ -2,7 +2,7 @@ import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from 'remotion'
 import { evolvePath, getLength, getPointAtLength } from '@remotion/paths'
 
 /**
- * The hero's route drawing, a Remotion composition (1000 x 1000, 30 fps, 10 s; the Player plays the first part once and holds, see RouteLinesPlayer). Four routes leave one hub, draw themselves one after another,
+ * The hero's route drawing, a Remotion composition (1000 x 1000, 30 fps, 10 s; the web clock pauses off screen, see RouteLinesPlayer). Four routes leave one hub, draw themselves one after another,
  * and a carrier keeps travelling along each; the whole fades before the loop restarts. It is abstract on purpose: no place is named and no route is
  * claimed, it only says "freight moves along lines". Everything is driven by the frame number, so the same code renders in the Player and in a still.
  */
@@ -20,8 +20,7 @@ const ROUTES = [
 const RED = '#B43E31'
 const INK = '#101720'
 
-export const RouteLines: React.FC = () => {
-  const frame = useCurrentFrame()
+export const RouteLinesFrame: React.FC<{ frame: number }> = ({ frame }) => {
   const whole = interpolate(frame, [0, 10, 250, 292], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
   return (
     <AbsoluteFill style={{ opacity: whole }}>
@@ -51,3 +50,6 @@ export const RouteLines: React.FC = () => {
     </AbsoluteFill>
   )
 }
+
+/** Remotion composition entry; the website also uses the same pure frame renderer. */
+export const RouteLines: React.FC = () => <RouteLinesFrame frame={useCurrentFrame()} />

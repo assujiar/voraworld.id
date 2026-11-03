@@ -18,7 +18,7 @@ export function pageMetadata({ locale, path, title, description, type = 'website
     title: { absolute: title },
     description,
     alternates: { canonical: at(locale), languages: Object.fromEntries((languages ?? ['en', 'id']).map((l) => [l, at(l)])) },
-    openGraph: { title, description, type, url: at(locale) },
+    openGraph: { title, description, type, url: at(locale), siteName: 'VORA', locale: locale === 'id' ? 'id_ID' : 'en_US', alternateLocale: locale === 'id' ? ['en_US'] : ['id_ID'], images: [{ url: absoluteUrl('/static/assets/vora-social.png'), width: 1200, height: 630, alt: 'VORA · Freight & Logistics' }] },
     twitter: { card: 'summary_large_image' },
     robots: noindex ? { index: false, follow: false } : undefined,
   }

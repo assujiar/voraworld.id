@@ -1,3 +1,6 @@
+import { pageDescriptions } from '@/content/page-seo'
+import { IllustrationFigure } from '@/components/atelier/IllustrationFigure'
+import { ObjectArt } from '@/components/atelier/ObjectArt'
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
 import { FoldOnPhone } from '@/components/site/FoldOnPhone'
@@ -7,12 +10,13 @@ import { localeOf, type LocaleParams } from '@/lib/page'
 import { pageMetadata } from '@/lib/metadata'
 import { getPublishedPage } from '@/server/site'
 
-/** One picture per industry, in the order of the list: a warehouse, a phone tracking a truck, equipment on a trailer, cartons on a pallet. */
-const ART = ['vora-visual-64.webp', 'vora-visual-51.webp', 'vora-visual-44.webp', 'vora-visual-62.webp']
+/** Industry overview and handling detail have separate, relevant artwork. */
+const ART = ['n04-manufacturing', 'n05-ecommerce-fulfillment', 'heavy-cargo', 'export-crate'] as const
+const DETAIL_ART = ['loading-bay', 'pallets', 'n03-project-engineering', 'cargo-assortment'] as const
 
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await localeOf(params)
-  return pageMetadata({ locale, path: '/solutions', title: `${siteText[locale].solutions_title} | VORA`, description: seoDescription[locale] })
+  return pageMetadata({ locale, path: '/solutions', title: `${siteText[locale].solutions_title} | VORA`, description: pageDescriptions[locale].solutions })
 }
 
 export default async function Solutions({ params }: LocaleParams) {
@@ -20,23 +24,15 @@ export default async function Solutions({ params }: LocaleParams) {
   const t = makeT(locale)
   const custom = await getPublishedPage('solutions', locale)
   return (
-    <>
-      <section className="v-page">
-        <div className="v-wrap v-page__grid">
-          <div>
-            <h1>{siteText[locale].solutions_title}</h1>
-            <p className="v-lead">{t('Different industries come with different cargo requirements. These examples explain approaches, not claims of contracted customers.', 'Setiap industri memiliki kebutuhan kargo yang berbeda. Contoh ini menjelaskan pendekatan, bukan klaim pelanggan berkontrak.')}</p>
-          </div>
-          <img className="v-page__art" src="/static/assets/vora-visual-62.webp" width={440} height={440} alt={t('Cartons stacked on a pallet', 'Karton bertumpuk di atas pallet')} />
-        </div>
-      </section>
+    <div className="hybrid-preserved hybrid-solutions">
+      <section className="x-solutions"><div className="v-wrap"><div className="x-solutions__head"><p className="a-label">SOLUTIONS / CARGO FIRST</p><h1>{t('Different industries. Different demands.', 'Beda industri. Beda kebutuhan.')}</h1><p className="a-intro">{t('Start with your operating constraints. Build the transport, handling and documentation scope around them.', 'Mulai dari kebutuhan operasional Anda. Susun cakupan angkutan, handling, dan dokumentasi yang sesuai.')}</p></div><nav className="x-industry-plates" aria-label={t('Explore industry requirements','Kenali kebutuhan industri')}>{solutions[locale].map(([title],i)=><a key={title} href={`#industry-${i+1}`}><span className="a-label">0{i+1} / INDUSTRY</span><ObjectArt asset={ART[i]}/><strong>{title}</strong><span className="x-industry-arrow" aria-hidden="true">↓</span></a>)}</nav></div></section>
       <section className="v-section v-section--tight">
         <div className="v-wrap v-bands">
           {solutions[locale].map(([title, detail], i) => {
             const g = solutionGuides[locale][i]
             return (
-              <article key={title} className="v-band" aria-labelledby={`sol-${i}`}>
-                {ART[i] ? <img className="v-band__art" src={`/static/assets/${ART[i]}`} width={176} height={176} loading="lazy" alt="" /> : null}
+              <article key={title} id={`industry-${i+1}`} className={`v-band${i === 2 ? ' v-band--engineering' : ''}`} aria-labelledby={`sol-${i}`}>
+                {i === 2 ? <IllustrationFigure asset="n03-project-engineering" locale={locale} className="v-band__art illustration-figure--engineering" sizes="(max-width: 700px) 92vw, 360px" caption={t('Engineering illustration; dimensions are examples.', 'Ilustrasi perencanaan; ukuran yang ditampilkan adalah contoh.')} /> : <ObjectArt className="v-band__art" asset={DETAIL_ART[i]} sizes="120px" />}
                 <header><h2 className="v-h2--section" id={`sol-${i}`}>{title}</h2><p>{detail}</p></header>
                 {g ? (
                   <div className="v-band__cols">
@@ -58,6 +54,6 @@ export default async function Solutions({ params }: LocaleParams) {
       <FoldOnPhone />
       <CustomSections locale={locale} sections={custom?.sections} />
       <CtaBand locale={locale} />
-    </>
+    </div>
   )
 }

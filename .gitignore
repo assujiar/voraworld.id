@@ -16,3 +16,8 @@ next-env.d.ts
 /coverage/
 test-results/
 playwright-report/
+
+# Local visual-review evidence (selected evidence is copied explicitly into docs/qa).
+.review-output/
+
+.review-final/

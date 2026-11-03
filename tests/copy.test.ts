@@ -1,6 +1,8 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { comparisonOptions, glossary } from '@/content/public-ux'
+import { documentSamples, sampleNotice } from '@/content/document-samples'
 import { faqEntries } from '@/content/faq'
 import { FOOTER_DESCRIPTION } from '@/content/footer'
 import { rfqGuidance } from '@/content/rfq-guidance'
@@ -35,6 +37,7 @@ function sentences(): Array<{ where: string; text: string }> {
   }
   walk(JSON.parse(readFileSync('src/content/site.json', 'utf8')), 'site.json')
   walk(serviceExtras, 'service-extras.ts')
+  walk(comparisonOptions,'public-ux.ts');walk(glossary,'glossary');walk(documentSamples,'document-samples.ts');walk(sampleNotice,'sample-notice');
   walk(faqEntries, 'faq.ts'); walk(workingNotes, 'working-notes.ts'); walk(rfqGuidance, 'rfq-guidance.ts'); walk(FOOTER_DESCRIPTION, 'footer.ts'); walk(solutionGuides, 'solution-guides.ts')
   for (const [name, value] of Object.entries(guides)) walk(value, `service-guides.ts:${name}`)
   const files = (dir: string): string[] => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? files(p) : /\.tsx?$/.test(p) ? [p] : [] })

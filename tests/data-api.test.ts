@@ -126,7 +126,7 @@ describe('database functions', () => {
   })
 
   it('report an unexpected failure as an ordinary error that keeps the SQLSTATE', async () => {
-    const err = await rpc('vr_next_number', { p_kind: 'INV', p_owner: 'not-a-code', p_date: null }).catch((e) => e)
+    const err = await rpc<{ message: string; code: string }>('vr_next_number', { p_kind: 'INV', p_owner: 'not-a-code', p_date: null }).catch((e) => e)
     expect(err).toBeInstanceOf(Error)
     expect(err).not.toBeInstanceOf(ActionError)
     expect(err.message).toContain('Invalid owner code')

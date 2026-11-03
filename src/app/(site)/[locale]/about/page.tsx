@@ -1,115 +1,37 @@
-import { Commitments } from '@/components/about/Commitments'
-import { Constellation } from '@/components/about/Constellation'
-import { Founder } from '@/components/about/Founder'
-import { Reveal } from '@/components/about/Reveal'
-import { HeroStage } from '@/components/about/HeroStage'
-import { MarkField } from '@/components/about/MarkField'
-import { RoutesStory } from '@/components/about/RoutesStory'
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
-import { ABOUT, CAPABILITIES, COMMITMENTS, COMPANY, FOUNDER, MEMORY, pick } from '@/content/about'
-import { makeT, seoDescription, seoTitles, serviceGroups, siteText } from '@/content'
+import { ServiceCards } from '@/components/site/ServiceCards'
+import { BrandMotion } from '@/components/atelier/BrandMotion'
+import { ProcessRail } from '@/components/atelier/ProcessRail'
+import { makeT, seoTitles } from '@/content'
 import { localeOf, type LocaleParams } from '@/lib/page'
 import { pageMetadata } from '@/lib/metadata'
 import { getPublishedPage, getSettings } from '@/server/site'
-
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await localeOf(params)
-  return pageMetadata({ locale, path: '/about', title: seoTitles[locale].about, description: seoDescription[locale] })
+  return pageMetadata({ locale, path: '/about', title: seoTitles[locale].about, description: locale === 'en' ? 'Meet VORA, the logistics brand of PT Satu Arah International. Learn how cargo requirements, commercial scope and handovers shape our approach.' : 'Kenali VORA, brand logistik PT Satu Arah International. Kebutuhan kargo, cakupan komersial, dan serah terima menjadi dasar cara kerja kami.' })
 }
-
-/**
- * About: the brand told through motion. Seven Remotion compositions (see src/motion/about.tsx), each answering the visitor in its own way: the logo follows the pointer, the
- * statement and the routes follow the scroll, the founder's four problems close one by one, five services light up on choice, the three steps build the A, a document is scanned,
- * and a field of marks answers a touch. All the words are real text on the page (the motion is decoration), and nothing here claims more than the rest of the site does.
- */
 export default async function About({ params }: LocaleParams) {
-  const locale = await localeOf(params)
-  const t = makeT(locale)
-  const text = siteText[locale]
+  const locale = await localeOf(params), t = makeT(locale)
   const [settings, custom] = await Promise.all([getSettings(), getPublishedPage('about', locale)])
-  const facts: Array<[string, string]> = [
-    [t('Company', 'Perusahaan'), settings.legal_name || 'PT Satu Arah International'],
-    ...(settings.address ? [[t('Office', 'Kantor'), settings.address] as [string, string]] : []),
-    ...(settings.email ? [[t('Email', 'Email'), settings.email] as [string, string]] : []),
+  const facts = [[t('Legal entity', 'Badan usaha'), settings.legal_name || 'PT Satu Arah International'], ['Email', settings.email], [t('Office', 'Kantor'), settings.address]].filter(([,v]) => Boolean(v))
+  const steps: Array<[string, string]> = locale === 'en' ? [
+    ['Ask for the details that change the plan', 'Commodity, packed dimensions, handling restrictions, trade terms and site access.'],
+    ['Write down the responsibilities', 'Specify scope, assumptions, costs and the points where cargo changes hands.'],
+    ['Keep the record with the work', 'Connect quotations, delivery evidence and commercial documents to the shipment.'],
+  ] : [
+    ['Tanyakan detail yang menentukan rencana', 'Komoditas, dimensi kemasan, batasan handling, trade terms, serta akses lokasi.'],
+    ['Perjelas pembagian tanggung jawab', 'Tuliskan cakupan, asumsi, biaya, dan titik perpindahan barang.'],
+    ['Simpan catatan bersama pekerjaannya', 'Hubungkan quotation, bukti delivery, dan dokumen komersial dengan shipment.'],
   ]
-  const services = Object.entries(serviceGroups).map(([key, g]) => ({ key, name: g[locale].name, strap: g[locale].strap, intro: g[locale].intro, href: `/${locale}/services/${key}` }))
-  const items = FOUNDER.items.map((i) => ({ title: pick(i.title, locale), problem: pick(i.problem, locale), answer: pick(i.answer, locale) }))
-  return (
-    <>
-      <link rel="stylesheet" href="/static/css/about.css?v=10" precedence="default" />
-      <HeroStage hint={pick(ABOUT.hint.hero, locale)} hintTouch={pick(ABOUT.hint.hintTouch, locale)}>
-        <div className="ab-wrap ab-hero__copy">
-          <p className="ab-eyebrow">{pick(ABOUT.eyebrow, locale)}</p>
-          <h1 className="ab-hero__title">{text.about_title}</h1>
-          <p className="ab-lead">{text.about_body}</p>
-        </div>
-      </HeroStage>
-
-      <RoutesStory label={pick(ABOUT.manifesto.label, locale)} text={pick(ABOUT.manifesto.words, locale)} labels={{ stops: ABOUT.manifesto.stops[locale], scope: pick(ABOUT.manifesto.scope, locale), confirmed: pick(ABOUT.manifesto.confirmed, locale) }} />
-
-      <section className="ab-section ab-founder" id="founder">
-        <div className="ab-wrap">
-          <Reveal>
-            <p className="ab-eyebrow">{pick(FOUNDER.label, locale)}</p>
-            <h2 className="ab-h">{pick(FOUNDER.title, locale)}</h2>
-            <div className="ab-founder__intro">
-              <p className="ab-lead">{pick(FOUNDER.lead, locale)}</p>
-              <p>{pick(FOUNDER.body, locale)}</p>
-            </div>
-            <p className="ab-choose">{pick(FOUNDER.choose, locale)}</p>
-          </Reveal>
-          <Founder items={items} labels={{ problem: pick(FOUNDER.problemLabel, locale), answer: pick(FOUNDER.answerLabel, locale), open: pick(FOUNDER.open, locale), closed: pick(FOUNDER.closed, locale), progress: pick(FOUNDER.progress, locale), complete: pick(FOUNDER.complete, locale) }} />
-          <p className="ab-after">{pick(FOUNDER.after, locale)}</p>
-          <p className="ab-byline">{pick(FOUNDER.byline, locale)}</p>
-        </div>
-      </section>
-
-      <section className="ab-section ab-dark ab-capabilities">
-        <div className="ab-wrap">
-          <Reveal>
-            <p className="ab-eyebrow">{pick(CAPABILITIES.label, locale)}</p>
-            <h2 className="ab-h">{pick(CAPABILITIES.title, locale)}</h2>
-            <p className="ab-lead">{pick(CAPABILITIES.body, locale)}</p>
-          </Reveal>
-          <Constellation services={services} more={pick(CAPABILITIES.more, locale)} />
-        </div>
-      </section>
-
-      <section className="ab-section ab-how" id="how">
-        <div className="ab-wrap">
-          <Reveal>
-            <p className="ab-eyebrow">{pick(COMMITMENTS.label, locale)}</p>
-            <h2 className="ab-h">{pick(COMMITMENTS.title, locale)}</h2>
-          </Reveal>
-          <Commitments steps={COMMITMENTS.steps.map((s) => ({ title: pick(s.title, locale), text: pick(s.text, locale) }))} chips={COMMITMENTS.chips.map((c) => pick(c, locale))} hint={pick(COMMITMENTS.hint, locale)} />
-        </div>
-      </section>
-
-      <section className="ab-section ab-company" id="company">
-        <div className="ab-wrap ab-company__grid">
-          <Reveal>
-            <p className="ab-eyebrow">{pick(COMPANY.label, locale)}</p>
-            <h2 className="ab-h">{pick(COMPANY.title, locale)}</h2>
-            <p className="ab-lead">{pick(COMPANY.body, locale)}</p>
-          </Reveal>
-          <Reveal delay={120}>
-            <dl className="ab-facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
-            <p className="ab-note">{pick(COMPANY.note, locale)}</p>
-          </Reveal>
-        </div>
-      </section>
-
-      <MarkField>
-        <p className="ab-eyebrow">VORA</p>
-        <h2 className="ab-field__tagline">{MEMORY.tagline}</h2>
-        <p>{pick(MEMORY.body, locale)}</p>
-        <p className="ab-actions"><a className="ab-btn ab-btn--solid" href={`/${locale}/request-quote`}>{pick(ABOUT.cta.quote, locale)}</a></p>
-        <p className="ab-hint" aria-hidden="true">{pick(MEMORY.hint, locale)}</p>
-      </MarkField>
-
-      <CustomSections locale={locale} sections={custom?.sections} />
-      <CtaBand locale={locale} />
-    </>
-  )
+  return <>
+    <section className="a-about"><div className="v-wrap">
+      <div className="a-about__cover"><div><p className="a-label">ABOUT / VORA</p><h1>{t('A clear direction for complex movements.', 'Arah yang jelas untuk pengiriman yang kompleks.')}</h1><p className="a-intro">{t('VORA is the logistics brand of PT Satu Arah International. We bring cargo requirements, transport choices and commercial responsibilities into one practical conversation.', 'VORA adalah brand logistik PT Satu Arah International. Kami membahas kebutuhan barang, pilihan angkutan, dan tanggung jawab komersial sebagai satu rencana kerja.')}</p><a className="v-link" href={`/${locale}/contact`}>{t('Start a conversation', 'Mulai pembahasan')}</a></div><div className="a-about__mark"><BrandMotion study="origin" mark loop label="VORA A" /></div></div>
+      <div className="a-about__principle"><div><p className="a-label">01 / {t('Our approach', 'Pendekatan kami')}</p><h2>{t('Cargo is physical. The details should be concrete.', 'Barangnya nyata. Rencananya harus konkret.')}</h2></div><p>{t('A route on paper becomes a sequence of real handovers. The loading bay, terminal, documentation desk and receiving site each have their own constraints. Our approach starts with those details, then connects the service scope around them.', 'Rute di atas kertas akan dijalankan lewat serangkaian handover di lapangan. Area loading, terminal, meja dokumentasi, dan lokasi penerimaan punya batasan masing-masing. Detail inilah yang menjadi dasar penyusunan cakupan layanan.')}</p></div>
+    </div></section>
+    <section className="a-brief"><div className="v-wrap a-brief__grid"><div><p className="a-label">02 / {t('Working principles', 'Prinsip kerja')}</p><h2>{t('Useful questions. Explicit responsibilities.', 'Pertanyaan yang tepat. Tanggung jawab yang jelas.')}</h2><p className="a-intro" style={{marginTop:24}}>{t('Operational experience informs the questions we ask. Every proposal still has to fit the actual cargo, route and provider capability.', 'Pengalaman operasional membentuk pertanyaan yang kami ajukan. Setiap proposal tetap perlu sesuai dengan barang, rute, dan kapabilitas pelaksana.')}</p></div><ProcessRail locale={locale} steps={steps} accent="flow-ribbon" /></div></section>
+    <section className="v-section"><div className="v-wrap"><div className="a-section-head"><div><p className="a-label">03 / {t('What we coordinate', 'Cakupan layanan')}</p><h2>{t('One shipment can need several kinds of expertise.', 'Satu shipment bisa membutuhkan beberapa layanan.')}</h2></div><p>{t('International freight, customs, warehousing, domestic distribution and project cargo. Choose the stages that belong in your brief.', 'International freight, customs, pergudangan, distribusi domestik, serta project cargo. Pilih tahapan yang memang dibutuhkan.')}</p></div><ServiceCards locale={locale} context="about" /></div></section>
+    <section className="a-about"><div className="v-wrap a-about__facts"><div><p className="a-label">04 / {t('Company details', 'Identitas perusahaan')}</p><h2>{t('Know who you are working with.', 'Kenali pihak yang menangani kebutuhan Anda.')}</h2></div><dl>{facts.map(([k,v]) => <div key={k}><dt>{k}</dt><dd>{k === 'Email' ? <a className="v-link" href={`mailto:${v}`}>{v}</a> : v}</dd></div>)}</dl></div></section>
+    <CustomSections locale={locale} sections={custom?.sections} /><CtaBand locale={locale} />
+  </>
 }

@@ -1,3 +1,4 @@
+import { ObjectArt } from '@/components/atelier/ObjectArt'
 import { customsNote, customsStages, domesticFit, forwardingLedger, projectInputs, warehouseIo } from '@/content/service-guides'
 import { makeT, type Locale } from '@/content'
 
@@ -83,7 +84,8 @@ export function WarehouseSpread({ locale }: { locale: Locale }) {
 
 /** Domestic: five questions that choose the mode. */
 export function DomesticFit({ locale }: { locale: Locale }) {
-  return <ol className="v-fit">{domesticFit[locale].map(([q, a]) => <li key={q}><strong>{q}</strong><span>{a}</span></li>)}</ol>
+  const t = makeT(locale)
+  return <div className="a-fit-with-art"><figure><ObjectArt asset="urgent-delivery" sizes="(max-width: 600px) 150px, 300px" /><figcaption>{t('The delivery window is one input. Capacity, access and handover decide the workable mode.', 'Jadwal delivery adalah satu pertimbangan. Kapasitas, akses, dan handover menentukan moda yang bisa dijalankan.')}</figcaption></figure><ol className="v-fit">{domesticFit[locale].map(([q, a]) => <li key={q}><strong>{q}</strong><span>{a}</span></li>)}</ol></div>
 }
 
 /** Project cargo: a drawing-style fragment (no dimensions are printed: it shows what a brief must carry) beside the technical-input rail. */

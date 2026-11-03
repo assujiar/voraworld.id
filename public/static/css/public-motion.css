@@ -1,0 +1,34 @@
+/* Autoplay decoration. Layout, information and controls retain their static geometry. */
+.vora-brand-motion{display:block;position:relative;width:100%;line-height:0;isolation:isolate}
+.vora-brand-motion__art,.vora-brand-motion__art>svg{display:block;width:100%;height:100%;overflow:visible}
+.v-brand>.vora-brand-motion{width:148px;max-width:100%}
+.v-footer__identity>.vora-brand-motion,.a-about__mark>.vora-brand-motion{width:100%;max-width:100%;filter:none}
+.v-footer__brand{display:grid;gap:8px;justify-items:start;margin-bottom:14px}
+.v-footer .v-footer__home{padding:0;width:fit-content;line-height:0}
+.v-footer .v-footer__tag{margin:0;max-width:100%;font-size:clamp(1rem,1.2vw,1.125rem);line-height:1.35;font-weight:650;font-stretch:103%;letter-spacing:-.015em;color:#fff}
+.a-about__mark .vora-brand-motion__art svg{overflow:visible}
+.a-home__routes{position:absolute;inset:0 0 65px;z-index:0;pointer-events:none;opacity:.46;overflow:hidden;border-radius:24px}
+.a-home__routes .v-hero__routes{position:absolute;inset:0;width:100%;height:100%;opacity:1}
+.a-arrival[data-motion-state=running]>.a-home__relief{animation:vora-relief-breathe 14s ease-in-out infinite}
+.a-arrival[data-motion-state=running]>.a-stage__architecture{animation:vora-surface-breathe 12s ease-in-out infinite}
+.a-arrival[data-motion-state=running] .a-route-map__line i{animation:vora-route-carry 2.8s ease-in-out infinite}
+.a-arrival[data-motion-state=running] .a-route-map__line i:nth-child(2){animation-delay:.22s}
+.a-arrival[data-motion-state=running] .a-route-map__line i:nth-child(3){animation-delay:.44s}
+[data-motion-region=process][data-motion-state=running] .a-process__n{animation:vora-step-breathe 9s ease-in-out infinite}
+[data-motion-region=process][data-motion-state=running] li:nth-child(2) .a-process__n{animation-delay:3s}
+[data-motion-region=process][data-motion-state=running] li:nth-child(3) .a-process__n{animation-delay:6s}
+[data-motion-region=records][data-motion-state=running] li::before{animation:vora-record-breathe 10.5s ease-in-out infinite}
+[data-motion-region=records][data-motion-state=running] li:nth-child(2)::before{animation-delay:3.5s}
+[data-motion-region=records][data-motion-state=running] li:nth-child(3)::before{animation-delay:7s}
+@keyframes vora-relief-breathe{0%,100%{border-top-left-radius:42%}50%{border-top-left-radius:49%}}
+@keyframes vora-surface-breathe{0%,100%{background-position:0 0}50%{background-position:8px 0}}
+@keyframes vora-route-carry{0%,65%,100%{opacity:.34;scale:1}25%{opacity:1;scale:1.4}}
+@keyframes vora-step-breathe{0%,34%,100%{box-shadow:2px 3px 5px #1017200d,-2px -2px 5px #fff}17%{box-shadow:0 0 0 3px #b43e3116,2px 4px 8px #10172012}}
+@keyframes vora-record-breathe{0%,34%,100%{opacity:.55}17%{opacity:1}}
+@media(max-width:600px){.a-home__routes{inset:0 0 55px;opacity:.35}}
+@media(prefers-reduced-motion:reduce){
+  .v-footer .v-footer__tag{transform:none!important;opacity:1!important}
+  .a-home__routes{display:none!important}
+  .a-arrival *,.a-arrival::before,.a-arrival::after,[data-motion-region] *{animation:none!important;transition:none!important}
+}
+@media print{.a-home__routes{display:none!important}}

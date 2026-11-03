@@ -3,7 +3,7 @@ import type { Locale } from './index'
 /**
  * The words of the About page, English and Bahasa Indonesia side by side. House rules for this copy (and for any edit of it): plain sentences with concrete nouns; nothing that
  * cannot be shown (no size, age, coverage, client, result or price); no superlatives and no "journey"; a commitment is only written if the page already behaves that way.
- * The founder is not named and no story is invented beyond what is known: more than ten years in freight forwarding, logistics and cargo, and the problems that work kept showing.
+ * The founder is not named and no story is invented beyond what is known: hands-on experience in freight forwarding, logistics and cargo, and the problems that work kept showing.
  * To add the founder's name or a real episode, edit FOUNDER below.
  */
 export interface Bi { en: string; id: string }
@@ -30,8 +30,8 @@ export const FOUNDER = {
   label: { en: 'Why VORA exists', id: 'Mengapa VORA ada' },
   title: { en: 'The same problems kept coming back.', id: 'Masalahnya selalu berulang.' },
   lead: {
-    en: 'VORA was started by a professional with more than ten years in freight forwarding, logistics and cargo.',
-    id: 'VORA didirikan oleh seorang profesional yang sudah lebih dari sepuluh tahun bekerja di freight forwarding, logistik, dan kargo.',
+    en: 'VORA was started by a professional with hands-on experience in freight forwarding, logistics and cargo.',
+    id: 'VORA didirikan oleh seorang profesional yang sudah pengalaman operasional di freight forwarding, logistik, dan kargo.',
   },
   body: {
     en: 'In that time the same problems came back, shipment after shipment. Most of them had little to do with the truck or the vessel. They came from what happened around the cargo: who had agreed to what, which document said what, and who was meant to act next.',

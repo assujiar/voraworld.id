@@ -71,7 +71,7 @@ export const modeGuides: Record<string, Record<Locale, ModeGuide>> = {
       points: [
         ['Cargo acceptance', 'The airline accepts the cargo against its own conditions: packing, labelling, dimensions and any special handling have to be declared before the cargo arrives at the terminal.'],
         ['Security screening', 'Cargo has to pass screening and be documented as secure. A consignment that cannot be screened as packed has to be repacked, which costs the cut-off.'],
-        ['Booking and cut-off', 'A booking secures space on a flight; the cut-off is the latest time the cargo and documents can be at the terminal. Missing it moves the cargo to the next flight.'],
+        ['Booking and cut-off', 'A confirmed booking identifies the requested flight arrangement. Cargo and documents must meet the applicable cut-offs; a missed cut-off requires a revised booking, subject to space and acceptance.'],
         ['Destination scope', 'Say whether the quotation ends at the destination airport or includes delivery. Export documents for the consignee must be consistent with the invoice.'],
       ],
       ask: ['Origin airport, destination airport and requested flight window', 'Goods description, packaging, number of pieces, gross weight and dimensions', 'Any special handling: batteries, liquids, temperature, fragile goods', 'Shipper and consignee names exactly as they should print on the air waybill'],
@@ -82,7 +82,7 @@ export const modeGuides: Record<string, Record<Locale, ModeGuide>> = {
       points: [
         ['Penerimaan kargo', 'Maskapai menerima kargo menurut ketentuannya sendiri: kemasan, pelabelan, dimensi, dan penanganan khusus harus dideklarasikan sebelum kargo tiba di terminal.'],
         ['Pemeriksaan keamanan', 'Kargo harus melewati screening dan didokumentasikan sebagai aman. Barang yang tidak bisa diperiksa dalam kemasannya harus dikemas ulang, dan itu memakan waktu menuju cut-off.'],
-        ['Booking dan cut-off', 'Booking mengamankan ruang di penerbangan; cut-off adalah batas waktu terakhir kargo dan dokumen berada di terminal. Terlewat berarti pindah ke penerbangan berikutnya.'],
+        ['Booking dan cut-off', 'Booking yang dikonfirmasi menjelaskan pengaturan penerbangan. Kargo dan dokumen harus memenuhi cut-off; bila terlewat, booking perlu disesuaikan dengan space serta acceptance yang tersedia.'],
         ['Cakupan di tujuan', 'Tentukan apakah quotation berakhir di bandara tujuan atau termasuk pengantaran. Dokumen ekspor untuk consignee harus konsisten dengan invoice.'],
       ],
       ask: ['Bandara asal, bandara tujuan, dan rentang penerbangan yang diminta', 'Deskripsi barang, kemasan, jumlah koli, berat kotor, dan dimensi', 'Penanganan khusus: baterai, cairan, suhu, barang mudah pecah', 'Nama shipper dan consignee persis seperti yang harus tercetak di air waybill'],
@@ -123,7 +123,7 @@ export const modeGuides: Record<string, Record<Locale, ModeGuide>> = {
         ['Windows and proof of delivery', 'Agree the pickup window, the delivery window and who signs for the goods. The signed proof of delivery is the record of the handover.'],
       ],
       ask: ['Pickup and delivery addresses with a contact at each', 'Cargo type, weight, dimensions and number of pallets or pieces', 'Who loads and unloads, and with what equipment', 'Pickup window, delivery window and the proof of delivery you need'],
-      limit: 'We coordinate vehicles for the movement. We do not state that VORA owns a fleet, and no transit time is promised before the booking is confirmed.',
+      limit: 'Vehicle type, loading/unloading responsibility, waiting terms and delivery window are agreed for the assignment. Capacity and routing follow provider confirmation.',
     },
     id: {
       title: 'Yang menentukan full truckload',
@@ -134,7 +134,7 @@ export const modeGuides: Record<string, Record<Locale, ModeGuide>> = {
         ['Jendela waktu dan bukti serah terima', 'Sepakati jendela penjemputan, jendela pengantaran, dan siapa yang menandatangani penerimaan. Bukti serah terima bertanda tangan adalah catatan serah terimanya.'],
       ],
       ask: ['Alamat penjemputan dan pengantaran dengan kontak di masing-masing', 'Jenis barang, berat, dimensi, dan jumlah pallet atau koli', 'Siapa yang memuat dan membongkar, dan dengan alat apa', 'Jendela penjemputan, jendela pengantaran, dan bukti serah terima yang dibutuhkan'],
-      limit: 'Kami mengoordinasikan kendaraan untuk pengiriman. Kami tidak menyatakan VORA memiliki armada, dan tidak ada waktu tempuh yang dijanjikan sebelum booking dikonfirmasi.',
+      limit: 'Tipe unit, tanggung jawab muat/bongkar, ketentuan waktu tunggu, serta jadwal delivery disepakati untuk penugasan. Kapasitas dan rute mengikuti konfirmasi provider.',
     },
   },
   'domestic-distribution/ltl': {

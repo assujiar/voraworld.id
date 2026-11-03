@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { sql } from './helpers/db'
-import { ensurePublicCode, nextNumber } from '@/server/numbering'
-import { createVerification, findVerification, getVerification } from '@/server/verification'
+import type { TransactionSql } from 'postgres'
+const tx = <T>(work: (sql: TransactionSql) => Promise<T>): Promise<T> => sql.begin(work) as unknown as Promise<T>
+import { ensurePublicCode, nextNumber, createVerification } from './helpers/legacy-numbering'
+import { findVerification, getVerification } from '@/server/verification'
 import { cleanHtml } from '@/server/sanitize'
 import { settingMap, saveSettings } from '@/server/settings'
 import { slugify } from '@/server/slug'
@@ -84,10 +86,10 @@ describe('verification tokens', () => {
   it('are opaque, looked up by hash, and revocable', async () => {
     const token = await createVerification(sql, 'invoice', 42)
     expect(token).toMatch(/^[A-Za-z0-9_-]{48}$/)
-    expect(await findVerification(sql, token)).toMatchObject({ kind: 'invoice', documentId: 42, revoked: false })
-    expect((await getVerification(sql, 'invoice', 42))?.token).toBe(token)
-    expect(await findVerification(sql, token + 'x')).toBeUndefined()
-    expect(await findVerification(sql, 'x'.repeat(200))).toBeUndefined()
+    expect(await findVerification(token)).toMatchObject({ kind: 'invoice', documentId: 42, revoked: false })
+    expect((await getVerification('invoice', 42))?.token).toBe(token)
+    expect(await findVerification(token + 'x')).toBeUndefined()
+    expect(await findVerification('x'.repeat(200))).toBeUndefined()
     const [row] = await sql`select token_hash from document_verification_tokens where token = ${token}`
     expect(row.tokenHash).not.toContain(token)
   })
@@ -111,9 +113,9 @@ describe('settings and slugs', () => {
   it('serve the approved contact details unless an admin overrides them', async () => {
     await sql`delete from settings where key in ('email','address')`
     expect(await settingMap()).toMatchObject({ email: 'info@voraworld.id', address: expect.stringContaining('Gedung Nucira') })
-    await saveSettings(sql, ['email'], { email: ' sales@voraworld.id ' })
+    await saveSettings(['email'], { email: ' sales@voraworld.id ' })
     expect((await settingMap()).email).toBe('sales@voraworld.id')
-    await saveSettings(sql, ['email'], { email: 'x'.repeat(20000) })
+    await saveSettings(['email'], { email: 'x'.repeat(20000) })
     expect((await settingMap()).email).toHaveLength(12000)
   })
   it('slugify matches the previous behaviour', () => {

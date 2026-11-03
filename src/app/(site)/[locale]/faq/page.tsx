@@ -1,3 +1,5 @@
+import { ObjectArt } from '@/components/atelier/ObjectArt'
+import { pageDescriptions } from '@/content/page-seo'
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
 import { faqEntries } from '@/content/faq'
@@ -10,15 +12,15 @@ import { getPublishedPage } from '@/server/site'
 
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await localeOf(params)
-  return pageMetadata({ locale, path: '/faq', title: `${siteText[locale].faq_title} | VORA`, description: seoDescription[locale] })
+  return pageMetadata({ locale, path: '/faq', title: `${siteText[locale].faq_title} | VORA`, description: pageDescriptions[locale].faq })
 }
 
 export default async function Faq({ params }: LocaleParams) {
   const locale = await localeOf(params)
   const t = makeT(locale)
-  const [faqs, custom] = await Promise.all([many('faqs', (q) => q.eq('visible', true).order('position').order('id'), 'question,answer'), getPublishedPage('faq', locale)])
+  const [faqs, custom] = await Promise.all([many('faqs', (q) => q.eq('visible', true).order('position').order('id'), 'id,question,answer'), getPublishedPage('faq', locale)])
   // Questions entered in the admin portal win; until there are any, the reviewed answers below are shown.
-  const items = faqs.length ? faqs.map((f) => ({ q: f.question as string, a: f.answer as string })) : faqEntries.map((f) => ({ q: f.q[locale], a: f.a[locale] }))
+  const items = faqs.length ? faqs.map((f) => ({ id:`question-${f.id}`, q: f.question as string, a: f.answer as string })) : faqEntries.map((f) => ({ id:f.id, q: f.q[locale], a: f.a[locale] }))
   const ld = { '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: locale, mainEntity: items.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })) }
   return (
     <>
@@ -28,9 +30,11 @@ export default async function Faq({ params }: LocaleParams) {
           <div>
             <h1 className="v-h2" style={{ fontSize: 'clamp(2.2rem,4.8vw,4rem)' }}>{siteText[locale].faq_title}</h1>
             <p className="v-muted" style={{ marginTop: 18 }}>{t('Ask for confirmation when your shipment has regulatory or technical requirements.', 'Mintalah konfirmasi bila pengiriman Anda memiliki persyaratan regulasi atau teknis.')}</p>
+            <ObjectArt asset="service-support" className="a-faq-art" sizes="136px" />
           </div>
           <div className="v-faq__list">
-            {items.map((f, i) => <details key={i}><summary>{f.q}</summary><p>{f.a}</p></details>)}
+            {items.map((f, i) => <details key={i} id={f.id}><summary>{f.q}</summary><p>{f.a}</p></details>)}
+            <p className="v-note"><a className="v-link" href={`/${locale}/document-samples`}>{t('View sample shipment documents', 'Lihat contoh dokumen pengiriman')}</a></p>
             <p className="v-note">{t('Your question is not here?', 'Pertanyaan Anda belum ada?')} <a className="v-link" href={`/${locale}/contact`}>{t('Write to us', 'Tulis kepada kami')}</a>.</p>
           </div>
         </div>

@@ -1,5 +1,7 @@
+import { pageDescriptions } from '@/content/page-seo'
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
+import { ServiceTools } from '@/components/site/ServiceTools'
 import { ServiceCards } from '@/components/site/ServiceCards'
 import { makeT, seoDescription, seoTitles, serviceGroups, serviceModes } from '@/content'
 import { localeOf, type LocaleParams } from '@/lib/page'
@@ -8,7 +10,7 @@ import { getPublishedPage } from '@/server/site'
 
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await localeOf(params)
-  return pageMetadata({ locale, path: '/services', title: seoTitles[locale].services, description: seoDescription[locale] })
+  return pageMetadata({ locale, path: '/services', title: seoTitles[locale].services, description: pageDescriptions[locale].services })
 }
 
 export default async function Services({ params }: LocaleParams) {
@@ -18,16 +20,9 @@ export default async function Services({ params }: LocaleParams) {
   const modes = Object.entries(serviceGroups).flatMap(([slug, g]) => g.modes.map((m) => ({ slug, mode: m, group: g[locale].name, copy: serviceModes[slug][m][locale] })))
   return (
     <>
-      <section className="v-page">
-        <div className="v-wrap v-page__grid">
-          <div>
-            <h1>{t('Five services, each with its own scope.', 'Lima layanan, masing-masing dengan cakupannya sendiri.')}</h1>
-            <p className="v-lead">{t('International freight forwarding, customs brokerage, 3PL and warehousing, domestic distribution, and project cargo. Each has its own page, and one inquiry can cover several.', 'International freight forwarding, customs brokerage, 3PL dan pergudangan, distribusi domestik, dan project cargo. Masing-masing punya halaman sendiri, dan satu permintaan bisa mencakup beberapa.')}</p>
-          </div>
-          <img className="v-page__art" src="/static/assets/vora-visual-65.webp" width={440} height={440} alt={t('Three stacked shipping containers', 'Tiga kontainer pengiriman bertumpuk')} />
-        </div>
-      </section>
+      <section className="a-cover a-cover--services"><div className="v-wrap a-cover__grid"><div><p className="a-label">SERVICES / VORA</p><h1>{t('Build the service around the shipment.', 'Susun layanan sesuai kebutuhan shipment.')}</h1><p className="a-intro">{t('Five service groups. Different transport, handling and documentation decisions. Begin with the cargo, then choose the scope.', 'Lima kelompok layanan, dengan kebutuhan angkutan, handling, dan dokumentasi yang berbeda. Mulai dari barangnya, lalu tentukan cakupannya.')}</p><div className="v-actions"><a className="v-link" href="#service-help">{t('Help me choose', 'Bantu saya memilih')}</a><a className="v-link" href="#compare-services">{t('Compare services', 'Bandingkan layanan')}</a></div></div><div className="a-cover__index" aria-hidden="true">05<span>AIR / SEA / ROAD / STORAGE / PROJECT</span></div></div></section>
       <section className="v-section v-section--tight"><div className="v-wrap"><ServiceCards locale={locale} /></div></section>
+      <ServiceTools locale={locale} />
       <section className="v-section v-section--bone">
         <div className="v-wrap">
           <div className="v-head">

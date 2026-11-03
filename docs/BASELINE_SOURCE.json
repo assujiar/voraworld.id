@@ -1,0 +1,12 @@
+{
+  "uploaded_archive": "voraworld.id-main(1).zip",
+  "sha256": "ffd9e7322aa12a2a9d251faffffe6f617c33b244a8259a83ca4d958b0b93536a",
+  "original_files": 589,
+  "canonical_logo_sha256": {
+    "public/static/assets/vora-a-icon-reverse.svg": "2fc6479c6b4820ae170c73d58c66ea76641e8917d4beed7fff00700e0fb0f7dd",
+    "public/static/assets/vora-reverse.svg": "e616c81de4019b528761b49c697464e4935780ada87daea8dbb220b72e93e1b9",
+    "public/static/assets/vora-a-icon-primary.svg": "51de416a0fcbbb0f69c3b6f9f4a7b63c3ce34c1773c80d99d655f1f51b09451f",
+    "public/static/assets/vora-primary.svg": "09035376d5ec91d4e454fdde5a778d1f6e062ca283e0465eea1ed34862c581ef"
+  },
+  "remote_source_substituted": false
+}

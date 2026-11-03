@@ -24,7 +24,7 @@ export const solutionGuides: Record<Locale, SolutionGuide[]> = {
   id: [
     { traits: ['Komponen tiba mengikuti jadwal produksi, jadi tanggal sama pentingnya dengan rate.', 'Inbound dan outbound sering lewat rute dan moda yang berbeda.', 'Nomor part dan jumlahnya harus sama persis dengan dokumen.'],
       limits: ['Tanggal inbound yang terlewat dapat menghentikan lini; tanyakan rencana cadangan sebelum booking.', 'Dokumen kepabeanan harus menguraikan komponen dengan cara yang sama di setiap pengiriman.'],
-      inputs: ['Jadwal produksi yang menetapkan tanggal kebutuhan', 'Daftar part dengan jumlah dan kemasannya', 'Tanggal siap dari pemasok dan term perdagangan yang disepakati'] },
+      inputs: ['Jadwal produksi yang menetapkan tanggal kebutuhan', 'Daftar part dengan jumlah dan kemasannya', 'Tanggal siap dari pemasok dan trade terms yang disepakati'] },
     { traits: ['Banyak pesanan kecil, permintaan tidak merata, dan puncak musiman.', 'Retur dan pengecualian adalah bagian dari volume normal.', 'Akurasi pengantaran bergantung pada catatan pesanan dan stok yang rapi.'],
       limits: ['Pada minggu puncak, pilihan kapasitas mendadak berkurang.', 'Pengaturan gudang sebaiknya dihitung dari order line dan penerimaan, bukan dari luas lantai saja.'],
       inputs: ['Pesanan dan order line per hari, serta puncaknya', 'Jumlah SKU, satuan simpan, dan kontrol kedaluwarsa', 'Jenis picking, pengangkut, dan jam cut-off'] },
@@ -33,6 +33,6 @@ export const solutionGuides: Record<Locale, SolutionGuide[]> = {
       inputs: ['Gambar general arrangement dan massa tiap bagian', 'Kondisi lokasi asal dan tujuan', 'Tanggal pemasangan dan tanggal mana yang bisa bergeser'] },
     { traits: ['Karton, pallet, dan barang campuran dengan kebutuhan penanganan biasa.', 'Keputusan utamanya adalah moda, cakupan, dan dokumen.', 'Kualitas kemasan menentukan sebagian besar risiko kerusakan.'],
       limits: ['Barang yang tampak biasa tetap bisa memerlukan penerimaan khusus, misalnya baterai atau cairan.', 'Penawaran mencakup langkah yang disebutkan; langkah lain tetap di pihak lain.'],
-      inputs: ['Barang dalam bahasa sederhana, kemasan, dan jumlah kemasan', 'Berat kotor dan dimensi per kemasan', 'Rute, term perdagangan, dan langkah yang ingin dihitung'] },
+      inputs: ['Barang dalam bahasa sederhana, kemasan, dan jumlah kemasan', 'Berat kotor dan dimensi per kemasan', 'Rute, trade terms, dan langkah yang ingin dihitung'] },
   ],
 }

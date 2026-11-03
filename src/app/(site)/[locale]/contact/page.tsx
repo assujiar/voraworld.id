@@ -1,3 +1,4 @@
+import { pageDescriptions } from '@/content/page-seo'
 import { InquiryPage } from '@/components/site/InquiryPage'
 import { seoDescription, seoTitles } from '@/content'
 import { localeOf, type LocaleParams } from '@/lib/page'
@@ -7,7 +8,7 @@ type P = LocaleParams & { searchParams: Promise<{ sent?: string; error?: string 
 
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await localeOf(params)
-  return pageMetadata({ locale, path: '/contact', title: seoTitles[locale].contact, description: seoDescription[locale] })
+  return pageMetadata({ locale, path: '/contact', title: seoTitles[locale].contact, description: pageDescriptions[locale].contact })
 }
 
 export default async function Contact({ params, searchParams }: P) {

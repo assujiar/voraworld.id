@@ -1,0 +1,1431 @@
+[
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (1).png",
+    "source_sha256": "e5d65f2f02b11a7eac3f41b3310cc4a746f19acc55638410f9a3214a23a08fff",
+    "original_dimensions": [
+      670,
+      398
+    ],
+    "subject": "cargo-inspection",
+    "production_path": "/vora-visual/objects/cargo-inspection.webp",
+    "dimensions": [
+      718,
+      439
+    ],
+    "size_bytes": 50330,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [],
+    "status": "retained-unmounted",
+    "retention_note": "Original artwork retained for contextually relevant future use; not forced into active public pages."
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (1).webp",
+    "source_sha256": "6cf08a0748eeb55992cc45fec8ebeda5a350c9334eac78ac7538a630bef4178e",
+    "original_dimensions": [
+      512,
+      512
+    ],
+    "subject": "service-support",
+    "production_path": "/vora-visual/objects/service-support.webp",
+    "dimensions": [
+      463,
+      422
+    ],
+    "size_bytes": 44794,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "support-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/faq:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (2).png",
+    "source_sha256": "43f95ceb0e261a908cb294aca7d9f76f030c3eec0c2b97567569bfee0072cb71",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "global-globe",
+    "production_path": "/vora-visual/objects/global-globe.webp",
+    "dimensions": [
+      1282,
+      1133
+    ],
+    "size_bytes": 302000,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/international-freight-forwarding:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (2).webp",
+    "source_sha256": "9dd25afd6dc04f5e437d01e6e984a9ce4d013c45e732390a20cc5a2661f84c72",
+    "original_dimensions": [
+      512,
+      512
+    ],
+    "subject": "data-cloud",
+    "production_path": "/vora-visual/objects/data-cloud.webp",
+    "dimensions": [
+      378,
+      463
+    ],
+    "size_bytes": 42240,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "support-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/privacy:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (3).png",
+    "source_sha256": "639e6c6d1dca093d03b602f0d354eedd6571b81660152fe9af933f3ae4feb80f",
+    "original_dimensions": [
+      935,
+      725
+    ],
+    "subject": "delivery-van",
+    "production_path": "/vora-visual/objects/delivery-van.webp",
+    "dimensions": [
+      998,
+      649
+    ],
+    "size_bytes": 131748,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [],
+    "status": "retained-unmounted",
+    "retention_note": "Original artwork retained for contextually relevant future use; not forced into active public pages."
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (3).webp",
+    "source_sha256": "b6ed8c2142a98c2a2ce1b8b2e795a5ef30f05f3d570bebfdb6399abdaf4d7184",
+    "original_dimensions": [
+      512,
+      512
+    ],
+    "subject": "next-step",
+    "production_path": "/vora-visual/objects/next-step.webp",
+    "dimensions": [
+      435,
+      392
+    ],
+    "size_bytes": 25034,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "support-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/insights:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (4).png",
+    "source_sha256": "ebd138cfbe4f50aba4b5ae10708b44586a56b1fa8dd337b439c0f757ce947993",
+    "original_dimensions": [
+      1199,
+      725
+    ],
+    "subject": "reachstacker",
+    "production_path": "/vora-visual/objects/reachstacker.webp",
+    "dimensions": [
+      1279,
+      781
+    ],
+    "size_bytes": 214980,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [],
+    "status": "retained-unmounted",
+    "retention_note": "Original artwork retained for contextually relevant future use; not forced into active public pages."
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (4).webp",
+    "source_sha256": "751e99919ba19f3557515a59b5fda1ad73f95549517f24172122d616dfe4b1a1",
+    "original_dimensions": [
+      512,
+      512
+    ],
+    "subject": "document-stack",
+    "production_path": "/vora-visual/objects/document-stack.webp",
+    "dimensions": [
+      375,
+      329
+    ],
+    "size_bytes": 32494,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "support-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [],
+    "status": "retained-unmounted",
+    "retention_note": "Original artwork retained for contextually relevant future use; not forced into active public pages."
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (5).png",
+    "source_sha256": "be074d410dbddcd8f33964544f8ec0d9f16e044a28decfbce441009993acf034",
+    "original_dimensions": [
+      498,
+      493
+    ],
+    "subject": "loading-bay",
+    "production_path": "/vora-visual/objects/loading-bay.webp",
+    "dimensions": [
+      487,
+      511
+    ],
+    "size_bytes": 45348,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/solutions:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (5).webp",
+    "source_sha256": "32a938f5c8c2ceb50930c9cdea7279d2addff3e0c1b4246cd6ebeb2a75b485e7",
+    "original_dimensions": [
+      512,
+      512
+    ],
+    "subject": "flow-ribbon",
+    "production_path": "/vora-visual/objects/flow-ribbon.webp",
+    "dimensions": [
+      481,
+      328
+    ],
+    "size_bytes": 28474,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "support-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/about:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (6).png",
+    "source_sha256": "5f19cf8c3fa7b325254112aa80565bcd951b7566645fc884a465eecbbcc3356a",
+    "original_dimensions": [
+      607,
+      421
+    ],
+    "subject": "screening",
+    "production_path": "/vora-visual/objects/screening.webp",
+    "dimensions": [
+      567,
+      377
+    ],
+    "size_bytes": 42284,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [],
+    "status": "retained-unmounted",
+    "retention_note": "Original artwork retained for contextually relevant future use; not forced into active public pages."
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (12).png",
+    "source_sha256": "d26cb91796761ce453dafb2028aee23cb5921fad243be7cd31545d0c4a5b6316",
+    "original_dimensions": [
+      515,
+      562
+    ],
+    "subject": "racking",
+    "production_path": "/vora-visual/objects/racking.webp",
+    "dimensions": [
+      479,
+      529
+    ],
+    "size_bytes": 98076,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (13).png",
+    "source_sha256": "2c34c363becff22cbedc736007238a9fb4a7c8e2dcbe3dff998fbbf37ee5d5fa",
+    "original_dimensions": [
+      614,
+      570
+    ],
+    "subject": "network-globe",
+    "production_path": "/vora-visual/objects/network-globe.webp",
+    "dimensions": [
+      565,
+      483
+    ],
+    "size_bytes": 85046,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (14).png",
+    "source_sha256": "0eebf8f0a3d6c1e6bc8f3d36b64d53a01d0e2495ae36d18bb28a4661697cdf14",
+    "original_dimensions": [
+      579,
+      567
+    ],
+    "subject": "scope-shield",
+    "production_path": "/vora-visual/objects/scope-shield.webp",
+    "dimensions": [
+      483,
+      470
+    ],
+    "size_bytes": 44040,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/terms:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (15).png",
+    "source_sha256": "3f0c293ce9f8a2de97875c80f1e45aa5e8ace5edbebfbf9a938e6bbbd532fedd",
+    "original_dimensions": [
+      511,
+      592
+    ],
+    "subject": "cost-review",
+    "production_path": "/vora-visual/objects/cost-review.webp",
+    "dimensions": [
+      465,
+      518
+    ],
+    "size_bytes": 33486,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [],
+    "status": "retained-unmounted",
+    "retention_note": "Original artwork retained for contextually relevant future use; not forced into active public pages."
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (42).png",
+    "source_sha256": "60ab8f8bc0297c7f9c9b891116ef5e03812c47b06276af5599452fbcc365acc0",
+    "original_dimensions": [
+      617,
+      581
+    ],
+    "subject": "schedule",
+    "production_path": "/vora-visual/objects/schedule.webp",
+    "dimensions": [
+      524,
+      499
+    ],
+    "size_bytes": 44626,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/insights:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (43).png",
+    "source_sha256": "53c313d37ac0c452f760d0d827468fa1bf79c71fdbba5de9f3de4f1927bf43bb",
+    "original_dimensions": [
+      635,
+      566
+    ],
+    "subject": "documents",
+    "production_path": "/vora-visual/objects/documents.webp",
+    "dimensions": [
+      543,
+      515
+    ],
+    "size_bytes": 50414,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/:illustration",
+      "/services:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (44).png",
+    "source_sha256": "ec52510d1a7697fa48c8ab0af92b1a337d6b1d331228d9d4d3ad905e9e69942a",
+    "original_dimensions": [
+      827,
+      418
+    ],
+    "subject": "heavy-cargo",
+    "production_path": "/vora-visual/objects/heavy-cargo.webp",
+    "dimensions": [
+      883,
+      473
+    ],
+    "size_bytes": 110432,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/project-cargo:hero",
+      "/solutions:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (45).png",
+    "source_sha256": "cc379d50658e45702b7b770d93e5245e3062cf9cf4f115341e360548ec3d2d78",
+    "original_dimensions": [
+      519,
+      435
+    ],
+    "subject": "reefer",
+    "production_path": "/vora-visual/objects/reefer.webp",
+    "dimensions": [
+      548,
+      448
+    ],
+    "size_bytes": 56282,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/international-freight-forwarding/sea-export:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (46).png",
+    "source_sha256": "0398f82d08b21a6ba634d75d35a7245d74eb782a3b70414687f1c5642aecdbc2",
+    "original_dimensions": [
+      470,
+      481
+    ],
+    "subject": "export-crate",
+    "production_path": "/vora-visual/objects/export-crate.webp",
+    "dimensions": [
+      497,
+      487
+    ],
+    "size_bytes": 64266,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/:illustration",
+      "/solutions:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (47).png",
+    "source_sha256": "1a1f4e0e107ddc3ff9943120d2f16420e8919c554a8a5e76bbbfd891e0caf755",
+    "original_dimensions": [
+      528,
+      452
+    ],
+    "subject": "air-pallet",
+    "production_path": "/vora-visual/objects/air-pallet.webp",
+    "dimensions": [
+      551,
+      464
+    ],
+    "size_bytes": 78204,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/domestic-distribution/air-freight:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (48).png",
+    "source_sha256": "62205472ee48f58ad9f406eebddd57f7af5db26813f001cca0fdc0e85f404295",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "cargo-assortment",
+    "production_path": "/vora-visual/objects/cargo-assortment.webp",
+    "dimensions": [
+      1286,
+      799
+    ],
+    "size_bytes": 251724,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/solutions:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (49).png",
+    "source_sha256": "a46298ee3401587de666ffcb8661ee2166f47fd8aecee7d1e007ed4a95e6c574",
+    "original_dimensions": [
+      1374,
+      1145
+    ],
+    "subject": "stopwatch",
+    "production_path": "/vora-visual/objects/stopwatch.webp",
+    "dimensions": [
+      1210,
+      1088
+    ],
+    "size_bytes": 159508,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/insights:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (50).png",
+    "source_sha256": "1d2930f580bcf360df3c33fe251fcf0415e8b6e4748cd9b2550bc4989f39061c",
+    "original_dimensions": [
+      1374,
+      1145
+    ],
+    "subject": "urgent-delivery",
+    "production_path": "/vora-visual/objects/urgent-delivery.webp",
+    "dimensions": [
+      1229,
+      1041
+    ],
+    "size_bytes": 185408,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/domestic-distribution:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (51).png",
+    "source_sha256": "c824ca4c81d4e4dcc57c6ba889caac3f797c84610291c0dfa3bbb3f6d131ad7f",
+    "original_dimensions": [
+      1374,
+      1145
+    ],
+    "subject": "delivery-tracking",
+    "production_path": "/vora-visual/objects/delivery-tracking.webp",
+    "dimensions": [
+      1286,
+      1114
+    ],
+    "size_bytes": 191710,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (52).png",
+    "source_sha256": "eca16b0b4c73ed0119aeef451f09af5f85e3a6c4b5b5ecd621f1b9221915080f",
+    "original_dimensions": [
+      1374,
+      1145
+    ],
+    "subject": "route-schedule",
+    "production_path": "/vora-visual/objects/route-schedule.webp",
+    "dimensions": [
+      1286,
+      1033
+    ],
+    "size_bytes": 167266,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (53).png",
+    "source_sha256": "0d90200d94b8ee886bcf52e148e9c09b997fe7a410b794f724916b5e4811f47d",
+    "original_dimensions": [
+      1374,
+      1145
+    ],
+    "subject": "global-cargo",
+    "production_path": "/vora-visual/objects/global-cargo.webp",
+    "dimensions": [
+      1286,
+      996
+    ],
+    "size_bytes": 187120,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/:illustration",
+      "/about:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (54).png",
+    "source_sha256": "18350272389b5d5c19ef898a84f0dead7fb4af5f1fa8199a258750e037b07987",
+    "original_dimensions": [
+      1374,
+      1145
+    ],
+    "subject": "network-console",
+    "production_path": "/vora-visual/objects/network-console.webp",
+    "dimensions": [
+      1286,
+      976
+    ],
+    "size_bytes": 166992,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [],
+    "status": "retained-unmounted",
+    "retention_note": "Original artwork retained for contextually relevant future use; not forced into active public pages."
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (55).png",
+    "source_sha256": "6cb2b70d469f2504442196a53edc07c8650dfa403b5d0a5aec80676267cb5f08",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "rack-handling",
+    "production_path": "/vora-visual/objects/rack-handling.webp",
+    "dimensions": [
+      1274,
+      1184
+    ],
+    "size_bytes": 291734,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (56).png",
+    "source_sha256": "4a98b972bdd44587e2b31841b81c8018ff219e894665d00597a080cbdf21ae2b",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "warehouse-routing",
+    "production_path": "/vora-visual/objects/warehouse-routing.webp",
+    "dimensions": [
+      1286,
+      1247
+    ],
+    "size_bytes": 249784,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/about:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_1.zip",
+    "source_filename": "ASET_WEB_VORA (57).png",
+    "source_sha256": "f446f5ea1096354b7eeb8d3ece00387f0077bcd1795cddfb298a7ddbea776c67",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "container-lift",
+    "production_path": "/vora-visual/objects/container-lift.webp",
+    "dimensions": [
+      1061,
+      1178
+    ],
+    "size_bytes": 183452,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/international-freight-forwarding/sea-export:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (58).png",
+    "source_sha256": "ba3a2694724a6607ac1056e4ff609417b14fbfdcb53b2be18bdedab6b0edb7a2",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "shipment-app",
+    "production_path": "/vora-visual/objects/shipment-app.webp",
+    "dimensions": [
+      1196,
+      1172
+    ],
+    "size_bytes": 171938,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/about:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (59).png",
+    "source_sha256": "027e0b3381d8ae4264b92b80e60ee55591f34f5c43b2105dbedd29914a5c445b",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "multimodal",
+    "production_path": "/vora-visual/objects/multimodal.webp",
+    "dimensions": [
+      1286,
+      1050
+    ],
+    "size_bytes": 214022,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (60).png",
+    "source_sha256": "2bd0d2d2f710ac0d94f86ad333aba39d91e23f9d51d5e9f9f5e37462f3ea869b",
+    "original_dimensions": [
+      1284,
+      1225
+    ],
+    "subject": "clearance-shield",
+    "production_path": "/vora-visual/objects/clearance-shield.webp",
+    "dimensions": [
+      1171,
+      1172
+    ],
+    "size_bytes": 145924,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/customs-brokerage:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (61).png",
+    "source_sha256": "ec0a92e3d30c7ec8835cc81376dd7a0b622740df380c19498b27a89305a948a5",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "route-map",
+    "production_path": "/vora-visual/objects/route-map.webp",
+    "dimensions": [
+      1286,
+      955
+    ],
+    "size_bytes": 128638,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/domestic-distribution:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (62).png",
+    "source_sha256": "e019d6807f341723559e8c8dc3bce2687b9648f80afce9bfa8272c17462abad5",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "pallets",
+    "production_path": "/vora-visual/objects/pallets.webp",
+    "dimensions": [
+      1284,
+      1138
+    ],
+    "size_bytes": 178730,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/solutions:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (63).png",
+    "source_sha256": "1f54ceeecd81716ec78b3a9616b27533dfbd1fb463a9f238acb73e40dfc25137",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "forklift",
+    "production_path": "/vora-visual/objects/forklift.webp",
+    "dimensions": [
+      1284,
+      1088
+    ],
+    "size_bytes": 208916,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/3pl-warehousing:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (64).png",
+    "source_sha256": "21ec1911169eb2a06144a0a855b15fa46456f8102ce56852c681a2f144324aea",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "warehouse",
+    "production_path": "/vora-visual/objects/warehouse.webp",
+    "dimensions": [
+      1284,
+      792
+    ],
+    "size_bytes": 167150,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/3pl-warehousing:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (65).png",
+    "source_sha256": "934aa4ac6b3721da4a7214c04039ee838797b7296651a44edad2915e8df1fe8a",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "containers",
+    "production_path": "/vora-visual/objects/containers.webp",
+    "dimensions": [
+      1120,
+      1178
+    ],
+    "size_bytes": 166714,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/domestic-distribution/fcl:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (66).png",
+    "source_sha256": "31545ca9970096a208299f40a1e4b605b09b81d2b261fda77a0fa0555a5e7403",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "truck",
+    "production_path": "/vora-visual/objects/truck.webp",
+    "dimensions": [
+      1284,
+      828
+    ],
+    "size_bytes": 144608,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/domestic-distribution/ftl:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (67).png",
+    "source_sha256": "c4e1b91590ace1486e746f50b1b19fef47bc32728674c5b6e666c7b5194e0308",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "vessel",
+    "production_path": "/vora-visual/objects/vessel.webp",
+    "dimensions": [
+      1284,
+      1145
+    ],
+    "size_bytes": 351888,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/international-freight-forwarding/sea-import:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (68).png",
+    "source_sha256": "aa85f959b3b5a3e54d62d9a70cfbb8bf615e3f8d2a56a06570c9ea10b05b4ee5",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "aircraft",
+    "production_path": "/vora-visual/objects/aircraft.webp",
+    "dimensions": [
+      1284,
+      669
+    ],
+    "size_bytes": 123688,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "hero-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/international-freight-forwarding/air-import:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "source_archive": "docs/design_guide/ASET_WEB_VORA_2.zip",
+    "source_filename": "ASET_WEB_VORA (69).png",
+    "source_sha256": "c8d0b66de3e5571fe98ec0ec35a5f827bddf879da35beb18a43e49093121f2a4",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "location",
+    "production_path": "/vora-visual/objects/location.webp",
+    "dimensions": [
+      853,
+      1160
+    ],
+    "size_bytes": 146680,
+    "derivation": "Original owner-supplied artwork; transparent safety margin and WebP encoding; no upscaling.",
+    "classification": "editorial-grade",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/contact:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N01",
+    "source_filename": "Dokumentasi Kepabeanan dan Kepatuhan(2).png",
+    "source_sha256": "2cbff2ec247e7fbacbc6daf4c69d0c7f1a598f2b471d3f48c8295087694e720d",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "n01-customs-clearance",
+    "production_path": "/assets/illustrations/vora-n01-customs-clearance.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "size_bytes": 2048063,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/about:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N02",
+    "source_filename": "Pengangkutan Transformator dengan Derek Crawler(2).png",
+    "source_sha256": "d0b9da5c3a2f36bd35614cf25d3329b24771839ddb02ac41e3b3af042e65c238",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n02-heavy-lift",
+    "production_path": "/assets/illustrations/vora-n02-heavy-lift.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2067459,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/:illustration",
+      "/about:illustration",
+      "/services:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N03",
+    "source_filename": "Perencanaan Rute Kargo Industri Oversize(2).png",
+    "source_sha256": "31b210f594b7670886c28a2a84271ad081ac1a08aaef2dee3c9e42bc51b084f9",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n03-project-engineering",
+    "production_path": "/assets/illustrations/vora-n03-project-engineering.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2695871,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/solutions:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N04",
+    "source_filename": "Logistik Pabrik dan Lini Produksi(2).png",
+    "source_sha256": "303de0f24c0e324f962c8dcabceaa98d1d7b4d033966ed1c555929bdf0f5b4cf",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n04-manufacturing",
+    "production_path": "/assets/illustrations/vora-n04-manufacturing.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2540864,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/solutions:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N05",
+    "source_filename": "Gudang Fulfillment E-Commerce Modern(2).png",
+    "source_sha256": "e373328f367427122e072755ccf46914ae3372772c0a97a05bf63e576414ecf3",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n05-ecommerce-fulfillment",
+    "production_path": "/assets/illustrations/vora-n05-ecommerce-fulfillment.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2924243,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/solutions:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N06",
+    "source_filename": "Truk Kargo dengan Zona Shipper Beragam(2).png",
+    "source_sha256": "58b1fe4d7329388e53612a28822df667c694c7628998c04ae202feb1b8b010cc",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n06-ltl-consolidation",
+    "production_path": "/assets/illustrations/vora-n06-ltl-consolidation.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2262255,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/domestic-distribution/ltl:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N07",
+    "source_filename": "Konsolidasi Kargo LCL dalam Kontainer(2).png",
+    "source_sha256": "0e25d49449c9f94a994472e22642d0bc9874ea7e2af39070ab8e6a2943e294e6",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n07-lcl-consolidation",
+    "production_path": "/assets/illustrations/vora-n07-lcl-consolidation.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2469087,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/domestic-distribution/lcl:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N08",
+    "source_filename": "Jaringan Logistik Global Asia-Pasifik(2).png",
+    "source_sha256": "b96f5cefa9a2458331f6142b3d808b731b3c41707e181f4ae5d1674b5da0645e",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n08-network-handover",
+    "production_path": "/assets/illustrations/vora-n08-network-handover.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2091808,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/network:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N09",
+    "source_filename": "Perbandingan Penawaran Angkutan Laut(2).png",
+    "source_sha256": "c3bd47f0bdf6f0dfd15b92a22a74a9410e410e940bc6d1f32fd1b7ce679076e0",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n09-quotation-comparison",
+    "production_path": "/assets/illustrations/vora-n09-quotation-comparison.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2528883,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/insights:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N10",
+    "source_filename": "Operasi Pemuatan Kargo Udara(2).png",
+    "source_sha256": "14cc894298edcd49e8b3e17522997e9484aad408c26278d52411e2e789ca0a71",
+    "original_dimensions": [
+      1254,
+      1254
+    ],
+    "subject": "n10-air-export-loading",
+    "production_path": "/assets/illustrations/vora-n10-air-export-loading.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "size_bytes": 2240124,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/services/international-freight-forwarding/air-export:hero"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N11",
+    "source_filename": "Logistics Documentation Workflow(2).png",
+    "source_sha256": "dc6d3c594ae3a3b72111ea04d3413683e2a68515e7ed7fca962dd67a1825cf7b",
+    "original_dimensions": [
+      1774,
+      887
+    ],
+    "subject": "n11-shipment-records",
+    "production_path": "/assets/illustrations/vora-n11-shipment-records.png",
+    "dimensions": [
+      1774,
+      887
+    ],
+    "size_bytes": 2360006,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/:illustration"
+    ],
+    "status": "mounted"
+  },
+  {
+    "id": "N12",
+    "source_filename": "Shipment Brief and Quotation Readiness(2).png",
+    "source_sha256": "6a8d3d5f4edf90e7489c7704e82e9405a52fa8e63b43dc1894e83a5a0f4da234",
+    "original_dimensions": [
+      1536,
+      1024
+    ],
+    "subject": "n12-rfq-shipment-brief",
+    "production_path": "/assets/illustrations/vora-n12-rfq-shipment-brief.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "size_bytes": 2463734,
+    "derivation": "Owner-supplied transparent PNG master, unchanged; Next.js serves responsive optimized variants.",
+    "classification": "approved-illustration",
+    "locales": [
+      "en",
+      "id"
+    ],
+    "usage": [
+      "/request-quote:illustration"
+    ],
+    "status": "mounted"
+  }
+]

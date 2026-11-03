@@ -14,6 +14,7 @@ export default function AdminRoot({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <link rel="preload" href="/static/fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="stylesheet" href="/static/css/site.css" />
         <link rel="stylesheet" href="/static/css/motion.css?v=2" />
         <link rel="stylesheet" href="/static/css/admin.css?v=1" />

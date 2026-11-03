@@ -38,7 +38,7 @@ export const MarkBuild: React.FC<{ id: string; left: number; right: number; wedg
       </defs>
       <path d={MARK_ART.ink.d} fill={inkOf(tone)} clipPath={`url(#${id}-l)`} />
       <path d={MARK_ART.ink.d} fill={inkOf(tone)} clipPath={`url(#${id}-r)`} />
-      <g style={{ transformBox: 'fill-box', transformOrigin: '50% 100%', scale: 0.12 + 0.88 * overshoot * breathe, opacity: Math.min(1, wedge * 6) }}>
+      <g style={{ transformBox: 'fill-box', transformOrigin: '50% 100%', opacity: Math.min(1, wedge * 6) }}>
         <path d={MARK_ART.red.d} fill={RED} />
       </g>
     </>
@@ -58,7 +58,7 @@ export const LogoParts: React.FC<{ id: string; wipe: number; lift?: number; wedg
         <linearGradient id={`${id}-glint`} x1="0" x2="1"><stop offset="0" stopColor="#fff" stopOpacity="0" /><stop offset=".5" stopColor="#fff" stopOpacity=".75" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></linearGradient>
       </defs>
       <g clipPath={`url(#${id}-wipe)`}><g style={{ translate: `0px ${(1 - lift) * h * 0.08}px`, opacity: lift }}><path d={art.ink.d} fill={inkOf(tone)} fillRule="evenodd" /></g></g>
-      <g style={{ transformBox: 'fill-box', transformOrigin: '50% 100%', scale: 0.12 + 0.88 * overshoot * breathe, opacity: Math.min(1, wedge * 6) }}>
+      <g style={{ transformBox: 'fill-box', transformOrigin: '50% 100%', opacity: Math.min(1, wedge * 6) }}>
         <path d={art.red.d} fill={RED} fillRule="evenodd" />
       </g>
       {glint >= 0 ? (

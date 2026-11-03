@@ -1,0 +1,95 @@
+{
+  "environment": {
+    "node": "24.22.1",
+    "next": "15.5.28",
+    "react": "19.1.10",
+    "chromium": "153.0.8010.0"
+  },
+  "commands": [
+    {
+      "command": "npm ci --ignore-scripts --no-audit --no-fund",
+      "exit_code": 0,
+      "phase": "baseline"
+    },
+    {
+      "command": "npm install motion --no-audit --no-fund",
+      "exit_code": 0
+    },
+    {
+      "command": "npm install gsap --no-audit --no-fund",
+      "exit_code": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 2,
+      "phase": "baseline",
+      "reason": "Stale test imports/signatures; repaired without changing production APIs."
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "phase": "release"
+    },
+    {
+      "command": "npm run test:unit",
+      "exit_code": 0,
+      "result": "157 passed, 21 skipped"
+    },
+    {
+      "command": "npm run test:copy",
+      "exit_code": 1,
+      "phase": "first check",
+      "reason": "One old Indonesian fallback slogan; rewritten."
+    },
+    {
+      "command": "npm run test:copy",
+      "exit_code": 0,
+      "result": "10 passed"
+    },
+    {
+      "command": "npm run test:visual",
+      "exit_code": 0,
+      "result": "17 passed; explicit local Chromium binary"
+    },
+    {
+      "command": "npm test",
+      "exit_code": 1,
+      "result": "BLOCKED: PostgreSQL connection refused on localhost:5432; no integration tests executed."
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 1,
+      "phase": "one retry",
+      "reason": "ENOTEMPTY in generated .next/export; removed generated output and rebuilt."
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0,
+      "phase": "clean release build"
+    },
+    {
+      "command": "npm ls motion gsap --depth=0",
+      "exit_code": 0,
+      "result": "motion 14.9.0; gsap 3.15.0"
+    },
+    {
+      "command": "npm run test:logic",
+      "exit_code": 0,
+      "result": "27 passed: money, dates and environment"
+    },
+    {
+      "command": "node scripts/review-qa.mjs --interactions-only",
+      "exit_code": 0,
+      "result": "Menu, reduced motion, honeypot confirmation, RFQ locale context, anonymous admin gate, labels and 50 metadata responses pass."
+    },
+    {
+      "command": "node scripts/review-qa.mjs (merged initial and targeted views)",
+      "result": "300 unique combinations, 84 repeated; zero remaining rendering failures."
+    },
+    {
+      "command": "npm run typecheck (without .next build artifacts)",
+      "exit_code": 0,
+      "result": "PASS: distributable source does not depend on generated route declarations."
+    }
+  ]
+}

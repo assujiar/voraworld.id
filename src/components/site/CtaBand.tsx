@@ -9,10 +9,10 @@ export async function CtaBand({ locale }: { locale: Locale }) {
     <section className="v-section v-section--bone">
       <div className="v-wrap v-close" style={{ padding: 0 }}>
         <div>
-          <h2 className="v-h2">{t('Tell us the cargo, the route and the date.', 'Beri tahu kami barang, rute, dan tanggalnya.')}</h2>
+          <h2 className="v-h2">{t('Your next shipment starts with a clear brief.', 'Siapkan detailnya. Mari susun pengirimannya.')}</h2>
           <div className="v-actions">
             <a className="v-btn" href={`/${locale}/request-quote`}>{siteText[locale].rfq}</a>
-            <a className="v-link" href={`/${locale}/contact`}>{t('Or write to us', 'Atau tulis kepada kami')}</a>
+            <a className="v-link" href={`/${locale}/contact`}>{t('Discuss the requirements', 'Bahas kebutuhannya')}</a>
           </div>
         </div>
         <address>

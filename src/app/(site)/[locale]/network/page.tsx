@@ -1,3 +1,8 @@
+import { ObjectArt } from '@/components/atelier/ObjectArt'
+import { AtlasIcon } from '@/components/atelier/AtlasIcon'
+import { pageDescriptions } from '@/content/page-seo'
+import { Arrival } from '@/components/atelier/Arrival'
+import { RouteSchematic } from '@/components/atelier/RouteSchematic'
 import { CtaBand } from '@/components/site/CtaBand'
 import { CustomSections } from '@/components/site/CustomSections'
 import { makeT, seoDescription, siteText } from '@/content'
@@ -8,7 +13,7 @@ import { getPublishedPage } from '@/server/site'
 
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await localeOf(params)
-  return pageMetadata({ locale, path: '/network', title: `${siteText[locale].network_title} | VORA`, description: seoDescription[locale] })
+  return pageMetadata({ locale, path: '/network', title: `${siteText[locale].network_title} | VORA`, description: pageDescriptions[locale].network })
 }
 
 export default async function Network({ params }: LocaleParams) {
@@ -16,16 +21,8 @@ export default async function Network({ params }: LocaleParams) {
   const t = makeT(locale)
   const [coverage, custom] = await Promise.all([many('coverage', (q) => q.eq('active', true).order('id'), 'region,mode'), getPublishedPage('network', locale)])
   return (
-    <>
-      <section className="v-page">
-        <div className="v-wrap v-page__grid">
-          <div>
-            <h1>{siteText[locale].network_title}</h1>
-            <p className="v-lead">{siteText[locale].network_body}</p>
-          </div>
-          <img className="v-page__art" src="/static/assets/vora-visual-61.webp" width={440} height={440} alt={t('A map with a route between two pins', 'Peta dengan rute di antara dua pin')} />
-        </div>
-      </section>
+    <div className="hybrid-preserved hybrid-network">
+      <section className="a-network x-network"><div className="v-wrap"><div className="a-network__intro"><div><p className="a-label">NETWORK / ROUTING</p><h1>{t('A route has to work at every handover.', 'Rute harus bisa dijalankan di setiap handover.')}</h1></div><p>{t('Origin, destination and cargo acceptance decide the available arrangement. We review the connecting stages before confirming scope and pricing.', 'Asal, tujuan, dan cargo acceptance menentukan opsi layanan. Setiap sambungan perjalanan ditinjau sebelum cakupan serta harga dikonfirmasi.')}</p></div><div className="x-network-brief"><div className="x-network-brief__head"><AtlasIcon name="route"/><span>{t('A route is a sequence of responsibilities.','Rute adalah rangkaian tanggung jawab.')}</span><span>ORIGIN → DESTINATION</span></div><Arrival signature="network"><RouteSchematic locale={locale} /></Arrival><div className="x-network-legend"><span><i/>{t('Routing schematic','Skema perencanaan rute')}</span><span>{t('Availability is assessed for each shipment.','Ketersediaan ditinjau untuk setiap pengiriman.')}</span></div></div></div></section>
       {coverage.length ? (
         <section className="v-section v-section--tight">
           <div className="v-wrap">
@@ -40,7 +37,7 @@ export default async function Network({ params }: LocaleParams) {
             <h2 className="v-h2--section" id="lane-h">{t('How a lane is confirmed', 'Cara rute dikonfirmasi')}</h2>
             <p className="v-muted">{coverage.length
               ? t('Listed regions are the ones approved for display. Any other lane is assessed when you send it.', 'Wilayah di atas adalah yang disetujui untuk ditampilkan. Rute lain dinilai saat Anda mengirimkannya.')
-              : t('Share the origin, destination and cargo details. We will confirm the available arrangement for your inquiry.', 'Sampaikan asal, tujuan, dan detail barang. Kami akan mengonfirmasi pilihan layanan untuk kebutuhan pengiriman Anda.')}</p>
+              : t('Share the origin, destination and cargo details. We will confirm the available arrangement for your inquiry.', 'Sampaikan asal, tujuan, dan detail barang. Kami akan mengonfirmasi pilihan layanan untuk kebutuhan pengiriman Anda.')}</p><ObjectArt asset="n08-network-handover" className="a-network-console" sizes="(max-width: 600px) 280px, 330px" />
           </div>
           <ol className="v-laneflow">
             <li><h3>{t('You send', 'Anda kirim')}</h3><p>{t('Origin and destination at city or port level, the goods, the packing and the date the cargo is ready.', 'Asal dan tujuan sampai tingkat kota atau pelabuhan, barang, kemasan, dan tanggal barang siap.')}</p></li>
@@ -51,6 +48,6 @@ export default async function Network({ params }: LocaleParams) {
       </section>
       <CustomSections locale={locale} sections={custom?.sections} />
       <CtaBand locale={locale} />
-    </>
+    </div>
   )
 }

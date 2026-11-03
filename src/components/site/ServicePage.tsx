@@ -1,3 +1,9 @@
+import { SectionNav } from './SectionNav'
+import { Glossary } from './ServiceTools'
+import { ServiceFaq } from '@/components/atelier/ServiceFaq'
+import { ServiceHero } from '@/components/atelier/ServiceHero'
+import { ShipmentDossier } from '@/components/atelier/ShipmentDossier'
+import { serviceDesign } from '@/content/service-design'
 import { makeT, serviceGroups, serviceModes, siteText, type Locale } from '@/content'
 import { serviceExtras } from '@/content/service-extras'
 import { modeGuides } from '@/content/service-guides'
@@ -17,10 +23,11 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
   const sub = mode ? serviceModes[group][mode][locale] : null
   const extras = serviceExtras[group][locale]
   const name = sub ? sub[0] : detail.name
-  const image = sub ? sub[3] : g.image
-  const quote = `/${locale}/request-quote?mode=${group}${mode ? '/' + mode : ''}`
-  const rfq = siteText[locale].rfq
+    const quote = `/${locale}/request-quote?mode=${group}${mode ? '/' + mode : ''}`
+  const rfq = serviceDesign(group, mode)[locale].cta
   const schema = { '@context': 'https://schema.org', '@type': 'Service', name, description: sub ? sub[1] : detail.intro, provider: { '@type': 'Organization', name: 'VORA' }, url: absoluteUrl(`/${locale}/services/${group}${mode ? '/' + mode : ''}`), serviceType: name }
+  const crumbs = [{ '@type': 'ListItem', position: 1, name: t('Services', 'Layanan'), item: absoluteUrl(`/${locale}/services`) }, { '@type': 'ListItem', position: 2, name: detail.name, item: absoluteUrl(`/${locale}/services/${group}`) }, ...(mode ? [{ '@type': 'ListItem', position: 3, name, item: schema.url }] : [])]
+  const structured = { '@context': 'https://schema.org', '@graph': [schema, { '@type': 'BreadcrumbList', itemListElement: crumbs }] }
   const guide = mode ? modeGuides[`${group}/${mode}`]?.[locale] : undefined
   const needs = (
     <div>
@@ -31,24 +38,12 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
   const closing = t('Tell us the route and the cargo.', 'Sampaikan rute dan barangnya.')
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
-      <section className="v-svc-hero">
-        <div className="v-wrap v-svc-hero__grid">
-          <div className="v-svc-hero__copy">
-            <nav className="v-crumbs" aria-label={t('Breadcrumb', 'Jejak halaman')}>
-              <a href={`/${locale}/services`}>{t('Services', 'Layanan')}</a> / {sub ? <><a href={`/${locale}/services/${group}`}>{detail.name}</a> / </> : null}<span>{name}</span>
-            </nav>
-            <h1>{name}</h1>
-            <p className="v-lead" style={{ marginTop: 22 }}>{sub ? sub[1] : detail.strap}</p>
-            <p className="v-muted" style={{ maxWidth: '48ch' }}>{sub ? sub[2] : detail.intro}</p>
-            <div className="v-actions"><a className="v-btn" href={quote}>{rfq}</a><a className="v-link" href={`/${locale}/services`}>{t('All services', 'Semua layanan')}</a></div>
-          </div>
-          <div className={`v-svc-hero__art${group === 'project-cargo' && !sub ? ' v-svc-hero__art--wide' : ''}`}>
-            <img src={`/static/assets/${encodeURIComponent(image)}`} alt={`${name}`} width={680} height={620} fetchPriority="high" />
-          </div>
-        </div>
-      </section>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(structured) }} />
+      <div id="overview"><ServiceHero locale={locale} group={group} mode={mode} /></div>
+      <SectionNav locale={locale} />
+      <div id="process"><ShipmentDossier locale={locale} group={group} mode={mode} /></div>
 
+      <div id="preparation">
       {g.modes.length ? (
         <div className="v-wrap"><nav className="v-modes-bar" aria-label={detail.name}>
           {g.modes.map((m) => <a key={m} href={`/${locale}/services/${group}/${m}`} aria-current={m === mode ? 'page' : undefined}>{serviceModes[group][m][locale][0]}</a>)}
@@ -66,7 +61,7 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
           <section className="v-section v-section--bone">
             <div className="v-wrap v-two">
               <div><h2 className="v-h2 v-h2--section">{t('Have ready for a quotation', 'Siapkan untuk penawaran')}</h2><ul className="v-needs">{guide.ask.map((n) => <li key={n}>{n}</li>)}</ul></div>
-              <div><h2 className="v-h2 v-h2--section">{t('What we do not assume', 'Yang tidak kami asumsikan')}</h2><p>{guide.limit}</p><a className="v-link" href={quote}>{t('Discuss the requirements', 'Diskusikan kebutuhan')}</a></div>
+              <div><h2 className="v-h2 v-h2--section">{t('Confirm the scope', 'Pastikan cakupannya')}</h2><p>{guide.limit}</p><a className="v-link" href={quote}>{t('Discuss the requirements', 'Diskusikan kebutuhan')}</a></div>
             </div>
           </section>
         </>
@@ -129,6 +124,10 @@ export function ServicePage({ locale, group, mode }: { locale: Locale; group: st
       {sub ? (
         <div className="v-wrap"><p className="v-small v-muted v-siblings">{t('Other movements:', 'Pengiriman lainnya:')} {g.modes.filter((m) => m !== mode).map((m, i) => <span key={m}>{i ? ' · ' : ' '}<a className="v-link" href={`/${locale}/services/${group}/${m}`}>{serviceModes[group][m][locale][0]}</a></span>)}</p></div>
       ) : null}
+
+      </div>
+      <div className="v-wrap"><Glossary locale={locale} terms={group === 'customs-brokerage' ? ['HS code'] : group === 'domestic-distribution' ? ['FTL','LTL','FCL','LCL','Chargeable weight'] : group === 'international-freight-forwarding' ? ['CBM','FCL','LCL','Chargeable weight'] : ['CBM','POD']} /></div>
+      <ServiceFaq locale={locale} group={group} mode={mode} />
 
       <section className="v-dark v-statement v-statement--compact">
         <div className="v-wrap v-two" style={{ alignItems: 'center' }}>
