@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { serviceGroups, serviceModes } from '@/content'
 import { comparisonOptions, publicSearchItems } from '@/content/public-ux'
-import { fieldError, rankSearch, safeDraft, suggestedServices } from '@/lib/public-ux'
+import { clipText, fieldError, rankSearch, safeDraft, suggestedServices } from '@/lib/public-ux'
 import { inquiryError } from '@/lib/inquiry-copy'
 import { documentSamples, sampleNotice } from '@/content/document-samples'
 import { readFileSync } from 'node:fs'
@@ -69,5 +69,21 @@ describe('safe public document examples',()=>{
       expect(pdf.getTitle()).toContain(locale==='en'?'SAMPLE':'CONTOH')
       expect(pdf.getPages()[0].node.Annots()?.size()??0).toBe(0)
     }
+  })
+})
+
+describe('card excerpts',()=>{
+  it('cuts at a whole word and marks the cut, never in the middle of a word',()=>{
+    const text='A shipment is finished when its records agree: what was quoted, what was delivered and what was paid. Reconciling them in order, and keeping the exceptions visible, prevents disputes.'
+    const out=clipText(text,170)
+    expect(out.endsWith('…')).toBe(true)
+    expect(out.length).toBeLessThanOrEqual(171)
+    expect(text.startsWith(out.slice(0,-1))).toBe(true)
+    expect(text[out.length-1]).toMatch(/[\s,.;:]/)
+    expect(clipText('Hello, world, and more',13)).toBe('Hello, world…')
+    expect(clipText('One sentence ends. Then another one follows',19)).toBe('One sentence ends…')
+  })
+  it('leaves short text whole and tidies its spacing',()=>{
+    expect(clipText('  Short   excerpt. ',170)).toBe('Short excerpt.')
   })
 })

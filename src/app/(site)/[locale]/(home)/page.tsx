@@ -33,7 +33,7 @@ export default async function Home({ params }: LocaleParams) {
       <div className="v-wrap">
         <div className="a-home__grid">
           <div className="a-home__copy"><p className="a-label">VORA <span>FREIGHT & LOGISTICS</span></p>
-            <h1>{t('Freight, with every detail in place.', 'Kargo bergerak. Detailnya terkendali.')}</h1>
+            <h1>{t('Freight, with every detail in place.', 'Pengiriman terencana sampai serah terima.')}</h1>
             <p className="a-intro">{t('Air, ocean and domestic freight. Customs, warehousing and project cargo. Built around your load, your route and the handovers that matter.', 'Udara, laut, dan distribusi domestik. Customs, pergudangan, serta project cargo. Direncanakan sesuai muatan, rute, dan kebutuhan serah terima Anda.')}</p>
             <div className="v-actions"><a className="v-btn v-btn--red" href={`/${locale}/request-quote`}>{siteText[locale].rfq}<span aria-hidden="true">↗</span></a><a className="v-link" href={`/${locale}/services`}>{t('Explore our services', 'Kenali layanan kami')}</a></div>
           </div>
@@ -42,7 +42,7 @@ export default async function Home({ params }: LocaleParams) {
             <div className="a-home__routes" aria-hidden="true"><RouteBackdrop /></div>
             <p className="a-home__edition" aria-hidden="true">AIR / OCEAN / ROAD</p>
             <ObjectArt asset="multimodal" priority alt={t('Illustration of connected air, ocean and road freight', 'Ilustrasi angkutan udara, laut, dan darat yang saling terhubung')} />
-            <div className="a-home__note" data-assembly><span className="a-label">{t('Every shipment starts here', 'Awal setiap pengiriman')}</span><p>{t('The cargo. The route. The right questions.', 'Barangnya. Rutenya. Detail yang menentukan.')}</p><a href={`/${locale}/contact`} aria-label={t('Discuss your shipment', 'Bahas pengiriman Anda')}>↗</a></div>
+            <div className="a-home__note" data-assembly><span className="a-label">{t('Every shipment starts here', 'Awal setiap pengiriman')}</span><p>{t('Tell us the cargo and the route. We’ll ask what the quotation depends on.', 'Ceritakan barang dan rutenya. Kami tanyakan detail yang menentukan penawaran.')}</p><a href={`/${locale}/contact`} aria-label={t('Discuss your shipment', 'Bahas pengiriman Anda')}>↗</a></div>
             <div className="a-stage__measure" aria-hidden="true"><i /><span>VORA / 01</span><i /></div>
           </Arrival>
         </div>
