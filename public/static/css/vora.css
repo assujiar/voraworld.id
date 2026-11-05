@@ -416,7 +416,7 @@
 .v-papers__sheet b{font-size:.75rem;letter-spacing:.08em;color:var(--steel)}
 .v-papers__sheet i{display:block;height:6px;border-radius:3px;background:var(--bone)}.v-papers__sheet i:nth-of-type(2){width:72%}.v-papers__sheet i:nth-of-type(3){width:48%}
 .v-papers__sheet--back{transform:rotate(-2.2deg);margin-right:10%;margin-bottom:-52px;opacity:.96}
-.v-papers__sheet:not(.v-papers__sheet--back){transform:translateX(8%) rotate(1.4deg)}
+.v-papers__sheet:not(.v-papers__sheet--back){transform:rotate(1.4deg);margin-left:8%}
 @media(max-width:700px){.v-papers__sheet:not(.v-papers__sheet--back){transform:rotate(1.4deg);margin-left:3%}.v-papers__sheet--back{margin-right:6%}}
 .is-flag{color:var(--red);font-weight:700;box-shadow:inset 0 -2px 0 var(--red);justify-self:start}
 .v-papers figcaption{margin-top:24px;font-size:.88rem;color:var(--steel);max-width:44ch}

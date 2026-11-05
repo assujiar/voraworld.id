@@ -15,7 +15,17 @@ export function rankSearch(items: SearchItem[], raw: string): SearchItem[] {
   }).filter(x => x.score > 0).sort((a,b) => b.score-a.score || a.index-b.index).map(x => x.item)
 }
 
-export type Need = 'domestic' | 'international' | 'customs' | 'warehouse' | 'project'
+/** Shortens text for a card at the last whole word, without trailing punctuation, and marks the cut with an ellipsis. */
+export function clipText(text: string, max: number): string {
+  const clean = text.replace(/\s+/g, ' ').trim()
+  if (clean.length <= max) return clean
+  const cut = clean.slice(0, max + 1)
+  const space = cut.lastIndexOf(' ')
+  const words = (space > max * 0.6 ? cut.slice(0, space) : clean.slice(0, max)).replace(/[\s,;:.!?–—-]+$/, '')
+  return `${words}…`
+}
+
+export type Need ='domestic' | 'international' | 'customs' | 'warehouse' | 'project'
 export type Arrangement = 'road' | 'sea' | 'air' | 'unsure'
 export function suggestedServices(need: Need, arrangement: Arrangement = 'unsure', shared = 'unsure'): string[] {
   if (need === 'customs') return ['customs-brokerage']

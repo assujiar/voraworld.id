@@ -24,10 +24,10 @@ export default async function LocaleLayout({ children, params }: { children: Rea
       <head>
         <link rel="preload" href="/static/fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="stylesheet" href="/static/css/site.css" />
-        <link rel="stylesheet" href="/static/css/vora.css?v=14" />
-        <link rel="stylesheet" href="/static/css/atelier.css?v=2" />
+        <link rel="stylesheet" href="/static/css/vora.css?v=15" />
+        <link rel="stylesheet" href="/static/css/atelier.css?v=3" />
         <link rel="stylesheet" href="/static/css/hybrid.css?v=1" />
-        <link rel="stylesheet" href="/static/css/assets.css?v=1" />
+        <link rel="stylesheet" href="/static/css/assets.css?v=2" />
         <link rel="stylesheet" href="/static/css/illustrations.css?v=1" />
         <link rel="stylesheet" href="/static/css/feedback.css?v=12" />
         <link rel="stylesheet" href="/static/css/public-motion.css?v=3" />

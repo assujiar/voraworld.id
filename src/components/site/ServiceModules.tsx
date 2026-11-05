@@ -34,8 +34,8 @@ export function CustomsSpread({ locale }: { locale: Locale }) {
         ))}
       </ol>
       <figure className="v-papers" aria-label={t('Synthetic example of two documents compared', 'Contoh sintetis dua dokumen yang dibandingkan')}>
-        <div className="v-papers__sheet v-papers__sheet--back" aria-hidden="true"><b>PACKING LIST</b><i /><i /><i /><span>Cartons: 24</span><span>Gross: 312 kg</span></div>
-        <div className="v-papers__sheet" aria-hidden="true"><b>COMMERCIAL INVOICE</b><i /><i /><i /><span>Cartons: 24</span><span className="is-flag">Gross: 321 kg</span></div>
+        <div className="v-papers__sheet v-papers__sheet--back" aria-hidden="true"><b>PACKING LIST</b><span>Cartons: 24</span><span className="is-flag">Gross: 312 kg</span><i /><i /><i /></div>
+        <div className="v-papers__sheet" aria-hidden="true"><b>COMMERCIAL INVOICE</b><span>Cartons: 24</span><span className="is-flag">Gross: 321 kg</span><i /><i /><i /></div>
         <figcaption>{t('Example, synthetic. The weight differs between the two documents: this is what the check finds, and the source is corrected before anything is filed.', 'Contoh, sintetis. Berat berbeda di antara dua dokumen: inilah yang ditemukan pemeriksaan, dan sumbernya dikoreksi sebelum apa pun diajukan.')}</figcaption>
       </figure>
       <p className="v-note">{customsNote[locale]}</p>

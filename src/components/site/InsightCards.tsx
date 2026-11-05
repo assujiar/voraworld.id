@@ -1,6 +1,7 @@
 import { makeT, type Locale } from '@/content'
 import { parseArchiveTags, periodLabel } from '@/lib/archive'
 import { today } from '@/server/dates'
+import { clipText } from '@/lib/public-ux'
 
 export interface ArticleCard { slug: string; title: string | null; excerpt: string; category: string; tags?: string; publishedAt: Date | null }
 
@@ -16,7 +17,7 @@ export function InsightCards({ locale, articles }: { locale: Locale; articles: A
         <li key={a.slug}>
           <a href={`/${locale}/insights/${a.slug}`}>
             <div><time dateTime={a.publishedAt ? today(a.publishedAt) : undefined}>{a.publishedAt ? today(a.publishedAt) : ''}</time><div className="v-cat">{a.category}</div>{meta.year && meta.quarter ? <div className="v-cat">{t('Archive', 'Arsip')} {periodLabel(meta.year, meta.quarter)}</div> : null}</div>
-            <div><h3 className="v-h3">{a.title}</h3><p>{a.excerpt.slice(0, 170)}</p></div>
+            <div><h3 className="v-h3">{a.title}</h3><p>{clipText(a.excerpt, 170)}</p></div>
           </a>
         </li>
         )
