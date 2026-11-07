@@ -1,4 +1,4 @@
-import type { Viewport } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ICONS, MANIFEST } from '@/lib/favicons'
@@ -8,12 +8,19 @@ import { PublicMotion } from '@/components/atelier/PublicMotion'
 import { Header } from '@/components/site/Header'
 import { OrganizationData, SiteFooter, SiteHeader } from '@/components/site/Chrome'
 import { isLocale, makeT } from '@/content'
+import { onVercel } from '@/server/env'
+import { getSettings } from '@/server/site'
+import { verificationMetadata } from '@/server/site-verification'
 
 // Content is editable in the admin, so pages are rendered per request.
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30      // form submissions queue and send email
 export const viewport: Viewport = { themeColor: '#101720', width: 'device-width', initialScale: 1 }
-export const metadata = { icons: ICONS, manifest: MANIFEST }
+// Search Console / Bing ownership tokens come from Site Settings, so they can be added without a deployment.
+export async function generateMetadata(): Promise<Metadata> {
+  const verification = verificationMetadata(await getSettings())
+  return { icons: ICONS, manifest: MANIFEST, ...(verification ? { verification } : {}) }
+}
 
 export default async function LocaleLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -32,6 +39,12 @@ export default async function LocaleLayout({ children, params }: { children: Rea
         <link rel="stylesheet" href="/static/css/feedback.css?v=12" />
         <link rel="stylesheet" href="/static/css/public-motion.css?v=3" />
         <link rel="stylesheet" href="/static/css/public-ux.css?v=3" />
+        {/* Vercel Web Analytics: cookieless visitor counts, served from this origin (so the CSP needs no new host). It only records once
+            Web Analytics is enabled for the project in the Vercel dashboard; elsewhere (local, tests) the script does not exist, so it is left out. */}
+        {onVercel() && <>
+          <script dangerouslySetInnerHTML={{ __html: 'window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};' }} />
+          <script defer src="/_vercel/insights/script.js" />
+        </>}
       </head>
       <body className="v-body">
         <Suspense fallback={null}><NavProgress /><PublicMotion /><PublicInteractions /></Suspense>

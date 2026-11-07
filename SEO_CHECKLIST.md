@@ -13,6 +13,8 @@
 - [x] Image alt text is mandatory for new media uploads
 - [x] Redirect manager for public paths (301, local paths only) plus built-in permanent redirects for legacy service URLs; `/` redirects to `/en`
 - [x] Privacy and Terms pages are `noindex` while the corresponding administrator text is blank
+- [x] Search-engine ownership: Site Settings has **Google Search Console verification code** and **Bing Webmaster verification code**; when filled, the public pages emit `google-site-verification` / `msvalidate.01` meta tags (the bare token or the whole pasted `<meta>` tag is accepted; anything else is dropped). The DNS TXT method (Search Console "Domain" property, set at the DNS host) needs no code
+- [x] Vercel Web Analytics script on public pages only (not admin, verification or document pages): cookieless, same-origin (`/_vercel/insights/*`), so the CSP is unchanged. It records nothing until Web Analytics is enabled for the project in the Vercel dashboard
 
 ## Pending manual or engineering work
 
@@ -22,7 +24,8 @@
 - [ ] Provide Open Graph preview images per page and article (no `og:image` is emitted today)
 - [ ] Add `lastmod` to the sitemap, SEO editor warnings, and automatic redirects when a slug changes
 - [ ] Verify redirects, image delivery and structured data on the production URL with Google's public testing tools
-- [ ] Connect Search Console, GA4 and consent-aware analytics only after consent handling and production configuration; the GA4/GTM ID fields in Site Settings are stored but nothing is injected into pages
+- [ ] Verify the property in Google Search Console (and Bing Webmaster Tools), then submit `https://voraworld.id/sitemap.xml`
+- [ ] GA4 / GTM only after consent handling and a CSP update for Google's hosts; the GA4/GTM ID fields in Site Settings are stored but nothing is injected into pages
 - [ ] Run real Lighthouse / Web Vitals audits on the production domain and address what they find; no LCP, CLS or INP score is claimed here. Pages are rendered per request, so measure with the database in the same region as the functions
 
 Do not index Privacy or Terms while placeholder notices remain unapproved; the implementation already sets `noindex` and omits them from the sitemap when the administrator text is blank.
