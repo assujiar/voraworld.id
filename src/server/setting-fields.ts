@@ -6,6 +6,8 @@ export const SETTING_FIELDS: Array<[string, string]> = [
   // Indonesian versions and the short footer texts: kept apart from the English approved texts and the long company profile. Empty means "not provided": the site then says so honestly or uses the built-in short text.
   ['privacy_id', 'Approved privacy notice HTML (Bahasa Indonesia)'], ['terms_id', 'Approved terms HTML (Bahasa Indonesia)'],
   ['footer_description_en', 'Footer: short description (English)'], ['footer_description_id', 'Footer: short description (Bahasa Indonesia)'], ['ga4_id', 'GA4 measurement ID (optional)'], ['gtm_id', 'GTM ID (optional)'],
+  // Search-engine ownership: paste the token (or the whole <meta> tag) from Google Search Console / Bing Webmaster Tools.
+  ['google_site_verification', 'Google Search Console verification code (optional)'], ['bing_site_verification', 'Bing Webmaster verification code (optional)'],
   // Text that the new-quotation form starts from (each quotation keeps its own copy, so later changes never alter an issued one).
   ['quotation_payment_terms', 'Quotations: default terms of payment'], ['quotation_terms', 'Quotations: default terms and conditions'],
 ]
