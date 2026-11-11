@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseSalutation, visitorAddress, visitorAddressInstructions } from '@/server/agent/personalization'
+import { SALUTATION_OPTIONS, parseSalutation, visitorAddress, visitorAddressInstructions } from '@/server/agent/personalization'
 
 describe('VORA visitor-selected personal addressing', () => {
   it('accepts explicit options only', () => {
@@ -25,5 +25,14 @@ describe('VORA visitor-selected personal addressing', () => {
     expect(result).toContain('Pak Ari')
     expect(result).not.toContain('!!!')
     expect(result).toContain('Do not repeatedly')
+  })
+  it('offers the right choices per language, and "Kak" only in Indonesian', () => {
+    expect(SALUTATION_OPTIONS.en.map((o) => o.label)).toEqual(['Mr.', 'Ms.', 'Mrs.', 'First name only'])
+    expect(SALUTATION_OPTIONS.id.map((o) => o.label)).toEqual(['Bapak', 'Ibu', 'Kak', 'Nama depan saja'])
+    for (const option of [...SALUTATION_OPTIONS.en, ...SALUTATION_OPTIONS.id]) expect(parseSalutation(option.value)).toBe(option.value)
+  })
+  it('addresses "Kak" naturally and never invents an English title for it', () => {
+    expect(visitorAddress('Dewi Lestari', 'kak', 'id')).toBe('Kak Dewi')
+    expect(visitorAddress('Dewi Lestari', 'kak', 'en')).toBe('Dewi')
   })
 })

@@ -35,6 +35,7 @@ $report = & {
         if (!(Test-Path -LiteralPath (Join-Path $repo 'public\static\assets\vora-agent-profile.png'))) { throw 'VORA Agent portrait missing' }
         if (!(Test-Path -LiteralPath (Join-Path $repo 'migrations\0036_agent_logistics_special_cargo.sql'))) { throw 'SQL migration 0036 missing' }
         if (!(Test-Path -LiteralPath (Join-Path $repo 'migrations\0037_agent_salutations.sql'))) { throw 'SQL migration 0037 missing' }
+        if (!(Test-Path -LiteralPath (Join-Path $repo 'migrations\0038_agent_salutation_kak.sql'))) { throw 'SQL migration 0038 missing' }
         "ROOT: $repo"
         "NODE: $(node --version)"
         "NPM: $(npm --version)"

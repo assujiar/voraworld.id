@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as Reac
 import Image from 'next/image'
 import type { Locale } from '@/content'
 import { AgentRichText, safeVoraPath } from './AgentRichText'
-import type { AgentSalutation } from '@/server/agent/personalization'
+import { SALUTATION_OPTIONS, type AgentSalutation } from '@/server/agent/personalization'
 
 type Turn = { role: 'user' | 'assistant'; content: string }
 type AgentAction = { type: 'request_quote'; href: string; label: string; reason: string }
@@ -26,7 +26,7 @@ const words = {
     rate: 'The chat limit has been reached. Please try again later or send an inquiry.',
     failure: 'I couldn’t respond right now. Please try again, or contact the team using the inquiry form.',
     leadTitle: 'Share this inquiry', leadNote: 'Review and edit the summary below. It will be submitted to VORA’s inquiry system, not to Gemini.',
-    name: 'Full name', salutation: 'Preferred form of address', salutationPlaceholder: 'Choose how to address you', email: 'Email address', phone: 'Mobile / WhatsApp', company: 'Company name', summary: 'Inquiry summary',
+    name: 'Full name', salutation: 'Preferred form of address', email: 'Email address', phone: 'Mobile / WhatsApp', company: 'Company name', summary: 'Inquiry summary',
     registerTitle: 'Before we start', registerDesc: 'Tell us a little about yourself to start chatting with VORA.', registerSubmit: 'Start conversation', registering: 'Setting up your chat…', registerError: 'Could not start the chat. Check your details or try again.', registeredInfo: 'Contact details received for this conversation.',
     leadConsent: 'I agree to VORA using these details to follow up on my inquiry under the privacy notice.',
     submit: 'Send inquiry', back: 'Back to chat', done: 'Inquiry received', doneText: 'Your reference is',
@@ -45,7 +45,7 @@ const words = {
     rate: 'Batas chat sementara sudah tercapai. Coba lagi nanti atau kirim inquiry.',
     failure: 'Pesan belum bisa dijawab. Coba lagi atau hubungi tim melalui form inquiry.',
     leadTitle: 'Kirim inquiry ke tim', leadNote: 'Periksa dan edit ringkasan di bawah ini. Informasi akan masuk ke sistem inquiry VORA, bukan dikirim ke Gemini.',
-    name: 'Nama lengkap', salutation: 'Sapaan yang diinginkan', salutationPlaceholder: 'Pilih sapaan', email: 'Alamat email', phone: 'No. HP / WhatsApp', company: 'Nama perusahaan', summary: 'Ringkasan inquiry',
+    name: 'Nama lengkap', salutation: 'Sapaan yang diinginkan', email: 'Alamat email', phone: 'No. HP / WhatsApp', company: 'Nama perusahaan', summary: 'Ringkasan inquiry',
     registerTitle: 'Sebelum mulai ngobrol', registerDesc: 'Isi data singkat berikut untuk mulai chat dengan VORA.', registerSubmit: 'Mulai percakapan', registering: 'Menyiapkan chat…', registerError: 'Chat belum bisa dimulai. Periksa data dan coba lagi.', registeredInfo: 'Data kontak sudah diterima untuk percakapan ini.',
     leadConsent: 'Saya setuju VORA menggunakan informasi ini untuk menindaklanjuti inquiry sesuai pemberitahuan privasi.',
     submit: 'Kirim inquiry', back: 'Kembali ke chat', done: 'Inquiry diterima', doneText: 'Nomor referensi',
@@ -89,6 +89,8 @@ export function VoraAgent({ locale }: { locale: Locale }) {
   const [input, setInput] = useState('')
   const [registered, setRegistered] = useState(false)
   const [visitor, setVisitor] = useState<Visitor>(blankVisitor)
+  // The choices follow the language of the page; a choice made in the other language no longer counts.
+  const salutation = SALUTATION_OPTIONS[locale].some((option) => option.value === visitor.salutation) ? visitor.salutation : ''
   const [registerBusy, setRegisterBusy] = useState(false)
   const [registerError, setRegisterError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -165,7 +167,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
     try {
       const r = await fetch('/api/agent/register', {
         method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...visitor, locale }),
+        body: JSON.stringify({ ...visitor, salutation, locale }),
       })
       const result = await r.json() as { registered?: boolean }
       if (!r.ok || !result.registered) { setRegisterError(r.status === 429 ? t.rate : t.registerError); return }
@@ -250,15 +252,15 @@ export function VoraAgent({ locale }: { locale: Locale }) {
         <form onSubmit={register} className="vora-agent-register__form">
           <div className="vora-agent-trap" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={visitor.website} onChange={(e) => setVisitor({ ...visitor, website: e.target.value })}/></label></div>
           <label>{t.name}<input required minLength={2} maxLength={140} autoComplete="name" value={visitor.name} onChange={(e) => setVisitor({ ...visitor, name: e.target.value })}/></label>
-          <label>{t.salutation}<select required value={visitor.salutation} onChange={(e) => setVisitor({ ...visitor, salutation: e.target.value as Visitor['salutation'] })}>
-            <option value="" disabled>{t.salutationPlaceholder}</option>
-            <option value="bapak">Bapak / Pak</option>
-            <option value="ibu">Ibu / Bu</option>
-            <option value="mr">Mr.</option>
-            <option value="ms">Ms.</option>
-            <option value="mrs">Mrs.</option>
-            <option value="name">{locale === 'id' ? 'Nama saja, tanpa sapaan' : 'First name only'}</option>
-          </select></label>
+          <fieldset className="vora-agent-choice">
+            <legend>{t.salutation}</legend>
+            <div className="vora-agent-choice__options">
+              {SALUTATION_OPTIONS[locale].map((option) => <label key={option.value} className="vora-agent-choice__option">
+                <input type="radio" name="vora-agent-salutation" value={option.value} required checked={salutation === option.value} onChange={() => setVisitor({ ...visitor, salutation: option.value })}/>
+                <span>{option.label}</span>
+              </label>)}
+            </div>
+          </fieldset>
           <label>{t.company}<input required minLength={2} maxLength={200} autoComplete="organization" value={visitor.company} onChange={(e) => setVisitor({ ...visitor, company: e.target.value })}/></label>
           <label>{t.phone}<input required type="tel" minLength={7} maxLength={40} autoComplete="tel" placeholder="+62 812 3456 7890" value={visitor.phone} onChange={(e) => setVisitor({ ...visitor, phone: e.target.value })}/></label>
           <label>{t.email}<input required type="email" maxLength={200} autoComplete="email" value={visitor.email} onChange={(e) => setVisitor({ ...visitor, email: e.target.value })}/></label>

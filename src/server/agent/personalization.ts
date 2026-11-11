@@ -1,7 +1,13 @@
 import type { Locale } from '@/content'
 
-export const SALUTATIONS = ['bapak', 'ibu', 'mr', 'ms', 'mrs', 'name'] as const
+export const SALUTATIONS = ['bapak', 'ibu', 'kak', 'mr', 'ms', 'mrs', 'name'] as const
 export type AgentSalutation = (typeof SALUTATIONS)[number]
+
+/** What the registration form offers in each language. The visitor chooses; nothing is inferred from the name. */
+export const SALUTATION_OPTIONS: Record<Locale, readonly { value: AgentSalutation; label: string }[]> = {
+  en: [{ value: 'mr', label: 'Mr.' }, { value: 'ms', label: 'Ms.' }, { value: 'mrs', label: 'Mrs.' }, { value: 'name', label: 'First name only' }],
+  id: [{ value: 'bapak', label: 'Bapak' }, { value: 'ibu', label: 'Ibu' }, { value: 'kak', label: 'Kak' }, { value: 'name', label: 'Nama depan saja' }],
+}
 
 export function parseSalutation(input: unknown): AgentSalutation | null {
   return typeof input === 'string' && (SALUTATIONS as readonly string[]).includes(input) ? input as AgentSalutation : null
@@ -19,8 +25,11 @@ export function visitorAddress(name: string, salutation: AgentSalutation | null,
   const first = sanitized.split(' ')[0]
   if (!salutation || salutation === 'name') return first
   if (locale === 'id') {
+    if (salutation === 'kak') return `Kak ${first}`
     return `${['bapak', 'mr'].includes(salutation) ? 'Pak' : 'Bu'} ${first}`
   }
+  // "Kak" is an Indonesian form of address with no English honorific: use the first name.
+  if (salutation === 'kak') return first
   const prefix = salutation === 'mrs' ? 'Mrs.' : ['bapak', 'mr'].includes(salutation) ? 'Mr.' : 'Ms.'
   // In English use full supplied name, because first/last name conventions vary internationally.
   return `${prefix} ${sanitized}`
