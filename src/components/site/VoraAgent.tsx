@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import Image from 'next/image'
 import type { Locale } from '@/content'
 
 type Turn = { role: 'user' | 'assistant'; content: string }
+type AgentAction = { type: 'request_quote'; href: string; label: string; reason: string }
 type Handoff = { message: string; consent: boolean; website: string }
 type Visitor = { name: string; company: string; email: string; phone: string; consent: boolean; website: string }
 const blankVisitor: Visitor = { name: '', company: '', email: '', phone: '', consent: false, website: '' }
@@ -50,12 +52,65 @@ const words = {
   },
 }
 
-function AgentMark({ small = false }: { small?: boolean }) {
-  return <span className={`vora-agent-mark${small ? ' vora-agent-mark--small' : ''}`} aria-hidden="true">
-    <span className="vora-agent-mark__line vora-agent-mark__line--one" />
-    <span className="vora-agent-mark__line vora-agent-mark__line--two" />
-    <span className="vora-agent-mark__line vora-agent-mark__line--three" />
+type AgentIconName = 'refresh' | 'close' | 'send' | 'external' | 'arrow' | 'check'
+
+/** One consistent, legible icon system for all VORA Agent actions. */
+function AgentIcon({ name }: { name: AgentIconName }) {
+  return <svg className={`vora-agent-icon vora-agent-icon--${name}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.15" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+    {name === 'refresh' && <><path d="M20 8a8 8 0 1 0 1 5.5"/><path d="M20 3v5h-5"/></>}
+    {name === 'close' && <path d="M5.5 5.5l13 13m0-13-13 13"/>}
+    {name === 'send' && <><path d="M4.5 12h15"/><path d="M13 5.5l6.5 6.5-6.5 6.5"/></>}
+    {name === 'external' && <><path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/></>}
+    {name === 'arrow' && <><path d="M4.5 12h15"/><path d="m13.5 6 6 6-6 6"/></>}
+    {name === 'check' && <path d="m4.5 12 5 5 10-10"/>}
+  </svg>
+}
+
+/** The image is the supplied official VORA Agent artwork, not a generated brand substitute. */
+function AgentAvatar({ small = false }: { small?: boolean }) {
+  return <span className={`vora-agent-avatar${small ? ' vora-agent-avatar--small' : ''}`} aria-hidden="true">
+    <Image src="/static/assets/vora-agent-profile.png" alt="" width={52} height={52} sizes={small ? '38px' : '46px'} className="vora-agent-avatar__image" />
   </span>
+}
+
+/** Only approved first-party pages become clickable. No HTML/JS or external links from model text. */
+function safeVoraPath(raw: string): string | null {
+  let parsed: URL
+  try { parsed = new URL(raw, 'https://voraworld.id') } catch { return null }
+  if (parsed.protocol !== 'https:' || !['voraworld.id', 'www.voraworld.id'].includes(parsed.hostname)) return null
+  if (parsed.username || parsed.password || parsed.port) return null
+  if (!/^\/(en|id)\/(request-quote|contact|services(?:\/[-a-z0-9]+){0,2}|faq|about|solutions|network|insights(?:\/[-a-z0-9]+)?|document-samples)\/?$/i.test(parsed.pathname)) return null
+  return parsed.pathname
+}
+
+/** Interpret approved page references as proper interactive buttons, never plain unclickable strings. */
+function renderAgentContent(content: string, locale: Locale) {
+  const pattern = /\[([^\]\n]{1,100})\]\((https?:\/\/[^\s)]+|\/(?:en|id)\/[^\s)]+)\)|https?:\/\/(?:www\.)?voraworld\.id\/(?:en|id)\/[^\s<>)]+|\/(?:en|id)\/[a-z0-9/_?#&=%.-]+/gi
+  const nodes: ReactNode[] = []
+  let index = 0
+  for (const match of content.matchAll(pattern)) {
+    const start = match.index ?? 0
+    if (start > index) nodes.push(content.slice(index, start))
+    const original = match[0]
+    // Do not accidentally turn the path portion of an unrelated domain into a VORA button.
+    if (!match[1] && original.startsWith('/') && start > 0 && /[a-z0-9./]/i.test(content[start - 1])) {
+      nodes.push(original)
+      index = start + original.length
+      continue
+    }
+    const raw = match[2] ?? original
+    const cleaned = raw.replace(/[.,;:!?]+$/, '')
+    const trailing = match[2] ? '' : raw.slice(cleaned.length)
+    const href = safeVoraPath(cleaned)
+    if (href) {
+      const label = match[1] || (/request-quote/.test(href) ? (locale === 'id' ? 'Minta Penawaran' : 'Request a Quote') : href.split('/').filter(Boolean).slice(-1)[0].replace(/-/g, ' '))
+      nodes.push(<a key={`page-${start}`} className="vora-agent-message-button" href={href} target="_blank" rel="noopener noreferrer">{label}<AgentIcon name="external" /></a>)
+      if (trailing) nodes.push(trailing)
+    } else nodes.push(original)
+    index = start + original.length
+  }
+  if (index < content.length) nodes.push(content.slice(index))
+  return nodes.length ? nodes : content
 }
 
 function summaryFrom(turns: Turn[], locale: Locale) {
@@ -68,6 +123,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
   const [enabled, setEnabled] = useState<boolean | null>(null)
   const [open, setOpen] = useState(false)
   const [turns, setTurns] = useState<Turn[]>([])
+  const [actions, setActions] = useState<AgentAction[]>([])
   const [input, setInput] = useState('')
   const [registered, setRegistered] = useState(false)
   const [visitor, setVisitor] = useState<Visitor>(blankVisitor)
@@ -89,9 +145,10 @@ export function VoraAgent({ locale }: { locale: Locale }) {
     const controller = new AbortController()
     fetch('/api/agent/chat', { cache: 'no-store', credentials: 'same-origin', signal: controller.signal })
       .then(async (r) => { if (!r.ok) throw new Error('history'); return r.json() })
-      .then((data: { enabled?: boolean; registered?: boolean; messages?: Turn[] }) => {
+      .then((data: { enabled?: boolean; registered?: boolean; messages?: Turn[]; actions?: AgentAction[] }) => {
         setEnabled(data.enabled === true)
         setRegistered(data.registered === true)
+        setActions(Array.isArray(data.actions) ? data.actions.filter((a) => a.type === 'request_quote' && Boolean(safeVoraPath(a.href))) : [])
         if (Array.isArray(data.messages)) {
           const loaded = data.messages.filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
           setTurns(loaded)
@@ -128,6 +185,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
       const response = await fetch('/api/agent/chat', { method: 'DELETE', credentials: 'same-origin' })
       if (!response.ok) { setError(t.failure); return }
       setTurns([])
+      setActions([])
       setInput('')
       setError('')
       setRegistered(false)
@@ -175,12 +233,14 @@ export function VoraAgent({ locale }: { locale: Locale }) {
         method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ message: value, locale, consent: true }),
       })
-      const result = await r.json() as { reply?: string; error?: string }
+      const result = await r.json() as { reply?: string; error?: string; actions?: AgentAction[] }
       if (!r.ok || !result.reply) {
+        if (Array.isArray(result.actions)) setActions(result.actions.filter((a) => a.type === 'request_quote' && Boolean(safeVoraPath(a.href))))
         if (r.status === 403 && result.error === 'registration_required') setRegistered(false)
         setError(r.status === 429 ? t.rate : t.failure)
       } else {
         setTurns((prev) => [...prev, { role: 'assistant', content: result.reply! }])
+        setActions(Array.isArray(result.actions) ? result.actions.filter((a) => a.type === 'request_quote' && Boolean(safeVoraPath(a.href))) : [])
       }
     } catch { setError(t.failure) }
     finally { ongoing.current = false; setBusy(false); inputRef.current?.focus() }
@@ -210,13 +270,13 @@ export function VoraAgent({ locale }: { locale: Locale }) {
   return <aside className={`vora-agent${open ? ' vora-agent--open' : ''}`} aria-label={t.heading}>
     {open && <section className="vora-agent-panel" role="dialog" aria-modal="false" aria-label={t.heading}>
       <header className="vora-agent-header">
-        <AgentMark />
+        <AgentAvatar />
         <div className="vora-agent-header__text"><strong>{t.heading}</strong><span>{t.subtitle}</span></div>
         <button className="vora-agent-icon-button" type="button" onClick={() => void resetChat()} disabled={busy || leadBusy || registerBusy} aria-label={t.reset} title={t.reset}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M20 7v5h-5M19 12a7 7 0 1 0-2.7 5.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <AgentIcon name="refresh" />
         </button>
         <button className="vora-agent-icon-button" type="button" onClick={() => { setOpen(false); setLead(null); launcherRef.current?.focus() }} aria-label={t.close} title={t.close}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          <AgentIcon name="close" />
         </button>
       </header>
 
@@ -233,11 +293,11 @@ export function VoraAgent({ locale }: { locale: Locale }) {
           <label>{t.email}<input required type="email" maxLength={200} autoComplete="email" value={visitor.email} onChange={(e) => setVisitor({ ...visitor, email: e.target.value })}/></label>
           <label className="vora-agent-consent"><input type="checkbox" required checked={visitor.consent} onChange={(e) => setVisitor({ ...visitor, consent: e.target.checked })}/><span>{t.consent} <a href={`/${locale}/privacy`} target="_blank" rel="noopener noreferrer">{t.privacyLink}</a>.</span></label>
           {registerError && <p className="vora-agent-error" role="alert">{registerError}</p>}
-          <button className="vora-agent-primary vora-agent-register__submit" disabled={registerBusy || loading} type="submit">{registerBusy ? t.registering : t.registerSubmit}<span aria-hidden="true">↗</span></button>
+          <button className="vora-agent-primary vora-agent-register__submit" disabled={registerBusy || loading} type="submit">{registerBusy ? t.registering : t.registerSubmit}<AgentIcon name="arrow" /></button>
         </form>
       </div> : lead ? <div className="vora-agent-lead" key="lead">
         {leadResult ? <div className="vora-agent-lead__success" role="status">
-          <span aria-hidden="true">✓</span><h3>{t.done}</h3><p>{t.doneText}: <strong>{leadResult}</strong></p>
+          <span aria-hidden="true"><AgentIcon name="check" /></span><h3>{t.done}</h3><p>{t.doneText}: <strong>{leadResult}</strong></p>
           <button className="vora-agent-text-button" type="button" onClick={() => setLead(null)}>{t.back}</button>
         </div> : <>
           <div className="vora-agent-lead__intro"><h3>{t.leadTitle}</h3><p>{t.leadNote}</p></div>
@@ -255,19 +315,20 @@ export function VoraAgent({ locale }: { locale: Locale }) {
           <div className="vora-agent-greeting"><span className="vora-agent-greeting__eyebrow">VORA / VIRTUAL AGENT</span><p>{t.greeting}</p></div>
           {loading && <p className="vora-agent-system">{t.loading}</p>}
           {turns.map((turn, index) => <div key={`${index}-${turn.role}`} className={`vora-agent-bubble vora-agent-bubble--${turn.role}`}>
-            {turn.role === 'assistant' && <span className="vora-agent-bubble__from">VORA Virtual Agent</span>}
-            <span>{turn.content}</span>
+            {turn.role === 'assistant' && <span className="vora-agent-bubble__from"><AgentAvatar small />VORA Virtual Agent</span>}
+            <span>{turn.role === 'assistant' ? renderAgentContent(turn.content, locale) : turn.content}</span>
           </div>)}
+          {actions.map((action) => <a key={action.type} className="vora-agent-safety-cta" href={safeVoraPath(action.href) || `/${locale}/request-quote`} target="_blank" rel="noopener noreferrer"><span>{action.label}</span><AgentIcon name="external" /></a>)}
           {busy && <div className="vora-agent-typing" role="status" aria-label={t.sending}><i/><i/><i/></div>}
           {error && <p className="vora-agent-error" role="alert">{error}</p>}
-          {turns.length === 0 && !loading && <div className="vora-agent-suggestions">{t.hints.map((hint) => <button type="button" key={hint} onClick={() => void send(hint)} disabled={!registered || busy}>{hint}<span aria-hidden="true">↗</span></button>)}</div>}
+          {turns.length === 0 && !loading && <div className="vora-agent-suggestions">{t.hints.map((hint) => <button type="button" key={hint} onClick={() => void send(hint)} disabled={!registered || busy}>{hint}<AgentIcon name="arrow" /></button>)}</div>}
         </div>
-        <div className="vora-agent-actions"><a href={`/${locale}/request-quote`}>{t.rfq}<span aria-hidden="true">↗</span></a><button type="button" onClick={startLead} disabled={busy || !turns.length}>{t.handoff}<span aria-hidden="true">↗</span></button></div>
+        <div className="vora-agent-actions"><a href={`/${locale}/request-quote`}>{t.rfq}<AgentIcon name="external" /></a><button type="button" onClick={startLead} disabled={busy || !turns.length}>{t.handoff}<AgentIcon name="arrow" /></button></div>
         <div className="vora-agent-compose">
           <form onSubmit={submitMessage} className="vora-agent-compose__form">
             <textarea ref={inputRef} rows={2} aria-label={t.input} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={inputKey} maxLength={1800} placeholder={t.input} disabled={busy || loading}/>
             <button type="submit" disabled={!registered || !input.trim() || busy || loading} aria-label={t.send} title={t.send}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <AgentIcon name="send" />
             </button>
           </form>
           <div className="vora-agent-compose__bottom"><span>{t.heading}</span><span>{input.length}/1800</span></div>
@@ -275,7 +336,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
       </>}
     </section>}
     <button ref={launcherRef} type="button" className="vora-agent-launcher" aria-label={open ? t.close : t.launcher} aria-expanded={open} onClick={() => { setOpen((v) => !v); setLead(null); setTimeout(() => inputRef.current?.focus(), 80) }}>
-      <AgentMark small/><span>{open ? t.close : t.launcher}</span><svg className="vora-agent-launcher__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d={open ? 'M6 6l12 12M18 6L6 18' : 'M5 12h14m-6-6 6 6-6 6'} strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <AgentAvatar small/><span>{open ? t.close : t.launcher}</span><AgentIcon name={open ? 'close' : 'arrow'} />
     </button>
   </aside>
 }

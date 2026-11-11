@@ -8,19 +8,19 @@
 .vora-agent :focus-visible{outline:3px solid #b43e31;outline-offset:2px}
 .vora-agent-launcher{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:56px;min-width:162px;border-radius:18px;border:1px solid #42505d;background:linear-gradient(145deg,#263440,#101720);color:#fff;box-shadow:0 13px 30px #10172040,0 3px 9px #10172026,inset 0 1px 0 #ffffff2b;padding:0 17px 0 9px;font-weight:650;letter-spacing:-.014em;transition:transform .2s ease,box-shadow .2s ease}
 .vora-agent-launcher:hover{transform:translateY(-3px);box-shadow:0 17px 34px #10172047}
-.vora-agent-launcher__arrow{width:17px;height:17px;margin-left:auto;flex:none;opacity:.84}
-.vora-agent-mark{position:relative;display:inline-block;width:43px;height:43px;flex:0 0 43px;border-radius:13px;background:#283542;overflow:hidden;box-shadow:inset 0 0 0 1px #ffffff18}
-.vora-agent-mark--small{width:38px;height:38px;flex-basis:38px;background:#ffffff0f}
-.vora-agent-mark__line{position:absolute;left:12px;width:22px;height:3px;border-radius:999px;transform-origin:left center;background:#fafaf7;transform:rotate(-28deg)}
-.vora-agent-mark__line--one{top:16px}
-.vora-agent-mark__line--two{top:23px;width:17px;background:#b43e31}
-.vora-agent-mark__line--three{top:30px;width:12px;opacity:.65}
-.vora-agent-mark--small .vora-agent-mark__line{left:11px}
-.vora-agent-mark--small .vora-agent-mark__line--one{top:14px}.vora-agent-mark--small .vora-agent-mark__line--two{top:21px}.vora-agent-mark--small .vora-agent-mark__line--three{top:28px}
+.vora-agent-launcher > .vora-agent-icon{width:18px;height:18px;margin-left:auto;opacity:.9}
+/* Official VORA Virtual Agent portrait. The round crop keeps the face visible in small sizes. */
+.vora-agent-avatar{display:block;position:relative;flex:0 0 46px;width:46px;height:46px;overflow:hidden;border-radius:50%;background:#fff;border:2px solid #ffffff55;box-shadow:0 0 0 1px #ffffff20,0 2px 9px #00000020}
+.vora-agent-avatar--small{flex-basis:38px;width:38px;height:38px;border-width:1px}
+.vora-agent-avatar__image{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.52) translate(-9%,1%);transform-origin:center}
+.vora-agent-icon{display:block;flex:none;width:20px;height:20px;stroke-width:2.15;vector-effect:non-scaling-stroke}
+.vora-agent-icon--external{width:17px;height:17px}
+.vora-agent-icon--arrow{width:18px;height:18px}
+.vora-agent-icon--send{width:21px;height:21px;stroke-width:2.25}
 .vora-agent-panel{position:absolute;bottom:70px;right:0;display:flex;flex-direction:column;overflow:hidden;width:min(400px,calc(100vw - 24px));height:min(620px,calc(100dvh - 110px));min-height:320px;max-height:calc(100dvh - 110px);border:1px solid #d5d8d5;border-radius:21px;background:#f7f7f4;box-shadow:0 24px 80px #10172045,0 2px 14px #10172019;animation:vora-agent-open .25s cubic-bezier(.2,.8,.2,1) both;transform-origin:bottom right}
 .vora-agent-header{display:flex;align-items:center;gap:12px;flex:none;background:#101720;color:#fff;padding:17px 17px 17px 18px}
 .vora-agent-header__text{display:grid;flex:1;min-width:0;gap:3px}.vora-agent-header__text strong{font-size:16px;font-weight:700;letter-spacing:-.028em}.vora-agent-header__text span{font-size:11px;color:#c3cbd0}
-.vora-agent-icon-button{display:grid;place-items:center;flex:0 0 32px;height:32px;padding:4px;border:0;border-radius:9px;background:#ffffff13;color:#fff}.vora-agent-icon-button:hover{background:#ffffff26}.vora-agent-icon-button svg{width:18px;height:18px}
+.vora-agent-icon-button{display:grid;place-items:center;flex:0 0 32px;height:32px;padding:4px;border:0;border-radius:9px;background:#ffffff13;color:#fff}.vora-agent-icon-button:hover{background:#ffffff26}.vora-agent-icon-button .vora-agent-icon{width:19px;height:19px}
 .vora-agent-conversation{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:21px 17px 16px;display:flex;flex-direction:column;gap:13px;scrollbar-color:#cbd0ce transparent;scrollbar-width:thin}
 .vora-agent-greeting{max-width:90%;padding:15px 17px;background:#fff;border:1px solid #e1e4df;border-radius:17px 17px 17px 5px;box-shadow:0 4px 10px #1017200a}
 .vora-agent-greeting__eyebrow{font-size:10px;font-weight:780;letter-spacing:.14em;color:#b43e31}.vora-agent .vora-agent-greeting p{margin:9px 0 0;font-size:14px;line-height:1.5}
@@ -33,7 +33,7 @@
 .vora-agent-suggestions{display:grid;grid-template-columns:1fr;gap:7px;margin-top:2px;align-self:start;width:100%}.vora-agent-suggestions button{display:flex;justify-content:space-between;gap:7px;align-items:center;text-align:left;border:1px solid #d7dcd7;background:linear-gradient(#fff,#f8f8f5);border-radius:10px;padding:11px 13px;color:#263440;font-size:12px;font-weight:570}.vora-agent-suggestions button:hover:not(:disabled){border-color:#b43e31}.vora-agent-suggestions button span{color:#b43e31;font-size:16px}
 .vora-agent-actions{flex:none;display:flex;justify-content:space-between;gap:10px;background:#eff0eb;border-top:1px solid #e0e2dc;padding:11px 16px}.vora-agent-actions button,.vora-agent-actions a{border:0;background:none;text-decoration:none;color:#3e4d58;font-size:11px;font-weight:680;padding:5px 2px}.vora-agent-actions a{color:#ab3e32}.vora-agent-actions span{margin-left:5px}.vora-agent-actions button:hover,.vora-agent-actions a:hover{text-decoration:underline}
 .vora-agent-compose{flex:none;padding:12px 15px 13px;background:#fff;border-top:1px solid #e1e3e1}
-.vora-agent-compose__form{display:flex;align-items:flex-end;gap:7px;border:1px solid #cbd1cd;background:#f8f9f6;border-radius:12px;padding:5px 5px 5px 11px;transition:border-color .2s}.vora-agent-compose__form:focus-within{border-color:#b43e31}.vora-agent-compose__form textarea{width:100%;min-height:42px;max-height:105px;resize:vertical;outline:0;border:0;background:transparent;color:#101720;padding:9px 0 3px;font-size:13px;line-height:1.45}.vora-agent-compose__form textarea:focus-visible{outline:0}.vora-agent-compose__form button{border:0;display:grid;place-items:center;border-radius:9px;flex:0 0 39px;height:39px;background:#b43e31;color:#fff}.vora-agent-compose__form button svg{width:20px;height:20px}
+.vora-agent-compose__form{display:flex;align-items:flex-end;gap:7px;border:1px solid #cbd1cd;background:#f8f9f6;border-radius:12px;padding:5px 5px 5px 11px;transition:border-color .2s}.vora-agent-compose__form:focus-within{border-color:#b43e31}.vora-agent-compose__form textarea{width:100%;min-height:42px;max-height:105px;resize:vertical;outline:0;border:0;background:transparent;color:#101720;padding:9px 0 3px;font-size:13px;line-height:1.45}.vora-agent-compose__form textarea:focus-visible{outline:0}.vora-agent-compose__form button{border:0;display:grid;place-items:center;border-radius:9px;flex:0 0 39px;height:39px;background:#b43e31;color:#fff}.vora-agent-compose__form button .vora-agent-icon{width:21px;height:21px}
 .vora-agent-compose__bottom{display:flex;justify-content:space-between;gap:10px;margin:8px 2px 0;color:#77838b;font-size:10px}.vora-agent-consent{display:flex;align-items:flex-start;gap:9px;font-size:11px;line-height:1.45;color:#596873;cursor:pointer}.vora-agent-consent input{flex:0 0 15px;width:15px;height:15px;margin:1px 0 0;accent-color:#b43e31}.vora-agent-consent span{flex:1;min-width:0}.vora-agent-consent a{color:#a43c31}.vora-agent-consent--chat{padding:0 2px 11px}
 .vora-agent-lead{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;padding:19px 19px 20px;scrollbar-width:thin}.vora-agent-lead__intro h3{font-size:20px;font-weight:740;line-height:1.2;margin:0 0 9px;letter-spacing:-.035em}.vora-agent-lead__intro p{font-size:12px;line-height:1.5;color:#586874;margin:0 0 16px}
 .vora-agent-lead__form{display:grid;gap:12px}.vora-agent-lead__form>label:not(.vora-agent-consent){display:grid;gap:5px;font-size:11px;letter-spacing:.025em;font-weight:670;color:#344451}.vora-agent-lead__form input:not([type=checkbox]),.vora-agent-lead__form textarea{border:1px solid #cfd5d1;border-radius:9px;padding:11px;background:#fff;outline:0;font-size:13px;line-height:1.4;color:#101720;width:100%}.vora-agent-lead__form input:focus,.vora-agent-lead__form textarea:focus{border-color:#b43e31}.vora-agent-lead__form textarea{resize:vertical}.vora-agent-lead__actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}.vora-agent-primary{background:#101720;color:#fff;border:0;border-radius:9px;padding:12px 16px;font-size:12px;font-weight:700}.vora-agent-text-button{background:none;border:0;color:#425562;padding:9px;font-size:12px;font-weight:650}.vora-agent-lead__success{text-align:center;display:grid;place-content:center;justify-items:center;gap:10px;flex:1}.vora-agent-lead__success>span{background:#e3efe8;color:#1f6650;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;font-size:23px}.vora-agent-lead__success h3{font-size:21px;margin:0}.vora-agent-lead__success p{font-size:13px;margin:0}.vora-agent-trap{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}
@@ -55,3 +55,31 @@
 .vora-agent-register__submit span{font-size:17px;color:#e8aba1}
 .vora-agent-lead__reuse{border:1px solid #d4ded7;border-radius:10px;padding:10px 12px;background:#eef4ee;color:#425e52;margin:0;font-size:12px}
 @media(max-width:640px){.vora-agent-register{padding:16px 15px 18px}.vora-agent-register__intro h3{font-size:21px}.vora-agent-register__form{gap:10px}}
+
+/* Agent answer readability and interactive links (desktop and mobile). */
+.vora-agent-bubble{font-size:15px;line-height:1.62;padding:13px 15px}
+.vora-agent-greeting p{font-size:15px;line-height:1.6}
+.vora-agent-compose__form textarea{font-size:14px;line-height:1.55}
+.vora-agent-message-button{display:inline-flex;vertical-align:middle;align-items:center;gap:10px;margin:5px 4px 5px 0;padding:9px 12px;border-radius:10px;border:1px solid #b43e31;background:#b43e31;color:#fff!important;font-size:12px;font-weight:700;text-decoration:none!important;line-height:1.25;white-space:normal;max-width:100%;overflow-wrap:anywhere}
+.vora-agent-message-button:hover{background:#983427;border-color:#983427}
+.vora-agent-message-button:focus-visible,.vora-agent-safety-cta:focus-visible{outline:3px solid #b43e31;outline-offset:3px}
+.vora-agent-safety-cta{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;flex-shrink:0;align-self:stretch;text-align:left;padding:13px 15px;border-radius:13px;background:#b43e31;color:#fff!important;box-shadow:0 5px 16px #b43e3126;text-decoration:none!important;font-size:14px;font-weight:750;line-height:1.35}
+.vora-agent-safety-cta:hover{background:#923528}
+@media(max-width:640px){.vora-agent-bubble{font-size:14.5px;line-height:1.62}.vora-agent-safety-cta{font-size:13px}.vora-agent-message-button{font-size:12px}}
+
+/* Harmonized visual weight: full touch targets, accessible icon hit areas, compact portrait meta. */
+.vora-agent-icon-button{flex:0 0 36px;height:36px;min-width:36px;border-radius:11px;transition:background .16s ease,transform .16s ease}
+.vora-agent-icon-button:hover:not(:disabled){transform:translateY(-1px)}
+.vora-agent-header{gap:10px;padding:14px 15px}
+.vora-agent-header__text strong{font-size:15px;line-height:1.15;letter-spacing:-.025em}
+.vora-agent-header__text span{font-size:11px;line-height:1.35}
+.vora-agent-bubble__from{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.035em;margin-bottom:8px}
+.vora-agent-bubble__from .vora-agent-avatar{flex-basis:24px;width:24px;height:24px;border:1px solid #e4e6e5;box-shadow:none}
+.vora-agent-message-button,.vora-agent-safety-cta{gap:10px}
+.vora-agent-message-button .vora-agent-icon,.vora-agent-safety-cta .vora-agent-icon{margin-left:auto}
+.vora-agent-actions button,.vora-agent-actions a{display:inline-flex;align-items:center;gap:5px;min-height:34px;font-size:12px}
+.vora-agent-actions .vora-agent-icon{width:16px;height:16px}
+.vora-agent-suggestions button .vora-agent-icon{width:17px;height:17px;color:#b43e31}
+.vora-agent-register__submit .vora-agent-icon{width:18px;height:18px;color:#e8aba1}
+.vora-agent-lead__success .vora-agent-icon{width:24px;height:24px}
+@media(max-width:640px){.vora-agent-header{gap:9px;padding:11px 12px}.vora-agent-icon-button{min-width:34px;flex-basis:34px;height:34px}.vora-agent-header__text strong{font-size:14px}.vora-agent-avatar{width:42px;height:42px;flex-basis:42px}}

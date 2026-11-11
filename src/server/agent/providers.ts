@@ -2,6 +2,7 @@
 import { rpc } from '@/server/data'
 import { makeLiveAgentInstructions, type AgentSource } from './knowledge'
 import type { Locale } from '@/content'
+import { assessCargoRisk, cargoSafetyInstructions } from './freight-safety'
 
 import { validProvider, validModel, type AIProvider } from '@/lib/agent-models'
 export { RECOMMENDED_MODELS, validProvider, validModel } from '@/lib/agent-models'
@@ -88,7 +89,9 @@ export async function generateAgentReply(messages: AgentTurn[], locale: Locale, 
   if (!ai) return { error: 'unavailable' }
   const latest = messages.filter((m) => m.role === 'user').slice(-3).map((m) => m.content).join(' ').slice(-1100)
   try {
-    const instructions = await makeLiveAgentInstructions(latest, locale, preview)
+    const baseInstructions = await makeLiveAgentInstructions(latest, locale, preview)
+    const safety = cargoSafetyInstructions(assessCargoRisk(messages), locale)
+    const instructions = safety ? `${baseInstructions}\n\n${safety}` : baseInstructions
     return ai.provider === 'gemini' ? await callGemini(ai, messages, instructions) : await callOpenAI(ai, messages, instructions)
   } catch (error) {
     console.error('VORA agent provider unavailable', error instanceof Error ? error.name : 'error')

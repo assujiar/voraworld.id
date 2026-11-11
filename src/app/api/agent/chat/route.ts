@@ -2,6 +2,7 @@ import { afterResponse } from '@/server/after'
 import { remove } from '@/server/data'
 import { agentMessages, addAgentMessage, loadSession, touchSession } from '@/server/agent/store'
 import { generateAgentReply } from '@/server/agent/gemini'
+import { assessCargoRisk, agentActions } from '@/server/agent/freight-safety'
 import { agentBudget, agentCleanup, agentEnabled, agentLocale, agentSameOrigin, deleteAgentToken, getAgentToken, safeMessage } from '@/server/agent/security'
 
 export const runtime = 'nodejs'
@@ -17,7 +18,8 @@ export async function GET() {
     if (!token) return json({ enabled: true, registered: false, messages: [] })
     const session = await loadSession(token)
     if (!session?.identityAt) return json({ enabled: true, registered: false, messages: [] })
-    return json({ enabled: true, registered: true, messages: await agentMessages(session.id, 40) })
+    const messages = await agentMessages(session.id, 40)
+    return json({ enabled: true, registered: true, messages, actions: agentActions(assessCargoRisk(messages), session.locale === 'id' ? 'id' : 'en') })
   } catch (e) {
     console.error('VORA agent history failed:', e instanceof Error ? e.message : e)
     return json({ enabled: true, messages: [], error: 'history_unavailable' }, 503)
@@ -49,14 +51,15 @@ export async function POST(request: Request) {
     await addAgentMessage(session.id, 'user', message)
     await touchSession(session.id)
     const messages = await agentMessages(session.id)
+    const actions = agentActions(assessCargoRisk(messages), locale)
     const reply = await generateAgentReply(messages, locale)
     if ('error' in reply) {
-      if (reply.error === 'quota') return json({ error: 'provider_limit' }, 429, 60)
-      return json({ error: 'provider_unavailable' }, 503, 30)
+      if (reply.error === 'quota') return json({ error: 'provider_limit', actions }, 429, 60)
+      return json({ error: 'provider_unavailable', actions }, 503, 30)
     }
     await addAgentMessage(session.id, 'assistant', reply.text)
     afterResponse(() => agentCleanup())
-    return json({ reply: reply.text })
+    return json({ reply: reply.text, actions })
   } catch (e) {
     console.error('VORA agent chat failed:', e instanceof Error ? e.message : e)
     return json({ error: 'service_unavailable' }, 503)

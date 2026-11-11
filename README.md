@@ -127,4 +127,4 @@ Privacy and Terms preserve the CMS bodies (`privacy`, `terms`, `privacy_id`, `te
 
 ## VORA Agent
 
-Optional site-wide EN/ID chat assistant with Google Gemini or OpenAI API, seven-day private Supabase chat sessions, durable anti-abuse quotas, explicit AI-processing consent, and lead handoff to the existing CRM. Setup and privacy requirements: [docs/VORA_AGENT_SETUP.md](docs/VORA_AGENT_SETUP.md). Configure provider, model and encrypted API key in Admin → VORA Virtual Agent → AI Settings after applying migrations 0034 and 0035. The chat remains hidden until enabled there.
+Optional site-wide EN/ID chat assistant with Google Gemini or OpenAI API, seven-day private Supabase chat sessions, durable anti-abuse quotas, explicit AI-processing consent, and lead handoff to the existing CRM. Setup and privacy requirements: [docs/VORA_AGENT_SETUP.md](docs/VORA_AGENT_SETUP.md). Configure provider, model and encrypted API key in Admin → VORA Virtual Agent → AI Settings after applying migrations 0034, 0035 and 0036. The chat remains hidden until enabled there.

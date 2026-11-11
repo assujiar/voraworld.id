@@ -40,10 +40,10 @@ export default async function LocaleLayout({ children, params }: { children: Rea
         <link rel="stylesheet" href="/static/css/feedback.css?v=12" />
         <link rel="stylesheet" href="/static/css/public-motion.css?v=3" />
         <link rel="stylesheet" href="/static/css/public-ux.css?v=3" />
-        <link rel="stylesheet" href="/static/css/agent.css?v=2" />
+        <link rel="stylesheet" href="/static/css/agent.css?v=4" />
         {/* Vercel Web Analytics: cookieless visitor counts, served from this origin (so the CSP needs no new host). It only records once
             Web Analytics is enabled for the project in the Vercel dashboard; elsewhere (local, tests) the script does not exist, so it is left out. */}
-        {onVercel() && <>
+        {onVercel() && process.env.NEXT_PUBLIC_VORA_WEB_ANALYTICS === 'true' && <>
           <script dangerouslySetInnerHTML={{ __html: 'window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};' }} />
           <script defer src="/_vercel/insights/script.js" />
         </>}

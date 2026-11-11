@@ -5,7 +5,7 @@ Website `/en` dan `/id` memiliki VORA Virtual Agent berbasis AI dengan registras
 ### Aktivasi
 
 1. Pastikan Supabase, autentikasi Admin dan konfigurasi Next.js existing sudah berjalan.
-2. Terapkan migrasi `0031_vora_agent.sql`, `0032_vora_agent_identity.sql`, `0033_vora_agent_knowledge.sql`, `0034_agent_ai_settings.sql`, `0035_logistics_knowledge_seed.sql` **secara berurutan**, hanya migrasi yang belum diterapkan.
+2. Terapkan migrasi `0031_vora_agent.sql`, `0032_vora_agent_identity.sql`, `0033_vora_agent_knowledge.sql`, `0034_agent_ai_settings.sql`, `0035_logistics_knowledge_seed.sql`, dan `0036_agent_logistics_special_cargo.sql` **secara berurutan**, hanya migrasi yang belum diterapkan.
 3. Buka **Admin → VORA Virtual Agent → AI Settings** (`/admin/agent-settings`). Simpan API key Google Gemini atau OpenAI, pilih model dan aktifkan agent.
 4. Uji provider, tanya jawab ID/EN, registrasi customer, inquiry handoff ke Leads, histori dan penghapusan chat.
 5. Untuk perubahan knowledge umum atau VORA, gunakan **Admin → VORA Virtual Agent → Knowledge Base** (`/admin/agent-knowledge`). Publish agar artikel dipakai chat. Respons agent tidak menampilkan rujukan atau sitasi.
