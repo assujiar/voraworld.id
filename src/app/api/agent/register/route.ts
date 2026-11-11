@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   if (!visitor) return json({ error: 'invalid_identity' }, 400)
   try {
     const oldToken = await getAgentToken()
-    const oldSession = oldToken && await loadSession(oldToken)
+    const oldSession = oldToken ? await loadSession(oldToken) : null
     if (oldSession?.identityAt) return json({ registered: true })
     const token = oldSession ? oldToken! : newToken()
     if (!await agentBudget(request, token, 'register')) return json({ error: 'rate_limit' }, 429)
