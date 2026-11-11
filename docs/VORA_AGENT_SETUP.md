@@ -17,3 +17,6 @@ Panduan setting, Vault, model, SQL seed dan validasi terdapat pada [VORA_AI_PROV
 API key disimpan terenkripsi di Supabase Vault, hanya diakses backend. Chat hanya tersedia ketika admin mengaktifkan dan key provider yang dipilih tersimpan. Data kontak registrasi tidak dimasukkan ke prompt model. Histori chat berakhir setelah tujuh hari, sedangkan CRM contact memiliki retensi terpisah. Perlakuan data provider mengikuti kebijakan akun/model yang dipilih. OpenAI API umumnya berbayar. Gemini Free Tier tunduk pada batas model/project, dan tidak ada fallback otomatis ke model lain.
 
 `VORA_AGENT_ENABLED=false` dapat digunakan sebagai pemutus darurat di Vercel jika diperlukan. Semua konfigurasi provider/model/API key normal berada di UI Admin; environment `GEMINI_API_KEY` tidak dipakai.
+
+### Rich-text answers and visitor salutation
+After migrations 0031–0036, apply `migrations/0037_agent_salutations.sql` before deploying the updated app. Registration now requests an explicit preferred form of address and keeps the selection in the private agent session. Historical sessions without a preference continue without inferred titles. Public replies render a safe Markdown subset and approved internal page actions only; no arbitrary HTML is executed.

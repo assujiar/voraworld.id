@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import Image from 'next/image'
 import type { Locale } from '@/content'
+import { AgentRichText, safeVoraPath } from './AgentRichText'
+import type { AgentSalutation } from '@/server/agent/personalization'
 
 type Turn = { role: 'user' | 'assistant'; content: string }
 type AgentAction = { type: 'request_quote'; href: string; label: string; reason: string }
 type Handoff = { message: string; consent: boolean; website: string }
-type Visitor = { name: string; company: string; email: string; phone: string; consent: boolean; website: string }
-const blankVisitor: Visitor = { name: '', company: '', email: '', phone: '', consent: false, website: '' }
+type Visitor = { name: string; salutation: AgentSalutation | ''; company: string; email: string; phone: string; consent: boolean; website: string }
+const blankVisitor: Visitor = { name: '', salutation: '', company: '', email: '', phone: '', consent: false, website: '' }
 const blankHandoff: Handoff = { message: '', consent: false, website: '' }
 
 const words = {
@@ -24,7 +26,7 @@ const words = {
     rate: 'The chat limit has been reached. Please try again later or send an inquiry.',
     failure: 'I couldn’t respond right now. Please try again, or contact the team using the inquiry form.',
     leadTitle: 'Share this inquiry', leadNote: 'Review and edit the summary below. It will be submitted to VORA’s inquiry system, not to Gemini.',
-    name: 'Full name', email: 'Email address', phone: 'Mobile / WhatsApp', company: 'Company name', summary: 'Inquiry summary',
+    name: 'Full name', salutation: 'Preferred form of address', salutationPlaceholder: 'Choose how to address you', email: 'Email address', phone: 'Mobile / WhatsApp', company: 'Company name', summary: 'Inquiry summary',
     registerTitle: 'Before we start', registerDesc: 'Tell us a little about yourself to start chatting with VORA.', registerSubmit: 'Start conversation', registering: 'Setting up your chat…', registerError: 'Could not start the chat. Check your details or try again.', registeredInfo: 'Contact details received for this conversation.',
     leadConsent: 'I agree to VORA using these details to follow up on my inquiry under the privacy notice.',
     submit: 'Send inquiry', back: 'Back to chat', done: 'Inquiry received', doneText: 'Your reference is',
@@ -43,7 +45,7 @@ const words = {
     rate: 'Batas chat sementara sudah tercapai. Coba lagi nanti atau kirim inquiry.',
     failure: 'Pesan belum bisa dijawab. Coba lagi atau hubungi tim melalui form inquiry.',
     leadTitle: 'Kirim inquiry ke tim', leadNote: 'Periksa dan edit ringkasan di bawah ini. Informasi akan masuk ke sistem inquiry VORA, bukan dikirim ke Gemini.',
-    name: 'Nama lengkap', email: 'Alamat email', phone: 'No. HP / WhatsApp', company: 'Nama perusahaan', summary: 'Ringkasan inquiry',
+    name: 'Nama lengkap', salutation: 'Sapaan yang diinginkan', salutationPlaceholder: 'Pilih sapaan', email: 'Alamat email', phone: 'No. HP / WhatsApp', company: 'Nama perusahaan', summary: 'Ringkasan inquiry',
     registerTitle: 'Sebelum mulai ngobrol', registerDesc: 'Isi data singkat berikut untuk mulai chat dengan VORA.', registerSubmit: 'Mulai percakapan', registering: 'Menyiapkan chat…', registerError: 'Chat belum bisa dimulai. Periksa data dan coba lagi.', registeredInfo: 'Data kontak sudah diterima untuk percakapan ini.',
     leadConsent: 'Saya setuju VORA menggunakan informasi ini untuk menindaklanjuti inquiry sesuai pemberitahuan privasi.',
     submit: 'Kirim inquiry', back: 'Kembali ke chat', done: 'Inquiry diterima', doneText: 'Nomor referensi',
@@ -71,46 +73,6 @@ function AgentAvatar({ small = false }: { small?: boolean }) {
   return <span className={`vora-agent-avatar${small ? ' vora-agent-avatar--small' : ''}`} aria-hidden="true">
     <Image src="/static/assets/vora-agent-profile.png" alt="" width={52} height={52} sizes={small ? '38px' : '46px'} className="vora-agent-avatar__image" />
   </span>
-}
-
-/** Only approved first-party pages become clickable. No HTML/JS or external links from model text. */
-function safeVoraPath(raw: string): string | null {
-  let parsed: URL
-  try { parsed = new URL(raw, 'https://voraworld.id') } catch { return null }
-  if (parsed.protocol !== 'https:' || !['voraworld.id', 'www.voraworld.id'].includes(parsed.hostname)) return null
-  if (parsed.username || parsed.password || parsed.port) return null
-  if (!/^\/(en|id)\/(request-quote|contact|services(?:\/[-a-z0-9]+){0,2}|faq|about|solutions|network|insights(?:\/[-a-z0-9]+)?|document-samples)\/?$/i.test(parsed.pathname)) return null
-  return parsed.pathname
-}
-
-/** Interpret approved page references as proper interactive buttons, never plain unclickable strings. */
-function renderAgentContent(content: string, locale: Locale) {
-  const pattern = /\[([^\]\n]{1,100})\]\((https?:\/\/[^\s)]+|\/(?:en|id)\/[^\s)]+)\)|https?:\/\/(?:www\.)?voraworld\.id\/(?:en|id)\/[^\s<>)]+|\/(?:en|id)\/[a-z0-9/_?#&=%.-]+/gi
-  const nodes: ReactNode[] = []
-  let index = 0
-  for (const match of content.matchAll(pattern)) {
-    const start = match.index ?? 0
-    if (start > index) nodes.push(content.slice(index, start))
-    const original = match[0]
-    // Do not accidentally turn the path portion of an unrelated domain into a VORA button.
-    if (!match[1] && original.startsWith('/') && start > 0 && /[a-z0-9./]/i.test(content[start - 1])) {
-      nodes.push(original)
-      index = start + original.length
-      continue
-    }
-    const raw = match[2] ?? original
-    const cleaned = raw.replace(/[.,;:!?]+$/, '')
-    const trailing = match[2] ? '' : raw.slice(cleaned.length)
-    const href = safeVoraPath(cleaned)
-    if (href) {
-      const label = match[1] || (/request-quote/.test(href) ? (locale === 'id' ? 'Minta Penawaran' : 'Request a Quote') : href.split('/').filter(Boolean).slice(-1)[0].replace(/-/g, ' '))
-      nodes.push(<a key={`page-${start}`} className="vora-agent-message-button" href={href} target="_blank" rel="noopener noreferrer">{label}<AgentIcon name="external" /></a>)
-      if (trailing) nodes.push(trailing)
-    } else nodes.push(original)
-    index = start + original.length
-  }
-  if (index < content.length) nodes.push(content.slice(index))
-  return nodes.length ? nodes : content
 }
 
 function summaryFrom(turns: Turn[], locale: Locale) {
@@ -288,6 +250,15 @@ export function VoraAgent({ locale }: { locale: Locale }) {
         <form onSubmit={register} className="vora-agent-register__form">
           <div className="vora-agent-trap" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={visitor.website} onChange={(e) => setVisitor({ ...visitor, website: e.target.value })}/></label></div>
           <label>{t.name}<input required minLength={2} maxLength={140} autoComplete="name" value={visitor.name} onChange={(e) => setVisitor({ ...visitor, name: e.target.value })}/></label>
+          <label>{t.salutation}<select required value={visitor.salutation} onChange={(e) => setVisitor({ ...visitor, salutation: e.target.value as Visitor['salutation'] })}>
+            <option value="" disabled>{t.salutationPlaceholder}</option>
+            <option value="bapak">Bapak / Pak</option>
+            <option value="ibu">Ibu / Bu</option>
+            <option value="mr">Mr.</option>
+            <option value="ms">Ms.</option>
+            <option value="mrs">Mrs.</option>
+            <option value="name">{locale === 'id' ? 'Nama saja, tanpa sapaan' : 'First name only'}</option>
+          </select></label>
           <label>{t.company}<input required minLength={2} maxLength={200} autoComplete="organization" value={visitor.company} onChange={(e) => setVisitor({ ...visitor, company: e.target.value })}/></label>
           <label>{t.phone}<input required type="tel" minLength={7} maxLength={40} autoComplete="tel" placeholder="+62 812 3456 7890" value={visitor.phone} onChange={(e) => setVisitor({ ...visitor, phone: e.target.value })}/></label>
           <label>{t.email}<input required type="email" maxLength={200} autoComplete="email" value={visitor.email} onChange={(e) => setVisitor({ ...visitor, email: e.target.value })}/></label>
@@ -316,7 +287,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
           {loading && <p className="vora-agent-system">{t.loading}</p>}
           {turns.map((turn, index) => <div key={`${index}-${turn.role}`} className={`vora-agent-bubble vora-agent-bubble--${turn.role}`}>
             {turn.role === 'assistant' && <span className="vora-agent-bubble__from"><AgentAvatar small />VORA Virtual Agent</span>}
-            <span>{turn.role === 'assistant' ? renderAgentContent(turn.content, locale) : turn.content}</span>
+            {turn.role === 'assistant' ? <AgentRichText content={turn.content} locale={locale} /> : <span>{turn.content}</span>}
           </div>)}
           {actions.map((action) => <a key={action.type} className="vora-agent-safety-cta" href={safeVoraPath(action.href) || `/${locale}/request-quote`} target="_blank" rel="noopener noreferrer"><span>{action.label}</span><AgentIcon name="external" /></a>)}
           {busy && <div className="vora-agent-typing" role="status" aria-label={t.sending}><i/><i/><i/></div>}

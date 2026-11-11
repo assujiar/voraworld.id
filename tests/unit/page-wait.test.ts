@@ -33,7 +33,10 @@ describe('the wait for a public page', () => {
 
   it('sends the frame of the page before the database answers: the menu and the footer are read inside their own Suspense', () => {
     const layout = readFileSync(site('layout.tsx'), 'utf8')
-    expect(layout).not.toMatch(/await getNav|await getSettings|Promise\.all\(\[getNav/)
+    // Only the rendered layout must not wait for the database. generateMetadata may read the site settings (verification tokens): it is not part of the frame.
+    const frame = layout.slice(layout.indexOf('export default async function LocaleLayout'))
+    expect(layout).toContain('export default async function LocaleLayout')
+    expect(frame).not.toMatch(/await getNav|await getSettings|Promise\.all\(\[getNav/)
     expect(layout).toContain('<SiteHeader'); expect(layout).toContain('<SiteFooter')
   })
 })

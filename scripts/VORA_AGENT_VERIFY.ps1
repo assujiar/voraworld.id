@@ -34,6 +34,7 @@ $report = & {
         if (!(Test-Path -LiteralPath (Join-Path $repo 'package-lock.json'))) { throw 'package-lock.json not found' }
         if (!(Test-Path -LiteralPath (Join-Path $repo 'public\static\assets\vora-agent-profile.png'))) { throw 'VORA Agent portrait missing' }
         if (!(Test-Path -LiteralPath (Join-Path $repo 'migrations\0036_agent_logistics_special_cargo.sql'))) { throw 'SQL migration 0036 missing' }
+        if (!(Test-Path -LiteralPath (Join-Path $repo 'migrations\0037_agent_salutations.sql'))) { throw 'SQL migration 0037 missing' }
         "ROOT: $repo"
         "NODE: $(node --version)"
         "NPM: $(npm --version)"
@@ -42,7 +43,7 @@ $report = & {
         Check -Name '2 - INSTALL LOCKED DEPENDENCIES' -Command 'npm ci --no-audit --no-fund' -Label 'install'
         Check -Name '3 - APPLICATION TYPESCRIPT' -Command 'node node_modules\typescript\bin\tsc --noEmit -p tsconfig.json --pretty false --incremental false' -Label 'ts-app'
         Check -Name '4 - TESTS TYPESCRIPT' -Command 'node node_modules\typescript\bin\tsc --noEmit -p tsconfig.tests.json --pretty false --incremental false' -Label 'ts-tests'
-        Check -Name '5 - AGENT UNIT TESTS' -Command 'node_modules\.bin\vitest.cmd run -c vitest.unit.config.ts tests/unit/agent-freight-safety.test.ts tests/unit/agent.test.ts tests/unit/agent-knowledge.test.ts' -Label 'agent-tests'
+        Check -Name '5 - AGENT UNIT TESTS' -Command 'node_modules\.bin\vitest.cmd run -c vitest.unit.config.ts tests/unit/agent-freight-safety.test.ts tests/unit/agent.test.ts tests/unit/agent-knowledge.test.ts tests/unit/agent-richtext.test.tsx tests/unit/agent-personalization.test.ts' -Label 'agent-tests'
         Check -Name '6 - COMPLETE SETUP SQL' -Command 'node_modules\.bin\tsx.cmd scripts/build-manual-setup.ts --check' -Label 'setup-sql'
         Check -Name '7 - NEXT.JS PRODUCTION BUILD' -Command 'npm run build' -Label 'build'
         "`n=== ALL RELEASE CHECKS PASSED ==="

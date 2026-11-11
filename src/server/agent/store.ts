@@ -2,11 +2,12 @@ import { insert, many, one, update } from '@/server/data'
 import { digest, SESSION_LIFETIME_SECONDS } from './security'
 import type { AgentTurn } from './gemini'
 import type { Locale } from '@/content'
+import { parseSalutation, type AgentSalutation } from './personalization'
 
-export interface AgentSession { id: string; locale: Locale; identityAt: Date | null; name: string; company: string; email: string; phone: string }
+export interface AgentSession { id: string; locale: Locale; identityAt: Date | null; name: string; company: string; email: string; phone: string; salutation: AgentSalutation | null }
 export async function loadSession(token: string): Promise<AgentSession | null> {
-  const row = await one('agent_sessions', (q) => q.eq('token_hash', digest(token)).gt('expires_at', new Date().toISOString()), 'id,locale,identity_at,visitor_name,visitor_company,visitor_email,visitor_phone')
-  return row ? { id: String(row.id), locale: row.locale === 'id' ? 'id' : 'en', identityAt: row.identityAt instanceof Date ? row.identityAt : row.identityAt ? new Date(String(row.identityAt)) : null, name: String(row.visitorName || ''), company: String(row.visitorCompany || ''), email: String(row.visitorEmail || ''), phone: String(row.visitorPhone || '') } : null
+  const row = await one('agent_sessions', (q) => q.eq('token_hash', digest(token)).gt('expires_at', new Date().toISOString()), 'id,locale,identity_at,visitor_name,visitor_company,visitor_email,visitor_phone,visitor_salutation')
+  return row ? { id: String(row.id), locale: row.locale === 'id' ? 'id' : 'en', identityAt: row.identityAt instanceof Date ? row.identityAt : row.identityAt ? new Date(String(row.identityAt)) : null, name: String(row.visitorName || ''), company: String(row.visitorCompany || ''), email: String(row.visitorEmail || ''), phone: String(row.visitorPhone || ''), salutation: parseSalutation(row.visitorSalutation) } : null
 }
 
 export async function ensureSession(token: string, locale: Locale): Promise<AgentSession> {
@@ -14,7 +15,7 @@ export async function ensureSession(token: string, locale: Locale): Promise<Agen
   if (existing) return existing
   // A token is generated only on the server. A unique collision is astronomically unlikely.
   const rows = await insert('agent_sessions', { token_hash: digest(token), locale, consent_at: new Date().toISOString(), expires_at: new Date(Date.now() + SESSION_LIFETIME_SECONDS * 1000).toISOString() })
-  return { id: String(rows[0].id), locale, identityAt: null, name: '', company: '', email: '', phone: '' }
+  return { id: String(rows[0].id), locale, identityAt: null, name: '', company: '', email: '', phone: '', salutation: null }
 }
 
 export async function touchSession(id: string): Promise<void> {

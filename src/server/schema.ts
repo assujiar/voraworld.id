@@ -101,6 +101,7 @@ export interface AgentSessionsRow {
   identityAt: Date | null
   identitySource: string | null
   identityRef: string | null
+  visitorSalutation: string | null
 }
 
 export interface AppSecretsRow {

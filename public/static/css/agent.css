@@ -83,3 +83,18 @@
 .vora-agent-register__submit .vora-agent-icon{width:18px;height:18px;color:#e8aba1}
 .vora-agent-lead__success .vora-agent-icon{width:24px;height:24px}
 @media(max-width:640px){.vora-agent-header{gap:9px;padding:11px 12px}.vora-agent-icon-button{min-width:34px;flex-basis:34px;height:34px}.vora-agent-header__text strong{font-size:14px}.vora-agent-avatar{width:42px;height:42px;flex-basis:42px}}
+/* Structured, safe AI text: spacing and hierarchy without raw Markdown symbols. */
+.vora-agent-richtext{display:flex;flex-direction:column;gap:9px;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.65}
+.vora-agent-richtext p,.vora-agent-richtext h4,.vora-agent-richtext ul,.vora-agent-richtext ol{margin:0}
+.vora-agent-richtext h4{font-size:1em;font-weight:750;line-height:1.45;color:#20303e}
+.vora-agent-richtext strong{font-weight:750;color:#182936}
+.vora-agent-richtext em{font-style:italic}
+.vora-agent-richtext code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;padding:1px 4px;border-radius:4px;background:#edf0ef}
+.vora-agent-richtext ul,.vora-agent-richtext ol{padding-left:20px;display:grid;gap:5px;list-style-position:outside}
+.vora-agent-richtext ul{list-style-type:disc}.vora-agent-richtext ol{list-style-type:decimal}
+.vora-agent-richtext li{padding-left:1px}.vora-agent-richtext li::marker{color:#b43e31;font-weight:700}
+.vora-agent-richtext .vora-agent-message-button{white-space:normal;vertical-align:middle;max-width:100%;overflow-wrap:anywhere}
+.vora-agent-richtext .vora-agent-message-button svg{width:15px;height:15px;flex:none}
+.vora-agent-register__form select{width:100%;min-width:0;padding:11px 12px;border:1px solid #cfd5d0;border-radius:10px;background:#fff;color:#101720;font:inherit;font-size:13px;line-height:1.45;outline:0;cursor:pointer}
+.vora-agent-register__form select:focus-visible{border-color:#b43e31;box-shadow:0 0 0 3px #b43e3117}
+@media(max-width:640px){.vora-agent-richtext{gap:8px;line-height:1.6}.vora-agent-richtext ul,.vora-agent-richtext ol{gap:4px}}

@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     await touchSession(session.id)
     const messages = await agentMessages(session.id)
     const actions = agentActions(assessCargoRisk(messages), locale)
-    const reply = await generateAgentReply(messages, locale)
+    const reply = await generateAgentReply(messages, locale, undefined, { name: session.name, salutation: session.salutation })
     if ('error' in reply) {
       if (reply.error === 'quota') return json({ error: 'provider_limit', actions }, 429, 60)
       return json({ error: 'provider_unavailable', actions }, 503, 30)

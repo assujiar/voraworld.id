@@ -1,5 +1,6 @@
-import { rpc } from '@/server/data'
+import { rpc, update } from '@/server/data'
 import { parseVisitorIdentity } from '@/server/agent/identity'
+import { parseSalutation } from '@/server/agent/personalization'
 import { ensureSession, loadSession } from '@/server/agent/store'
 import { agentBudget, agentEnabled, agentLocale, agentSameOrigin, getAgentToken, newToken, setAgentToken } from '@/server/agent/security'
 
@@ -24,6 +25,8 @@ export async function POST(request: Request) {
   if (payload.consent !== true || payload.website) return json({ error: 'consent_required' }, 400)
   const visitor = parseVisitorIdentity(payload)
   if (!visitor) return json({ error: 'invalid_identity' }, 400)
+  const salutation = parseSalutation(payload.salutation)
+  if (!salutation) return json({ error: 'invalid_salutation' }, 400)
   try {
     const oldToken = await getAgentToken()
     const oldSession = oldToken ? await loadSession(oldToken) : null
@@ -31,6 +34,9 @@ export async function POST(request: Request) {
     const token = oldSession ? oldToken! : newToken()
     if (!await agentBudget(request, token, 'register')) return json({ error: 'rate_limit' }, 429)
     const session = oldSession || await ensureSession(token, agentLocale(payload.locale))
+    // Store the chosen address before identity registration, so retries cannot leave a
+    // registered session without its salutation if the subsequent CRM RPC succeeds.
+    await update('agent_sessions', { visitor_salutation: salutation }, (q) => q.eq('id', session.id))
     // The function atomically checks existing leads, customers and agent contacts.
     // Possible typos are held for manual review; public callers never learn matching CRM identities.
     await rpc('agent_register_identity', {
