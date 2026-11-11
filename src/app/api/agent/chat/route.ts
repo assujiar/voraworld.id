@@ -42,9 +42,10 @@ export async function POST(request: Request) {
   const locale = agentLocale(payload.locale)
   try {
     const previousToken = await getAgentToken()
-    const session = previousToken && await loadSession(previousToken)
+    if (!previousToken) return json({ error: 'registration_required' }, 403)
+    const session = await loadSession(previousToken)
     if (!session?.identityAt) return json({ error: 'registration_required' }, 403)
-    if (!await agentBudget(request, previousToken!, 'chat')) return json({ error: 'rate_limit' }, 429, 600)
+    if (!await agentBudget(request, previousToken, 'chat')) return json({ error: 'rate_limit' }, 429, 600)
     await addAgentMessage(session.id, 'user', message)
     await touchSession(session.id)
     const messages = await agentMessages(session.id)
