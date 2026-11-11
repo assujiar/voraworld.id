@@ -19,7 +19,7 @@ const words = {
     greeting: 'Hi. What shipment or logistics question can I help with?',
     hints: ['Ship cargo overseas', 'Customs clearance', 'Heavy-lift / OOG'],
     privacy: 'AI responses may be inaccurate. Avoid sharing confidential information.',
-    consent: 'I agree to VORA recording and checking these contact details against existing business contacts to prevent duplicates. Chat messages are processed by the AI provider currently selected by VORA (Google or OpenAI); processing and retention are subject to the provider terms and account settings. Chat history expires after 7 days; business contact details are kept separately.',
+    consent: 'I agree to VORA using these details to personalise the service I receive. Chat history expires after 7 days; my contact details are kept separately.',
     privacyLink: 'Privacy notice', input: 'Ask about a shipment or service…', send: 'Send message', sending: 'Thinking…',
     reset: 'Delete chat & start over', rfq: 'Request a Quote', handoff: 'Send to the team',
     loading: 'Loading conversation…', offline: 'The assistant is not available right now.',
@@ -38,7 +38,7 @@ const words = {
     greeting: 'Halo. Ada kebutuhan pengiriman atau pertanyaan logistics yang bisa saya bantu?',
     hints: ['Kirim barang ke luar negeri', 'Customs clearance', 'Heavy-lift / OOG'],
     privacy: 'Jawaban AI bisa keliru. Hindari berbagi informasi rahasia.',
-    consent: 'Saya setuju data kontak dicatat dan diperiksa dengan kontak bisnis VORA yang sudah ada untuk mencegah duplikasi. Pesan chat diproses penyedia AI yang dipilih VORA (Google atau OpenAI), sesuai kebijakan pemrosesan data masing-masing penyedia. Histori chat kedaluwarsa setelah 7 hari; data kontak bisnis disimpan terpisah.',
+    consent: 'Saya setuju VORA menggunakan data ini untuk mempersonalisasi layanan untuk saya. Histori chat kedaluwarsa setelah 7 hari; data kontak saya disimpan terpisah.',
     privacyLink: 'Pemberitahuan privasi', input: 'Tanya soal pengiriman atau layanan…', send: 'Kirim pesan', sending: 'Sedang menjawab…',
     reset: 'Hapus chat & mulai baru', rfq: 'Minta Penawaran', handoff: 'Teruskan ke tim',
     loading: 'Memuat percakapan…', offline: 'Asisten sedang tidak tersedia.',
@@ -251,7 +251,6 @@ export function VoraAgent({ locale }: { locale: Locale }) {
         </div>
         <form onSubmit={register} className="vora-agent-register__form">
           <div className="vora-agent-trap" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={visitor.website} onChange={(e) => setVisitor({ ...visitor, website: e.target.value })}/></label></div>
-          <label>{t.name}<input required minLength={2} maxLength={140} autoComplete="name" value={visitor.name} onChange={(e) => setVisitor({ ...visitor, name: e.target.value })}/></label>
           <fieldset className="vora-agent-choice">
             <legend>{t.salutation}</legend>
             <div className="vora-agent-choice__options">
@@ -261,6 +260,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
               </label>)}
             </div>
           </fieldset>
+          <label>{t.name}<input required minLength={2} maxLength={140} autoComplete="name" value={visitor.name} onChange={(e) => setVisitor({ ...visitor, name: e.target.value })}/></label>
           <label>{t.company}<input required minLength={2} maxLength={200} autoComplete="organization" value={visitor.company} onChange={(e) => setVisitor({ ...visitor, company: e.target.value })}/></label>
           <label>{t.phone}<input required type="tel" minLength={7} maxLength={40} autoComplete="tel" placeholder="+62 812 3456 7890" value={visitor.phone} onChange={(e) => setVisitor({ ...visitor, phone: e.target.value })}/></label>
           <label>{t.email}<input required type="email" maxLength={200} autoComplete="email" value={visitor.email} onChange={(e) => setVisitor({ ...visitor, email: e.target.value })}/></label>
