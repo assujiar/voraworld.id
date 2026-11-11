@@ -10,7 +10,7 @@ DECLARE
   expected_tables text[] := ARRAY['app_secrets','articles','audit_logs','bank_accounts','counters','coverage','customers','deliveries','delivery_items','delivery_proof_photos','delivery_proofs','document_seals',
     'document_verification_tokens','documents','email_job_attachments','email_jobs','email_rules','email_templates','faqs','invoice_bank_instructions','invoice_delivery_notes','invoice_items',
     'invoices','lead_activities','leads','login_attempts','mail_config','media','navigation_items','pages','payments','prepayment_receipts',
-    'quotation_approvals','quotation_items','quotations','receipts','revisions','sections','seo_redirects','settings','users'];
+    'quotation_approvals','quotation_items','quotations','receipts','revisions','sections','seo_redirects','settings','users','agent_sessions','agent_messages','agent_rate_counters','agent_housekeeping','agent_contacts','agent_identity_reviews','agent_knowledge','agent_knowledge_chunks','agent_knowledge_revisions','agent_ai_config','agent_ai_credentials'];
   expected_events text[] := ARRAY['lead_admin','lead_customer','lead_reply','invoice_customer','receipt_customer',
     'payment_confirmed','quotation_approval_request','quotation_approved_admin','quotation_customer_approved_admin','quotation_validated_customer','prepayment_receipt_customer','delivery_received_customer','delivery_received_admin'];
   missing text; n bigint; v text;
@@ -53,7 +53,7 @@ BEGIN
     RETURN QUERY SELECT 'migration history', 'WARN', 'schema_migrations table absent (fine if you ran the SQL files by hand)';
   ELSE
     EXECUTE 'SELECT count(*), max(name) FROM schema_migrations' INTO n, v;
-    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 26 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (26 expected), latest ' || COALESCE(v, 'none');
+    RETURN QUERY SELECT 'migration history', CASE WHEN n >= 35 THEN 'PASS' ELSE 'FAIL' END, n || ' migrations recorded (35 expected), latest ' || COALESCE(v, 'none');
   END IF;
 
   -- 4. Seed data the application depends on ------------------------------------
@@ -115,3 +115,31 @@ END
 $fn$;
 
 SELECT * FROM pg_temp.vora_verify();
+
+-- VORA Virtual Agent Knowledge Base (migration 0033)
+-- Private tables must have RLS enabled; search must never include unpublished entries.
+SELECT c.relname AS kb_table, c.relrowsecurity AS rls_enabled
+FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='public' AND c.relname IN ('agent_knowledge','agent_knowledge_chunks','agent_knowledge_revisions')
+ORDER BY c.relname;
+SELECT count(*) AS published_articles FROM public.agent_knowledge WHERE status='published';
+SELECT count(*) AS indexed_chunks FROM public.agent_knowledge_chunks;
+
+-- VORA AI provider configuration / encrypted Vault credentials (migration 0034)
+SELECT
+  (to_regclass('public.agent_ai_config') IS NOT NULL AND to_regclass('public.agent_ai_credentials') IS NOT NULL) AS ai_settings_tables_exist,
+  (to_regclass('vault.secrets') IS NOT NULL AND to_regclass('vault.decrypted_secrets') IS NOT NULL) AS supabase_vault_available,
+  (SELECT count(*) FROM agent_ai_config WHERE id=1) = 1 AS singleton_config_exists;
+SELECT c.relname AS ai_table, c.relrowsecurity AS rls_enabled
+FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='public' AND c.relname IN ('agent_ai_config','agent_ai_credentials')
+ORDER BY c.relname;
+SELECT p.proname, NOT has_function_privilege('anon',p.oid,'EXECUTE') AS anonymous_blocked,
+       NOT has_function_privilege('authenticated',p.oid,'EXECUTE') AS signed_in_blocked
+FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+WHERE n.nspname='public' AND p.proname IN ('agent_ai_set_key','agent_ai_remove_key','agent_ai_get_key','agent_ai_active');
+
+-- Editorial logistics knowledge (migration 0035); this SELECT never reads private API keys.
+SELECT count(*) AS published_seed_articles, count(*) FILTER(WHERE length(body_en)>30 AND length(body_id)>30) AS bilingual_articles
+FROM agent_knowledge WHERE seed_key IS NOT NULL AND status='published';
+SELECT count(*) AS published_seed_chunks FROM agent_knowledge_chunks c JOIN agent_knowledge a ON a.id=c.document_id WHERE a.seed_key IS NOT NULL AND a.status='published';

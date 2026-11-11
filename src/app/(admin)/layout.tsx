@@ -17,7 +17,7 @@ export default function AdminRoot({ children }: { children: React.ReactNode }) {
         <link rel="preload" href="/static/fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="stylesheet" href="/static/css/site.css" />
         <link rel="stylesheet" href="/static/css/motion.css?v=2" />
-        <link rel="stylesheet" href="/static/css/admin.css?v=1" />
+        <link rel="stylesheet" href="/static/css/admin.css?v=2" />
         <link rel="stylesheet" href="/static/css/feedback.css?v=12" />
       </head>
       <body className="admin-body"><Suspense fallback={null}><NavProgress /></Suspense>{children}</body>

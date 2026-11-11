@@ -1,4 +1,6 @@
 import { safeEqual } from '@/server/crypto'
+import { agentCleanup } from '@/server/agent/security'
+import { afterResponse } from '@/server/after'
 import { publicBaseUrl } from '@/server/env'
 import { dispatch } from '@/server/mail/outbox'
 
@@ -14,6 +16,7 @@ export async function GET(request: Request) {
   const given = /^Bearer (\S+)$/.exec(request.headers.get('authorization') || '')?.[1] ?? ''
   const headers = { 'cache-control': 'no-store', 'x-robots-tag': 'noindex' }
   if (secret.length < 32 || !given || !safeEqual(given, secret)) return new Response('Unauthorized', { status: 401, headers })
+  if (process.env.VORA_AGENT_ENABLED !== 'false') afterResponse(() => agentCleanup())
   const result = await dispatch(publicBaseUrl(), 30)
   return Response.json(result, { headers })
 }

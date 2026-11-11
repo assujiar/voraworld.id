@@ -64,3 +64,7 @@ export function assertConfig(): void {
     throw new Error('Production requires an HTTPS PUBLIC_BASE_URL (it is printed into document QR codes)')
   }
 }
+
+/** AI API keys and model selection are managed from Admin in Supabase Vault, not environment variables. */
+/** For anonymous visitor quotas: hash IP addresses with a non-public project secret. */
+export const agentIpSalt = (): string => process.env.VORA_AGENT_IP_SALT || supabaseSecretKey()

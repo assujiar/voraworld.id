@@ -5,6 +5,7 @@
  */
 export const ADMIN_MENU: Array<{ title: string; links: Array<{ label: string; href: string }> }> = [
   { title: 'Sales & Customers', links: [{ label: 'Leads', href: '/admin/leads' }, { label: 'Customers', href: '/admin/customers' }, { label: 'Quotations', href: '/admin/quotations' }] },
+  { title: 'VORA Virtual Agent', links: [{ label: 'AI Settings', href: '/admin/agent-settings' }, { label: 'Knowledge Base', href: '/admin/agent-knowledge' }, { label: 'Agent Contacts', href: '/admin/agent-contacts' }] },
   { title: 'Delivery', links: [{ label: 'Delivery Notes & Proof', href: '/admin/deliveries' }] },
   { title: 'Finance', links: [
     { label: 'Invoices & Payments', href: '/admin/invoices' }, { label: 'Receipts', href: '/admin/receipts' }, { label: 'Bank Accounts', href: '/admin/bank-accounts' },
