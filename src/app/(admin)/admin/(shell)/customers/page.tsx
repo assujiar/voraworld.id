@@ -11,8 +11,8 @@ export default async function Customers({ searchParams }: { searchParams: Promis
       <div className="admin-panel">
         <p className="note">A customer is where every commercial document starts: a quotation can be made for a customer directly, or after a lead is saved as one.</p>
         <StepForm className="inline-actions" style={{ marginBottom: 14 }}>
-          <input name="q" defaultValue={q} placeholder="Search company, owner code, email, contact person or phone" style={{ minWidth: 320 }} />
-          <AsyncButton className="button" busy="Mencari Customer…">Search</AsyncButton>
+          <input name="q" defaultValue={q} placeholder="Search company, owner code, email, contact person or phone" />
+          <AsyncButton className="button" busy="Searching customers…">Search</AsyncButton>
         </StepForm>
         <ListLoad filters={[q]} what="customers" columns={6}><CustomerRows q={q} /></ListLoad>
       </div>

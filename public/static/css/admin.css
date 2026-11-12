@@ -152,3 +152,22 @@
 .admin-body .agent-settings-aside a.button-outline{display:inline-flex;text-decoration:none;min-height:39px;font-size:.77rem;align-items:center;padding:8px 13px}
 @media(max-width:1080px){.admin-body .agent-settings-grid{grid-template-columns:minmax(0,1fr)}.admin-body .agent-settings-aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:720px){.admin-body .agent-settings-intro{padding:20px 17px;align-items:flex-start;gap:12px}.admin-body .agent-settings-symbol{width:44px;height:44px}.admin-body .agent-settings-grid .admin-panel{padding:18px}.admin-body .agent-settings-aside,.admin-body .agent-settings-provider-grid,.admin-body .agent-settings-model-row{grid-template-columns:minmax(0,1fr)}.admin-body .agent-settings-provider{min-height:115px}.admin-body .agent-settings-model-row .button-outline{width:100%}.admin-body .agent-settings-actions{flex-direction:column;align-items:stretch}.admin-body .agent-settings-actions .button,.admin-body .agent-settings-actions .button-outline{width:100%;justify-content:center}}
+/* Agent conversation transcript: visitor on the left, VORA Agent on the right, text kept exactly as stored (line breaks included). */
+.admin-body .agent-transcript{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:12px}
+.admin-body .agent-transcript__msg{justify-self:start;max-width:min(78ch,85%);padding:12px 14px;border-radius:10px;border:1px solid #dce0d6;background:#fff}
+.admin-body .agent-transcript__msg--assistant{justify-self:end;background:#f1f3ee}
+.admin-body .agent-transcript__who{display:block;font:500 .68rem ui-monospace,monospace;letter-spacing:.06em;color:#64717c}
+.admin-body .agent-transcript__msg p{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0;font-size:.88rem;line-height:1.6;color:#1b2934}
+@media(max-width:700px){.admin-body .agent-transcript__msg{max-width:100%}}
+/* Filter and search rows (form.inline-actions): the fields share the portal's field style and one height with their buttons; the search box takes the free width and everything wraps cleanly on a phone. */
+.admin-body form.inline-actions{gap:10px;margin-bottom:14px}
+.admin-body form.inline-actions>input:not([type=hidden]):not([type=checkbox]):not([type=radio]),.admin-body form.inline-actions>select{min-height:42px;border:1px solid #ccd2c8;border-radius:7px;background-color:#fff;padding:9px 12px;color:#26333d;font:inherit;font-size:.86rem;max-width:100%}
+.admin-body form.inline-actions>input:not([type=hidden]):not([type=checkbox]):not([type=radio]){flex:1 1 280px;min-width:0}
+.admin-body form.inline-actions>input::placeholder{color:#7a8790}
+.admin-body form.inline-actions>select{flex:0 1 auto;min-width:150px;appearance:none;-webkit-appearance:none;padding-right:34px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2364717c' stroke-width='1.6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.admin-body form.inline-actions>.button,.admin-body form.inline-actions>.button-outline{min-height:42px;padding:8px 18px;font-size:.8rem}
+@media(max-width:600px){.admin-body form.inline-actions>input:not([type=hidden]):not([type=checkbox]):not([type=radio]){flex-basis:100%}.admin-body form.inline-actions>select{flex:1 1 140px;min-width:0}.admin-body form.inline-actions>.button,.admin-body form.inline-actions>.button-outline{flex:1 1 120px;justify-content:center}}
+/* On a phone a list scrolls sideways inside its panel instead of squeezing every column (reference numbers no longer break over three lines). */
+@media(max-width:700px){.admin-body .admin-panel table{min-width:560px}}
+/* Secondary lines in a table (company, email, phone) read as quiet text: the site-wide small style is an uppercase label, which turned email addresses into capitals. */
+.admin-body td small{font-size:.78rem;letter-spacing:0;text-transform:none;font-weight:400;color:#5d6b75}
