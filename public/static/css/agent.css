@@ -12,7 +12,7 @@
 /* Official VORA Virtual Agent portrait. The round crop keeps the face visible in small sizes. */
 .vora-agent-avatar{display:block;position:relative;flex:0 0 46px;width:46px;height:46px;overflow:hidden;border-radius:50%;background:#fff;border:2px solid #ffffff55;box-shadow:0 0 0 1px #ffffff20,0 2px 9px #00000020}
 .vora-agent-avatar--small{flex-basis:38px;width:38px;height:38px;border-width:1px}
-.vora-agent-avatar__image{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.52) translate(-9%,1%);transform-origin:center}
+.vora-agent-avatar__image{display:block;width:100%;height:100%;object-fit:cover}
 .vora-agent-icon{display:block;flex:none;width:20px;height:20px;stroke-width:2.15;vector-effect:non-scaling-stroke}
 .vora-agent-icon--external{width:17px;height:17px}
 .vora-agent-icon--arrow{width:18px;height:18px}

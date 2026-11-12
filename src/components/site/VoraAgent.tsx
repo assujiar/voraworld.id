@@ -71,7 +71,7 @@ function AgentIcon({ name }: { name: AgentIconName }) {
 /** The image is the supplied official VORA Agent artwork, not a generated brand substitute. */
 function AgentAvatar({ small = false }: { small?: boolean }) {
   return <span className={`vora-agent-avatar${small ? ' vora-agent-avatar--small' : ''}`} aria-hidden="true">
-    <Image src="/static/assets/vora-agent-profile.png" alt="" width={52} height={52} sizes={small ? '38px' : '46px'} className="vora-agent-avatar__image" />
+    <Image src="/static/assets/vora-agent-profile-v2.png" alt="" width={52} height={52} sizes={small ? '38px' : '46px'} className="vora-agent-avatar__image" />
   </span>
 }
 

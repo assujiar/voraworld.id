@@ -28,7 +28,7 @@ npm run build
 
 ## Agent avatar and UI
 
-- `public/static/assets/vora-agent-profile.png` is the user-provided VORA Agent portrait (transparent PNG). The header, launcher and assistant-message identity all reference this one asset.
+- `public/static/assets/vora-agent-profile-v2.png` is the user-provided VORA Agent portrait (transparent PNG). The header, launcher and assistant-message identity all reference this one asset.
 - UI icons are consistent 24×24-viewBox SVGs with ~2.15px strokes and adequate touch targets.
 - First-party URLs in messages are rendered as clickable styled links (button presentation), with a strict route allowlist. External/model-invented destinations remain plain text.
 - `NEXT_PUBLIC_VORA_WEB_ANALYTICS=true` is an optional build-time flag to load the Vercel Analytics script; leave unset when Vercel Web Analytics is not active, avoiding a missing-script console error.
