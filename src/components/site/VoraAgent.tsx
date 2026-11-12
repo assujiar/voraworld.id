@@ -1,14 +1,25 @@
 'use client'
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import type { Locale } from '@/content'
 import { AgentRichText, safeVoraPath } from './AgentRichText'
 import { SALUTATION_OPTIONS, type AgentSalutation } from '@/server/agent/personalization'
+import { AGENT_DOCK_ID, AGENT_PREFILL_EVENT } from '@/content/vora-agent-page'
 
 type Turn = { role: 'user' | 'assistant'; content: string }
 type AgentAction = { type: 'request_quote'; href: string; label: string; reason: string }
 type Handoff = { message: string; consent: boolean; website: string }
+/** closed: only the launcher. floating: the window in the corner, kept while the visitor moves between pages. docked: full size inside the VORA Agent page. */
+type View = 'closed' | 'floating' | 'docked'
+const VIEW_KEY = 'vora-agent:view'
+const DRAFT_KEY = 'vora-agent:draft'
+// Browser storage can be blocked (private mode, site data off); the chat then simply starts closed and without a saved draft.
+const readStore = (key: string) => { try { return window.sessionStorage.getItem(key) ?? '' } catch { return '' } }
+const writeStore = (key: string, value: string) => { try { if (value) window.sessionStorage.setItem(key, value); else window.sessionStorage.removeItem(key) } catch { /* not available */ } }
+// On a phone the floating window covers the page, so "minimize" there means back to the launcher button.
+const isPhone = () => typeof window !== 'undefined' && window.matchMedia('(max-width:640px)').matches
 type Visitor = { name: string; salutation: AgentSalutation | ''; company: string; email: string; phone: string; consent: boolean; website: string }
 const blankVisitor: Visitor = { name: '', salutation: '', company: '', email: '', phone: '', consent: false, website: '' }
 const blankHandoff: Handoff = { message: '', consent: false, website: '' }
@@ -32,6 +43,7 @@ const words = {
     submit: 'Send inquiry', back: 'Back to chat', done: 'Inquiry received', doneText: 'Your reference is',
     leadError: 'The inquiry could not be sent. Please check the details and try again.',
     character: 'characters',
+    minimize: 'Minimize chat', expand: 'Expand chat', minimized: 'The chat is minimized. Your conversation is kept.', showHere: 'Show the chat here',
   },
   id: {
     launcher: 'Tanya VORA', heading: 'VORA Virtual Agent', subtitle: 'Tanya soal logistics dan pengiriman', close: 'Tutup chat',
@@ -51,10 +63,11 @@ const words = {
     submit: 'Kirim inquiry', back: 'Kembali ke chat', done: 'Inquiry diterima', doneText: 'Nomor referensi',
     leadError: 'Inquiry belum berhasil dikirim. Periksa data dan coba lagi.',
     character: 'karakter',
+    minimize: 'Perkecil chat', expand: 'Perbesar chat', minimized: 'Chat sedang diperkecil. Percakapan Anda tetap tersimpan.', showHere: 'Tampilkan chat di sini',
   },
 }
 
-type AgentIconName = 'refresh' | 'close' | 'send' | 'external' | 'arrow' | 'check'
+type AgentIconName = 'refresh' | 'close' | 'send' | 'external' | 'arrow' | 'check' | 'minimize' | 'expand'
 
 /** One consistent, legible icon system for all VORA Agent actions. */
 function AgentIcon({ name }: { name: AgentIconName }) {
@@ -65,6 +78,8 @@ function AgentIcon({ name }: { name: AgentIconName }) {
     {name === 'external' && <><path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/></>}
     {name === 'arrow' && <><path d="M4.5 12h15"/><path d="m13.5 6 6 6-6 6"/></>}
     {name === 'check' && <path d="m4.5 12 5 5 10-10"/>}
+    {name === 'minimize' && <path d="M5.5 17.5h13"/>}
+    {name === 'expand' && <><path d="M14 4.5h5.5V10"/><path d="M10 19.5H4.5V14"/><path d="M19.5 4.5 13 11"/><path d="M4.5 19.5 11 13"/></>}
   </svg>
 }
 
@@ -83,7 +98,9 @@ function summaryFrom(turns: Turn[], locale: Locale) {
 export function VoraAgent({ locale }: { locale: Locale }) {
   const t = words[locale]
   const [enabled, setEnabled] = useState<boolean | null>(null)
-  const [open, setOpen] = useState(false)
+  const [view, setView] = useState<View>('closed')
+  const [dock, setDock] = useState<HTMLElement | null>(null)
+  const open = view !== 'closed'
   const [turns, setTurns] = useState<Turn[]>([])
   const [actions, setActions] = useState<AgentAction[]>([])
   const [input, setInput] = useState('')
@@ -104,6 +121,15 @@ export function VoraAgent({ locale }: { locale: Locale }) {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const launcherRef = useRef<HTMLButtonElement>(null)
   const ongoing = useRef(false)
+
+  useEffect(() => {
+    const el = document.getElementById(AGENT_DOCK_ID)
+    setDock(el)
+    if (el) setView('docked')
+    else if (readStore(VIEW_KEY) === 'floating' && !isPhone()) setView('floating')
+    const draft = readStore(DRAFT_KEY)
+    if (draft) setInput(draft.slice(0, 1800))
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -128,20 +154,68 @@ export function VoraAgent({ locale }: { locale: Locale }) {
       const node = scrollRef.current
       if (node) node.scrollTop = node.scrollHeight
     }
-  }, [turns, open, busy, error, lead])
+  }, [turns, view, busy, error, lead])
 
   useEffect(() => {
-    if (!open) return
+    if (view !== 'floating') return
     const listener = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setOpen(false)
+        changeView('closed')
         setLead(null)
         launcherRef.current?.focus()
       }
     }
     document.addEventListener('keydown', listener)
     return () => document.removeEventListener('keydown', listener)
-  }, [open])
+  }, [view])
+
+  // The dock's loading text gives way once the chat is there; it stays when the agent is switched off.
+  useEffect(() => {
+    if (!dock) return
+    if (enabled) dock.dataset.live = '1'
+    return () => { delete dock.dataset.live }
+  }, [dock, enabled])
+
+  // A page can put a question in the input (the examples on the VORA Agent page); the visitor still sends it.
+  useEffect(() => {
+    const listener = (event: Event) => {
+      const text = (event as CustomEvent<{ text?: unknown }>).detail?.text
+      if (typeof text !== 'string' || !text.trim()) return
+      setInput(text.slice(0, 1800))
+      writeStore(DRAFT_KEY, text.slice(0, 1800))
+      setLead(null)
+      setView((v) => (v === 'closed' ? (document.getElementById(AGENT_DOCK_ID) ? 'docked' : 'floating') : v))
+      setTimeout(() => inputRef.current?.focus(), 80)
+    }
+    window.addEventListener(AGENT_PREFILL_EVENT, listener)
+    return () => window.removeEventListener(AGENT_PREFILL_EVENT, listener)
+  }, [])
+
+  /** Changes the window and remembers it for the next page (the docked state belongs to the VORA Agent page only). */
+  function changeView(next: View) {
+    setView(next)
+    if (next !== 'docked') writeStore(VIEW_KEY, next)
+  }
+  function minimize() {
+    changeView(isPhone() ? 'closed' : 'floating')
+    setTimeout(() => launcherRef.current?.focus(), 80)
+  }
+  function expand() {
+    if (dock) { changeView('docked'); setTimeout(() => { dock.scrollIntoView({ block: 'start', behavior: 'smooth' }); inputRef.current?.focus() }, 80); return }
+    writeStore(VIEW_KEY, 'floating')
+    window.location.href = `/${locale}/vora-agent`
+  }
+  function launch() {
+    setLead(null)
+    if (open) { changeView('closed'); return }
+    if (dock) { expand(); return }
+    changeView('floating')
+    setTimeout(() => inputRef.current?.focus(), 80)
+  }
+  function updateInput(value: string) {
+    setInput(value)
+    writeStore(DRAFT_KEY, value)
+  }
 
   async function resetChat() {
     if (busy || leadBusy || registerBusy) return
@@ -150,7 +224,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
       if (!response.ok) { setError(t.failure); return }
       setTurns([])
       setActions([])
-      setInput('')
+      updateInput('')
       setError('')
       setRegistered(false)
       setVisitor(blankVisitor)
@@ -189,7 +263,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
     if (!value || value.length > 1800 || !registered || ongoing.current) return
     ongoing.current = true
     setBusy(true)
-    setInput('')
+    updateInput('')
     setError('')
     setTurns((prev) => [...prev, { role: 'user', content: value }])
     try {
@@ -231,17 +305,24 @@ export function VoraAgent({ locale }: { locale: Locale }) {
 
   if (enabled !== true) return null
 
-  return <aside className={`vora-agent${open ? ' vora-agent--open' : ''}`} aria-label={t.heading}>
-    {open && <section className="vora-agent-panel" role="dialog" aria-modal="false" aria-label={t.heading}>
+  const docked = view === 'docked' && dock !== null
+  const panel = <section className="vora-agent-panel" role={docked ? 'region' : 'dialog'} aria-modal={docked ? undefined : false} aria-label={t.heading}>
       <header className="vora-agent-header">
         <AgentAvatar />
         <div className="vora-agent-header__text"><strong>{t.heading}</strong><span>{t.subtitle}</span></div>
         <button className="vora-agent-icon-button" type="button" onClick={() => void resetChat()} disabled={busy || leadBusy || registerBusy} aria-label={t.reset} title={t.reset}>
           <AgentIcon name="refresh" />
         </button>
-        <button className="vora-agent-icon-button" type="button" onClick={() => { setOpen(false); setLead(null); launcherRef.current?.focus() }} aria-label={t.close} title={t.close}>
-          <AgentIcon name="close" />
-        </button>
+        {docked ? <button className="vora-agent-icon-button" type="button" onClick={minimize} aria-label={t.minimize} title={t.minimize}>
+          <AgentIcon name="minimize" />
+        </button> : <>
+          <button className="vora-agent-icon-button" type="button" onClick={expand} aria-label={t.expand} title={t.expand}>
+            <AgentIcon name="expand" />
+          </button>
+          <button className="vora-agent-icon-button" type="button" onClick={() => { changeView('closed'); setLead(null); launcherRef.current?.focus() }} aria-label={t.close} title={t.close}>
+            <AgentIcon name="close" />
+          </button>
+        </>}
       </header>
 
       {!registered ? <div className="vora-agent-register">
@@ -299,7 +380,7 @@ export function VoraAgent({ locale }: { locale: Locale }) {
         <div className="vora-agent-actions"><a href={`/${locale}/request-quote`}>{t.rfq}<AgentIcon name="external" /></a><button type="button" onClick={startLead} disabled={busy || !turns.length}>{t.handoff}<AgentIcon name="arrow" /></button></div>
         <div className="vora-agent-compose">
           <form onSubmit={submitMessage} className="vora-agent-compose__form">
-            <textarea ref={inputRef} rows={2} aria-label={t.input} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={inputKey} maxLength={1800} placeholder={t.input} disabled={busy || loading}/>
+            <textarea ref={inputRef} rows={2} aria-label={t.input} value={input} onChange={(e) => updateInput(e.target.value)} onKeyDown={inputKey} maxLength={1800} placeholder={t.input} disabled={busy || loading}/>
             <button type="submit" disabled={!registered || !input.trim() || busy || loading} aria-label={t.send} title={t.send}>
               <AgentIcon name="send" />
             </button>
@@ -307,9 +388,19 @@ export function VoraAgent({ locale }: { locale: Locale }) {
           <div className="vora-agent-compose__bottom"><span>{t.heading}</span><span>{input.length}/1800</span></div>
         </div>
       </>}
-    </section>}
-    <button ref={launcherRef} type="button" className="vora-agent-launcher" aria-label={open ? t.close : t.launcher} aria-expanded={open} onClick={() => { setOpen((v) => !v); setLead(null); setTimeout(() => inputRef.current?.focus(), 80) }}>
-      <AgentAvatar small/><span>{open ? t.close : t.launcher}</span><AgentIcon name={open ? 'close' : 'arrow'} />
-    </button>
-  </aside>
+    </section>
+
+  return <>
+    {docked && createPortal(<div className="vora-agent vora-agent--docked">{panel}</div>, dock)}
+    {dock && !docked && createPortal(<div className="vora-agent-dock__minimized" role="status">
+      <p>{t.minimized}</p>
+      <button type="button" className="v-btn" onClick={expand}>{t.showHere}</button>
+    </div>, dock)}
+    {!docked && <aside className={`vora-agent${open ? ' vora-agent--open' : ''}`} aria-label={t.heading}>
+      {view === 'floating' && panel}
+      <button ref={launcherRef} type="button" className="vora-agent-launcher" aria-label={open ? t.close : t.launcher} aria-expanded={open} onClick={launch}>
+        <AgentAvatar small/><span>{open ? t.close : t.launcher}</span><AgentIcon name={open ? 'close' : 'arrow'} />
+      </button>
+    </aside>}
+  </>
 }

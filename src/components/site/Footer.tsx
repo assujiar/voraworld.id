@@ -34,6 +34,7 @@ export function Footer({ locale, settings }: { locale: Locale; settings: Record<
             <h4>{t('Contact', 'Kontak')}</h4>
             <a href={`/${locale}/contact`}>{labels['/contact']}</a>
             <a href={`/${locale}/request-quote`}>{text.rfq}</a>
+            <a href={`/${locale}/vora-agent`}>{t('Ask VORA Agent', 'Tanya VORA Agent')}</a>
             {settings.email ? <a href={`mailto:${settings.email}`}>{settings.email}</a> : null}
             {settings.address ? <p style={{ marginTop: 12 }}>{settings.address}</p> : null}
           </div>

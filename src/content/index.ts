@@ -22,4 +22,4 @@ export const serviceAliases = data.serviceAliases as unknown as Record<string, s
 /** Two-language inline copy: `t('English', 'Bahasa')`. */
 export const makeT = (locale: Locale) => (en: string, id: string) => (locale === 'en' ? en : id)
 
-export const CORE_PAGES = ['/', '/about', '/services', '/solutions', '/network', '/insights', '/faq', '/contact', '/request-quote', '/privacy', '/terms', '/document-samples'] as const
+export const CORE_PAGES = ['/', '/about', '/services', '/solutions', '/network', '/insights', '/faq', '/contact', '/request-quote', '/privacy', '/terms', '/document-samples', '/vora-agent'] as const

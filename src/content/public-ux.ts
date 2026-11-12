@@ -1,5 +1,6 @@
 import { serviceGroups, serviceModes, type Locale } from './index'
 import { faqEntries } from './faq'
+import { voraAgentPage } from './vora-agent-page'
 import { workingNotes } from './working-notes'
 import { serviceExtras } from './service-extras'
 import { modeGuides } from './service-guides'
@@ -59,6 +60,7 @@ export function publicSearchItems(locale: Locale): SearchItem[] {
     ]),
     ...faqEntries.map(f => ({ href:`/${locale}/faq#${f.id}`, title:f.q[locale], body:f.a[locale], category:'FAQ' })),
     ...workingNotes.map(n => ({ href:`/${locale}/insights#note-${n.id}`, title:n.title[locale], body:n.items[locale].join(' '), category:locale === 'en' ? 'Field note' : 'Catatan praktis' })),
+    { href:`/${locale}/vora-agent`, title:'VORA Agent', body:voraAgentPage[locale].intro, category:locale === 'en' ? 'Ask online' : 'Tanya online', aliases:['chat', 'chatbot', 'asisten', 'assistant', 'ai', 'tanya', 'ask', 'konsultasi'] },
     { href:`/${locale}/document-samples`, title:locale === 'en' ? 'Sample shipment documents' : 'Contoh dokumen pengiriman', body:locale === 'en' ? 'Quotation, delivery note and proof of delivery. Illustrative examples with no customer data.' : 'Penawaran, surat jalan, dan bukti serah terima. Contoh tanpa data pelanggan.', category:locale === 'en' ? 'Reference' : 'Referensi', aliases:['pod', 'quotation', 'surat jalan', 'contoh dokumen', 'sample documents', 'bukti serah terima'] },
   ]
 }

@@ -3,7 +3,7 @@ import { many } from '@/server/data'
 import { absoluteUrl, getSettings } from '@/server/site'
 
 export const dynamic = 'force-dynamic'
-const CORE_SLUGS = new Set(['', 'home', 'about', 'services', 'solutions', 'network', 'insights', 'faq', 'contact', 'request-quote', 'privacy', 'terms'])
+const CORE_SLUGS = new Set(['', 'home', 'about', 'services', 'solutions', 'network', 'insights', 'faq', 'contact', 'request-quote', 'privacy', 'terms', 'vora-agent'])
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
 
 export async function GET() {
