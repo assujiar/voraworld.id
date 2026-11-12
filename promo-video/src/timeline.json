@@ -1,0 +1,118 @@
+{
+  "fps": 30,
+  "bpm": 120,
+  "duration": 60,
+  "voice": {
+    "am_michael": 0.7,
+    "am_fenrir": 0.3
+  },
+  "scenes": {
+    "logoOpen": [
+      0,
+      6
+    ],
+    "hook": [
+      6,
+      11
+    ],
+    "meet": [
+      11,
+      17
+    ],
+    "brief": [
+      17,
+      23.5
+    ],
+    "breath": [
+      23.5,
+      24
+    ],
+    "services": [
+      24,
+      44
+    ],
+    "promise": [
+      44,
+      50
+    ],
+    "logoClose": [
+      50,
+      56
+    ],
+    "cta": [
+      56,
+      60
+    ]
+  },
+  "vo": [
+    {
+      "id": "01_hook",
+      "start": 8.6,
+      "max": 2.3,
+      "say": "Every shipment is different."
+    },
+    {
+      "id": "02_meet",
+      "start": 12.2,
+      "max": 4.6,
+      "say": "This is Vora. Freight and logistics, planned before the cargo moves."
+    },
+    {
+      "id": "03_brief",
+      "start": 17.6,
+      "max": 5.2,
+      "say": "Tell us what is moving, where it has to go, and by when."
+    },
+    {
+      "id": "04_freight",
+      "start": 24.35,
+      "max": 3.55,
+      "say": "Air and ocean freight, with the handovers connected."
+    },
+    {
+      "id": "05_customs",
+      "start": 28.35,
+      "max": 3.55,
+      "say": "Declarations prepared around the actual commodity."
+    },
+    {
+      "id": "06_warehouse",
+      "start": 32.3,
+      "max": 3.65,
+      "say": "Storage, handling and fulfilment, as one operating flow.",
+      "speed": 1.1
+    },
+    {
+      "id": "07_distribution",
+      "start": 36.35,
+      "max": 3.55,
+      "say": "Mode, capacity and access, planned together."
+    },
+    {
+      "id": "08_project",
+      "start": 40.3,
+      "max": 3.65,
+      "say": "Heavy and oversized cargo, planned against the real constraints.",
+      "speed": 1.15
+    },
+    {
+      "id": "09_promise",
+      "start": 44.4,
+      "max": 5.3,
+      "say": "Scope, timelines and responsibility are explicit, before anything is committed."
+    },
+    {
+      "id": "10_tagline",
+      "start": 54.5,
+      "max": 2.6,
+      "say": "Vora. Bringing the world within reach."
+    },
+    {
+      "id": "11_cta",
+      "start": 56.75,
+      "max": 3.2,
+      "say": "Talk through your shipment, at vora world dot I D.",
+      "speed": 1.05
+    }
+  ]
+}
