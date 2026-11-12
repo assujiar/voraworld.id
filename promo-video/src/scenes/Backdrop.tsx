@@ -71,7 +71,7 @@ export const Backdrop: React.FC = () => {
 
       {/* frame furniture: hairlines and a slow vertical ticker on the right edge */}
       {t > 5.9 ? (
-        <AbsoluteFill style={{ opacity: decorIn * (1 - p(t, 51.2, 51.6)) }}>
+        <AbsoluteFill style={{ opacity: decorIn * (1 - p(t, 55.2, 55.6)) }}>
           <div style={{ position: "absolute", left: 80, top: 176, width: 920, height: 2, background: fg }} />
           <div style={{ position: "absolute", left: 80, top: 1764, width: 920, height: 2, background: fg }} />
           <div style={{ position: "absolute", left: 1020, top: 220, width: 40, height: 1500, overflow: "hidden" }}>

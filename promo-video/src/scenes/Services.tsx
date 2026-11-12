@@ -12,8 +12,8 @@ const SERVICES = [
   { name: "Project Cargo", strap: "Heavy and oversized movements, planned against the real constraints.", chips: ["OOG", "Heavy-lift", "Breakbulk"], word: "PROJECT CARGO", img: "heavy.webp", bg: C.paper },
 ];
 export const STATION_T = [26, 30, 34, 38, 42];
-/** scenes after the map run 2 s later than their authored times */
-export const SHIFT = 2;
+/** scenes after the map run 6 s later than their authored times */
+export const SHIFT = 6;
 const CARD = { w: 640, h: 900, cy: 880 };
 
 /** sheet geometry (shared with the closing scene) */

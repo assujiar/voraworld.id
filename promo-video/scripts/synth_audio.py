@@ -11,7 +11,7 @@ import soundfile as sf
 from scipy.signal import butter, sosfilt, fftconvolve
 
 SR = 48000
-DUR = 62.0
+DUR = 66.0
 N = int(SR * DUR)
 BEAT = 0.5
 BAR = 2.0
@@ -353,77 +353,78 @@ fx.add(19.9, boom(1.6, 0.9), 0.75)
 fx.add(19.9, crash(1.6), 0.4)
 kick_times.append(19.9)
 
-# C. Map 20-27.6: groove, pings climb the D-major pentatonic with every arc, then the build
-groove(20.0, 25.5, 20.0, 2)
-PENTA = [74, 76, 78, 81, 83, 86, 88, 90, 93, 95]
+# C. Map 20-31.6: groove, pings climb the D-major pentatonic with every arc (Indonesia, then the world), then the build
+groove(20.0, 29.5, 20.0, 2)
+PENTA = [74, 76, 78, 81, 83, 86, 88, 90, 93, 95, 98]
 for k in range(10):
     lead.add(20.6 + k * 0.4, pluck(PENTA[k] + 12, 0.55, 0.6), 0.34, pan=(-0.4 if k % 2 else 0.4))
+for k in range(11):
+    lead.add(25.8 + k * 0.45, pluck(PENTA[k] + 12, 0.5, 0.6), 0.3, pan=(-0.4 if k % 2 else 0.4))
+synth.add(25.6, pad(CHORDS["D"], 2.0, cutoff=2600, attack=0.6), 0.35)
 for k in range(8):
-    lead.add(25.6 + k * 0.3, pluck(PENTA[min(9, k + 2)] + 12, 0.45, 0.6), 0.3, pan=(-0.4 if k % 2 else 0.4))
-for k in range(8):
-    drums.add(25.5 + k * 0.25, snare(), 0.5 + 0.04 * k)
-t = 27.5 - 1.0
+    drums.add(29.5 + k * 0.25, snare(), 0.5 + 0.04 * k)
+t = 31.5 - 1.0
 step = 0.125
-while t < 27.55:
+while t < 31.55:
     drums.add(t, snare(), 0.8)
     t += step
     step = max(0.045, step * 0.85)
 for k in range(4):
-    kick_at(25.5 + k * 0.5, 0.9)
-fx.add(23.6, riser(4.0, 250, 9000), 0.75)
-synth.add(25.5, pad(CHORDS["G"], 2.1, cutoff=4500, attack=1.2), 0.55)
+    kick_at(29.5 + k * 0.5, 0.9)
+fx.add(27.6, riser(4.0, 250, 9000), 0.75)
+synth.add(29.5, pad(CHORDS["G"], 2.1, cutoff=4500, attack=1.2), 0.55)
 
-# E. DROP 28-48 with an impact on every service
-groove(28, 48, 28, 3)
-for T in (28, 32, 36, 40, 44):
-    fx.add(T, boom(2.2, 1.1 if T == 28 else 0.95), 0.95 if T == 28 else 0.7)
-    fx.add(T, crash(2.0), 0.7 if T == 28 else 0.45)
-for tm, f in [(47, 160), (47.25, 140), (47.5, 120), (47.75, 95)]:
+# E. DROP 32-52 with an impact on every service
+groove(32, 52, 32, 3)
+for T in (32, 36, 40, 44, 48):
+    fx.add(T, boom(2.2, 1.1 if T == 32 else 0.95), 0.95 if T == 32 else 0.7)
+    fx.add(T, crash(2.0), 0.7 if T == 32 else 0.45)
+for tm, f in [(51, 160), (51.25, 140), (51.5, 120), (51.75, 95)]:
     drums.add(tm, tom(f), 0.9)
 
-# F. Breakdown 48-52: pad, plucks, half-time pulse, three stamp hits
-synth.add(48, pad(CHORDS["D"], 2.0, cutoff=1800, attack=0.05), 0.6)
-synth.add(50, pad(CHORDS["A"], 2.0, cutoff=1800, attack=0.2), 0.6)
-fx.add(48, boom(2.0, 0.9), 0.6)
-fx.add(48, crash(2.0), 0.4)
+# F. Breakdown 52-56: pad, plucks, half-time pulse, three stamp hits
+synth.add(52, pad(CHORDS["D"], 2.0, cutoff=1800, attack=0.05), 0.6)
+synth.add(54, pad(CHORDS["A"], 2.0, cutoff=1800, attack=0.2), 0.6)
+fx.add(52, boom(2.0, 0.9), 0.6)
+fx.add(52, crash(2.0), 0.4)
 for k in range(8):
-    t = 48 + k * 0.5
-    c = chord_at(t, 48)
+    t = 52 + k * 0.5
+    c = chord_at(t, 52)
     lead.add(t, pluck(CHORDS[c][3] + 12, 0.45), 0.3, pan=0.2)
     lead.add(t + 0.25, pluck(CHORDS[c][4] + 12, 0.45), 0.22, pan=-0.2)
-for t in (48, 49, 50, 51):
+for t in (52, 53, 54, 55):
     kick_at(t, 0.7)
-for t in (49, 49.5, 50):
+for t in (53, 53.5, 54):
     fx.add(t, boom(1.0, 0.75), 0.55)
 
-# G. Final build 52-56, BIG HIT at 56
-groove(52, 54, 52, 2)
+# G. Final build 56-60, BIG HIT at 60
+groove(56, 58, 56, 2)
 for k in range(8):
-    drums.add(54 + k * 0.25, snare(), 0.55 + 0.04 * k)
-t = 55
+    drums.add(58 + k * 0.25, snare(), 0.55 + 0.04 * k)
+t = 59
 step = 0.125
-while t < 55.95:
+while t < 59.95:
     drums.add(t, snare(), 0.85)
     t += step
     step = max(0.045, step * 0.82)
-for tm, f in ((55.5, 150), (55.62, 130), (55.75, 110), (55.88, 90)):
+for tm, f in ((59.5, 150), (59.62, 130), (59.75, 110), (59.88, 90)):
     drums.add(tm, tom(f), 0.85)
-fx.add(52, riser(4.0, 200, 10000), 0.85)
-synth.add(54, pad(CHORDS["G"], 2.0, cutoff=5000, attack=1.0), 0.6)
-fx.add(56, boom(4.0, 1.4), 1.15)
-fx.add(56, crash(4.0), 1.0)
-kick_times.append(56)
-synth.add(56, supersaw(CHORDS["D"] + [74, 78], 4.2, cutoff=7000, attack=0.01, release=2.5), 1.0)
-synth.add(56, pad([38, 45, 50, 57, 62, 66, 69], 5.8, cutoff=3000, attack=0.02), 0.6)
-for k in range(12):
-    drums.add(56.5 + k * 0.25, hat(), 0.35, pan=0.2)
-for t in (57, 58, 59):
-    kick_at(t, 0.55)
-synth.add(60, stab([62, 66, 69, 74]), 0.5)
-fx.add(60, boom(1.8, 0.8), 0.5)
+fx.add(56, riser(4.0, 200, 10000), 0.85)
+synth.add(58, pad(CHORDS["G"], 2.0, cutoff=5000, attack=1.0), 0.6)
+fx.add(60, boom(4.0, 1.4), 1.15)
+fx.add(60, crash(4.0), 1.0)
 kick_times.append(60)
+synth.add(60, supersaw(CHORDS["D"] + [74, 78], 4.2, cutoff=7000, attack=0.01, release=2.5), 1.0)
+synth.add(60, pad([38, 45, 50, 57, 62, 66, 69], 5.8, cutoff=3000, attack=0.02), 0.6)
+for k in range(12):
+    drums.add(60.5 + k * 0.25, hat(), 0.35, pan=0.2)
+for t in (61, 62, 63):
+    kick_at(t, 0.55)
+synth.add(64, stab([62, 66, 69, 74]), 0.5)
+fx.add(64, boom(1.8, 0.8), 0.5)
+kick_times.append(64)
 for k, m in enumerate([74, 78, 81, 86]):
-    lead.add(60 + k * 0.12, pluck(m + 12, 0.8), 0.22)
+    lead.add(64 + k * 0.12, pluck(m + 12, 0.8), 0.22)
 
 # ================================================================ SFX (visual)
 S = sfx.add
@@ -454,26 +455,26 @@ S(20.3, pop(900), 0.4)
 for k in range(10):
     S(20.6 + k * 0.4, zip_(), 0.25)
 S(24.2, whoosh(1.3, False), 0.6)
-for k in range(8):
-    S(25.6 + k * 0.3, zip_(), 0.25)
-S(27.25, whoosh(0.6, True), 0.7)
-S(28.3, whoosh(0.8, True), 0.8)    # plane sweep
-for T in (32, 36, 40, 44):
+for k in range(11):
+    S(25.8 + k * 0.45, zip_(), 0.25)
+S(31.25, whoosh(0.6, True), 0.7)
+S(32.3, whoosh(0.8, True), 0.8)    # plane sweep
+for T in (36, 40, 44, 48):
     S(T - 0.45, whoosh(0.5, True), 0.7)
-S(33, stamp(), 1.0)               # customs stamp
-S(40.15, whoosh(0.5, False), 0.8)   # truck
+S(37, stamp(), 1.0)               # customs stamp
+S(44.15, whoosh(0.5, False), 0.8)   # truck
 for k in range(3):
-    S(45 + k * 0.2, zip_(), 0.6)  # sling wraps
-S(47.7, whoosh(0.6, True), 0.7)     # card flip
-for t in (49, 49.5, 50):
+    S(49.0 + k * 0.2, zip_(), 0.6)  # sling wraps
+S(51.7, whoosh(0.6, True), 0.7)     # card flip
+for t in (53, 53.5, 54):
     S(t, stamp(), 1.0)
-S(51.5, whoosh(0.7, False), 0.6)
+S(55.5, whoosh(0.7, False), 0.6)
 for k in range(7):
-    S(52.6 + k * 0.42, zip_(), 0.7)
-S(55.5, whoosh(0.3, True), 0.6)
-S(58, pop(600), 0.5)
-S(58.5, whoosh(0.4, True), 0.4)
-S(59.4, pop(450), 0.4)
+    S(56.6 + k * 0.42, zip_(), 0.7)
+S(59.5, whoosh(0.3, True), 0.6)
+S(62, pop(600), 0.5)
+S(62.5, whoosh(0.4, True), 0.4)
+S(63.4, pop(450), 0.4)
 
 # ================================================================ MIX
 side = np.ones(N)
@@ -494,11 +495,11 @@ music = (
 )
 music = np.tanh(music * 1.1) / 1.1
 # hard silence for the breath 25.6-26.0, short fades around it
-a, b = int(27.55 * SR), int(28.0 * SR) - 1
+a, b = int(31.55 * SR), int(32.0 * SR) - 1
 fade = int(0.05 * SR)
 music[:, a : a + fade] *= np.linspace(1, 0, fade)
 music[:, a + fade : b] = 0
-music[:, int(61.6 * SR):] *= np.linspace(1, 0, N - int(61.6 * SR))
+music[:, int(65.6 * SR):] *= np.linspace(1, 0, N - int(65.6 * SR))
 sfxm = reverb(sfx.x, 1.2, 0.15)
 
 os.makedirs(OUT, exist_ok=True)

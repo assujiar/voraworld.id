@@ -14,12 +14,12 @@ import { Close } from "./scenes/Close";
 /** header logo: arrives from the opening, visits the "This is VORA" moment, leaves before the ink */
 const HeaderLogo: React.FC = () => {
   const t = useT();
-  if (t < 6 || t > 51.8) return null;
+  if (t < 6 || t > 55.8) return null;
   const go = p(t, 10.85, 11.45, EASE_INOUT);
   const back = p(t, 13.95, 14.55, EASE_INOUT);
   const k = go * (1 - back);
   const HERO = { left: 160, top: 520, width: 760 };
-  const out = p(t, 51.25, 51.65, EASE_IN);
+  const out = p(t, 55.25, 55.65, EASE_IN);
   const rev = p(t, 20.15, 20.35);
   return (
     <div
@@ -43,7 +43,7 @@ const Footer: React.FC = () => {
   const t = useT();
   if (t < 5.6) return null;
   const inK = p(t, 5.7, 6.2, EASE);
-  const end = p(t, 58.45, 59.05, EASE_INOUT);
+  const end = p(t, 62.45, 63.05, EASE_INOUT);
   const dark = t > 20.25;
   const dash = mix(34, 0, end);
   const lineC = dark ? "rgba(255,255,255,0.45)" : "#C9CFD2";

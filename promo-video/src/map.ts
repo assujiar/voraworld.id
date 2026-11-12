@@ -22,17 +22,20 @@ export const INDO_T0 = 20.6;
 export const INDO_STEP = 0.4;
 
 export const WORLD: { name: string; at: LonLat }[] = [
-  { name: "Singapore", at: [103.82, 1.35] },
-  { name: "Shanghai", at: [121.47, 31.23] },
-  { name: "Tokyo", at: [139.69, 35.68] },
   { name: "Sydney", at: [151.21, -33.87] },
+  { name: "Tokyo", at: [139.69, 35.68] },
+  { name: "Busan", at: [129.08, 35.18] },
+  { name: "Shanghai", at: [121.47, 31.23] },
+  { name: "Hong Kong", at: [114.17, 22.32] },
+  { name: "Singapore", at: [103.82, 1.35] },
   { name: "Mumbai", at: [72.88, 19.08] },
   { name: "Dubai", at: [55.27, 25.2] },
+  { name: "Jeddah", at: [39.19, 21.49] },
   { name: "Rotterdam", at: [4.48, 51.92] },
   { name: "Hamburg", at: [9.99, 53.55] },
 ];
-export const WORLD_T0 = 25.6;
-export const WORLD_STEP = 0.3;
+export const WORLD_T0 = 25.8;
+export const WORLD_STEP = 0.45;
 
 export type View = { lon: number; lat: number; scale: number };
 
@@ -47,11 +50,11 @@ export const viewAt = (t: number): View => {
   lon = mix(lon, 92, z);
   lat = mix(lat, 12, z);
   // C: spin west so Europe comes round
-  const c = p(t, 25.6, 27.35, (x) => EASE_INOUT(x) * 0.5 + x * 0.5);
-  lon = mix(lon, 42, c);
-  lat = mix(lat, 22, c);
+  const c = p(t, 25.6, 31.0, (x) => EASE_INOUT(x) * 0.4 + x * 0.6);
+  lon = mix(lon, 28, c);
+  lat = mix(lat, 24, c);
   // D: the globe is sucked into a point for the drop
-  const d = p(t, 27.3, 27.95, EASE_IN);
+  const d = p(t, 31.3, 31.95, EASE_IN);
   scale = mix(scale, 6, d);
   lon = mix(lon, 10, d);
   void EASE;

@@ -1,7 +1,7 @@
 {
   "fps": 30,
   "bpm": 120,
-  "duration": 62,
+  "duration": 66,
   "voice": {
     "af_bella": 0.6,
     "af_nova": 0.4
@@ -26,23 +26,23 @@
     ],
     "map": [
       19.9,
-      28
+      32
     ],
     "services": [
-      28,
-      48
-    ],
-    "promise": [
-      48,
+      32,
       52
     ],
-    "logoClose": [
+    "promise": [
       52,
-      58
+      56
+    ],
+    "logoClose": [
+      56,
+      62
     ],
     "cta": [
-      58,
-      62
+      62,
+      66
     ]
   },
   "vo": [
@@ -71,50 +71,56 @@
       "say": "From Jakarta, we coordinate domestic and international logistics!"
     },
     {
+      "id": "03c_intl",
+      "start": 24.75,
+      "max": 6.6,
+      "say": "Beyond Indonesia, we plan the international leg, together with pickup, documentation and destination delivery!"
+    },
+    {
       "id": "04_freight",
-      "start": 28.35,
+      "start": 32.35,
       "max": 3.55,
       "say": "Air and ocean freight, with the handovers connected!"
     },
     {
       "id": "05_customs",
-      "start": 32.35,
+      "start": 36.35,
       "max": 3.55,
       "say": "Declarations prepared around the actual commodity."
     },
     {
       "id": "06_warehouse",
-      "start": 36.3,
+      "start": 40.3,
       "max": 3.65,
       "say": "Storage, handling and fulfilment, as one operating flow."
     },
     {
       "id": "07_distribution",
-      "start": 40.35,
+      "start": 44.35,
       "max": 3.55,
       "say": "Mode, capacity and access, planned together."
     },
     {
       "id": "08_project",
-      "start": 44.3,
+      "start": 48.3,
       "max": 3.7,
       "say": "Heavy and oversized cargo, planned against the real constraints."
     },
     {
       "id": "09_promise",
-      "start": 48.25,
+      "start": 52.25,
       "max": 4.7,
       "say": "Scope, timelines and responsibility are explicit, before anything is committed."
     },
     {
       "id": "10_tagline",
-      "start": 56.5,
+      "start": 60.5,
       "max": 2.6,
       "say": "Vora! Bringing the world within reach!"
     },
     {
       "id": "11_cta",
-      "start": 58.75,
+      "start": 62.75,
       "max": 3.2,
       "say": "Talk through your shipment, at vora world dot I D!"
     }
