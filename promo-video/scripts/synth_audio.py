@@ -427,7 +427,28 @@ for k, m in enumerate([74, 78, 81, 86]):
     lead.add(64 + k * 0.12, pluck(m + 12, 0.8), 0.22)
 
 # ================================================================ SFX (visual)
-S = sfx.add
+EDIT = os.environ.get("EDIT", "full")
+
+
+def to_edit(t):
+    """master time -> edit time for the 59.8 s gbp cut (None = cut out)"""
+    if EDIT != "gbp" or t < 14.3:
+        return t
+    if t < 19.9:
+        return 14.3 + (t - 14.3) * (3.6 / 5.6)
+    if t < 52:
+        return t - 2
+    if t < 56:
+        return None
+    return t - 6
+
+
+def S(t0, sig, gain=1.0, pan=0.0):
+    nt = to_edit(t0)
+    if nt is not None:
+        sfx.add(nt, sig, gain, pan)
+
+
 S(0.55, whoosh(0.45, True), 0.8)
 S(1.0, stamp(), 0.7); S(1.0, pop(700), 0.4)
 for t in (2.0, 2.5, 3.0):
@@ -503,6 +524,26 @@ music[:, int(65.6 * SR):] *= np.linspace(1, 0, N - int(65.6 * SR))
 sfxm = reverb(sfx.x, 1.2, 0.15)
 
 os.makedirs(OUT, exist_ok=True)
+if EDIT == "gbp":
+    # cut whole bars out of the music: 16-18 (brief) and 52-56 (plan sheet), with 15 ms crossfades
+    def seg(a, b):
+        return music[:, int(a * SR) : int(b * SR)]
+    xf = int(0.015 * SR)
+    parts = [seg(0, 16), seg(18, 52), seg(56, 65.8)]
+    out = parts[0]
+    for nxt in parts[1:]:
+        ramp = np.linspace(0, 1, xf)
+        out = np.concatenate([out[:, :-xf], out[:, -xf:] * (1 - ramp) + nxt[:, :xf] * ramp, nxt[:, xf:]], axis=1)
+    L = int(59.8 * SR)
+    if out.shape[1] < L:
+        out = np.concatenate([out, np.zeros((2, L - out.shape[1]))], axis=1)
+    out = out[:, :L]
+    out[:, -int(0.3 * SR):] *= np.linspace(1, 0, int(0.3 * SR))
+    sfxm = sfxm[:, :L]
+    sf.write(os.path.join(OUT, "music_gbp.wav"), (out / (np.max(np.abs(out)) + 1e-9) * 0.9).T.astype(np.float32), SR)
+    sf.write(os.path.join(OUT, "sfx_gbp.wav"), (sfxm / (np.max(np.abs(sfxm)) + 1e-9) * 0.9).T.astype(np.float32), SR)
+    print("gbp music + sfx written", out.shape[1] / SR)
+    raise SystemExit(0)
 sf.write(os.path.join(OUT, "music.wav"), (music / (np.max(np.abs(music)) + 1e-9) * 0.9).T.astype(np.float32), SR)
 sf.write(os.path.join(OUT, "sfx.wav"), (sfxm / (np.max(np.abs(sfxm)) + 1e-9) * 0.9).T.astype(np.float32), SR)
 print("music + sfx written")

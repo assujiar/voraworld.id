@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile } from "remotion";
 import { Label } from "../components";
-import { BACK, C, EASE, EASE_IN, EASE_INOUT, mix, p, shake, useT } from "../lib";
+import { BACK, C, EASE, EASE_IN, EASE_INOUT, mix, p, shake, useT, useVariant } from "../lib";
 
 // ---------------------------------------------------------------- copy (site.json, verbatim) and look
 const SERVICES = [
@@ -178,7 +178,8 @@ const SheetContent: React.FC<{ t: number }> = ({ t }) => {
 // ---------------------------------------------------------------- scene
 export const Services: React.FC = () => {
   const t = useT() - SHIFT;
-  if (t < 25.95 || t > 50.0) return null;
+  const short = useVariant() === "gbp";
+  if (t < 25.95 || t > 50.0 || (short && t >= 46.0)) return null;
   const a = activeAt(t);
   const front = Math.round(a);
   const sh = [26, 30, 34, 38, 42, 47, 47.5, 48].reduce(
@@ -188,8 +189,11 @@ export const Services: React.FC = () => {
     },
     { x: 0, y: 0 },
   );
-  const exit = p(t, 45.55, 46.15, EASE_IN);
-  const flip = p(t, 45.7, 46.3, EASE_INOUT);
+  const exit = short ? p(t, 44.9, 45.5, EASE_IN) : p(t, 45.55, 46.15, EASE_IN);
+  const flip = short ? 0 : p(t, 45.7, 46.3, EASE_INOUT);
+  // gbp edit: no plan sheet, the last card collapses straight into the red needle square
+  const shrink = short ? p(t, 45.3, 46.0, EASE_INOUT) : 0;
+  const redK = short ? p(t, 45.5, 45.9) : 0;
   const leave = p(t, 49.4, 49.85, EASE_IN);
 
   // marquee keyword behind the ring
@@ -223,8 +227,15 @@ export const Services: React.FC = () => {
       opacity *= 1 - exit;
     }
     const isLast = i === 4;
-    const w = isLast ? mix(CARD.w, SHEET.width, flip) : CARD.w;
-    const h = isLast ? mix(CARD.h, SHEET.height, flip) : CARD.h;
+    let w = isLast ? mix(CARD.w, SHEET.width, flip) : CARD.w;
+    let h = isLast ? mix(CARD.h, SHEET.height, flip) : CARD.h;
+    if (isLast && shrink > 0) {
+      w = mix(w, 84, shrink);
+      h = mix(h, 84, shrink);
+      x = mix(x, LAST_CHECK.x - 540, shrink);
+      y = mix(y, LAST_CHECK.y - CARD.cy, shrink);
+      z = mix(z, 0, shrink);
+    }
     if (isLast && flip > 0) rotY = 180 * flip;
     if (isLast) {
       scale *= 1 - leave * 0.25;
@@ -285,8 +296,11 @@ export const Services: React.FC = () => {
               }}
             >
               <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
-                <Front i={c.i} t={t} active={c.i === front} />
+                <div style={{ position: "absolute", inset: 0, opacity: isLast ? 1 - redK : 1 }}>
+                  <Front i={c.i} t={t} active={c.i === front} />
+                </div>
                 <div style={{ position: "absolute", inset: 0, borderRadius: 44, background: C.ink, opacity: c.dim, pointerEvents: "none" }} />
+                {isLast && redK > 0 ? <div style={{ position: "absolute", inset: 0, borderRadius: mix(44, 10, shrink), background: C.red, opacity: redK }} /> : null}
               </div>
               {isLast ? (
                 <div style={{ position: "absolute", inset: 0, transform: "rotateY(180deg)", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>

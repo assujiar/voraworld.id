@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { C, EASE_IN, p, useT } from "../lib";
+import { C, EASE_IN, p, useT, useVariant } from "../lib";
 import { jakartaAt } from "../map";
 
 const TICKER = "PT SATU ARAH INTERNATIONAL  ·  JAKARTA  ·  06°12′S 106°49′E  ·  FREIGHT & LOGISTICS  ·  ";
@@ -8,6 +8,7 @@ const TICKER = "PT SATU ARAH INTERNATIONAL  ·  JAKARTA  ·  06°12′S 106°49�
 /** paper first half, ink second half, with the decor that keeps each frame from feeling empty */
 export const Backdrop: React.FC = () => {
   const t = useT();
+  const short = useVariant() === "gbp";
   const decorIn = p(t, 5.9, 6.6);
   const jk = jakartaAt(19.95);
   const flood = p(t, 19.85, 20.45, EASE_IN);
@@ -71,7 +72,7 @@ export const Backdrop: React.FC = () => {
 
       {/* frame furniture: hairlines and a slow vertical ticker on the right edge */}
       {t > 5.9 ? (
-        <AbsoluteFill style={{ opacity: decorIn * (1 - p(t, 55.2, 55.6)) }}>
+        <AbsoluteFill style={{ opacity: decorIn * (1 - (short ? p(t, 51.6, 52.0) : p(t, 55.2, 55.6))) }}>
           <div style={{ position: "absolute", left: 80, top: 176, width: 920, height: 2, background: fg }} />
           <div style={{ position: "absolute", left: 80, top: 1764, width: 920, height: 2, background: fg }} />
           <div style={{ position: "absolute", left: 1020, top: 220, width: 40, height: 1500, overflow: "hidden" }}>

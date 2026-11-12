@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill } from "remotion";
 import { getLength, getPointAtLength } from "@remotion/paths";
 import { Agent, Logo, redGrow } from "../components";
-import { BACK, C, EASE, EASE_IN, EASE_INOUT, mix, p, shake, useT } from "../lib";
+import { BACK, C, EASE, EASE_IN, EASE_INOUT, mix, p, shake, useT, useVariant } from "../lib";
 import { LAST_CHECK, SHIFT } from "./Services";
 
 const LOGO = { left: 100, width: 880 };
@@ -32,6 +32,7 @@ const TAG = "Bringing the World Within Reach.".split(" ");
 
 export const Close: React.FC = () => {
   const t = useT() - SHIFT;
+  const short = useVariant() === "gbp";
   if (t < 49.35) return null;
 
 
@@ -56,8 +57,9 @@ export const Close: React.FC = () => {
       {/* the last red check leaves the plan sheet and becomes the needle */}
       {t < 50.65
         ? (() => {
-            const m = p(t, 49.75, 50.55, EASE_INOUT);
-            const size = mix(84, 22, p(t, 49.75, 50.1, EASE));
+            const n0 = short ? 50.0 : 49.75;
+            const m = p(t, n0, 50.55, EASE_INOUT);
+            const size = mix(84, 22, p(t, n0, n0 + 0.35, EASE));
             const x = mix(LAST_CHECK.x, PTS[0][0], m);
             const y = mix(LAST_CHECK.y, PTS[0][1], m) - Math.sin(m * Math.PI) * 160;
             return (
@@ -68,7 +70,7 @@ export const Close: React.FC = () => {
                   top: y - size / 2,
                   width: size,
                   height: size,
-                  borderRadius: mix(10, size / 2, p(t, 49.75, 50.1)),
+                  borderRadius: mix(10, size / 2, p(t, n0, n0 + 0.35)),
                   background: C.red,
                   opacity: t < 49.4 ? 0 : 1,
                 }}

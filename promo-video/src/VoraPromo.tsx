@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Sequence, staticFile } from "remotion";
 import { Audio, Video } from "@remotion/media";
 import { Logo } from "./components";
-import { C, EASE, EASE_IN, EASE_INOUT, FONT, FOOTER, HEADER, mix, p, useT } from "./lib";
+import { C, EASE, EASE_IN, EASE_INOUT, FONT, FOOTER, HEADER, mix, p, useT, useVariant, Variant, VariantCtx } from "./lib";
 import { Hook, Meet, RedDot } from "./scenes/Intro";
 import { Brief } from "./scenes/Brief";
 import { Plane, Services } from "./scenes/Services";
@@ -19,7 +19,8 @@ const HeaderLogo: React.FC = () => {
   const back = p(t, 13.95, 14.55, EASE_INOUT);
   const k = go * (1 - back);
   const HERO = { left: 160, top: 520, width: 760 };
-  const out = p(t, 55.25, 55.65, EASE_IN);
+  const short = useVariant() === "gbp";
+  const out = short ? p(t, 51.6, 52.0, EASE_IN) : p(t, 55.25, 55.65, EASE_IN);
   const rev = p(t, 20.15, 20.35);
   return (
     <div
@@ -75,7 +76,8 @@ const Footer: React.FC = () => {
   );
 };
 
-export const VoraPromo: React.FC = () => (
+export const VoraPromo: React.FC<{ variant: Variant }> = ({ variant }) => (
+  <VariantCtx.Provider value={variant}>
   <AbsoluteFill style={{ background: C.paper, fontFamily: FONT, color: C.ink }}>
     <Backdrop />
     <Decor />
@@ -92,6 +94,7 @@ export const VoraPromo: React.FC = () => (
     <HeaderLogo />
     <Footer />
     <Plane />
-    <Audio src={staticFile("audio/soundtrack.wav")} />
+    <Audio src={staticFile(variant === "gbp" ? "audio/soundtrack_gbp.wav" : "audio/soundtrack.wav")} />
   </AbsoluteFill>
+  </VariantCtx.Provider>
 );

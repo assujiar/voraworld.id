@@ -1,4 +1,18 @@
+import { createContext, useContext } from "react";
 import { Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+
+/** "full" = the 66 s master; "gbp" = the 59.8 s edit (brief tightened, plan sheet removed) */
+export type Variant = "full" | "gbp";
+export const VariantCtx = createContext<Variant>("full");
+export const useVariant = () => useContext(VariantCtx);
+
+/** gbp edit time -> master time. Brief 14.3-17.9 plays the master's 14.3-19.9; then +2 s; from 50 s, +6 s (plan sheet cut). */
+export const gbpToMaster = (t: number) => {
+  if (t < 14.3) return t;
+  if (t < 17.9) return 14.3 + (t - 14.3) * (5.6 / 3.6);
+  if (t < 50) return t + 2;
+  return t + 6;
+};
 
 export const C = {
   ink: "#101720",
@@ -23,7 +37,9 @@ export const BACK = Easing.out(Easing.back(1.6));
 export const useT = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  return frame / fps;
+  const v = useContext(VariantCtx);
+  const t = frame / fps;
+  return v === "gbp" ? gbpToMaster(t) : t;
 };
 
 /** 0..1 progress between a and b seconds, clamped */
