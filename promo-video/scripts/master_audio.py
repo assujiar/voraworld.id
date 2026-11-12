@@ -18,7 +18,7 @@ sfx, _ = sf.read(os.path.join(A, "sfx.wav"), always_2d=True)
 N = music.shape[0]
 vo = np.zeros(N)
 for line in T["vo"]:
-    x, sr = sf.read(os.path.join(A, "vo", f"{line['id']}.wav"))
+    x, sr = sf.read(os.path.join(os.environ.get("VO_DIR") or os.path.join(A, "vo"), f"{line['id']}.wav"))
     if sr != SR:
         x = resample_poly(x, SR, sr)
     i = int(line["start"] * SR)
@@ -52,7 +52,7 @@ mix = mix * 10 ** ((-14.0 - loud) / 20)
 ceil = 10 ** (-1.0 / 20)
 mix = np.where(np.abs(mix) > ceil * 0.8, np.sign(mix) * (ceil * 0.8 + (ceil * 0.2) * np.tanh((np.abs(mix) - ceil * 0.8) / (ceil * 0.2))), mix)
 final = meter.integrated_loudness(mix)
-sf.write(os.path.join(A, "soundtrack.wav"), mix.astype(np.float32), SR)
+sf.write(os.environ.get("MIX_OUT") or os.path.join(A, "soundtrack.wav"), mix.astype(np.float32), SR)
 print(f"integrated {final:.1f} LUFS, peak {20*np.log10(np.max(np.abs(mix))):.1f} dBFS")
 for a, b in T["scenes"].values():
     seg = mix[int(a * SR) : int(b * SR)]
