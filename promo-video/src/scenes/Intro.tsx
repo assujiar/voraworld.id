@@ -37,27 +37,44 @@ export const Hook: React.FC = () => {
       {WORDS.map((w, i) => {
         const inK = p(t, BEATS[i] - 0.13, BEATS[i], EASE_IN);
         const outK = p(t, 8.85 + i * 0.06, 9.3 + i * 0.06, EASE_IN);
+        const tape = i % 2 === 1; // "shipment" and "different" ride on ink label tapes
+        const tapeK = p(t, BEATS[i] - 0.2, BEATS[i] - 0.02, EASE);
         return (
-          <div
-            key={w}
-            style={{
-              position: "absolute",
-              right: 1080 - RIGHT,
-              top: TOPS[i],
-              fontSize: 168,
-              fontWeight: 700,
-              letterSpacing: "-0.045em",
-              lineHeight: 1,
-              color: C.ink,
-              opacity: inK * (1 - outK),
-              scale: `${mix(1.7, 1, inK)}`,
-              transformOrigin: "100% 60%",
-              translate: `${mix(0, -260, outK)}px 0px`,
-              filter: `blur(${(1 - inK) * 14}px)`,
-            }}
-          >
-            {w}
-          </div>
+          <React.Fragment key={w}>
+            {tape ? (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: TOPS[i] - 8,
+                  height: 184,
+                  width: i === 1 ? 960 : 1010,
+                  background: C.ink,
+                  borderRadius: "18px 0 0 18px",
+                  translate: `${mix(1100, 0, tapeK) + mix(0, 1100, outK)}px 0px`,
+                }}
+              />
+            ) : null}
+            <div
+              style={{
+                position: "absolute",
+                right: 1080 - RIGHT,
+                top: TOPS[i],
+                fontSize: 168,
+                fontWeight: 700,
+                letterSpacing: "-0.045em",
+                lineHeight: 1,
+                color: tape ? C.white : C.ink,
+                opacity: inK * (1 - outK),
+                scale: `${mix(1.7, 1, inK)}`,
+                transformOrigin: "100% 60%",
+                translate: `${mix(0, tape ? 400 : -260, outK)}px 0px`,
+                filter: `blur(${(1 - inK) * 14}px)`,
+              }}
+            >
+              {w}
+            </div>
+          </React.Fragment>
         );
       })}
     </AbsoluteFill>

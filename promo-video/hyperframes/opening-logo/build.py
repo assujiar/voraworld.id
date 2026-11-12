@@ -15,7 +15,7 @@ VB = "132 164 1780 384"
 LOGO_W = 880
 LOGO_H = LOGO_W * 384 / 1780
 LEFT, TOP = 100, 830
-HEAD_LEFT, HEAD_TOP, HEAD_W = 80, 150, 240
+HEAD_LEFT, HEAD_TOP, HEAD_W = 420, 96, 240
 
 # slab cuts in svg-local x (0..1780) where the ligature is crossed by as few strokes as possible
 CUTS = [0, 440, 822, 1210, 1780]
@@ -78,13 +78,13 @@ html, body {{ width:1080px; height:1920px; overflow:hidden; background:var(--pap
 .mark i {{ position:absolute; background:var(--ink); left:0; top:0; }}
 .mark .h {{ width:56px; height:3px; transform-origin:0 0; }}
 .mark .v {{ width:3px; height:56px; transform-origin:0 0; }}
-#baseline {{ position:absolute; left:{LEFT}px; top:{TOP + LOGO_H + 22}px; width:{LOGO_W}px; height:2px; background:var(--line); transform-origin:0 50%; transform:scaleX(0); }}
+#baseline {{ position:absolute; left:{LEFT}px; top:{TOP + LOGO_H + 22}px; width:{LOGO_W}px; height:2px; background:var(--line); transform-origin:0 50%; }}
 .dash {{ position:absolute; width:0; height:0; }}
 .dash i {{ position:absolute; left:150px; top:-2px; width:46px; height:4px; background:var(--ink); transform-origin:-150px 50%; transform:scaleX(0); opacity:0; }}
 .ring {{ position:absolute; left:{RCX}px; top:{RCY}px; width:0; height:0; }}
 .ring i {{ position:absolute; left:-400px; top:-400px; width:800px; height:800px; border-radius:50%; border:3px solid var(--ink); transform:scale(0); opacity:0; }}
 #desc {{ position:absolute; left:0; width:1080px; top:{TOP + LOGO_H + 52}px; text-align:center; font-size:36px; font-weight:600; letter-spacing:0.18em; color:var(--muted); }}
-#desc .ch {{ display:inline-block; opacity:0; transform:translateY(26px); }}
+#desc .ch {{ display:inline-block; opacity:0; }}
 </style>
 </head>
 <body>
@@ -105,6 +105,8 @@ html, body {{ width:1080px; height:1920px; overflow:hidden; background:var(--pap
 <script>
 window.__timelines = window.__timelines || {{}};
 const tl = gsap.timeline({{ paused: true }});
+tl.set('#baseline', {{ scaleX: 0 }}, 0);
+tl.set('#desc .ch', {{ y: 26 }}, 0);
 
 // 0.0-0.9  print registration: crop marks tick in on the clock, baseline draws
 [0, 0.125, 0.25, 0.375].forEach((t, i) => {{

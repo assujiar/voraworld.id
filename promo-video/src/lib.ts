@@ -45,9 +45,9 @@ export const shake = (t: number, t0: number, amp: number, dur = 0.35) => {
 };
 
 /** shared header/footer geometry (matches the Hyperframes opening) */
-export const HEADER = { left: 80, top: 150, width: 240 };
+export const HEADER = { left: 420, top: 96, width: 240 };
 export const LOGO_RATIO = 384 / 1780;
-export const FOOTER = { left: 80, top: 1696 };
+export const FOOTER = { left: 540, top: 1796 };
 
 /** the services window centre */
 export const WIN = { cx: 540, cy: 860 };
