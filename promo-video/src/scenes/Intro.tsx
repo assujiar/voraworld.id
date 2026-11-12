@@ -10,7 +10,7 @@ const KNOT_PAGE = { x: AGENT_MEET.left + KNOT.x * S, y: AGENT_MEET.top + KNOT.y 
 
 /** vertical offset of the agent in the Meet scene (rise, then exit) */
 export const agentMeetY = (t: number) =>
-  mix(820, 0, p(t, 10.72, 11.12, BACK)) + mix(0, 900, p(t, 15.2, 15.85, EASE_IN));
+  mix(820, 0, p(t, 9.72, 10.12, BACK)) + mix(0, 900, p(t, 14.2, 14.85, EASE_IN));
 
 /** where the scarf knot is on the page at time t */
 export const knotAt = (t: number) => ({ x: KNOT_PAGE.x, y: KNOT_PAGE.y + agentMeetY(t) });
@@ -24,7 +24,7 @@ const DOT = { x: 950, y: 1104, r: 19 };
 // ---------------------------------------------------------------- hook 6-11
 export const Hook: React.FC = () => {
   const t = useT();
-  if (t < 6 || t > 10.6) return null;
+  if (t < 6 || t > 9.6) return null;
   const sh = BEATS.reduce(
     (acc, b) => {
       const s = shake(t, b, 12, 0.3);
@@ -36,7 +36,7 @@ export const Hook: React.FC = () => {
     <AbsoluteFill style={{ translate: `${sh.x}px ${sh.y}px` }}>
       {WORDS.map((w, i) => {
         const inK = p(t, BEATS[i] - 0.13, BEATS[i], EASE_IN);
-        const outK = p(t, 9.7 + i * 0.06, 10.15 + i * 0.06, EASE_IN);
+        const outK = p(t, 8.85 + i * 0.06, 9.3 + i * 0.06, EASE_IN);
         return (
           <div
             key={w}
@@ -67,16 +67,16 @@ export const Hook: React.FC = () => {
 /** the red full stop: pops after "different", drops, and becomes the scarf knot */
 export const RedDot: React.FC = () => {
   const t = useT();
-  if (t < 8.4 || t > 11.5) return null;
+  if (t < 8.4 || t > 10.5) return null;
   const pop = p(t, 8.45, 8.62, BACK);
   const k = knotAt(t);
-  const fx = p(t, 10.2, 11.02, EASE);
-  const fy = p(t, 10.2, 11.02, EASE_IN);
+  const fx = p(t, 9.25, 10.02, EASE);
+  const fy = p(t, 9.25, 10.02, EASE_IN);
   const x = mix(DOT.x, k.x, fx);
   const y = mix(DOT.y, k.y, fy) - Math.sin(fx * Math.PI) * 120;
-  const merge = p(t, 11.04, 11.3, EASE);
+  const merge = p(t, 10.04, 10.3, EASE);
   const r = DOT.r * pop * (1 - merge);
-  const ring = p(t, 11.02, 11.45, EASE);
+  const ring = p(t, 10.02, 10.45, EASE);
   return (
     <AbsoluteFill>
       <div
@@ -90,7 +90,7 @@ export const RedDot: React.FC = () => {
           background: C.red,
         }}
       />
-      {t > 11.02 ? (
+      {t > 10.02 ? (
         <div
           style={{
             position: "absolute",
@@ -113,12 +113,12 @@ const LINE = "Freight and logistics, planned before the cargo moves.".split(" ")
 
 export const Meet: React.FC = () => {
   const t = useT();
-  if (t < 10.6 || t > 16.2) return null;
-  const waveEnv = p(t, 11.3, 11.5) * (1 - p(t, 12.7, 13.0));
-  const wave = Math.sin((t - 11.3) * Math.PI * 2 * 2.1) * 13 * waveEnv;
+  if (t < 9.6 || t > 15.0) return null;
+  const waveEnv = p(t, 10.3, 10.5) * (1 - p(t, 11.7, 12.0));
+  const wave = Math.sin((t - 10.3) * Math.PI * 2 * 2.1) * 13 * waveEnv;
   const breathe = 1 + Math.sin(t * Math.PI) * 0.006;
-  const labelK = p(t, 11.85, 12.2);
-  const out = p(t, 14.85, 15.25, EASE_IN);
+  const labelK = p(t, 10.85, 11.2);
+  const out = p(t, 13.85, 14.25, EASE_IN);
   return (
     <AbsoluteFill>
       <Label
@@ -149,7 +149,7 @@ export const Meet: React.FC = () => {
         }}
       >
         {LINE.map((w, i) => {
-          const k = p(t, 12.85 + i * 0.07, 13.25 + i * 0.07);
+          const k = p(t, 11.85 + i * 0.07, 12.25 + i * 0.07);
           return (
             <span
               key={i}

@@ -5,18 +5,21 @@ import { Logo } from "./components";
 import { C, EASE, EASE_IN, EASE_INOUT, FONT, FOOTER, HEADER, mix, p, useT } from "./lib";
 import { Hook, Meet, RedDot } from "./scenes/Intro";
 import { Brief } from "./scenes/Brief";
-import { Plane, Story } from "./scenes/Story";
+import { Plane, Services } from "./scenes/Services";
+import { MapScene } from "./scenes/MapScene";
+import { Backdrop } from "./scenes/Backdrop";
 import { Close } from "./scenes/Close";
 
 /** header logo: arrives from the opening, visits the "This is VORA" moment, leaves before the ink */
 const HeaderLogo: React.FC = () => {
   const t = useT();
-  if (t < 6 || t > 49.8) return null;
-  const go = p(t, 11.85, 12.45, EASE_INOUT);
-  const back = p(t, 14.95, 15.55, EASE_INOUT);
+  if (t < 6 || t > 51.8) return null;
+  const go = p(t, 10.85, 11.45, EASE_INOUT);
+  const back = p(t, 13.95, 14.55, EASE_INOUT);
   const k = go * (1 - back);
   const HERO = { left: 160, top: 520, width: 760 };
-  const out = p(t, 49.25, 49.65, EASE_IN);
+  const out = p(t, 51.25, 51.65, EASE_IN);
+  const rev = p(t, 20.15, 20.35);
   return (
     <div
       style={{
@@ -26,7 +29,10 @@ const HeaderLogo: React.FC = () => {
         opacity: 1 - out,
       }}
     >
-      <Logo width={mix(HEADER.width, HERO.width, k)} />
+      <div style={{ position: "relative" }}>
+        <Logo width={mix(HEADER.width, HERO.width, k)} style={{ opacity: 1 - rev }} />
+        <Logo width={mix(HEADER.width, HERO.width, k)} reverse style={{ position: "absolute", left: 0, top: 0, opacity: rev }} />
+      </div>
     </div>
   );
 };
@@ -36,8 +42,8 @@ const Footer: React.FC = () => {
   const t = useT();
   if (t < 5.6) return null;
   const inK = p(t, 5.7, 6.2, EASE);
-  const end = p(t, 56.45, 57.05, EASE_INOUT);
-  const dark = t > 49.92;
+  const end = p(t, 58.45, 59.05, EASE_INOUT);
+  const dark = t > 20.25;
   return (
     <div
       style={{
@@ -64,13 +70,15 @@ const Footer: React.FC = () => {
 
 export const VoraPromo: React.FC = () => (
   <AbsoluteFill style={{ background: C.paper, fontFamily: FONT, color: C.ink }}>
+    <Backdrop />
     <Sequence durationInFrames={180} name="Opening logo (Hyperframes)">
       <Video src={staticFile("video/opening-logo.mp4")} muted />
     </Sequence>
     <Hook />
     <Meet />
     <Brief />
-    <Story />
+    <MapScene />
+    <Services />
     <RedDot />
     <Close />
     <HeaderLogo />

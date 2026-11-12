@@ -1,7 +1,7 @@
 {
   "fps": 30,
   "bpm": 120,
-  "duration": 60,
+  "duration": 62,
   "voice": {
     "af_bella": 0.6,
     "af_nova": 0.4
@@ -14,101 +14,107 @@
     ],
     "hook": [
       6,
-      11
+      10
     ],
     "meet": [
-      11,
-      17
+      10,
+      14.5
     ],
     "brief": [
-      17,
-      23.5
+      14.3,
+      19.9
     ],
-    "breath": [
-      23.5,
-      24
+    "map": [
+      19.9,
+      28
     ],
     "services": [
-      24,
-      44
+      28,
+      48
     ],
     "promise": [
-      44,
-      50
+      48,
+      52
     ],
     "logoClose": [
-      50,
-      56
+      52,
+      58
     ],
     "cta": [
-      56,
-      60
+      58,
+      62
     ]
   },
   "vo": [
     {
       "id": "01_hook",
-      "start": 8.6,
+      "start": 8.3,
       "max": 2.3,
       "say": "Every shipment is different!"
     },
     {
       "id": "02_meet",
-      "start": 12.2,
+      "start": 11.1,
       "max": 4.6,
       "say": "This is Vora! Freight and logistics, planned before the cargo moves."
     },
     {
       "id": "03_brief",
-      "start": 17.6,
+      "start": 15.9,
       "max": 5.2,
       "say": "Tell us what is moving, where it has to go, and by when!"
     },
     {
+      "id": "03b_map",
+      "start": 20.5,
+      "max": 4.2,
+      "say": "From Jakarta, we coordinate domestic and international logistics!"
+    },
+    {
       "id": "04_freight",
-      "start": 24.35,
+      "start": 28.35,
       "max": 3.55,
       "say": "Air and ocean freight, with the handovers connected!"
     },
     {
       "id": "05_customs",
-      "start": 28.35,
+      "start": 32.35,
       "max": 3.55,
       "say": "Declarations prepared around the actual commodity."
     },
     {
       "id": "06_warehouse",
-      "start": 32.3,
+      "start": 36.3,
       "max": 3.65,
       "say": "Storage, handling and fulfilment, as one operating flow."
     },
     {
       "id": "07_distribution",
-      "start": 36.35,
+      "start": 40.35,
       "max": 3.55,
       "say": "Mode, capacity and access, planned together."
     },
     {
       "id": "08_project",
-      "start": 40.3,
+      "start": 44.3,
       "max": 3.7,
       "say": "Heavy and oversized cargo, planned against the real constraints."
     },
     {
       "id": "09_promise",
-      "start": 44.4,
-      "max": 5.3,
+      "start": 48.25,
+      "max": 4.7,
       "say": "Scope, timelines and responsibility are explicit, before anything is committed."
     },
     {
       "id": "10_tagline",
-      "start": 54.5,
+      "start": 56.5,
       "max": 2.6,
       "say": "Vora! Bringing the world within reach!"
     },
     {
       "id": "11_cta",
-      "start": 56.75,
+      "start": 58.75,
       "max": 3.2,
       "say": "Talk through your shipment, at vora world dot I D!"
     }
