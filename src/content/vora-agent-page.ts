@@ -6,7 +6,7 @@ import type { Locale } from './index'
  * track shipments, quote live rates or confirm a price, booking, permit or transit time.
  */
 export const voraAgentPage: Record<Locale, {
-  title: string; description: string; label: string; h1: string; intro: string; keep: string; fallback: string
+  title: string; description: string; label: string; h1: string; intro: string; keepTitle: string; keep: string; fallback: string; figureAlt: string
   examplesTitle: string; examplesHint: string; examples: string[]
   limitsTitle: string; limits: string[]; teamTitle: string; team: string; rfq: string
 }> = {
@@ -16,6 +16,8 @@ export const voraAgentPage: Record<Locale, {
     label: 'VORA / VIRTUAL AGENT',
     h1: 'Ask VORA Agent about your shipment.',
     intro: 'VORA Agent is the AI assistant on this website. Ask it about international freight, customs, domestic distribution, project cargo or warehousing, and it will help you work out the details a quotation needs.',
+    keepTitle: 'Chat while you browse',
+    figureAlt: 'Illustration of VORA Virtual Agent',
     keep: 'Minimize the chat to keep it in the corner of the screen while you read other pages. The conversation continues from your last message. On a phone it waits behind the Ask VORA button.',
     fallback: 'The chat is loading. If it does not appear, use Request a Quote or email info@voraworld.id.',
     examplesTitle: 'Questions you can start with',
@@ -41,6 +43,8 @@ export const voraAgentPage: Record<Locale, {
     label: 'VORA / VIRTUAL AGENT',
     h1: 'Tanya VORA Agent soal pengiriman Anda.',
     intro: 'VORA Agent adalah asisten AI di website ini. Tanyakan soal freight internasional, customs, distribusi domestik, project cargo, atau pergudangan, dan agent akan membantu menyusun detail yang dibutuhkan untuk penawaran.',
+    keepTitle: 'Chat sambil menjelajah',
+    figureAlt: 'Ilustrasi VORA Virtual Agent',
     keep: 'Perkecil chat agar tetap di pojok layar saat Anda membuka halaman lain. Percakapan berlanjut dari pesan terakhir. Di HP, chat menunggu di tombol Tanya VORA.',
     fallback: 'Chat sedang dimuat. Jika tidak muncul, gunakan Minta Penawaran atau email info@voraworld.id.',
     examplesTitle: 'Contoh pertanyaan untuk memulai',

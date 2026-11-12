@@ -105,29 +105,54 @@
 .vora-agent-register__form .vora-agent-choice__option input[type=radio]:checked+span{background:#101720;border-color:#101720;color:#fff}
 .vora-agent-register__form .vora-agent-choice__option input[type=radio]:focus-visible+span{border-color:#b43e31;box-shadow:0 0 0 3px #b43e3126}
 @media(max-width:640px){.vora-agent-richtext{gap:8px;line-height:1.6}.vora-agent-richtext ul,.vora-agent-richtext ol{gap:4px}}
-/* VORA Agent page (/en/vora-agent): the same chat component and conversation, docked full size in the page. Minimizing it floats it over the rest of the site. */
-.vora-agent-page{padding:40px 0 64px;background:radial-gradient(ellipse at top left,#fff,#f1f1eb 80%)}
-.vora-agent-page__grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);grid-template-areas:"head dock" "examples dock";gap:28px 56px;align-items:start}
-.vora-agent-page__head{grid-area:head}.vora-agent-dock{grid-area:dock;min-width:0;position:sticky;top:104px}.vora-agent-page__examples{grid-area:examples}
-.vora-agent-page h1{font-size:clamp(2.6rem,4.4vw,4.2rem);font-weight:710;line-height:1.02;letter-spacing:-.05em;max-width:12ch;text-wrap:balance;margin:0 0 22px}
-.vora-agent-page .a-intro{max-width:46ch}
-.vora-agent-page__keep{margin-top:18px;padding-left:14px;border-left:2px solid #b43e31;color:#43515c;font-size:.95rem;max-width:46ch}
-.vora-agent-page__examples h2{font-size:1.25rem;letter-spacing:-.02em;margin:0 0 4px}
-.vora-agent-page__hint{color:#64717c;font-size:.88rem;margin:0 0 14px}
-.vora-agent-examples{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.vora-agent-examples button{width:100%;display:flex;justify-content:space-between;gap:14px;align-items:center;text-align:left;font:inherit;font-size:.95rem;color:#101720;background:#fff;border:1px solid #dcdfd9;border-radius:12px;padding:14px 16px;min-height:48px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+/* VORA Agent page (/en/vora-agent): the same chat component and conversation, docked in the page. Minimizing it floats it over the rest of the site.
+   Phone and tablet: intro, then the chat at almost a screen tall, then the details as accordions. */
+.vora-agent-page{padding:24px 0 48px;background:radial-gradient(ellipse at top left,#fff,#f1f1eb 80%)}
+.vora-agent-page__grid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"first" "info";gap:20px}
+/* Phone and tablet: the first screen is the title and the chat; the accordions wait below it. On a desktop the wrapper disappears (display:contents) and the grid places head and chat itself. */
+.vora-agent-page__first{grid-area:first;display:flex;flex-direction:column;gap:12px;height:max(540px,calc(100dvh - 96px - 38px))}
+.vora-agent-page__head{flex:none}
+.vora-agent-page__info{grid-area:info;min-height:0}.vora-agent-dock{flex:1;min-width:0;min-height:0}
+.vora-agent-page__figure{display:none;grid-area:figure;margin:0}
+.vora-agent-page .a-label{margin-bottom:12px}
+.vora-agent-page h1{font-size:clamp(2.1rem,8.6vw,3rem);font-weight:710;line-height:1.02;letter-spacing:-.045em;max-width:16ch;text-wrap:balance;margin:0 0 12px}
+.vora-agent-page .a-intro{max-width:52ch;font-size:.95rem;line-height:1.5;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.vora-agent-acc{border-top:1px solid #dcdfd9}.vora-agent-acc:last-child{border-bottom:1px solid #dcdfd9}
+.vora-agent-acc summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:50px;padding:12px 2px;font-weight:650;font-size:1rem;letter-spacing:-.01em;color:#101720}
+.vora-agent-acc summary::-webkit-details-marker{display:none}
+.vora-agent-acc summary::after{content:'';flex:none;width:9px;height:9px;border-right:2px solid #b43e31;border-bottom:2px solid #b43e31;transform:translateY(-3px) rotate(45deg);transition:transform .2s}
+.vora-agent-acc[open] summary::after{transform:translateY(2px) rotate(-135deg)}
+.vora-agent-acc summary:focus-visible{outline:3px solid #b43e31;outline-offset:2px;border-radius:4px}
+.vora-agent-acc__body{padding:0 2px 16px;color:#43515c;font-size:.92rem;line-height:1.6}
+.vora-agent-acc__body p{margin:0 0 10px;max-width:60ch}
+.vora-agent-page__hint{color:#64717c;font-size:.86rem}
+.vora-agent-examples{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.vora-agent-examples button{width:100%;display:flex;justify-content:space-between;gap:14px;align-items:center;text-align:left;font:inherit;font-size:.92rem;color:#101720;background:#fff;border:1px solid #dcdfd9;border-radius:11px;padding:11px 14px;min-height:46px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .vora-agent-examples button:hover{border-color:#b43e31;box-shadow:0 8px 20px -14px #10172055}
 .vora-agent-examples button:focus-visible{outline:3px solid #b43e31;outline-offset:3px}
 .vora-agent-examples button span{color:#b43e31;flex:none}
-.vora-agent.vora-agent--docked{position:relative;right:auto;bottom:auto;z-index:1}
-.vora-agent--docked .vora-agent-panel{position:relative;bottom:auto;right:auto;width:100%;height:min(680px,calc(100dvh - 140px));min-height:520px;max-height:none;animation:none;box-shadow:0 22px 60px -20px #10172045,0 2px 10px #10172012}
-.vora-agent-dock__fallback{margin:0;padding:28px;border:1px solid #dcdfd9;border-radius:21px;background:#f7f7f4;color:#43515c}
+.vora-agent.vora-agent--docked{position:relative;right:auto;bottom:auto;z-index:1;height:100%}
+.vora-agent-dock{display:flex;flex-direction:column}.vora-agent-dock>.vora-agent{flex:1;min-height:0}
+.vora-agent--docked .vora-agent-panel{position:relative;bottom:auto;right:auto;width:100%;height:100%;min-height:0;max-height:none;animation:none;border-radius:18px;box-shadow:0 22px 60px -20px #10172045,0 2px 10px #10172012}
+.vora-agent-dock__fallback{margin:0;padding:28px;border:1px solid #dcdfd9;border-radius:18px;background:#f7f7f4;color:#43515c}
 .vora-agent-dock[data-live]>.vora-agent-dock__fallback{display:none}
-.vora-agent-dock__minimized{display:grid;justify-items:start;gap:14px;padding:28px;border:1px dashed #c4cbc5;border-radius:21px;background:#f7f7f4}
+.vora-agent-dock__minimized{display:grid;justify-items:start;gap:14px;padding:28px;border:1px dashed #c4cbc5;border-radius:18px;background:#f7f7f4}
 .vora-agent-dock__minimized p{margin:0;color:#43515c}
-.vora-agent-page__notes-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px 56px}
-.vora-agent-page__notes h2{font-size:1.5rem;letter-spacing:-.02em;margin:0 0 12px}
-.vora-agent-page__notes p{color:#43515c;max-width:56ch}
-.vora-agent-page__notes .v-btn{margin-top:10px}
-@media(max-width:900px){.vora-agent-page__grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "dock" "examples"}.vora-agent-dock{position:static}.vora-agent-page__notes-grid{grid-template-columns:1fr}}
-@media(max-width:640px){.vora-agent-page{padding:28px 0 44px}.vora-agent-page h1{font-size:clamp(2.4rem,10.5vw,3.2rem)}.vora-agent--docked .vora-agent-panel{height:min(620px,calc(100dvh - 120px));min-height:460px;border-radius:18px}}
+/* Desktop: the whole page fits one screen under the header; only the chat (and an opened accordion, inside its column) scrolls. */
+@media(min-width:1024px) and (min-height:600px){
+  .vora-agent-page{height:calc(100dvh - 96px);padding:0;overflow:hidden}
+  .vora-agent-page__first{display:contents}
+  .vora-agent-page__head{grid-area:head}.vora-agent-dock{grid-area:dock}
+  .vora-agent-page__grid{height:100%;padding-block:20px 24px;grid-template-columns:minmax(0,1fr) minmax(420px,1.1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"head dock" "info dock";gap:18px 40px}
+  .vora-agent-page__info{overflow-y:auto;overscroll-behavior:contain;padding-right:6px;scrollbar-width:thin}
+  .vora-agent-page h1{font-size:clamp(2.2rem,3.3vw,3.3rem);max-width:13ch}
+  .vora-agent-page .a-intro{display:block;-webkit-line-clamp:unset;overflow:visible;font-size:1rem;line-height:1.6}
+}
+/* Wide desktop: the agent figure stands between the information and the chat, as tall as the chat window. */
+@media(min-width:1200px) and (min-height:600px){
+  .vora-agent-page__grid{grid-template-columns:minmax(0,1fr) minmax(0,.58fr) minmax(420px,1.05fr);grid-template-areas:"head figure dock" "info figure dock";column-gap:28px}
+  .vora-agent-page__figure{display:flex;align-items:flex-end;justify-content:center;height:100%;min-height:0;overflow:hidden}
+  .vora-agent-page__figure img{display:block;height:100%;width:auto;max-width:100%;object-fit:contain;object-position:bottom center}
+}
+@media(min-width:641px){.vora-agent-page .a-intro{display:block;-webkit-line-clamp:unset;overflow:visible}}
+@media(max-width:640px){.vora-agent-page{padding:14px 0 32px}.vora-agent-page__grid{gap:14px}.vora-agent-page .a-label{display:none}.vora-agent-page h1{font-size:clamp(1.65rem,7.2vw,2.1rem);max-width:none;margin-bottom:8px}.vora-agent-page .a-intro{font-size:.88rem;-webkit-line-clamp:2}.vora-agent-page__first{height:max(520px,calc(100dvh - 96px - 28px))}}
