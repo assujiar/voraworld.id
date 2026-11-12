@@ -29,13 +29,24 @@ for line in T["vo"]:
 from scipy.signal import butter, sosfilt
 vo = sosfilt(butter(2, 90, btype="high", fs=SR, output="sos"), vo)
 vo = vo + 0.4 * sosfilt(butter(2, [2000, 5000], btype="band", fs=SR, output="sos"), vo)
-vo = np.tanh(vo / (np.max(np.abs(vo)) + 1e-9) * 1.3)
+vo /= np.max(np.abs(vo)) + 1e-9
 
-# ducking envelope from the voice
+# leveler: ride quiet and low-pitched syllables up (max +9 dB) so phrase ends stay audible
+blk = int(0.04 * SR)
+rms = np.sqrt(np.convolve(vo**2, np.ones(blk) / blk, mode="same")) + 1e-6
+target = 0.22
+gain = np.clip(target / rms, 1.0, 10 ** (9 / 20))
+gain = np.where(rms < 0.01, 1.0, gain)  # leave silence alone
+gain = np.convolve(gain, np.ones(blk) / blk, mode="same")
+vo = np.tanh(vo * gain * 1.4)
+
+# ducking envelope from the voice (held through short pauses between words)
 env = np.abs(vo)
 win = int(0.03 * SR)
 env = np.convolve(env, np.ones(win) / win, mode="same")
 active = (env > 0.02).astype(float)
+hold = int(0.3 * SR)
+active = (np.convolve(active, np.ones(hold), mode="same") > 0).astype(float)
 att, rel = int(0.06 * SR), int(0.35 * SR)
 smooth = np.zeros(N)
 g = 0.0
@@ -44,9 +55,22 @@ for i in range(0, N, 240):  # 5 ms blocks
     step = 240 / (att if tgt > g else rel)
     g = min(tgt, g + step) if tgt > g else max(tgt, g - step)
     smooth[i : i + 240] = g
-duck = 1 - 0.62 * smooth  # about -8.4 dB under voice
+duck = 1 - 0.68 * smooth  # about -10 dB under voice
 
-mix = music * duck[:, None] * 0.62 + sfx * 0.38 + np.stack([vo, vo], 1) * 0.8
+# carve the voice's own range (low-mid body 150-700 Hz, consonants 1.5-4 kHz) out of the music while she talks
+body = sosfilt(butter(2, [150, 700], btype="band", fs=SR, output="sos"), music, axis=0)
+pres = sosfilt(butter(2, [1500, 4000], btype="band", fs=SR, output="sos"), music, axis=0)
+music_carved = music - (0.55 * body + 0.45 * pres) * smooth[:, None]
+
+voice = np.stack([vo, vo], 1) * 1.0
+mix = music_carved * duck[:, None] * 0.62 + sfx * 0.32 + voice
+
+# report how far the voice sits above the music while she talks
+_m = pyln.Meter(SR)
+_mask = smooth > 0.9
+_v = voice[_mask]
+_b = (music_carved * duck[:, None] * 0.62 + sfx * 0.32)[_mask]
+print(f"voice over bed while talking: {_m.integrated_loudness(_v) - _m.integrated_loudness(_b):+.1f} dB")
 
 meter = pyln.Meter(SR)
 loud = meter.integrated_loudness(mix)
