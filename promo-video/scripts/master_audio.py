@@ -25,7 +25,10 @@ for line in T["vo"]:
     e = min(N, i + len(x))
     vo[i:e] += x[: e - i]
 
-# voice: gentle presence + compression
+# voice clarity: cut rumble, lift presence (2-5 kHz), then gentle compression
+from scipy.signal import butter, sosfilt
+vo = sosfilt(butter(2, 90, btype="high", fs=SR, output="sos"), vo)
+vo = vo + 0.4 * sosfilt(butter(2, [2000, 5000], btype="band", fs=SR, output="sos"), vo)
 vo = np.tanh(vo / (np.max(np.abs(vo)) + 1e-9) * 1.3)
 
 # ducking envelope from the voice
@@ -41,9 +44,9 @@ for i in range(0, N, 240):  # 5 ms blocks
     step = 240 / (att if tgt > g else rel)
     g = min(tgt, g + step) if tgt > g else max(tgt, g - step)
     smooth[i : i + 240] = g
-duck = 1 - 0.55 * smooth  # about -7 dB under voice
+duck = 1 - 0.62 * smooth  # about -8.4 dB under voice
 
-mix = music * duck[:, None] * 0.62 + sfx * 0.38 + np.stack([vo, vo], 1) * 0.72
+mix = music * duck[:, None] * 0.62 + sfx * 0.38 + np.stack([vo, vo], 1) * 0.8
 
 meter = pyln.Meter(SR)
 loud = meter.integrated_loudness(mix)

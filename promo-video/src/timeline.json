@@ -3,10 +3,10 @@
   "bpm": 120,
   "duration": 60,
   "voice": {
-    "am_liam": 0.55,
-    "am_puck": 0.45
+    "af_bella": 0.6,
+    "af_nova": 0.4
   },
-  "speedMul": 1.12,
+  "speedMul": 1.06,
   "scenes": {
     "logoOpen": [
       0,
@@ -62,7 +62,7 @@
       "id": "03_brief",
       "start": 17.6,
       "max": 5.2,
-      "say": "Tell us what is moving, where it has to go, and by when."
+      "say": "Tell us what is moving, where it has to go, and by when!"
     },
     {
       "id": "04_freight",
@@ -91,7 +91,7 @@
     {
       "id": "08_project",
       "start": 40.3,
-      "max": 3.65,
+      "max": 3.7,
       "say": "Heavy and oversized cargo, planned against the real constraints."
     },
     {
