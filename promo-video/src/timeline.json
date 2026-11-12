@@ -3,9 +3,10 @@
   "bpm": 120,
   "duration": 60,
   "voice": {
-    "am_michael": 0.7,
-    "am_fenrir": 0.3
+    "am_liam": 0.55,
+    "am_puck": 0.45
   },
+  "speedMul": 1.12,
   "scenes": {
     "logoOpen": [
       0,
@@ -49,13 +50,13 @@
       "id": "01_hook",
       "start": 8.6,
       "max": 2.3,
-      "say": "Every shipment is different."
+      "say": "Every shipment is different!"
     },
     {
       "id": "02_meet",
       "start": 12.2,
       "max": 4.6,
-      "say": "This is Vora. Freight and logistics, planned before the cargo moves."
+      "say": "This is Vora! Freight and logistics, planned before the cargo moves."
     },
     {
       "id": "03_brief",
@@ -67,7 +68,7 @@
       "id": "04_freight",
       "start": 24.35,
       "max": 3.55,
-      "say": "Air and ocean freight, with the handovers connected."
+      "say": "Air and ocean freight, with the handovers connected!"
     },
     {
       "id": "05_customs",
@@ -79,8 +80,7 @@
       "id": "06_warehouse",
       "start": 32.3,
       "max": 3.65,
-      "say": "Storage, handling and fulfilment, as one operating flow.",
-      "speed": 1.1
+      "say": "Storage, handling and fulfilment, as one operating flow."
     },
     {
       "id": "07_distribution",
@@ -92,8 +92,7 @@
       "id": "08_project",
       "start": 40.3,
       "max": 3.65,
-      "say": "Heavy and oversized cargo, planned against the real constraints.",
-      "speed": 1.15
+      "say": "Heavy and oversized cargo, planned against the real constraints."
     },
     {
       "id": "09_promise",
@@ -105,14 +104,13 @@
       "id": "10_tagline",
       "start": 54.5,
       "max": 2.6,
-      "say": "Vora. Bringing the world within reach."
+      "say": "Vora! Bringing the world within reach!"
     },
     {
       "id": "11_cta",
       "start": 56.75,
       "max": 3.2,
-      "say": "Talk through your shipment, at vora world dot I D.",
-      "speed": 1.05
+      "say": "Talk through your shipment, at vora world dot I D!"
     }
   ]
 }
