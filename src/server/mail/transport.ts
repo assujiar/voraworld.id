@@ -5,7 +5,8 @@ import { decryptSecret } from './secret'
 
 export interface Attachment { filename: string; content: Uint8Array }
 /** One attachment, or an array when a message carries several (the invoice and its pre-payment receipt). */
-export type Sender = (conf: MailConfigRow, to: string, subject: string, html: string, attachment?: Attachment | Attachment[]) => Promise<void>
+export interface SendOptions { unsubscribeUrl?: string }
+export type Sender = (conf: MailConfigRow, to: string, subject: string, html: string, attachment?: Attachment | Attachment[], options?: SendOptions) => Promise<void>
 
 /** The plain-text alternative. A link keeps its address, because a reader of the text part can not click what has been stripped away. */
 export const stripTags = (html: string) => html
@@ -14,7 +15,7 @@ export const stripTags = (html: string) => html
   .replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
   .replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
 
-const smtpSender: Sender = async (conf, to, subject, html, attachment) => {
+const smtpSender: Sender = async (conf, to, subject, html, attachment, options) => {
   if (!conf.enabled) throw new Error('SMTP disabled')
   const transporter = nodemailer.createTransport({
     host: conf.host ?? '',
@@ -34,6 +35,10 @@ const smtpSender: Sender = async (conf, to, subject, html, attachment) => {
       subject,
       text: stripTags(html),
       html,
+      ...(options?.unsubscribeUrl ? { headers: {
+        'List-Unsubscribe': `<${options.unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      } } : {}),
       attachments: (Array.isArray(attachment) ? attachment : attachment ? [attachment] : []).map((a) => ({ filename: a.filename, content: Buffer.from(a.content), contentType: 'application/pdf' })),
     })
   } finally {

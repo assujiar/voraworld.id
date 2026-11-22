@@ -1,0 +1,26 @@
+name: VORA broadcast dispatcher
+on:
+  schedule:
+    - cron: '7,17,27,37,47,57 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      CRON_SECRET: ${{ secrets.VORA_CRON_SECRET }}
+      DISPATCH_URL: https://voraworld.id/internal/broadcast/dispatch
+    steps:
+      - name: Trigger the rate-limited broadcast queue
+        shell: bash
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "VORA_CRON_SECRET is not configured. Skipping dispatcher."
+            exit 0
+          fi
+          curl --fail --silent --show-error --retry 2 --max-time 55 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Accept: application/json" \
+            "$DISPATCH_URL"

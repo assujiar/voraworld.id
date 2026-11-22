@@ -166,6 +166,71 @@ export interface BankAccountsRow {
   updatedAt: Date
 }
 
+export interface BroadcastCampaignsRow {
+  id: number
+  name: string
+  subject: string
+  html: string
+  audienceTag: string
+  status: string
+  scheduledAt: Date | null
+  createdBy: number | null
+  launchedAt: Date | null
+  completedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface BroadcastContactsRow {
+  id: number
+  companyName: string
+  picName: string
+  position: string
+  email: string
+  phone: string
+  country: string
+  businessCategory: string
+  tags: string
+  source: string
+  consentStatus: string
+  consentEvidence: string
+  consentAt: Date | null
+  unsubscribedAt: Date | null
+  unsubscribeToken: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface BroadcastDeliveriesRow {
+  id: number
+  campaignId: number
+  contactId: number
+  recipientEmail: string
+  status: string
+  attempts: number
+  nextAttemptAt: Date
+  claimedAt: Date | null
+  activeAttemptId: number | null
+  sentAt: Date | null
+  lastError: string
+  createdAt: Date
+}
+
+export interface BroadcastSendAttemptsRow {
+  id: number
+  deliveryId: number
+  attemptedAt: Date
+  outcome: string
+  error: string
+}
+
+export interface BroadcastSettingsRow {
+  id: number
+  enabled: boolean
+  maxPerHour: number
+  updatedAt: Date
+}
+
 export interface CountersRow {
   id: number
   kind: string
@@ -833,6 +898,11 @@ export const DATE_COLUMNS: Readonly<Record<string, readonly string[]>> = {
   attestation_keys: ['createdAt', 'retiredAt', 'compromisedAt'],
   audit_logs: ['createdAt'],
   bank_accounts: ['createdAt', 'updatedAt'],
+  broadcast_campaigns: ['scheduledAt', 'launchedAt', 'completedAt', 'createdAt', 'updatedAt'],
+  broadcast_contacts: ['consentAt', 'unsubscribedAt', 'createdAt', 'updatedAt'],
+  broadcast_deliveries: ['nextAttemptAt', 'claimedAt', 'sentAt', 'createdAt'],
+  broadcast_send_attempts: ['attemptedAt'],
+  broadcast_settings: ['updatedAt'],
   coverage: ['verifiedAt'],
   customers: ['createdAt'],
   deliveries: ['createdAt', 'updatedAt', 'issuedAt', 'deliveredAt'],
